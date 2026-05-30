@@ -116,8 +116,8 @@ is fully conformant with **zero** addons installed.
   reconciled, not clobbered, against any existing devcontainer setup.
 - The full implementation lives at
   `skills/deepworkplan/addons/devcontainer/` — see its
-  [`SKILL.md`](../deepworkplan-skill/skills/deepworkplan/addons/devcontainer/SKILL.md)
-  (onboarding hook), [`SPEC.md`](../deepworkplan-skill/skills/deepworkplan/addons/devcontainer/SPEC.md)
+  [`SKILL.md`](../addons/devcontainer/SKILL.md)
+  (onboarding hook), [`SPEC.md`](../addons/devcontainer/SPEC.md)
   (RFC-2119 common skeleton, reasoning checklist, project-identity precedence,
   public-OSS variant, validation), and `templates/` (reasoning templates + the 7
   presets).
@@ -150,8 +150,8 @@ is fully conformant with **zero** addons installed.
   Dailybot, and a repo with zero addons is fully conformant.
 - The full implementation lives at
   `skills/deepworkplan/addons/dailybot/` — see its
-  [`SKILL.md`](../deepworkplan-skill/skills/deepworkplan/addons/dailybot/SKILL.md)
-  (onboarding hook), [`SPEC.md`](../deepworkplan-skill/skills/deepworkplan/addons/dailybot/SPEC.md)
+  [`SKILL.md`](../addons/dailybot/SKILL.md)
+  (onboarding hook), [`SPEC.md`](../addons/dailybot/SPEC.md)
   (RFC-2119 contract: opt-in install, deferred auth, optional reporting,
   never-block rule, vendor-neutral guardrail, validation), and
   `templates/INTEGRATION.md` (reasoning aid).

@@ -440,7 +440,7 @@ When an agent is instructed to use this system, it must obey:
    - If a validation fails or something is unclear, stop and log.
    - Do not continue blindly.
 
-6. **Progress reporting** — handled by the `dailybot` skill at [`.agents/skills/dailybot/`](../../.agents/skills/dailybot/SKILL.md). Trigger by intent ("report this to Dailybot") or via `/dailybot_report` on Claude Code. The skill handles auth, project detection, and payload construction.
+6. **Progress reporting** — handled by the optional Dailybot addon at [`addons/dailybot/`](../addons/dailybot/SKILL.md). Trigger by intent ("report this to Dailybot") or via `/dailybot_report` on Claude Code. The addon defers auth to the Dailybot skill and is opt-in and never-blocking.
 
    **Per-task reports (only for individually significant tasks):**
    - After a task that ships a feature, fixes a bug, or completes a major refactor, trigger the skill with a standup-style message — e.g., *"Implemented JWT middleware for the API gateway — all protected routes now validate tokens."*
@@ -457,7 +457,7 @@ When an agent is instructed to use this system, it must obey:
      - ❌ NEVER (vague, no detail): *"Completed a deep work plan with multiple tasks executed and validated"*
      - ❌ NEVER (process-focused): *"Plan completed: PLAN_auth_refactor - 8 tasks completed successfully"*
 
-   See [`.agents/skills/dailybot/report/examples.md`](../../.agents/skills/dailybot/report/examples.md) for the full pattern.
+   See [`addons/dailybot/templates/INTEGRATION.md`](../addons/dailybot/templates/INTEGRATION.md) for the full pattern.
 
    **General rules:**
    - ALWAYS in English, regardless of conversation language
@@ -1755,7 +1755,7 @@ This cuts wall-clock time ~50% vs sequential without sacrificing correctness, as
 > Non-Claude agents (Cursor, Codex, Gemini) safely ignore these sections and execute tasks sequentially.
 > All plans remain fully functional without team agents.
 >
-> **Reference:** For complete team agents documentation, see [`docs/technical/TEAM_AGENTS_REFERENCE.md`](../../docs/technical/TEAM_AGENTS_REFERENCE.md).
+> **Reference:** For the team-agents task template, see [`examples/TEAM_AGENTS_TASK_TEMPLATE.md`](../examples/TEAM_AGENTS_TASK_TEMPLATE.md).
 
 ### 14.1. Overview
 
