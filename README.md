@@ -176,6 +176,6 @@ checklist. Deeper background lives under [`docs/`](docs/) — [DESIGN.md](docs/D
 - [Open Agent Skills standard (agentskills.io)](https://agentskills.io)
 - [skills.sh](https://skills.sh) — cross-agent skills directory
 
-## :electric_plug: Powered by [DailyBot](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill)
+## :electric_plug: Powered by [Dailybot](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill)
 
-DailyBot is an [AI Assistant](https://www.dailybot.com/product/ai) powered by ChatGPT that takes chat and collaboration to the next level helping to automate: daily standups, team check-ins, surveys, kudos, virtual watercooler, 1:1 intros, motivation tracking, chatops and more. [Learn more](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill).
+Dailybot is an [AI Assistant](https://www.dailybot.com/product/ai) powered by ChatGPT that takes chat and collaboration to the next level helping to automate: daily standups, team check-ins, surveys, kudos, virtual watercooler, 1:1 intros, motivation tracking, chatops and more. [Learn more](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill).
