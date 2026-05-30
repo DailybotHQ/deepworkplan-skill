@@ -9,6 +9,13 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.0.2] — 2026-05-30
+
+### Changes
+
+- fix(docs): point install commands and repo URLs at the real DailybotHQ org
+
+
 ## [2.0.1] — 2026-05-30
 
 ### Changes
