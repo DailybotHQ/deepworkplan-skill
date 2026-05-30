@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # Allow re-running the gate manually from the Actions tab if needed.
+  workflow_dispatch: {}
+
+# Cancel old runs of the same branch / PR when a new push lands. Saves CI
+# minutes and keeps the most recent commit's status as the source of truth.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Default to read-only on the GitHub token. Individual jobs that need more
+# (writes, packages, releases) opt in explicitly.
+permissions:
+  contents: read
+
+jobs:
+  frontmatter-validation:
+    name: SKILL.md frontmatter validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install pyyaml
+      - run: python3 scripts/validate-frontmatter.py
+
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck on shipped + repo-dev scripts
+        run: |
+          # setup.sh is the only repo-root script; shared/context.sh is the
+          # only shipped runtime script. Lint both, plus any scripts/*.sh.
+          shellcheck setup.sh skills/deepworkplan/shared/context.sh
+          if ls scripts/*.sh >/dev/null 2>&1; then
+            shellcheck scripts/*.sh
+          fi
+
+  context-sh-smoke:
+    name: context.sh smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Emits valid single-line JSON in a regular directory
+        run: |
+          OUTPUT=$(bash skills/deepworkplan/shared/context.sh)
+          echo "Output: $OUTPUT"
+          echo "$OUTPUT" | python3 -c 'import json,sys; json.loads(sys.stdin.read())'
+
+      - name: Respects DWP_AGENT_TOOL override
+        run: |
+          export DWP_AGENT_TOOL="my-test-agent"
+          OUTPUT=$(bash skills/deepworkplan/shared/context.sh)
+          echo "Output: $OUTPUT"
+          echo "$OUTPUT" | grep -q '"agent_tool":"my-test-agent"' || {
+            echo "FAIL: env override not honored"
+            exit 1
+          }
+
+      - name: Respects DWP_DIR override
+        run: |
+          export DWP_DIR="/tmp/custom-dwp"
+          OUTPUT=$(bash skills/deepworkplan/shared/context.sh)
+          echo "Output: $OUTPUT"
+          echo "$OUTPUT" | grep -q '"dwp_dir":"/tmp/custom-dwp"' || {
+            echo "FAIL: DWP_DIR override not honored"
+            exit 1
+          }
+
+  bats-tests:
+    name: bats unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats-core
+        run: sudo apt-get update && sudo apt-get install -y bats
+      - name: Run bats tests
+        run: bats tests/
+
+  setup-smoke:
+    name: setup.sh smoke (Linux + macOS bash 3.2)
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm bash version
+        run: bash --version
+      - name: setup.sh --help runs cleanly
+        run: bash setup.sh --help
+      - name: setup.sh --host claude creates pack + sub-skill symlinks
+        run: |
+          # Point HOME at a temp dir so we don't touch the real agent config.
+          export HOME=$(mktemp -d)
+          mkdir -p "$HOME/.claude"
+          bash setup.sh --host claude
+          test -L "$HOME/.claude/skills/deepworkplan" || { echo "FAIL: pack symlink missing"; exit 1; }
+          for v in create execute refine resume status onboard; do
+            test -L "$HOME/.claude/skills/deepworkplan-$v" || { echo "FAIL: deepworkplan-$v symlink missing"; exit 1; }
+          done
+          echo "OK: pack + six sub-skill symlinks created"
+
+  markdown-links:
+    name: Markdown link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          config-file: '.github/markdown-link-check.json'
+          # Only check repo-internal links by default (external can be flaky)
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'yes'

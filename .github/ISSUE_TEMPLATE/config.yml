@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/DailybotHQ/deepworkplan-skill/blob/main/SECURITY.md
+    about: Do not open a public issue for security problems. Follow the coordinated-disclosure process in SECURITY.md (email security@dailybot.com).
+  - name: DeepWorkPlan documentation
+    url: https://deepworkplan.com
+    about: Methodology guide, usage docs, and the full DeepWorkPlan standard.
+  - name: How to contribute
+    url: https://github.com/DailybotHQ/deepworkplan-skill/blob/main/CONTRIBUTING.md
+    about: Setup, conventions, the auto-release flow, and how to add a sub-skill.

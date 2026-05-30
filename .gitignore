@@ -1,0 +1,82 @@
+# OS-generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.history/
+*.bak
+*.tmp
+
+# Python (scripts/validate-frontmatter.py + any other helper)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Node (some contributors may run `npx skills` locally for testing)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+.pnp.*
+
+# shellcheck artifacts
+.bats-cache/
+
+# Local environment overrides
+.env
+.env.local
+.env.*.local
+.envrc
+
+# Test / coverage outputs
+coverage/
+.coverage
+*.cov
+*.log
+
+# Built / packaged artifacts (we have none today — defensive)
+dist/
+build/
+out/
+
+# Repo `tmp/` for scratch work (see AGENTS.md)
+# Ignore everything inside; keep only `.gitkeep` so the directory is tracked.
+tmp/*
+!tmp/.gitkeep
+
+# Deep Work Plan output is local working state — never committed in this repo.
+# (NOTE: this only matters if a contributor runs the skill against this repo
+# itself; the skill ships under skills/ which is explicitly NOT ignored below.)
+.dwp/
+
+# Local agent install dirs created during setup.sh smoke testing
+/.claude/skills/
+/.cursor/skills/
+/.codex/skills/
+
+# Make doubly sure the runtime artifact is NEVER ignored.
+!skills/
+!skills/**

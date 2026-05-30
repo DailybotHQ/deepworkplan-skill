@@ -1,0 +1,174 @@
+name: Auto-release on merge to main
+
+# Conventional-commit-driven auto-release for the DeepWorkPlan skill, a
+# markdown-first skill pack. Every merge to `main` produces a new GitHub
+# Release unless the merge itself is the bot's own release commit.
+#
+# Bump rule (conventional-commit-aware, with PATCH as the safe default):
+#   feat(...)!: / "BREAKING CHANGE:" in body  → MAJOR
+#   feat(...):                                → MINOR
+#   anything else (incl. no prefix)           → PATCH
+#
+# What it does:
+#   1. Reads the current version from skills/deepworkplan/SKILL.md frontmatter
+#      (the ROUTER SKILL.md is the single source of truth for the version)
+#   2. Looks at commits since the last `vX.Y.Z` git tag and decides MAJOR/MINOR/PATCH
+#   3. Writes the new version into ALL SKILL.md files (router + every sub-skill
+#      + the devcontainer addon) so they stay in sync
+#   4. Prepends a new section to CHANGELOG.md with the merged commits as bullets
+#   5. Commits as "Dailybot Automations" with `[skip ci]` to break the loop
+#   6. Tags `vX.Y.Z` and pushes
+#   7. Creates a GitHub Release with auto-generated notes
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Bump version, tag, release
+    runs-on: ubuntu-latest
+    # Skip our own release commits to prevent an infinite loop.
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Uses `AUTOMATION_GITHUB_TOKEN` (the org convention) so the bot
+          # user (`dailybotops`) can push to the protected `main` branch.
+          # Falls back to the default GITHUB_TOKEN, which will fail at the
+          # push step unless `github-actions[bot]` is in the branch-protection
+          # bypass list.
+          token: ${{ secrets.AUTOMATION_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Set up git identity
+        run: |
+          git config user.name "Dailybot Automations"
+          git config user.email "ops@dailybot.com"
+
+      - name: Determine bump level + new version
+        id: version
+        run: |
+          set -euo pipefail
+          # Read current version from the ROUTER SKILL.md (single source of truth).
+          CURRENT=$(awk -F'"' '/^version:/ {print $2; exit}' skills/deepworkplan/SKILL.md)
+          if [ -z "$CURRENT" ]; then
+            echo "Could not read current version from skills/deepworkplan/SKILL.md" >&2
+            exit 1
+          fi
+
+          # Find last release tag (vX.Y.Z). Empty if no tag yet.
+          LAST_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1)
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"%s" --invert-grep --grep='^chore(release):')
+          else
+            COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s" --invert-grep --grep='^chore(release):')
+          fi
+
+          # Stop early if nothing meaningful since last tag.
+          if [ -z "$COMMITS" ]; then
+            echo "No releasable commits since ${LAST_TAG:-(repo start)}; skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          BUMP="patch"
+          if echo "$COMMITS" | grep -qE '^(feat|fix|chore|refactor|perf|build|ci|docs|test|style)(\([^)]*\))?!:' \
+             || git log "${LAST_TAG:+${LAST_TAG}..HEAD}" --pretty=format:"%B" | grep -qE '^BREAKING CHANGE:'; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -qE '^feat(\([^)]*\))?:'; then
+            BUMP="minor"
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH+1)) ;;
+          esac
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          NEW_TAG="v${NEW_VERSION}"
+
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "bump=$BUMP" >> "$GITHUB_OUTPUT"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "last_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
+
+          {
+            echo 'commits<<EOF'
+            echo "$COMMITS"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Bump version in ALL SKILL.md files
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          # Sync the new version across every SKILL.md under skills/deepworkplan
+          # (router + create/execute/refine/resume/status/onboard + addons).
+          while IFS= read -r f; do
+            sed -i "s/^version: \".*\"/version: \"${NEW_VERSION}\"/" "$f"
+          done < <(find skills/deepworkplan -name 'SKILL.md')
+
+      - name: Update CHANGELOG.md
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          DATE=$(date -u +%Y-%m-%d)
+          COMMITS="${{ steps.version.outputs.commits }}"
+
+          # Build the new section.
+          {
+            echo "## [${NEW_VERSION}] — ${DATE}"
+            echo ""
+            echo "### Changes"
+            echo ""
+            while IFS= read -r line; do
+              [ -n "$line" ] && echo "- ${line}"
+            done <<< "$COMMITS"
+            echo ""
+          } > /tmp/new_section.md
+
+          # Insert the new section after the leading "# Changelog" header
+          # paragraph but before the first existing version section.
+          awk -v section_file=/tmp/new_section.md '
+            BEGIN {
+              while ((getline line < section_file) > 0) section = section line "\n"
+              close(section_file)
+              inserted = 0
+            }
+            /^## \[/ && !inserted { print section; inserted = 1 }
+            { print }
+            END {
+              if (!inserted) print section
+            }
+          ' CHANGELOG.md > CHANGELOG.md.new
+          mv CHANGELOG.md.new CHANGELOG.md
+
+      - name: Commit, tag, push
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.new_version }}"
+          NEW_TAG="${{ steps.version.outputs.new_tag }}"
+          git add -A
+          git commit -m "chore(release): ${NEW_VERSION} [skip ci]"
+          git tag -a "$NEW_TAG" -m "Release ${NEW_VERSION}"
+          git push origin main --follow-tags
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.skip != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          name: ${{ steps.version.outputs.new_version }}
+          generate_release_notes: true
