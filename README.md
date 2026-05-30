@@ -175,3 +175,7 @@ checklist. Deeper background lives under [`docs/`](docs/) — [DESIGN.md](docs/D
 - [Dailybot](https://www.dailybot.com)
 - [Open Agent Skills standard (agentskills.io)](https://agentskills.io)
 - [skills.sh](https://skills.sh) — cross-agent skills directory
+
+---
+
+<p align="center">⚡ Powered by <a href="https://www.dailybot.com/">Dailybot</a></p>
