@@ -44,7 +44,7 @@ RFC-2119 spec under `skills/deepworkplan/spec/`, and two small bash helpers
 
 Distribution channels:
 
-- `npx skills add dailybotops/deepworkplan-skill` (skills.sh registry)
+- `npx skills add DailybotHQ/deepworkplan-skill` (skills.sh registry)
 - `openclaw skills install deepworkplan` (OpenClaw native registry)
 - `git clone … && ./setup.sh` (direct, for users who prefer it)
 

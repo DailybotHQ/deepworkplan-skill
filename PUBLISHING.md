@@ -1,4 +1,4 @@
-# Publishing Playbook — `dailybotops/deepworkplan-skill`
+# Publishing Playbook — `DailybotHQ/deepworkplan-skill`
 
 > **Not installed.** Contributor / maintainer document. This is the launch and
 > ongoing-release playbook for the DeepWorkPlan skill pack. End users don't need
@@ -11,13 +11,13 @@ the **one-time launch** and the **steady-state release loop**.
 
 ## 1. Create the GitHub repository
 
-1. Create `github.com/dailybotops/deepworkplan-skill` (public).
+1. Create `github.com/DailybotHQ/deepworkplan-skill` (public).
 2. Push this repo tree to it (`main` as the default branch):
    ```bash
    git init -b main
    git add -A
    git commit -m "feat(skill): initial public release of the DeepWorkPlan skill pack"
-   git remote add origin git@github.com:dailybotops/deepworkplan-skill.git
+   git remote add origin git@github.com:DailybotHQ/deepworkplan-skill.git
    git push -u origin main
    ```
    > Confirm the ship boundary before the first push: only `skills/deepworkplan/`
@@ -72,7 +72,7 @@ Maintainers' only job is to **write good conventional commits**. Never hand-edit
 ## 5. skills.sh registry
 
 `skills.sh` resolves GitHub-hosted skills directly, so the install command
-`npx skills add dailybotops/deepworkplan-skill` works as soon as the repo is
+`npx skills add DailybotHQ/deepworkplan-skill` works as soon as the repo is
 public — no separate registry submission is strictly required. To appear in the
 searchable directory / get re-indexed:
 
@@ -93,7 +93,7 @@ searchable directory / get re-indexed:
 
 DeepWorkPlan does **not** ship a `skills-lock.json` of its own — that's a
 **consumer-side** artifact. When a team installs at project scope (e.g.
-`npx skills add dailybotops/deepworkplan-skill` inside a workspace), the
+`npx skills add DailybotHQ/deepworkplan-skill` inside a workspace), the
 skills.sh CLI writes an entry (source, `skills/deepworkplan/SKILL.md` path, and
 a content hash) to a `skills-lock.json` at *their* workspace root, mirroring how
 the Dailybot Core Hub tracks its own `skills-lock.json` for reproducible
@@ -104,7 +104,7 @@ into this skill repo.
 
 | Method | Update command |
 |--------|----------------|
-| `npx skills` | `npx skills update dailybotops/deepworkplan-skill` |
+| `npx skills` | `npx skills update DailybotHQ/deepworkplan-skill` |
 | Git clone | `cd <skill-path> && git pull && ./setup.sh` |
 | OpenClaw | `openclaw skills update deepworkplan` |
 

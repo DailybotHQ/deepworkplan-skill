@@ -14,7 +14,7 @@ If you're picking for the first time and aren't sure: **use Method 1
 
 | Method | When to use | Command (TL;DR) |
 |--------|-------------|-----------------|
-| 1. `npx skills add` (recommended) | Any agent, any OS, you have Node available | `npx skills add dailybotops/deepworkplan-skill` |
+| 1. `npx skills add` (recommended) | Any agent, any OS, you have Node available | `npx skills add DailybotHQ/deepworkplan-skill` |
 | 2. OpenClaw native | You're on OpenClaw | `openclaw skills install deepworkplan` |
 | 3. Git clone + `setup.sh` | No Node available, you want explicit control | `git clone … && ./setup.sh` |
 | 4. Manual per-agent | You want one specific agent and no symlink layer | `git clone … ~/.<agent>/skills/deepworkplan-pack` |
@@ -27,7 +27,7 @@ Uses the [skills.sh](https://skills.sh) CLI. It auto-detects which AI coding
 agents you have installed and creates the appropriate symlinks for each.
 
 ```bash
-npx skills add dailybotops/deepworkplan-skill
+npx skills add DailybotHQ/deepworkplan-skill
 ```
 
 Useful flags:
@@ -44,20 +44,20 @@ Examples:
 
 ```bash
 # Just see what's in the repo
-npx skills add dailybotops/deepworkplan-skill --list
+npx skills add DailybotHQ/deepworkplan-skill --list
 
 # Install only into Claude Code, globally
-npx skills add dailybotops/deepworkplan-skill -a claude-code -g
+npx skills add DailybotHQ/deepworkplan-skill -a claude-code -g
 
 # Non-interactive (e.g. inside a Dockerfile or CI step)
-npx skills add dailybotops/deepworkplan-skill -y
+npx skills add DailybotHQ/deepworkplan-skill -y
 ```
 
 Installing at **project scope** writes an entry to a workspace-root
 `skills-lock.json` so the exact skill version is reproducible across your team —
 commit that file to pin the version.
 
-To update later: `npx skills update dailybotops/deepworkplan-skill`.
+To update later: `npx skills update DailybotHQ/deepworkplan-skill`.
 To uninstall: `npx skills remove deepworkplan`.
 
 **Pros:** one command, cross-agent, easy updates. **Cons:** requires Node.js / `npx`.
@@ -88,7 +88,7 @@ For users who don't want Node and prefer explicit control. The included
 `setup.sh` auto-detects which agents are installed and creates symlinks for each.
 
 ```bash
-git clone https://github.com/dailybotops/deepworkplan-skill.git ~/deepworkplan-skill
+git clone https://github.com/DailybotHQ/deepworkplan-skill.git ~/deepworkplan-skill
 cd ~/deepworkplan-skill
 ./setup.sh                 # auto-detect installed agents
 ./setup.sh --host claude   # or: cursor, codex, windsurf, copilot, cline, gemini
@@ -128,7 +128,7 @@ For the simplest possible filesystem layout for one specific agent: clone the
 repo directly into the agent's skills directory.
 
 ```bash
-git clone https://github.com/dailybotops/deepworkplan-skill.git ~/.claude/skills/deepworkplan-pack
+git clone https://github.com/DailybotHQ/deepworkplan-skill.git ~/.claude/skills/deepworkplan-pack
 # or ~/.cursor/skills/deepworkplan-pack, etc.
 ```
 
@@ -193,7 +193,7 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
 
 | Method used | Update command |
 |-------------|----------------|
-| 1 (`npx skills add`) | `npx skills update dailybotops/deepworkplan-skill` |
+| 1 (`npx skills add`) | `npx skills update DailybotHQ/deepworkplan-skill` |
 | 2 (OpenClaw) | `openclaw skills update deepworkplan` |
 | 3 (git clone + setup) | `cd <skill-path> && git pull && ./setup.sh` |
 | 4 (manual per-agent) | `cd <skill-path> && git pull` |
@@ -215,7 +215,7 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
 | Problem | Likely cause |
 |---------|--------------|
 | Agent doesn't recognize the skill after install | Restart the session. Agents discover skills at session start, not mid-session. |
-| `npx skills add` fails with a Git error | Wrap the repo slug in quotes if your shell expands it: `'dailybotops/deepworkplan-skill'`. |
+| `npx skills add` fails with a Git error | Wrap the repo slug in quotes if your shell expands it: `'DailybotHQ/deepworkplan-skill'`. |
 | Sub-skills (`deepworkplan-create` etc.) don't appear as slash commands | You used Method 4 (no symlink layer). Use Method 3 for per-sub-skill discoverability. |
 | Plan output showing up in `git status` | `.dwp/` should be gitignored. Re-run onboarding, or add `.dwp/` to `.gitignore` manually. |
 

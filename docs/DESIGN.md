@@ -70,7 +70,7 @@ though they're "reference material," because:
 
 ## 4. `setup.sh` exists alongside `npx skills add`
 
-There are two install paths: `npx skills add dailybotops/deepworkplan-skill`
+There are two install paths: `npx skills add DailybotHQ/deepworkplan-skill`
 (skills.sh CLI, the canonical cross-agent installer) and `git clone && ./setup.sh`
 (symlinks the pack and each sub-skill). `setup.sh` is not redundant:
 

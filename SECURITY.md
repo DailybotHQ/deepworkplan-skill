@@ -2,7 +2,7 @@
 
 This is the **official DeepWorkPlan agent skill pack**, maintained by the team
 at [Dailybot](https://www.dailybot.com). Source of truth:
-<https://github.com/dailybotops/deepworkplan-skill>. Reports against this repo
+<https://github.com/DailybotHQ/deepworkplan-skill>. Reports against this repo
 reach the Dailybot security team directly.
 
 ## Reporting a Vulnerability

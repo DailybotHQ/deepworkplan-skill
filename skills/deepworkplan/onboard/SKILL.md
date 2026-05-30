@@ -324,7 +324,7 @@ and **stack-appropriate**, not generic boilerplate.
 
 1. **Make the DeepWorkPlan skill available** to the target repo via one of (offer
    the developer the choice; recommend the first):
-   - `npx skills add dailybotops/deepworkplan-skill`
+   - `npx skills add DailybotHQ/deepworkplan-skill`
    - OpenClaw: `openclaw skills install deepworkplan`
    - `git clone` the skill repo + run its `setup.sh`
    - or symlink the local skill pack into `.agents/skills/deepworkplan/`.

@@ -40,14 +40,14 @@ The [skills.sh](https://skills.sh) CLI auto-detects your agent and installs the
 skill in the right place:
 
 ```bash
-npx skills add dailybotops/deepworkplan-skill
+npx skills add DailybotHQ/deepworkplan-skill
 ```
 
 To target a specific agent or list available skills first:
 
 ```bash
-npx skills add dailybotops/deepworkplan-skill --list
-npx skills add dailybotops/deepworkplan-skill -a claude-code
+npx skills add DailybotHQ/deepworkplan-skill --list
+npx skills add DailybotHQ/deepworkplan-skill -a claude-code
 ```
 
 Installing at **project scope** writes an entry to a workspace-root
@@ -79,7 +79,7 @@ Pick the path for your agent, clone, then run `setup.sh`:
 | OpenClaw | `<workspace>/skills/deepworkplan/` or `~/.openclaw/skills/` |
 
 ```bash
-git clone https://github.com/dailybotops/deepworkplan-skill.git ~/deepworkplan-skill
+git clone https://github.com/DailybotHQ/deepworkplan-skill.git ~/deepworkplan-skill
 cd ~/deepworkplan-skill
 ./setup.sh                # auto-detect installed agents
 ./setup.sh --host claude  # or target one agent explicitly
@@ -129,7 +129,7 @@ later restores the same revision. This skill repo does **not** ship a
 
 ```bash
 # npx
-npx skills update dailybotops/deepworkplan-skill
+npx skills update DailybotHQ/deepworkplan-skill
 
 # Git clone
 cd <skill-path> && git pull && ./setup.sh
