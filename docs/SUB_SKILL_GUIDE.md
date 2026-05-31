@@ -1,8 +1,8 @@
 # Adding a New Sub-Skill
 
 Step-by-step for adding a new capability under `skills/deepworkplan/`. Use this
-when you have a new verb that's distinct enough from the existing six
-(`onboard`, `create`, `execute`, `refine`, `resume`, `status`) to deserve its own
+when you have a new verb that's distinct enough from the existing seven
+(`onboard`, `create`, `execute`, `refine`, `resume`, `status`, `author`) to deserve its own
 `SKILL.md`, but tightly enough coupled to the DeepWorkPlan methodology that it
 belongs in this pack rather than a separate repo.
 

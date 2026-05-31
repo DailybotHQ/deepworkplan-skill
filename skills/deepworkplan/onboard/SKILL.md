@@ -304,7 +304,11 @@ and **stack-appropriate**, not generic boilerplate.
   `dwp-*` files are the shorter, conventional aliases.) Copy and adapt the
   ready delegator templates at [`command-templates/`](command-templates/) —
   one per `dwp-*` command — fixing the `<skill-path>` to where the skill is
-  installed in the target repo.
+  installed in the target repo. The same directory also ships `skill-create.md`
+  and `agent-create.md` — thin delegators that route `/skill-create` and
+  `/agent-create` to the **author** sub-skill so the onboarded repo can evolve
+  its own kit (create/update skills, agents, commands). Copy and adapt these two
+  alongside the `dwp-*` templates, fixing the same `<skill-path>`.
 - **`.agents/skills/`** — **stack-appropriate** skills chosen by reasoning (use
   the preset's "skills to generate" list as a starting point, then verify
   against the repo's real needs), plus the DeepWorkPlan skill installed here

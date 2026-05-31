@@ -25,6 +25,7 @@ living in a gitignored `.dwp/` directory.
 | **deepworkplan-refine** | Refine a plan draft, or modify the scope/tasks of an existing final plan. |
 | **deepworkplan-resume** | Resume an interrupted plan from its recorded progress state. |
 | **deepworkplan-status** | Report the status of a plan — completed tasks, what's left, and blockers — without executing. |
+| **deepworkplan-author** | Author or update reusable skills, agents, and commands in the current repo — reasons about the repo's `.agents/` layout, follows the Open Agent Skills frontmatter contract, and keeps the `.agents/docs/` catalog in sync. Backs the `/skill-create` and `/agent-create` aliases. |
 
 A root **deepworkplan** meta-skill acts as a router — it describes all
 capabilities and routes to the right sub-skill based on the developer's intent.
@@ -99,6 +100,7 @@ sub-skill:
 - "Create a plan to ship feature X" → **deepworkplan-create**
 - "Execute the plan" / "continue the plan" → **deepworkplan-execute**
 - "What's left on the plan?" → **deepworkplan-status**
+- "Create a skill / agent" / "evolve the kit" → **deepworkplan-author** (also `/skill-create`, `/agent-create`)
 
 Or invoke directly: `/deepworkplan-create`, `/deepworkplan-onboard`, etc.
 
@@ -178,4 +180,4 @@ checklist. Deeper background lives under [`docs/`](docs/) — [DESIGN.md](docs/D
 
 ## :electric_plug: Powered by [Dailybot](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill)
 
-Dailybot is an [AI Assistant](https://www.dailybot.com/product/ai) powered by ChatGPT that takes chat and collaboration to the next level helping to automate: daily standups, team check-ins, surveys, kudos, virtual watercooler, 1:1 intros, motivation tracking, chatops and more. [Learn more](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill).
+[Dailybot](https://www.dailybot.com/product/ai) is an AI-powered async communication platform that keeps **people and agents** visible — without adding more meetings or tools. It lives where your team already works (Slack, Teams, Google Chat, Discord, VS Code, and the CLI) and turns scattered signals into clear progress: async check-ins and standups, AI summaries that detect blockers and read team sentiment, workflow automation and approvals, team analytics, and recognition. As AI agents join the workflow, Dailybot surfaces their status and activity right alongside your team's — so long-running agents never go dark. [Learn more](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill).

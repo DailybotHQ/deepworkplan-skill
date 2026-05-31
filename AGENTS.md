@@ -39,6 +39,7 @@ the same instructions other agents do.
 | `resume` sub-skill | [skills/deepworkplan/resume/SKILL.md](skills/deepworkplan/resume/SKILL.md) |
 | `status` sub-skill | [skills/deepworkplan/status/SKILL.md](skills/deepworkplan/status/SKILL.md) |
 | `onboard` sub-skill (make any repo AI-first) | [skills/deepworkplan/onboard/SKILL.md](skills/deepworkplan/onboard/SKILL.md) |
+| `author` sub-skill (author/update skills, agents, commands) | [skills/deepworkplan/author/SKILL.md](skills/deepworkplan/author/SKILL.md) |
 | Methodology guide | [skills/deepworkplan/guide/GUIDE.md](skills/deepworkplan/guide/GUIDE.md) |
 | Context detection + `.dwp/` resolution | [skills/deepworkplan/shared/context.sh](skills/deepworkplan/shared/context.sh) |
 | `.dwp/` output path convention | [skills/deepworkplan/shared/dwp-paths.md](skills/deepworkplan/shared/dwp-paths.md) |
@@ -98,6 +99,7 @@ deepworkplan-skill/
     ├── resume/SKILL.md                         ← resume an interrupted plan
     ├── status/SKILL.md                         ← report plan status
     ├── onboard/SKILL.md                        ← make any repo AI-first (+ presets/)
+    ├── author/SKILL.md                         ← author/update skills, agents, commands (+ templates/)
     ├── guide/GUIDE.md                          ← methodology guide
     ├── examples/                               ← plan + orchestrator templates
     └── addons/devcontainer/SKILL.md            ← opt-in devcontainer addon
