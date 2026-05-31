@@ -354,12 +354,13 @@ After the core AI-first scaffolding, **enumerate** the available addons under
 required** — a repo is fully conformant with zero addons. In **trust mode**, you
 MAY recommend the obviously-applicable ones, but still surface them.
 
-Two addons ship today; enumerate **both** and offer each independently:
+Three addons ship today; enumerate **all** and offer each independently:
 
 | Addon | Folder | Recommend in trust mode when… |
 |-------|--------|-------------------------------|
 | **Devcontainer support** | [`../addons/devcontainer/`](../addons/devcontainer/SKILL.md) | the repo benefits from a reproducible isolated dev container (most repos with Docker/services). |
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
+| **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | the repo has a lockfile + a dependency-heavy stack and wants safe, batched, validated upgrades — recommend only when a lockfile is present; **never auto-install for everyone**. |
 
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
@@ -399,6 +400,20 @@ absent, unauthenticated, or unreachable. The core DeepWorkPlan methodology has
 **zero Dailybot dependency** — this addon is purely optional team visibility.
 After applying, run the addon's validation step (SPEC §8). If declined, skip it
 and continue — the repo stays baseline-conformant.
+
+The third addon is **dependency upgrade**
+([`../addons/dependency-upgrade/SKILL.md`](../addons/dependency-upgrade/SKILL.md) +
+[`SPEC.md`](../addons/dependency-upgrade/SPEC.md)). It is **package-manager
+agnostic** — offer it when the repo has a lockfile and a dependency-heavy stack;
+in trust mode recommend it **only** when a lockfile is present, and **never**
+auto-install it for everyone. If accepted: read that addon's `SKILL.md` and run
+its flow — detect the repo's real package manager (npm/pnpm/yarn + ncu,
+pip/poetry/uv, cargo, go mod, bundler, composer…), classify upgrades by semver,
+upgrade in safe batches, run the repo's **real** validation gate after each
+batch, revert a failing batch, and summarize. **Only when accepted**, the addon
+installs a `/lib-upgrade` delegator into the repo's `.agents/commands/`. After
+applying, run the addon's validation step (SPEC §9). If declined, skip it — the
+repo stays baseline-conformant and no command is installed.
 
 ## Phase 8 — Self-check / validation (mandatory)
 
