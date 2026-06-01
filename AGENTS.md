@@ -38,6 +38,7 @@ the same instructions other agents do.
 | `refine` sub-skill | [skills/deepworkplan/refine/SKILL.md](skills/deepworkplan/refine/SKILL.md) |
 | `resume` sub-skill | [skills/deepworkplan/resume/SKILL.md](skills/deepworkplan/resume/SKILL.md) |
 | `status` sub-skill | [skills/deepworkplan/status/SKILL.md](skills/deepworkplan/status/SKILL.md) |
+| `verify` sub-skill (conformance check) | [skills/deepworkplan/verify/SKILL.md](skills/deepworkplan/verify/SKILL.md) |
 | `onboard` sub-skill (make any repo AI-first) | [skills/deepworkplan/onboard/SKILL.md](skills/deepworkplan/onboard/SKILL.md) |
 | `author` sub-skill (author/update skills, agents, commands) | [skills/deepworkplan/author/SKILL.md](skills/deepworkplan/author/SKILL.md) |
 | Methodology guide | [skills/deepworkplan/guide/GUIDE.md](skills/deepworkplan/guide/GUIDE.md) |
@@ -98,6 +99,7 @@ deepworkplan-skill/
     ├── refine/SKILL.md                         ← refine a draft / modify a final plan
     ├── resume/SKILL.md                         ← resume an interrupted plan
     ├── status/SKILL.md                         ← report plan status
+    ├── verify/SKILL.md                         ← verify repo/plan conformance (read-only)
     ├── onboard/SKILL.md                        ← make any repo AI-first (+ presets/)
     ├── author/SKILL.md                         ← author/update skills, agents, commands (+ templates/)
     ├── guide/GUIDE.md                          ← methodology guide

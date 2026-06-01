@@ -290,8 +290,8 @@ and **stack-appropriate**, not generic boilerplate.
   `security-auditor`, plus any **stack-specific** role the preset suggests
   (e.g. a Django `migration-author`, a Vue `component-author`). Each persona
   must be described well enough that a non-Claude agent can read it.
-- **`.agents/commands/`** — the five short DWP commands (`dwp-create`,
-  `dwp-execute`, `dwp-refine`, `dwp-resume`, `dwp-status`) plus stack-relevant
+- **`.agents/commands/`** — the six short DWP commands (`dwp-create`,
+  `dwp-execute`, `dwp-refine`, `dwp-resume`, `dwp-status`, `dwp-verify`) plus stack-relevant
   ones (`code-review`, `pr`, `commit`, `branch`). **The `dwp-*` commands MUST be
   thin delegators, NOT copies of the flow.** Each is a short file (frontmatter
   `description:` + a body) that routes the invocation to the matching sub-skill
@@ -439,10 +439,10 @@ After generating, run this checklist in the target repo. On any failure,
 5. **`.agents/`** has `agents/`, `commands/`, `skills/`, `docs/`, `settings.json`
    and a `.claude → .agents` symlink (or documented fallback);
    `skills_agents_catalog.md` and `COMMANDS_REFERENCE.md` **match** what was
-   actually created (no phantom entries). **The five `dwp-*` commands exist** in
+   actually created (no phantom entries). **The six `dwp-*` commands exist** in
    `.agents/commands/` (`dwp-create`, `dwp-execute`, `dwp-refine`, `dwp-resume`,
-   `dwp-status`) and are thin delegators (no leftover `<skill-path>` placeholder,
-   no copied flow body).
+   `dwp-status`, `dwp-verify`) and are thin delegators (no leftover `<skill-path>`
+   placeholder, no copied flow body).
 6. **DeepWorkPlan skill is discoverable** and `.dwp/` exists, is gitignored
    (`git check-ignore .dwp` confirms), and has `plans/` + `drafts/`. **`tmp/`
    exists and is gitignored** (`git check-ignore tmp` confirms).

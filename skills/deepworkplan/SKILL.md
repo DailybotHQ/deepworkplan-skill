@@ -1,6 +1,6 @@
 ---
 name: deepworkplan
-description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, or manage structured multi-task work, or make a repository AI-agent-ready.
+description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
 version: "2.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -39,7 +39,10 @@ plain install). Before routing anywhere else:
    replacing anything. The result: `AGENTS.md` + `CLAUDE.md` symlink, a reasoned
    `docs/` tree, per-module docs, a `.agents/` kit, and a gitignored `.dwp/` — the
    repository becomes the agent harness.
-3. **Then plan and execute.** With the harness in place, create and execute Deep
+3. **Verify conformance.** Read [`verify/SKILL.md`](verify/SKILL.md) and run it to
+   confirm, objectively, that the repository now meets the standard (AGENTS.md with
+   real commands, the `.agents/` catalog, the gitignored `.dwp/`, and so on).
+4. **Then plan and execute.** With the harness in place, create and execute Deep
    Work Plans (below) — long-horizon, gated, resumable work an agent can run
    autonomously for hours.
 
@@ -67,6 +70,7 @@ full step-by-step flow.
 | "refine the draft", "modify the plan", "/dwp-refine" | **Refine** → read [`refine/SKILL.md`](refine/SKILL.md) |
 | "resume", "continue the interrupted plan", "/dwp-resume" | **Resume** → read [`resume/SKILL.md`](resume/SKILL.md) |
 | "plan status", "what's left", "/dwp-status" | **Status** → read [`status/SKILL.md`](status/SKILL.md) |
+| "verify", "is this repo AI-first?", "check conformance", "/dwp-verify" | **Verify** → read [`verify/SKILL.md`](verify/SKILL.md) |
 | "make this repo AI-first", "onboard this repo", "set up AGENTS.md + docs + .agents" | **Onboard** → read [`onboard/SKILL.md`](onboard/SKILL.md) |
 | "create/update a skill or agent", "evolve the kit", "/skill-create", "/agent-create" | **Author** → read [`author/SKILL.md`](author/SKILL.md) |
 
