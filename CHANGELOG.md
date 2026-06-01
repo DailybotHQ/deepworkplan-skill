@@ -9,6 +9,26 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.1.0] — 2026-06-01
+
+### Changes
+
+- Merge pull request #5 from DailybotHQ/ci/harden-release-push-order
+- ci(release): push main before tagging; bump checkout to v5
+- Merge pull request #4 from DailybotHQ/ci/fix-auto-release-quoted-commits
+- ci(release): pass commit log + version via env to harden auto-release
+- Merge pull request #3 from DailybotHQ/docs/readme-powered-by-dailybot
+- Merge branch 'main' into docs/readme-powered-by-dailybot
+- feat(onboard): enumerate dependency-upgrade addon in Phase 7b
+- fix(addon): use ASCII hyphens in dependency-upgrade name (was U+2011, failed validate-frontmatter)
+- feat(addon): add opt-in dependency-upgrade addon (package-manager agnostic)
+- feat(author): add deepworkplan-author sub-skill (skills/agents/commands generator)
+- Merge pull request #2 from DailybotHQ/docs/readme-powered-by-dailybot
+- docs(skill): use the official Dailybot "Powered by" section in the README
+- Merge pull request #1 from DailybotHQ/docs/powered-by-dailybot
+- docs(skill): add "Powered by Dailybot" footer to the README
+
+
 ## [2.0.2] — 2026-05-30
 
 ### Changes
