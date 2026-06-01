@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.2.1] — 2026-06-01
+
+### Changes
+
+- Merge pull request #7 from DailybotHQ/docs/silent-routing-when-ai-first
+- docs(skill): make already-AI-first routing silent
+
+
 ## [2.2.0] — 2026-06-01
 
 ### Changes
