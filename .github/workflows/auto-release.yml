@@ -112,8 +112,9 @@ jobs:
 
       - name: Bump version in ALL SKILL.md files
         if: steps.version.outputs.skip != 'true'
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
         run: |
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
           # Sync the new version across every SKILL.md under skills/deepworkplan
           # (router + create/execute/refine/resume/status/onboard + addons).
           while IFS= read -r f; do
@@ -122,10 +123,14 @@ jobs:
 
       - name: Update CHANGELOG.md
         if: steps.version.outputs.skip != 'true'
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+          # Passed via env (NOT inlined with ${{ }}) so commit messages
+          # containing quotes, backticks, or $() can't break or inject into
+          # this shell script.
+          COMMITS: ${{ steps.version.outputs.commits }}
         run: |
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
           DATE=$(date -u +%Y-%m-%d)
-          COMMITS="${{ steps.version.outputs.commits }}"
 
           # Build the new section.
           {
@@ -157,9 +162,10 @@ jobs:
 
       - name: Commit, tag, push
         if: steps.version.outputs.skip != 'true'
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+          NEW_TAG: ${{ steps.version.outputs.new_tag }}
         run: |
-          NEW_VERSION="${{ steps.version.outputs.new_version }}"
-          NEW_TAG="${{ steps.version.outputs.new_tag }}"
           git add -A
           git commit -m "chore(release): ${NEW_VERSION} [skip ci]"
           git tag -a "$NEW_TAG" -m "Release ${NEW_VERSION}"
