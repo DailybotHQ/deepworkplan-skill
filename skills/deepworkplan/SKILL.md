@@ -18,6 +18,33 @@ a gitignored `.dwp/` directory at the repo root (`.dwp/plans/`, `.dwp/drafts/`).
 
 Source of truth: <https://deepworkplan.com>. License: MIT.
 
+## Start here (first run)
+
+This skill is a self-sufficient entry point: whether a developer arrives from
+<https://deepworkplan.com/init.md> or simply installs this skill, the setup plan
+is the same — and it lives here, so no network is required.
+
+**If the repository is not yet AI-first** — there is no root `AGENTS.md` and no
+`.agents/` directory — the recommended first action is to **onboard it**, even if
+the developer's request was vague ("set this up", "make this repo AI-first", or a
+plain install). Before routing anywhere else:
+
+1. **Read the standard locally.** Read [`spec/`](spec/README.md) (five RFC-2119
+   documents) and [`shared/adaptation.md`](shared/adaptation.md). The overriding
+   rule is **REASON, do not copy-paste**: this skill is the reusable engine; what
+   you produce must be adapted to *this* repository, never templated.
+2. **Run onboarding.** Read [`onboard/SKILL.md`](onboard/SKILL.md) and execute it.
+   It is **non-destructive**: detect existing `AGENTS.md`, `docs/`, `.agents/`, or
+   `CLAUDE.md`, reconcile rather than overwrite, and ask the developer before
+   replacing anything. The result: `AGENTS.md` + `CLAUDE.md` symlink, a reasoned
+   `docs/` tree, per-module docs, a `.agents/` kit, and a gitignored `.dwp/` — the
+   repository becomes the agent harness.
+3. **Then plan and execute.** With the harness in place, create and execute Deep
+   Work Plans (below) — long-horizon, gated, resumable work an agent can run
+   autonomously for hours.
+
+**If the repository is already AI-first**, skip onboarding and route by intent.
+
 ## What it does
 
 This is the **router**. It does not run any flow itself — it maps the
