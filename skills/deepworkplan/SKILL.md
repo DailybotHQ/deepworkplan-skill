@@ -46,7 +46,10 @@ plain install). Before routing anywhere else:
    Work Plans (below) — long-horizon, gated, resumable work an agent can run
    autonomously for hours.
 
-**If the repository is already AI-first**, skip onboarding and route by intent.
+**If the repository is already AI-first**, skip onboarding and route by intent
+**silently** — do not announce the detection or the routing decision (no "the repo
+is already AI-first" / "routing to the create sub-skill" preamble). Just begin the
+matched sub-skill's flow directly.
 
 ## What it does
 
