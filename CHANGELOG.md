@@ -9,6 +9,16 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.2.0] — 2026-06-01
+
+### Changes
+
+- Merge pull request #6 from DailybotHQ/feat/router-start-here
+- docs(execute): document autonomous mode + context-window checkpointing
+- feat(verify): add the verify sub-skill (objective conformance check)
+- feat(skill): add 'Start here (first run)' section to the router
+
+
 ## [2.1.0] — 2026-06-01
 
 ### Changes
