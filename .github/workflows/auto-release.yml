@@ -38,7 +38,7 @@ jobs:
     # Skip our own release commits to prevent an infinite loop.
     if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           # Uses `AUTOMATION_GITHUB_TOKEN` (the org convention) so the bot
@@ -168,8 +168,16 @@ jobs:
         run: |
           git add -A
           git commit -m "chore(release): ${NEW_VERSION} [skip ci]"
+          # Push the branch FIRST. If main is rejected (e.g. branch
+          # protection), we bail out here BEFORE creating/pushing the tag, so
+          # a failed run can never leave a dangling tag pointing at a commit
+          # that isn't reachable from main (which would block every future
+          # release with an "already exists" tag push).
+          git push origin HEAD:main
+          # main accepted the release commit — now tag that exact commit and
+          # push the tag on its own.
           git tag -a "$NEW_TAG" -m "Release ${NEW_VERSION}"
-          git push origin main --follow-tags
+          git push origin "refs/tags/${NEW_TAG}"
 
       - name: Create GitHub Release
         if: steps.version.outputs.skip != 'true'
