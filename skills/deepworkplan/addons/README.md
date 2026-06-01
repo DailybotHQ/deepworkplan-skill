@@ -62,9 +62,12 @@ An addon MAY additionally ship per-stack presets, examples, or migration notes.
 |-------|--------|--------|
 | Devcontainer support | [`addons/devcontainer/`](devcontainer/SKILL.md) | **Authored** — compose-based `.devcontainer/` + `docker/` with AI-CLI persistence, `dailybot-project-network`, `DOCKER_DEV_ENV=vscode`, project-identity precedence, public-OSS variant, 7 reasoning presets. |
 | Dailybot integration | [`addons/dailybot/`](dailybot/SKILL.md) | **Authored** — opt-in install of the Dailybot agent skill / CLI, auth **deferred** to the Dailybot skill's own consent flow, and an **optional, best-effort, never-blocking** progress/milestone report wired into DWP execution (a plan completion → a Dailybot milestone report). The core methodology has **zero** Dailybot dependency. |
+| Dependency upgrade | [`addons/dependency-upgrade/`](dependency-upgrade/SKILL.md) | **Authored** — opt-in, **package-manager-agnostic** dependency upgrades: detect the repo's real manager (npm/pnpm/yarn + ncu, pip/poetry/uv, cargo, go mod, bundler, composer…), classify by semver, upgrade in safe batches, run the repo's **real** validation gate after each batch, revert a failing batch, summarize. Installs a `/lib-upgrade` delegator into the repo's `.agents/commands/` only when accepted. |
 
 > This README is the mechanism doc. The first addon, `addons/devcontainer/`, is
 > the methodology's proof that the mechanism works; the second,
 > `addons/dailybot/`, shows an addon can layer optional team visibility while
-> keeping the methodology fully vendor-neutral (a repo is conformant with zero
-> addons).
+> keeping the methodology fully vendor-neutral; the third,
+> `addons/dependency-upgrade/`, shows an addon can encode a recurring maintenance
+> workflow that reasons about each repo's actual stack (a repo is conformant with
+> zero addons).
