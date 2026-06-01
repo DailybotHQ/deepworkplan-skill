@@ -98,6 +98,29 @@ Rules (strict):
 **Stop conditions:** all tasks `[x]`; a validation fails; the user requests a
 pause; a blocking issue.
 
+#### Autonomous mode (long-horizon, hours-long runs)
+
+A Deep Work Plan is designed to be executed **autonomously for hours**, across
+many tasks and even across a context-window reset. When the developer asks to run
+unattended (or passes `trust` / `auto`):
+
+- **Continue without per-task confirmation.** Run task → validate → commit →
+  update `PROGRESS.md` → next task, in a loop. Do not stop to ask "shall I
+  continue?" between tasks.
+- **Stop only on a real boundary:** a failed validation gate, genuine ambiguity,
+  a blocking dependency, an unsafe/destructive action outside the plan's scope, or
+  plan completion. On a stop, log the reason in the task's Completion & Log and
+  report.
+- **Checkpoint every task.** Progress lives on disk — the README checkboxes, each
+  task's Completion & Log, and `PROGRESS.md` (summaries, key decisions, important
+  values/paths). After each task this state MUST be current, because it is the
+  only thing that survives a context-window reset.
+- **Resume from disk, not memory.** If context is exhausted or a fresh agent takes
+  over, do not rely on conversation history: re-read the plan README, `PROGRESS.md`,
+  and the Completion & Logs, then continue at the first `[ ]` task (this is exactly
+  what the `resume` sub-skill does). Re-anchor to the plan goal before each task to
+  prevent drift over the long horizon.
+
 #### Step 5.0.1 — Team-Agents Parallel Groups
 
 > **CRITICAL: use REAL team agents, NOT subagents.** When the plan has a "Team
