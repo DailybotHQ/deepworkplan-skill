@@ -1,6 +1,6 @@
 ---
 name: deepworkplan
-description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, or manage structured multi-task work, or make a repository AI-agent-ready.
+description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
 version: "2.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -17,6 +17,36 @@ refines, executes task-by-task, and resumes. All plan and draft outputs land in
 a gitignored `.dwp/` directory at the repo root (`.dwp/plans/`, `.dwp/drafts/`).
 
 Source of truth: <https://deepworkplan.com>. License: MIT.
+
+## Start here (first run)
+
+This skill is a self-sufficient entry point: whether a developer arrives from
+<https://deepworkplan.com/init.md> or simply installs this skill, the setup plan
+is the same — and it lives here, so no network is required.
+
+**If the repository is not yet AI-first** — there is no root `AGENTS.md` and no
+`.agents/` directory — the recommended first action is to **onboard it**, even if
+the developer's request was vague ("set this up", "make this repo AI-first", or a
+plain install). Before routing anywhere else:
+
+1. **Read the standard locally.** Read [`spec/`](spec/README.md) (five RFC-2119
+   documents) and [`shared/adaptation.md`](shared/adaptation.md). The overriding
+   rule is **REASON, do not copy-paste**: this skill is the reusable engine; what
+   you produce must be adapted to *this* repository, never templated.
+2. **Run onboarding.** Read [`onboard/SKILL.md`](onboard/SKILL.md) and execute it.
+   It is **non-destructive**: detect existing `AGENTS.md`, `docs/`, `.agents/`, or
+   `CLAUDE.md`, reconcile rather than overwrite, and ask the developer before
+   replacing anything. The result: `AGENTS.md` + `CLAUDE.md` symlink, a reasoned
+   `docs/` tree, per-module docs, a `.agents/` kit, and a gitignored `.dwp/` — the
+   repository becomes the agent harness.
+3. **Verify conformance.** Read [`verify/SKILL.md`](verify/SKILL.md) and run it to
+   confirm, objectively, that the repository now meets the standard (AGENTS.md with
+   real commands, the `.agents/` catalog, the gitignored `.dwp/`, and so on).
+4. **Then plan and execute.** With the harness in place, create and execute Deep
+   Work Plans (below) — long-horizon, gated, resumable work an agent can run
+   autonomously for hours.
+
+**If the repository is already AI-first**, skip onboarding and route by intent.
 
 ## What it does
 
@@ -40,6 +70,7 @@ full step-by-step flow.
 | "refine the draft", "modify the plan", "/dwp-refine" | **Refine** → read [`refine/SKILL.md`](refine/SKILL.md) |
 | "resume", "continue the interrupted plan", "/dwp-resume" | **Resume** → read [`resume/SKILL.md`](resume/SKILL.md) |
 | "plan status", "what's left", "/dwp-status" | **Status** → read [`status/SKILL.md`](status/SKILL.md) |
+| "verify", "is this repo AI-first?", "check conformance", "/dwp-verify" | **Verify** → read [`verify/SKILL.md`](verify/SKILL.md) |
 | "make this repo AI-first", "onboard this repo", "set up AGENTS.md + docs + .agents" | **Onboard** → read [`onboard/SKILL.md`](onboard/SKILL.md) |
 | "create/update a skill or agent", "evolve the kit", "/skill-create", "/agent-create" | **Author** → read [`author/SKILL.md`](author/SKILL.md) |
 
