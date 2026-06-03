@@ -73,6 +73,7 @@ calls — unlike the `dailybot` skill pack this repo is modeled on.
 deepworkplan-skill/
 ├── AGENTS.md, CLAUDE.md (symlink)              ← this file (NOT installed)
 ├── README.md                                   ← public README on GitHub (NOT installed)
+├── assets/                                      ← README brand marks (NOT installed)
 ├── LICENSE, SECURITY.md, CHANGELOG.md          ← repo metadata (NOT installed)
 ├── PUBLISHING.md                               ← launch playbook (NOT installed)
 ├── setup.sh                                    ← symlink installer for non-skills.sh users (NOT installed)

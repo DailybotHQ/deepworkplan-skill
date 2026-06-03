@@ -10,11 +10,14 @@ metadata: {"openclaw":{"emoji":"🧠","homepage":"https://deepworkplan.com","req
 
 # DeepWorkPlan — Methodology Skill (Router)
 
-The **DeepWorkPlan** skill turns any repository "AI-first" — `AGENTS.md` +
-`docs/` + per-module docs + `.agents/` (with the `.claude → .agents` symlink) —
-and runs structured **Deep Work Plans**: multi-task plans an AI agent drafts,
-refines, executes task-by-task, and resumes. All plan and draft outputs land in
-a gitignored `.dwp/` directory at the repo root (`.dwp/plans/`, `.dwp/drafts/`).
+Models matter; context matters more. The **DeepWorkPlan** skill turns any
+repository into a structured environment — context, guardrails, and a durable
+plan — where any coding agent executes reliably on long-horizon work. It makes
+the repository "AI-first" — `AGENTS.md` + `docs/` + per-module docs + `.agents/`
+(with the `.claude → .agents` symlink) — and runs structured **Deep Work
+Plans**: multi-task plans an AI agent drafts, refines, executes task-by-task,
+and resumes. All plan and draft outputs land in a gitignored `.dwp/` directory
+at the repo root (`.dwp/plans/`, `.dwp/drafts/`).
 
 Source of truth: <https://deepworkplan.com>. License: MIT.
 
