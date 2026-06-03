@@ -1,13 +1,35 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/dwp-mark-dark.png" />
+  <img alt="Deep Work Plan" src="./assets/dwp-mark-light.png" width="200" />
+</picture>
+
 # DeepWorkPlan Skill Pack
+
+**Models matter. Context matters more.**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Open Agent Skills](https://img.shields.io/badge/format-Open%20Agent%20Skills-7b2d26)](https://agentskills.io)
+[![skills.sh](https://img.shields.io/badge/install-skills.sh-000)](https://skills.sh)
+
+[🌐 deepworkplan.com](https://deepworkplan.com) · [🔒 Security](SECURITY.md) · [📝 Changelog](CHANGELOG.md) · [🤝 Contributing](CONTRIBUTING.md)
+
+</div>
+
+---
 
 > The official DeepWorkPlan agent skill pack, maintained by [Dailybot](https://www.dailybot.com).
 
-Turn any repository AI-first and run structured, multi-task **Deep Work Plans**
-— a methodology for getting reliable, reviewable work out of AI coding agents.
-DeepWorkPlan teaches your agent to onboard a repo (generate an adapted
-`AGENTS.md`, `docs/`, per-module docs, and `.agents/` config), then plan,
-execute, refine, resume, and report on long-running work, with all plan output
-living in a gitignored `.dwp/` directory.
+DeepWorkPlan turns any repository into a **structured environment** — context,
+guardrails, and a durable plan — where any coding agent executes with precision
+and finishes long-horizon work. It makes the repo AI-first (an adapted
+`AGENTS.md`, `docs/`, per-module docs, and `.agents/` config), then drives
+structured, multi-task **Deep Work Plans**: plan, execute, refine, resume, and
+report on long-running work, with all plan output living in a gitignored
+`.dwp/` directory.
+
+> DeepWorkPlan is spec-driven development where the repository itself becomes the harness.
 
 - **License:** [MIT](LICENSE)
 - **Security policy:** [SECURITY.md](SECURITY.md)
