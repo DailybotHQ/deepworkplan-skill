@@ -69,6 +69,32 @@ On every merge to `main`, `auto-release.yml`:
 Maintainers' only job is to **write good conventional commits**. Never hand-edit
 `version:` fields, `CHANGELOG.md`, or tags — see [AGENTS.md](AGENTS.md) rule 4.
 
+## 4.1 Provenance & integrity
+
+Every release publishes a **`SHA256SUMS`** file covering the shipped runtime
+artifact (`skills/deepworkplan/**`). The `auto-release.yml` workflow generates it
+with `scripts/generate-checksums.sh` and attaches it to the GitHub Release. This
+gives users a "verify before you run" path:
+
+```bash
+# From a cloned/downloaded copy at the tag you installed:
+curl -fsSL -o SHA256SUMS \
+  https://github.com/DailybotHQ/deepworkplan-skill/releases/download/vX.Y.Z/SHA256SUMS
+./setup.sh --verify          # or: ./scripts/verify-integrity.sh
+```
+
+A non-zero exit means a shipped file does not match the published checksum — the
+copy has drifted from the release and should not be trusted. `SHA256SUMS` is a
+generated release asset and is git-ignored; never commit it.
+
+**Why checksums and not signatures (yet).** Checksums prove a downloaded copy
+matches what the release published; combined with the public, diffable git
+history they cover the realistic tampering surface for a Markdown-first skill.
+**Next step (not yet live):** sign the `SHA256SUMS` (or the tag) with
+[cosign](https://github.com/sigstore/cosign) keyless signing or a maintainer GPG
+key, and document the `cosign verify-blob` / `git tag -v` step here. Until that
+ships, do **not** advertise releases as "signed" — only as checksummed.
+
 ## 5. skills.sh registry
 
 `skills.sh` resolves GitHub-hosted skills directly, so the install command

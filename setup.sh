@@ -34,12 +34,21 @@ while [ $# -gt 0 ]; do
       fi
       HOST="$2"; shift 2 ;;
     --host=*) HOST="${1#--host=}"; shift ;;
+    --verify)
+      # Provenance check: verify the shipped pack against a published
+      # SHA256SUMS before installing. Non-zero exit means a file does not match.
+      exec "$SCRIPT_DIR/scripts/verify-integrity.sh"
+      ;;
     -h|--help)
       echo "Usage: ./setup.sh [--host claude|cursor|codex|windsurf|copilot|cline|gemini|auto]"
+      echo "       ./setup.sh --verify"
       echo ""
       echo "Creates symlinks for the DeepWorkPlan pack and each sub-skill so your"
       echo "agent discovers them. Run without --host to auto-detect, or specify"
       echo "an agent explicitly."
+      echo ""
+      echo "  --verify   Verify the pack against a published SHA256SUMS (download"
+      echo "             it from the matching GitHub Release first) and exit."
       exit 0
       ;;
     *) shift ;;

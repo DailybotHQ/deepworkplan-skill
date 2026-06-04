@@ -179,6 +179,13 @@ jobs:
           git tag -a "$NEW_TAG" -m "Release ${NEW_VERSION}"
           git push origin "refs/tags/${NEW_TAG}"
 
+      - name: Generate provenance checksums
+        if: steps.version.outputs.skip != 'true'
+        # SHA256SUMS over the shipped runtime artifact (skills/deepworkplan).
+        # Attached to the Release so users can verify provenance before running
+        # the skill (see scripts/verify-integrity.sh and `setup.sh --verify`).
+        run: bash scripts/generate-checksums.sh
+
       - name: Create GitHub Release
         if: steps.version.outputs.skip != 'true'
         uses: softprops/action-gh-release@v2
@@ -186,3 +193,4 @@ jobs:
           tag_name: ${{ steps.version.outputs.new_tag }}
           name: ${{ steps.version.outputs.new_version }}
           generate_release_notes: true
+          files: SHA256SUMS
