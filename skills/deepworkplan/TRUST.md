@@ -98,6 +98,7 @@ grep -nE 'curl|wget|http' skills/deepworkplan/shared/context.sh \
 
 ## Reporting a vulnerability
 
-Privately, to **security@dailybot.com** (ack ≤ 3 business days; fix/mitigation
-target ≤ 30 days for valid findings). See [`SECURITY.md`](https://github.com/DailybotHQ/deepworkplan-skill/blob/main/SECURITY.md). The
-public trust page is <https://deepworkplan.com/trust>.
+Privately, through **GitHub's private vulnerability reporting** on this repo —
+<https://github.com/DailybotHQ/deepworkplan-skill/security> — not a public issue.
+See [`SECURITY.md`](https://github.com/DailybotHQ/deepworkplan-skill/blob/main/SECURITY.md).
+The public trust page is <https://deepworkplan.com/trust>.
