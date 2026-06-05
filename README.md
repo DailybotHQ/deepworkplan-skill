@@ -99,6 +99,8 @@ Pick the path for your agent, clone, then run `setup.sh`:
 | GitHub Copilot | `~/.copilot/skills/deepworkplan/` |
 | Cline | `~/.cline/skills/deepworkplan/` |
 | Gemini CLI | `~/.gemini/skills/deepworkplan/` |
+| OpenCode | `~/.config/opencode/skills/deepworkplan/` |
+| Antigravity | `~/.antigravity/skills/deepworkplan/` |
 | OpenClaw | `<workspace>/skills/deepworkplan/` or `~/.openclaw/skills/` |
 
 ```bash

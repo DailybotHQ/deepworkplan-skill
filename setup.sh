@@ -40,7 +40,7 @@ while [ $# -gt 0 ]; do
       exec "$SCRIPT_DIR/scripts/verify-integrity.sh"
       ;;
     -h|--help)
-      echo "Usage: ./setup.sh [--host claude|cursor|codex|windsurf|copilot|cline|gemini|auto]"
+      echo "Usage: ./setup.sh [--host claude|cursor|codex|windsurf|copilot|cline|gemini|opencode|antigravity|auto]"
       echo "       ./setup.sh --verify"
       echo ""
       echo "Creates symlinks for the DeepWorkPlan pack and each sub-skill so your"
@@ -66,6 +66,8 @@ resolve_skills_dir() {
     copilot)  echo "$HOME/.copilot/skills" ;;
     cline)    echo "$HOME/.cline/skills" ;;
     gemini)   echo "$HOME/.gemini/skills" ;;
+    opencode) echo "$HOME/.config/opencode/skills" ;;
+    antigravity) echo "$HOME/.antigravity/skills" ;;
     *) echo "" ;;
   esac
 }
@@ -126,6 +128,8 @@ detect_agents() {
   [ -d "$HOME/.copilot" ]                  && found+=("copilot")
   [ -d "$HOME/.cline" ]                    && found+=("cline")
   [ -d "$HOME/.gemini" ]                   && found+=("gemini")
+  [ -d "$HOME/.config/opencode" ]          && found+=("opencode")
+  [ -d "$HOME/.antigravity" ]              && found+=("antigravity")
 
   # Deduplicate
   if [ ${#found[@]} -gt 0 ]; then
