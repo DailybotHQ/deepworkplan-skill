@@ -8,9 +8,14 @@ reach the Dailybot security team directly.
 ## Reporting a Vulnerability
 
 If you believe you have found a security vulnerability in the DeepWorkPlan skill
-pack, please report it privately rather than opening a public issue.
+pack, please report it **privately through GitHub's private vulnerability
+reporting** rather than opening a public issue (which would disclose the problem
+before a fix exists):
 
-**Email:** security@dailybot.com
+**Report a vulnerability:** <https://github.com/DailybotHQ/deepworkplan-skill/security>
+(GitHub → the **Security** tab → "Report a vulnerability"). If private reporting is
+ever unavailable, open a minimal issue asking us to enable it — do **not** post
+exploit details publicly.
 
 Include in your report:
 
@@ -18,9 +23,6 @@ Include in your report:
 - Steps to reproduce (a minimal proof of concept is ideal)
 - The version of the skill pack (`version` field in `skills/deepworkplan/SKILL.md`)
 - Your name or handle if you would like credit in the release notes
-
-We acknowledge reports within **3 business days** and aim to issue a fix or a
-mitigation within **30 days** for valid findings, depending on severity.
 
 ## Supported Versions
 
