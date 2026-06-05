@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.4.0] — 2026-06-05
+
+### Changes
+
+- Merge pull request #10 from DailybotHQ/feat/preset-catalog-and-agent-hosts
+- feat(onboard): expand preset catalog to 22 stacks + add OpenCode/Antigravity hosts
+
+
 ## [2.3.0] — 2026-06-05
 
 ### Changes
