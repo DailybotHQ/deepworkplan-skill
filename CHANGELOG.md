@@ -9,6 +9,16 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.3.0] — 2026-06-05
+
+### Changes
+
+- Merge pull request #9 from DailybotHQ/feat/provenance-integrity
+- docs(skill): report security via GitHub private vulnerability reporting; drop email + SLA
+- docs(skill): ship a TRUST.md trust statement + self-audit inside the skill
+- feat(setup): publish + verify SHA256SUMS provenance for releases
+
+
 ## [2.2.2] — 2026-06-03
 
 ### Changes
