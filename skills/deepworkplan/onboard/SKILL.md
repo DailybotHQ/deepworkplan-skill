@@ -44,9 +44,13 @@ work reliably without per-session human hand-holding.
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — the `.dwp/` output
   convention you scaffold in Phase 7.
 - [`presets/README.md`](presets/README.md) — the per-stack **reasoning guides**
-  (Django, Vue/Vite, Astro/Svelte, Node/TS service, Python package/CLI, generic
-  fallback) and the orchestrator-hub note. Read the matching preset in Phase 1
-  and use it in Phases 3–6. **Presets are reasoning aids, not templates.**
+  spanning backend/API (Django, FastAPI, Rails, Spring Boot, Laravel, NestJS),
+  frontend (Vue/Vite, Next.js, SvelteKit, Nuxt, Angular, Astro/Svelte), mobile
+  (React Native, Flutter, Swift/iOS), and systems/infra (Go, Rust, Terraform,
+  TypeScript Lambda, Node/TS service, Python package/CLI), plus a `generic`
+  fallback and the orchestrator-hub note. See `presets/README.md` for the full
+  index. Read the matching preset in Phase 1 and use it in Phases 3–6.
+  **Presets are reasoning aids, not templates.**
 - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the DWP methodology you reference
   when wiring the skill and (for hubs) the orchestrator/child-DWP capability.
 
@@ -158,9 +162,10 @@ Detect, by reading actual files (not by habit):
   commit-message style (`git log`). **Carry these forward**; do not override a
   working convention with a generic one.
 
-Then **load the matching preset** from `presets/` (Django, Vue/Vite,
-Astro/Svelte, Node/TS service, Python package/CLI, or `generic` if nothing
-matches). Use it as a **reasoning checklist**, and explicitly verify each preset
+Then **load the matching preset** from `presets/` (one per common stack across
+backend, frontend, mobile, and systems/infra — see `presets/README.md` for the
+full index — or `generic` if nothing matches). Use it as a **reasoning
+checklist**, and explicitly verify each preset
 assumption against what you actually found — **detected reality wins over preset
 assumptions**.
 

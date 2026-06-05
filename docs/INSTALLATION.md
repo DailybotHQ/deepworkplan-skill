@@ -91,7 +91,7 @@ For users who don't want Node and prefer explicit control. The included
 git clone https://github.com/DailybotHQ/deepworkplan-skill.git ~/deepworkplan-skill
 cd ~/deepworkplan-skill
 ./setup.sh                 # auto-detect installed agents
-./setup.sh --host claude   # or: cursor, codex, windsurf, copilot, cline, gemini
+./setup.sh --host claude   # or: cursor, codex, windsurf, copilot, cline, gemini, opencode, antigravity
 ```
 
 `setup.sh` creates these symlinks for each detected agent:
@@ -143,6 +143,8 @@ Per-agent paths:
 | GitHub Copilot | `~/.copilot/skills/<dir>` |
 | Cline | `~/.cline/skills/<dir>` |
 | Gemini CLI | `~/.gemini/skills/<dir>` |
+| OpenCode | `~/.config/opencode/skills/<dir>` |
+| Antigravity | `~/.antigravity/skills/<dir>` |
 | OpenClaw | `<workspace>/skills/<dir>` or `~/.openclaw/skills/` |
 
 The runnable skill lives inside the clone at `skills/deepworkplan/`, and the
