@@ -248,11 +248,14 @@ Each doc must contain **real** content:
 
 - `PRODUCT_SPEC.md` — the non-technical product/why doc: the problem the repo
   solves, who it is for, its key capabilities/features, success criteria, and
-  explicit non-goals. Reason it from the README, package description, public
-  API, and any roadmap/issues — never a generic stub. **Required for every repo,
-  including libraries, CLIs, and internal tools**: if there are no end users,
-  frame the product as its consumers (who calls this API, and why they choose
-  it). This is the *why*; the docs below are the *how*.
+  explicit non-goals. It **MUST read plainly enough that anyone — a person or an
+  agent, technical or not — can understand what this repository is and why it
+  exists at a glance**; that is the whole point of the document. Reason it from
+  the README, package description, public API, and any roadmap/issues — never a
+  generic stub. **Required for every repo, including libraries, CLIs, and
+  internal tools**: if there are no end users, frame the product as its
+  consumers (who calls this API, and why they choose it). This is the *why*; the
+  docs below are the *how*.
 - `ARCHITECTURE.md` — the real components, data flow, and deployment shape from
   recon; an annotated diagram of the actual module layout.
 - `STANDARDS.md` — the repo's real coding conventions, naming, import order,
