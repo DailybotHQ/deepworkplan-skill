@@ -48,7 +48,7 @@ test -f AGENTS.md && grep -qiE 'quick commands|## commands' AGENTS.md && echo "A
 
 # 3. docs/ with the standard categories
 test -d docs && echo "docs/: present" || echo "docs/: FAIL"
-for d in ARCHITECTURE STANDARDS TESTING_GUIDE DEVELOPMENT_COMMANDS SECURITY AI_AGENT_ONBOARDING; do
+for d in PRODUCT_SPEC ARCHITECTURE STANDARDS TESTING_GUIDE DEVELOPMENT_COMMANDS SECURITY AI_AGENT_ONBOARDING; do
   ls docs/ 2>/dev/null | grep -qi "$d" && echo "  docs/$d: ok" || echo "  docs/$d: missing"
 done
 
