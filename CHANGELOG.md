@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.5.0] — 2026-06-06
+
+### Changes
+
+- Merge pull request #11 from DailybotHQ/feat/product-spec-doc-standard
+- docs(onboard): make the "readable by anyone" rationale explicit for PRODUCT_SPEC
+- feat(spec): require PRODUCT_SPEC.md in the docs/ standard (MUST, all archetypes)
+
+
 ## [2.4.0] — 2026-06-05
 
 ### Changes
