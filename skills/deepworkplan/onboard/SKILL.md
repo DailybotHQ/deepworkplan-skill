@@ -449,11 +449,15 @@ its flow — locate the repo's **real** design source, **reason out** each canon
 section of `DESIGN.md` from those tokens (Overview/atmosphere, colors & roles incl.
 dark mode, typography, layout & spacing, elevation, shapes, components, responsive
 behavior, do's & don'ts incl. the repo's accessibility rules, agent prompt guide),
-and write `DESIGN.md` at the repo root — **never** copying a third-party brand file.
-An **existing `DESIGN.md`/token source MUST be reconciled, not clobbered**. After
-applying, run the addon's validation step (SPEC §11: sections present, values
-traceable to the real source, WCAG AA contrast, token references resolve). If
-declined, skip it — the repo stays baseline-conformant.
+and write it at **`docs/DESIGN.md`** (alongside the other specs you generated in
+Phase 4 — root only if the repo has no `docs/` tree) — **never** copying a
+third-party brand file. Then **add a `DESIGN.md` reference to the `AGENTS.md`
+documentation index** (and `CLAUDE.md`) so agents discover it like the rest of
+`docs/`. An **existing `DESIGN.md`/token source MUST be reconciled, not clobbered**.
+After applying, run the addon's validation step (SPEC §11: file at `docs/DESIGN.md`
+or root with all sections, AGENTS.md references it, values traceable to the real
+source, WCAG AA contrast, token references resolve). If declined, skip it — the repo
+stays baseline-conformant.
 
 ## Phase 8 — Self-check / validation (mandatory)
 

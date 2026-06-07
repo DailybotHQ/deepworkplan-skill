@@ -4,10 +4,12 @@
 
 This document is the **normative specification** of the DeepWorkPlan
 **design-system addon**: an opt-in capability that gives a **frontend/UI
-repository** a repo-root **`DESIGN.md`** — a Markdown design-system file that any
+repository** a **`DESIGN.md`** — placed under **`docs/`** alongside the repo's
+other specs and indexed from `AGENTS.md` — a Markdown design-system file that any
 coding agent reads to generate UI **consistent with the repo's own design
-system**. It defines the **frontend-scope gate** (RFC-2119), the **canonical
-sections** a `DESIGN.md` MUST carry, the **reason-don't-copy** rule, the
+system**. It defines the **frontend-scope gate** (RFC-2119), the **location +
+`AGENTS.md` discovery** rule, the **canonical sections** a `DESIGN.md` MUST carry,
+the **reason-don't-copy** rule, the
 **reconcile-don't-clobber** behavior, the **pragmatic-reference** posture toward
 the upstream convention, the **onboarding hook**, and the **validation** step.
 
@@ -32,8 +34,9 @@ The RFC 2119 keywords (**MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**,
 **MAY**, **OPTIONAL**) are interpreted as in
 [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
-Throughout, **`DESIGN.md`** is the repo-root design-system file this addon
-produces; a **token** is a named design value (a color, a type size, a spacing
+Throughout, **`DESIGN.md`** is the design-system file this addon produces (at
+`docs/DESIGN.md` by default, §2); a **token** is a named design value (a color, a
+type size, a spacing
 step, a radius, an elevation); and the **design source** is the repo's real
 origin of those values (a stylesheet, a Tailwind config, a token file, or the
 component styles themselves).
@@ -42,13 +45,21 @@ component styles themselves).
 
 ## 2. What the Addon Provides
 
-- The addon **MUST** produce a single **`DESIGN.md` at the repository root**: a
-  Markdown file, human-authorable and LLM-legible, that documents the repo's
-  design system so an agent generating UI follows it instead of inventing
-  statistically-common defaults.
-- `DESIGN.md` **MUST** be **co-located with the code** (repo root, version
-  controlled, reviewable in pull requests) — it is repo-native context, the same
-  shape as `AGENTS.md`.
+- The addon **MUST** produce a single **`DESIGN.md`** — a Markdown file,
+  human-authorable and LLM-legible, that documents the repo's design system so an
+  agent generating UI follows it instead of inventing statistically-common
+  defaults. It **MUST** be version-controlled and reviewable in pull requests.
+- **Location (DWP-native default):** in a repo that follows the DWP documentation
+  standard — specs/docs centralized under `docs/` and indexed by `AGENTS.md` —
+  `DESIGN.md` **SHOULD** live at **`docs/DESIGN.md`**, alongside the other specs
+  (`ARCHITECTURE.md`, `STANDARDS.md`, `PRODUCT_SPEC.md`, …), **not** scattered at
+  the root. A repo with **no** `docs/` tree (or one mirroring the upstream
+  root convention) **MAY** instead place it at the repo root (`./DESIGN.md`).
+- **Discovery is by reference, not by physical location.** Wherever it lives, the
+  addon **MUST** ensure `AGENTS.md` (and therefore `CLAUDE.md`) **references**
+  `DESIGN.md` in its documentation index, so any agent discovers it the same way it
+  discovers the rest of the `docs/` specs. The location matters less than the
+  `AGENTS.md` pointer being present.
 - The file **SHOULD** stay compact (roughly 2–5K tokens) so it fits comfortably in
   an agent's context window alongside the task.
 - The addon **MUST NOT** introduce a build dependency, a plugin, or an external
@@ -215,15 +226,19 @@ The addon is correctly applied when **all** hold:
 
 1. The repo was confirmed to have a **frontend/UI surface** (§3); the addon was
    **skipped** for non-UI repos.
-2. A `DESIGN.md` exists **at the repo root** with all canonical sections (§4).
-3. Every documented value is **traceable to the repo's real design source** (§5);
+2. A `DESIGN.md` exists with all canonical sections (§4) — at **`docs/DESIGN.md`**
+   for a repo with a `docs/` tree (DWP-native default), or at the repo root for a
+   repo without one (§2).
+3. **`AGENTS.md` references `DESIGN.md`** in its documentation index (so agents
+   discover it like the other `docs/` specs) (§2).
+4. Every documented value is **traceable to the repo's real design source** (§5);
    no third-party brand file was pasted; inferred values are flagged.
-4. An **existing** `DESIGN.md`/token source, if present, was **reconciled** (§6),
+5. An **existing** `DESIGN.md`/token source, if present, was **reconciled** (§6),
    not clobbered; destructive changes were approved.
-5. Documented text color pairings meet **WCAG AA**; token references **resolve**
+6. Documented text color pairings meet **WCAG AA**; token references **resolve**
    (no orphans/broken refs) (§7).
-6. The file is Markdown-first and compact; no build dependency was introduced (§2).
-7. If a `/design-system` delegator was offered and accepted, it exists in the
+7. The file is Markdown-first and compact; no build dependency was introduced (§2).
+8. If a `/design-system` delegator was offered and accepted, it exists in the
    repo's `.agents/commands/`; if declined, none was installed (§9).
 
 ---
