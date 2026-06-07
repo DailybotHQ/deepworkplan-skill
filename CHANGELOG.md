@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.7.0] — 2026-06-07
+
+### Changes
+
+- Merge pull request #13 from DailybotHQ/feat/design-system-docs-location
+- feat(addon): place design-system DESIGN.md under docs/, discovered via AGENTS.md index
+
+
 ## [2.6.0] — 2026-06-07
 
 ### Changes
