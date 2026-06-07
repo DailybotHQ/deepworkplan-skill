@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-design-system
-description: Optional DeepWorkPlan addon that gives a frontend/UI repo a repo-root DESIGN.md — a Markdown design-system file any coding agent reads to generate UI consistent with the repo's OWN design system. Reasons about the repo's ACTUAL design tokens (CSS custom properties, Tailwind config, token files, component styles) rather than copying a brand file; documents colors & roles, typography, spacing/layout, elevation, shapes, components, responsive behavior, do's & don'ts, and an agent prompt guide; checks contrast (WCAG AA) and token integrity. Frontend-scoped and default-on when a UI/design system is detected (applied in trust mode, strongly recommended in guided mode; never offered for backend/CLI/library-only repos); never required for baseline conformance; reconciles an existing DESIGN.md instead of clobbering it. Use when the developer wants agents to produce on-brand, consistent UI for a frontend repo.
+description: Optional DeepWorkPlan addon that gives a frontend/UI repo a DESIGN.md (under docs/, indexed from AGENTS.md) — a Markdown design-system file any coding agent reads to generate UI consistent with the repo's OWN design system. Reasons about the repo's ACTUAL design tokens (CSS custom properties, Tailwind config, token files, component styles) rather than copying a brand file; documents colors & roles, typography, spacing/layout, elevation, shapes, components, responsive behavior, do's & don'ts, and an agent prompt guide; checks contrast (WCAG AA) and token integrity. Frontend-scoped and default-on when a UI/design system is detected (applied in trust mode, strongly recommended in guided mode; never offered for backend/CLI/library-only repos); never required for baseline conformance; reconciles an existing DESIGN.md instead of clobbering it. Use when the developer wants agents to produce on-brand, consistent UI for a frontend repo.
 version: "2.6.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -10,8 +10,9 @@ metadata: {"openclaw":{"emoji":"🎨","homepage":"https://deepworkplan.com"}}
 
 # DeepWorkPlan — Design-System Addon
 
-Give a **frontend/UI repo** a repo-root **`DESIGN.md`** so any human or AI agent
-generates UI that matches the repo's **own** design system — instead of the
+Give a **frontend/UI repo** a **`DESIGN.md`** — living under **`docs/`** alongside
+the repo's other specs and **indexed from `AGENTS.md`** — so any human or AI agent
+generates UI that matches the repo's **own** design system, instead of the
 unstyled, statistically-common defaults an agent falls back to with no guidance.
 This is an **opt-in addon** — it is **never** required for a repo to be AI-first,
 and it is **only** for repos with a real UI surface.
@@ -90,14 +91,22 @@ prompt guide. Express values as **named tokens with usage notes**; add a
 machine-readable token block only if the repo already maintains structured tokens.
 Flag any value you had to **infer** so a human can confirm it.
 
-### Step 3 — Write or reconcile `DESIGN.md`
-- If no `DESIGN.md` exists → write it at the **repo root**.
+### Step 3 — Write or reconcile `DESIGN.md`, then index it in `AGENTS.md`
+- Choose the location (`SPEC.md` §2): if the repo has a `docs/` tree (DWP-native),
+  write **`docs/DESIGN.md`** alongside the other specs; if it has no `docs/` tree,
+  write `./DESIGN.md` at the root.
+- If no `DESIGN.md` exists → write it at the chosen location.
 - If one already exists → **reconcile additively** (`SPEC.md` §6): keep working
   values, add missing canonical sections, and ask before any destructive change.
+- **Index it in `AGENTS.md`** (and therefore `CLAUDE.md`): add a reference to
+  `DESIGN.md` in the documentation index so agents discover it like the other
+  `docs/` specs. This pointer — not the physical location — is what guarantees
+  discovery (`SPEC.md` §2).
 
 ### Step 4 — Validate (the gate)
 Run the validation step (`SPEC.md` §11):
-- All canonical sections present.
+- `DESIGN.md` exists at the chosen location (`docs/DESIGN.md` or root) with all
+  canonical sections, and **`AGENTS.md` references it**.
 - Every documented value traces to the real design source (spot-check a few
   against the stylesheet/config); inferred values flagged.
 - Documented text-color pairings meet **WCAG AA** contrast; token references

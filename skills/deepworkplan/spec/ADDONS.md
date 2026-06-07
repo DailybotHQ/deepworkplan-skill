@@ -190,8 +190,10 @@ is fully conformant with **zero** addons installed.
   ```
 
 - Scope: a **frontend/UI-scoped**, **opt-in** capability that gives a repo a
-  repo-root **`DESIGN.md`** — a Markdown design-system file any coding agent reads
-  to generate UI consistent with the repo's **own** design system. When accepted,
+  **`DESIGN.md`** — placed at **`docs/DESIGN.md`** alongside the repo's other specs
+  (root only if the repo has no `docs/` tree) and **indexed from `AGENTS.md`** — a
+  Markdown design-system file any coding agent reads to generate UI consistent with
+  the repo's **own** design system. When accepted,
   it **reasons about the repo's actual design tokens** (CSS custom properties, a
   Tailwind config, token files, component styles) — **never** copying a brand file —
   documents the canonical sections (colors & roles, typography, layout/spacing,
