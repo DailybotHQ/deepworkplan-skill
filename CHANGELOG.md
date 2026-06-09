@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.10.0] — 2026-06-09
+
+### Changes
+
+- Merge pull request #17 from DailybotHQ/chore/spec-version-2.1.0-sync
+- feat(onboard): verify gate, evidence-based scale decision, idempotent plan-driven
+- docs(spec): unify methodology spec version to 2.1.0 across all docs
+
+
 ## [2.9.0] — 2026-06-09
 
 ### Changes
