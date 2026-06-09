@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.10.1] — 2026-06-09
+
+### Changes
+
+- Merge pull request #18 from DailybotHQ/test/agents-dogfood-coverage
+- test(skill): lock in the .agents/ dogfood structure with a bats suite
+
+
 ## [2.10.0] — 2026-06-09
 
 ### Changes
