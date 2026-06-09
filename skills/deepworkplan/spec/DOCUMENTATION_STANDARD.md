@@ -26,7 +26,7 @@ requirements are called out inline.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.0.0 |
+| **Version** | 2.1.0 |
 | **Status** | Stable |
 | **Supersedes** | `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DOCUMENTATION_STANDARD.md` (v1.0.0) |
 | **Companions** | `DWP_SPECIFICATION.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md` |
@@ -375,4 +375,4 @@ for all complex modules (§4).
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.1.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
