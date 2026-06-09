@@ -17,7 +17,7 @@ The addon is governed by `../README.md` and `methodology-spec/ADDONS.md`: it is
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.0.0 |
+| **Version** | 2.1.0 |
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/*` (reasoning templates + 7 presets), `../README.md`, `methodology-spec/ADDONS.md` |
 | **License** | MIT |
@@ -262,4 +262,4 @@ The addon is correctly applied when **all** hold:
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.1.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

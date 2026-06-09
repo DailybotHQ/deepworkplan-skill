@@ -193,6 +193,18 @@ validation commands (flagged CI/Docker-only where relevant), source roots +
 major modules, test convention, deployment shape, carried-forward conventions,
 and which preset you used.
 
+**Also record a scale count** (the evidence the Phase 2b decision reads, so the
+inline-vs-plan choice is mechanical, not guessed):
+
+- `major_modules` — the number of major source modules you'll write per-module
+  docs for (Phase 5).
+- `planned_artifacts` — a rough total of files to generate: `AGENTS.md` (1) +
+  the `docs/` categories (~10) + one per-module `README.md` + the `.agents/` kit.
+  Estimate it: `≈ 11 + major_modules` for a typical repo.
+
+Record both numbers explicitly in `.dwp/onboard/RECON.md`. Phase 2b thresholds
+are stated against these counts.
+
 ## Phase 2 — Archetype decision
 
 Classify the repo using `../spec/ARCHETYPES.md` signals (summarized in
@@ -232,19 +244,29 @@ becomes its own Deep Work Plan** — the repo's first plan is "finish onboarding
 myself," executed task-by-task with gates and full resumability. This is the
 methodology dogfooding itself: the onboarding uses the very loop it installs.
 
-**Decide the strategy from recon (reason, don't default).** Choose
+**Decide the strategy from the recon counts (mechanical, not a guess).** Read the
+`major_modules` and `planned_artifacts` numbers you recorded in Phase 1. Choose
 **plan-driven** when a clear majority of these hold (or the developer asks):
 
-- More than ~8 major modules needing their own per-module docs (Phase 5).
+- `major_modules` **> 8** (each needs its own per-module doc, Phase 5).
+- `planned_artifacts` **≥ 15** (docs + per-module docs + `.agents/`).
 - A monorepo / multi-package workspace, or an orchestrator hub.
-- Docs + per-module docs + `.agents/` add up to ~15+ artifacts to generate.
 - The work plainly won't fit one focused session, or must survive across
   sessions/agents.
 
-Otherwise stay **inline** (the typical case) — run Phases 3–8 directly.
+Otherwise stay **inline** (the typical case) — run Phases 3–8 directly. State the
+counts and the resulting choice in `.dwp/onboard/RECON.md` so the decision is
+auditable; if the counts sit right at the boundary, present them and let the
+developer break the tie.
 
 **The plan-driven path:**
 
+0. **Resume, don't regenerate (idempotency check).** Before building a new plan,
+   look for an in-progress onboarding plan: `ls .dwp/plans/PLAN_onboard_*`. If one
+   exists, **do not start over** — read its `PROGRESS.md`, report status, and hand
+   off to `/dwp-resume` to continue from the first open task. Only generate a new
+   plan when none exists. (This honors the Phase 0 idempotency rule for the
+   plan-driven path and matches the `verify` sub-skill's in-progress note.)
 1. Still complete **Phase 1 recon** and **Phase 2 archetype** here — the recon
    (`.dwp/onboard/RECON.md`) is the analysis the plan is built from. Never skip
    it.
@@ -594,7 +616,15 @@ done.
 8. **Archetype-specific:** if orchestrator hub, confirm the sub-repo navigation
    index + multi-project commit workflow are documented and `ECOSYSTEM_CONTEXT.md`
    exists.
-9. **Write the onboarding report** to `.dwp/onboard/REPORT.md` summarizing: the
+9. **Objective conformance gate — run `/dwp-verify`.** This checklist mirrors the
+   `verify` sub-skill; close the loop by actually running it (read
+   [`../verify/SKILL.md`](../verify/SKILL.md) and execute its repository checks)
+   for an independent **CONFORMANT / NOT CONFORMANT** verdict. This dogfoods
+   `verify` and turns the manual checklist into a reproducible gate. Treat a
+   `NOT CONFORMANT` verdict as a Phase 8 failure: **fix-then-recheck** before
+   reporting done. (On the plan-driven path, `/dwp-verify` is exactly the final
+   task's gate.)
+10. **Write the onboarding report** to `.dwp/onboard/REPORT.md` summarizing: the
    archetype chosen + evidence, the detected stack + package manager, the exact
    validation commands captured, the full list of files/folders generated or
    modified, addons accepted/declined, the smoke-test result, any symlink

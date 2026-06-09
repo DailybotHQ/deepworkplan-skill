@@ -20,7 +20,7 @@ through its own native convention. The protocol applies to **both archetypes**
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.0.0 |
+| **Version** | 2.1.0 |
 | **Status** | Stable |
 | **Supersedes** | `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/AGENT_PROTOCOL.md` (v1.0.0) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `DWP_SPECIFICATION.md`, `ARCHETYPES.md`, `ADDONS.md` |
@@ -149,4 +149,4 @@ generated documentation. See `RECONCILIATION.md` non-divergences.
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.1.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

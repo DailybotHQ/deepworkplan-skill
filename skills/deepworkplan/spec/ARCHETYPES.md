@@ -15,7 +15,7 @@ repository, and how onboarding differs between them. Every other spec
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.0.0 |
+| **Version** | 2.1.0 |
 | **Status** | Stable |
 | **Supersedes** | (net-new in v2; no v1 equivalent) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `DWP_SPECIFICATION.md`, `AGENT_PROTOCOL.md`, `ADDONS.md` |
@@ -130,4 +130,4 @@ following signals hold; otherwise it **MUST** classify it as an **individual rep
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.1.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
