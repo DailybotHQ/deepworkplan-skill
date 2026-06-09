@@ -23,6 +23,9 @@ time**, validating and committing after each, and reporting progress.
   and validation commands resolve.
 - [`../guide/GUIDE.md`](../guide/GUIDE.md) — execution rules (§6), orchestrator
   protocol (§13), team agents (§14).
+- [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) — the machine-readable state
+  layer (`manifest.json` + `state.json`); update it at every completion when the
+  plan carries it.
 
 ## Parameter Support
 
@@ -90,6 +93,10 @@ Rules (strict):
    & Log (status, timestamp, summary, files changed, validation results, notes).
 5. **Commit** after each completed task using conventional commits:
    `type(scope): complete task N - description`.
+   Where the plan carries the state layer (`../spec/PLAN_STATE.md`), rewrite
+   `state.json` atomically as the final completion step: task `completed`,
+   gate records (`command`, `passes`, `evidence`), a short outcome record
+   (tried / failed / worked), and the commit hash.
 6. **Dailybot per-task report (only for individually significant tasks)** — after
    committing a task that is independently significant (feature, bug fix, major
    refactor), trigger the `dailybot` skill (e.g. "report this to Dailybot" or
@@ -106,8 +113,12 @@ pause; a blocking issue.
 #### Autonomous mode (long-horizon, hours-long runs)
 
 A Deep Work Plan is designed to be executed **autonomously for hours**, across
-many tasks and even across a context-window reset. When the developer asks to run
-unattended (or passes `trust` / `auto`):
+many tasks and even across a context-window reset. The normative contract for
+this mode is the **unattended execution profile**
+(`../spec/AGENT_PROTOCOL.md` §7): the plan must be pre-approved, the state layer
+(`../spec/PLAN_STATE.md`) is REQUIRED, authority is bounded by the plan, and the
+stop conditions of §7.3 apply. When the developer asks to run unattended (or
+passes `trust` / `auto`):
 
 - **Continue without per-task confirmation.** Run task → validate → commit →
   update `PROGRESS.md` → next task, in a loop. Do not stop to ask "shall I

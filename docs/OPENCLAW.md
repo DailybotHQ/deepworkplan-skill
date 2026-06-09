@@ -45,6 +45,39 @@ wire best-effort progress reporting into plan execution. It is deferred,
 consent-gated, and **never blocks** the plan — core DeepWorkPlan has zero Dailybot
 dependency. Leave it off if you don't use Dailybot.
 
+## Unattended plan execution (the adapter)
+
+OpenClaw's own docs note that skills are not designed as long-running
+multi-step workflows. That is exactly the gap DeepWorkPlan fills: the durable
+multi-step procedure lives in the **plan** (`.dwp/plans/PLAN_{name}/`), and
+OpenClaw's scheduling primitives drive its continuation. The mapping:
+
+| OpenClaw primitive | DWP role |
+|--------------------|----------|
+| Workspace (`<workspace>/`) | The **agent workspace** archetype (`spec/ARCHETYPES.md` §4): `AGENTS.md`, `.agents/`, `.dwp/` at the workspace root |
+| `<workspace>/.agents/skills/` (native tier-2 scan) | Where this pack lives — no adapter shim needed |
+| Heartbeat / cron turn | One **scheduled continuation** turn (`spec/AGENT_PROTOCOL.md` §7.4): wake → DWP Resume Protocol → next atomic task → update state → yield |
+| `HEARTBEAT.md` checks | Add one line: *"If `.dwp/plans/` has an open plan, resume it for one task."* |
+| Task ledger entries | Mirror of the plan's per-task completion (the plan's `state.json` is the source of truth) |
+| Standing orders | The plan-approval boundary: which plans may run unattended, and the bounded authority of `spec/AGENT_PROTOCOL.md` §7.2 |
+
+Operationally:
+
+1. A human creates and approves a plan interactively (`create` flow). Approval
+   is the control point — unattended turns never create-and-execute in one breath.
+2. The plan **must** carry the machine-readable state layer
+   (`spec/PLAN_STATE.md`): `manifest.json` + `state.json`. In a workspace
+   without git, `state.json` is what makes crash-safe resume possible.
+3. Each heartbeat/cron turn executes **at most one** task, passes its
+   validation gate, updates `state.json` atomically, and yields.
+4. On any stop condition (`spec/AGENT_PROTOCOL.md` §7.3) the agent writes
+   `state.json.blocked` and reports through the workspace's normal channel —
+   the next human glance (or heartbeat report) sees exactly what is needed.
+
+The result: a multi-hour, multi-day plan that survives restarts, model
+changes, and session boundaries, executed overnight by the daemon — with the
+same gates a human-supervised run would have.
+
 ## Updates
 
 ```bash

@@ -234,6 +234,19 @@ Follow `../guide/GUIDE.md`. Create:
    build alone). Where related work is substantial, prefer a dedicated
    `N.task_add_tests_for_{feature}.md` task right after the implementation task.
 
+7. **State layer (RECOMMENDED, `../spec/PLAN_STATE.md`)** — write
+   `manifest.json` (plan identity: name, archetype, rigor tier, spec version,
+   task count, creating agent — once, never edited after) and the initial
+   `state.json` (every task `pending`, empty gates). Both atomically
+   (write-temp-then-rename). REQUIRED when the plan will run unattended
+   (`../spec/AGENT_PROTOCOL.md` §7.2) or the workspace has no git.
+
+**Proportional rigor check first (`../spec/DWP_SPECIFICATION.md` §11):** before
+materializing anything, confirm the work actually warrants a plan. A trivial
+single-concern change is **micro** tier — say that a plan is disproportionate,
+offer to state goal + acceptance criteria + validation gate inline and just do
+it. Declare the chosen tier (`standard` or `deep`) and why in the refined draft.
+
 **Two mandatory final tasks (always):**
 - **Skills & Agents Discovery** (MANDATORY, **second-to-last**, task `N-1`,
   `{N-1}.task_skills_agents_discovery.md`): reviews completed tasks for new

@@ -43,12 +43,26 @@ List `PLAN_*` folders in `.dwp/plans/`; mark the most recently modified as
 choice.
 
 ### Step 2 — Assess Current State (CRITICAL)
+
+This step implements the **DWP Resume Protocol**
+(`../spec/DWP_SPECIFICATION.md` §5.3) — the named six-step ritual any resuming
+session performs:
+
 1. Read the plan README fully (objective; which tasks are `[x]` vs `[ ]`).
 2. Run `git status`, `git log --oneline -10`, and `git diff` (if uncommitted
-   changes exist).
-3. Find the resumption point — the **first unchecked `[ ]` task**.
-4. Check for partial work: if `git status` shows uncommitted changes, review them
+   changes exist). In a workspace without git, read `state.json`'s `checkpoint`
+   instead (`../spec/PLAN_STATE.md` §4.4).
+3. **Reconcile the state layer (when present):** compare `state.json` against
+   the README checkboxes. On any desync the **markdown wins** — regenerate
+   `state.json` from the README (and git log), note the reconciliation in
+   `PROGRESS.md`, then continue (`../spec/PLAN_STATE.md` §5). If
+   `state.json.blocked` is set, surface it: that is why the plan stopped.
+4. Find the resumption point — the **first unchecked `[ ]` task**.
+5. Check for partial work: if `git status` shows uncommitted changes, review them
    against the current `[ ]` task; read that task's Completion & Log for notes.
+6. **Smoke-test before building:** run the repo's cheapest standing check (from
+   `AGENTS.md` Quick Commands) to confirm the world still works before adding to
+   it. A failing smoke test is investigated first.
 
 ### Step 3 — Report Resumption Status
 Report: completed `[x]` tasks; pending `[ ]` tasks; the task to resume from; git
