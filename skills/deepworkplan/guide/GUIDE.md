@@ -343,6 +343,7 @@ Examples:
 - All required functionality is implemented.
 - Code matches the patterns in `docs/ARCHITECTURE.md`.
 - No TypeScript errors are introduced.
+- New or changed behavior is covered by automated tests added or updated in this task (see §5.3).
 - All tests pass (`npm run test`).
 - ESLint checks pass (`npm run eslint:check`).
 - Naming and structure follow existing conventions in `docs/STANDARDS.md`.
@@ -372,6 +373,8 @@ npm run prettier:check
 If any of these fail, the agent must **stop, log the issue, and not mark the task as complete**.
 
 **Note:** The `codecheck` command (from `docker/custom_commands.sh`) runs setup, automatic fixes, and tests in sequence.
+
+For a task that changes product behavior, Validation **must** run the repo's tests **and** its lint/type-check/format checks (the full code-quality check), not the build alone — see §5.3.
 
 ## 8. Rollback (optional)
 
@@ -405,6 +408,39 @@ The agent must append a short log here when the task is done (or blocked):
 - **Notes / follow-ups:**
 ````
 
+### 5.3. Test & Validation Discipline (MANDATORY)
+
+Tests are a first-class part of the loop — they are what makes the code a Deep
+Work Plan ships **reliable** and verifiable, not just "written". This discipline
+applies on every plan, in addition to the per-task validation gates above:
+
+- **New core functionality or changed behavior ⇒ tests.** When a task implements
+  new functionality or materially changes existing behavior, that task **MUST**
+  add or update automated tests covering the new/changed behavior (happy path +
+  meaningful edge/error cases), following the repo's test convention and coverage
+  expectation (`docs/TESTING_GUIDE.md`). Put it in the task's **Acceptance
+  Criteria** so it is checkable.
+- **Run the full code-quality check, not just the build.** A behavior-changing
+  task's **Validation** must run the repo's **tests** *and* its **lint /
+  type-check / format** checks (e.g. `codecheck`, `npm run test && npm run lint`,
+  `pytest && ruff check`). "It builds" / "the file exists" is not a sufficient
+  gate for a behavior change.
+- **Keep existing tests green.** If a change breaks a test that covers the
+  affected code, update the test to reflect the intended new behavior. **Never**
+  delete, skip, or weaken a test just to make the gate pass.
+- **Proportional, not bureaucratic.** Depth of testing scales with the size of the
+  change and the repo's maturity — a one-line fix is not a test suite. Pure docs /
+  config / research tasks are exempt from *creating* tests but still run the repo's
+  validation gate.
+- **No toolchain? It was proposed at onboarding.** If the repo has no test/lint
+  setup, onboarding proposes one fit to the stack and records it in
+  `docs/TESTING_GUIDE.md` (`spec/DOCUMENTATION_STANDARD.md` §3.3). Plans then
+  execute against that — they do not silently skip validation.
+
+> A plan that adds features but ships **zero** test changes is a smell: either the
+> work was not behavior-changing, or the test discipline was skipped. Call it out
+> in the Executive Report rather than hiding it.
+
 ---
 
 ## 6. Agent Execution Rules (Critical Behavior)
@@ -421,6 +457,7 @@ When an agent is instructed to use this system, it must obey:
 
 3. **Validation required**
    - Never mark a task as completed without running and considering the validations defined in the task file.
+   - For behavior-changing tasks, the validations **must** include the repo's tests and its lint/type-check/format checks, and the task must have added/updated tests for the new behavior (§5.3).
 
 4. **Logging & commits**
    - Always update the task's log.

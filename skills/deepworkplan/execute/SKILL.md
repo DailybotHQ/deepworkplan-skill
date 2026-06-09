@@ -79,7 +79,12 @@ Rules (strict):
    instructions and Execution Checklist.
 3. **Run validations** — execute ALL validation commands. If any fail: STOP, log
    the issue in the task's Completion & Log, do NOT mark `[x]`, report and wait
-   for guidance.
+   for guidance. **Test discipline (`../guide/GUIDE.md` §5.3):** if the task added
+   new core functionality or changed product behavior, confirm it added/updated
+   automated tests for that behavior and that validation runs the repo's tests +
+   lint/type-check (not just the build). If a behavior change shipped with no test
+   coverage where the repo supports tests, treat it as an incomplete gate — add the
+   missing tests before marking `[x]`, or log it as a blocker.
 4. **Mark complete** — only when all acceptance criteria are met and all
    validations pass. Update the README `[ ] → [x]` and fill the task's Completion
    & Log (status, timestamp, summary, files changed, validation results, notes).

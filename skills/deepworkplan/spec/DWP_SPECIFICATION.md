@@ -177,6 +177,41 @@ and scoped; they **MUST NOT** require human judgment to interpret. The concrete
 commands are repo-specific (see `DOCUMENTATION_STANDARD.md` §7) and **MUST** be
 reasoned about per repo.
 
+When the repository has a test, lint, or type-check toolchain (per
+`DOCUMENTATION_STANDARD.md` §7), a task that changes product behavior **MUST** run
+the relevant suite as part of its validation gate. "It builds" or "the file
+exists" is **NOT** a sufficient gate for a behavior change.
+
+### 5.1.1. Test Discipline — New and Changed Behavior
+
+Tests are a first-class part of the loop, not an optional add-on: they are what
+makes the code a Deep Work Plan ships **reliable** and verifiable. Whenever a task
+implements new core functionality or materially changes existing behavior, the
+agent **MUST**:
+
+- Include, in the task's **Acceptance Criteria**, automated test coverage for the
+  new or changed behavior (the happy path plus the meaningful edge/error cases),
+  following the repository's test convention and coverage expectation
+  (`DOCUMENTATION_STANDARD.md` §2.3, §3.1).
+- Include, in the task's **Validation**, the repository's relevant **tests** *and*
+  its **lint / type-check / format** checks — the full code-quality check the repo
+  defines (e.g. `codecheck`, `npm run test && npm run lint`, `pytest && ruff check`),
+  not the build alone.
+- Keep existing tests **green**: if a behavior change breaks a test that covers the
+  affected code, the agent **MUST** update that test to reflect the intended new
+  behavior — it **MUST NOT** delete, skip, or weaken a test merely to force the gate
+  to pass.
+
+Pure-documentation, configuration, or research tasks are **exempt** from creating
+tests but still **MUST** run whatever validation gate the repo defines. The *depth*
+of testing is **proportional** to the size of the change and the repository's
+maturity (`SHOULD` scale, not `MUST` reach a fixed number); what is non-negotiable
+is that a behavior change ships with the coverage and the green checks the
+repository's standard calls for. Where the repository has **no** test or lint
+toolchain, the agent **MUST NOT** silently skip this discipline — it surfaces the
+gap and relies on the toolchain established or **proposed** during onboarding
+(`DOCUMENTATION_STANDARD.md` §3.1, §7).
+
 ### 5.2. Task Completion Protocol
 
 After passing validation and before advancing, the agent **MUST**, in order:

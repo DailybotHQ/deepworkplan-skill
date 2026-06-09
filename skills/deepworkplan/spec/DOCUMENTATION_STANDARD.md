@@ -150,7 +150,7 @@ standard:
 | 0 | `PRODUCT_SPEC.md` | **MUST** | The product spec: the problem the repo solves, who it is for, its key capabilities/features, success criteria, and explicit non-goals — the **why** and **for whom**, not the **how**. Deliberately **non-technical**, high-value context. **Every repository is a product** — even a library, CLI, or internal tool: its consumers and their use cases are its product, and they deserve a non-technical spec. A library that omits this hides the very thing a new agent (or human) most needs to understand first. |
 | 1 | `ARCHITECTURE.md` | **MUST** | System design, components, data flow, key decisions. |
 | 2 | `STANDARDS.md` | **MUST** | Coding conventions, naming, import order, error/logging patterns, forbidden anti-patterns. |
-| 3 | `TESTING_GUIDE.md` | **MUST** | Test framework, file-naming pattern, how to run/scope tests, coverage expectation. |
+| 3 | `TESTING_GUIDE.md` | **MUST** | Test framework, file-naming pattern, how to run/scope tests, coverage expectation. **Where the repo has no test setup, this doc MUST instead specify the *proposed* setup reasoned from the stack** (see §3.3). |
 | 4 | `DEVELOPMENT_COMMANDS.md` | **MUST** | Authoritative command reference (install/test/lint/type-check/build/run), expanding §2.4. |
 | 5 | `SECURITY.md` | **MUST** | Secrets handling, auth model, sensitive-data boundaries, what agents MUST NOT write to docs. |
 | 6 | `PERFORMANCE.md` | **SHOULD** | Performance-critical paths, budgets, profiling guidance. |
@@ -188,6 +188,35 @@ A repository **SHOULD** provide `docs/README.md` as the master index of the
 one-line description, and a "start here" pointer for common tasks. It **MUST** be
 present in the orchestrator hub archetype (the hub's `docs/` is large enough that
 navigation without an index degrades agent performance).
+
+### 3.3. The Testing & Validation Toolchain Is Essential (discover, or propose)
+
+A repository's **test, lint, type-check, and format** toolchain is the backbone of
+the validation gates that make Deep Work Plans reliable (`DWP_SPECIFICATION.md`
+§5.1, §5.1.1). It is therefore **not** part of the optional repo-specific surface to
+record "if present" — establishing it is a conformance concern:
+
+- An onboarding agent **MUST** discover how the repo validates code — its real
+  test runner, test file convention, coverage expectation, and its lint /
+  type-check / format commands — by inspecting manifests, config, and CI, and
+  record the **concrete** values in `TESTING_GUIDE.md`, `DEVELOPMENT_COMMANDS.md`,
+  and the `AGENTS.md` Mandatory Rules + Quick Commands (§2.3, §2.4).
+- Where the repository has **no** testing or linting setup, the agent **MUST NOT**
+  leave `TESTING_GUIDE.md` empty or write "no tests". It **MUST propose** a setup
+  fit to the detected stack — a recommended framework and runner, a test
+  file-naming convention, where tests live, a sensible initial coverage target,
+  and the lint / type-check / format tooling — document that proposal as the
+  **target** in `TESTING_GUIDE.md`, and surface it to the developer. It **SHOULD**
+  scaffold a minimal runnable baseline (the test/lint scripts plus at least one
+  real smoke test) when doing so is non-destructive and the developer consents.
+- The proposal **MUST** be reasoned per repo (§7), proportional to the project's
+  size and maturity, and **MUST NOT** be a generic stub — a tiny CLI does not need
+  the same suite as a service, but every repo deserves a defined way to validate
+  its behavior.
+
+A repository whose `TESTING_GUIDE.md` neither describes a real setup nor specifies
+a concrete proposed one is **not** AI-first conformant: agents would have no
+objective validation gate to run.
 
 ---
 
@@ -299,7 +328,7 @@ this standard or from another repo. An onboarding agent (`AGENT_PROTOCOL.md`)
 
 | Repo-specific value | How the agent reasons about it |
 |---------------------|--------------------------------|
-| **Validation commands** | Derive `test`/`lint`/`type-check`/`build`/`validate` from package manager, lockfiles, CI config (e.g. `codecheck -f` in Docker for Django; `eslint:check && test` for Node; `astro:check` for Astro). |
+| **Validation commands** | Derive `test`/`lint`/`type-check`/`build`/`validate` from package manager, lockfiles, CI config (e.g. `codecheck -f` in Docker for Django; `eslint:check && test` for Node; `astro:check` for Astro). **If the repo has no test/lint commands, propose stack-appropriate ones (§3.3) rather than recording their absence.** |
 | **File paths & structure** | Derive module layout from the actual source tree (`app/` vs `src/` vs `pages/`). |
 | **Test file naming** | Derive from existing tests (`*_test.py`, `*.spec.ts`, `*.test.ts`). |
 | **Stack-specific skills** | Decide which `.agents/skills/` to install based on the stack and the repo's needs. |

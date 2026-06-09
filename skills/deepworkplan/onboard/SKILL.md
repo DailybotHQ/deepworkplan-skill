@@ -146,7 +146,12 @@ Detect, by reading actual files (not by habit):
   `codecheck -f` *inside Docker*, `poetry run pytest`, `ruff check`,
   `npm run biome:check`, `astro check`). Note any command that runs **only in
   CI** or **only inside a container** — flag it as such (this matters for the
-  Quick Commands block and the Phase 8 smoke test).
+  Quick Commands block and the Phase 8 smoke test). **If the repo has no test
+  and/or no lint/type-check command at all, do not just record the absence** —
+  flag it as a gap to be closed in Phase 4 by *proposing* a stack-appropriate
+  toolchain (per `../spec/DOCUMENTATION_STANDARD.md` §3.3). Validation gates are
+  the backbone of reliable Deep Work Plans; a repo with no way to validate its
+  behavior is not yet AI-first.
 - **Package manager.** Infer from the **lockfile that actually exists**
   (`pnpm-lock.yaml` → pnpm, `poetry.lock` → poetry, etc.), never from habit.
 - **Folder layout & modules.** Find the source roots (`src/`, `app/`, `lib/`,
@@ -154,7 +159,9 @@ Detect, by reading actual files (not by habit):
   These become the per-module docs in Phase 5.
 - **Test convention.** File naming (`*_test.py`, `*.spec.ts`, `*.test.ts`),
   framework (pytest / jest / vitest / playwright / go test), and where tests
-  live (co-located vs `tests/`).
+  live (co-located vs `tests/`). If **no tests exist**, note that — Phase 4 will
+  *propose* a convention and framework reasoned from the stack rather than
+  leaving testing undefined.
 - **Deployment / runtime shape.** Containerized? Serverless? Static site?
   Long-running service? Library/package? This informs `ARCHITECTURE.md` and
   `PERFORMANCE.md`.
@@ -262,7 +269,15 @@ Each doc must contain **real** content:
   error/logging patterns, and forbidden anti-patterns (carry forward existing
   linter config).
 - `TESTING_GUIDE.md` — the **real** test framework + file-naming pattern + how
-  to run/scope tests + coverage expectation.
+  to run/scope tests + coverage expectation. **If the repo has no test/lint
+  setup, do NOT write "no tests" or leave it empty** — *propose* a
+  stack-appropriate setup (recommended framework + runner, test file convention,
+  where tests live, a sensible initial coverage target, and the lint /
+  type-check / format tooling), document it as the **target**, and surface it to
+  the developer. When non-destructive and the developer consents, scaffold a
+  minimal runnable baseline (the test/lint scripts + at least one real smoke
+  test). See `../spec/DOCUMENTATION_STANDARD.md` §3.3. This is essential, not
+  cosmetic: it is what gives every future Deep Work Plan a real validation gate.
 - `DEVELOPMENT_COMMANDS.md` — the authoritative, **verbatim** command reference
   (install/test/lint/type-check/build/run), expanding the AGENTS.md Quick
   Commands; flag CI/Docker-only commands.
@@ -479,6 +494,8 @@ After generating, run this checklist in the target repo. On any failure,
    (the eight MUST files at minimum — `PRODUCT_SPEC` included — plus
    `docs/README.md`). Grep for leftover
    placeholder markers (`<...>`, "TODO", "your command here") and fix any.
+   **`TESTING_GUIDE.md` MUST describe either a real test/lint setup or a concrete
+   *proposed* one (§3.3)** — never empty, never "no tests".
 4. **Every major source module has a `README.md`** (and complex modules have a
    `docs/`).
 5. **`.agents/`** has `agents/`, `commands/`, `skills/`, `docs/`, `settings.json`
@@ -494,7 +511,10 @@ After generating, run this checklist in the target repo. On any failure,
 7. **Smoke test — run the repo's OWN detected validation command once** to
    confirm recon was accurate (e.g. the lint or test command). If it cannot run
    (e.g. Docker required and unavailable, network-gated CI command), **note why**
-   in the report instead of silently skipping.
+   in the report instead of silently skipping. If the repo had **no** validation
+   toolchain and you proposed (and scaffolded) one, run the proposed test/lint
+   command to confirm the baseline is real; if you only documented the proposal
+   without scaffolding, note it as a recommended follow-up in the report.
 8. **Archetype-specific:** if orchestrator hub, confirm the sub-repo navigation
    index + multi-project commit workflow are documented and `ECOSYSTEM_CONTEXT.md`
    exists.

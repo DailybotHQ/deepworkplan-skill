@@ -74,6 +74,7 @@ git check-ignore tmp >/dev/null 2>&1 && echo "tmp gitignored: ok" || echo "tmp g
 Then, by reading rather than grepping:
 
 - **Real commands.** Open `AGENTS.md` and confirm the Quick Commands actually correspond to this repo (the real package manager, test, lint, and build commands). Flag any command that could not run here.
+- **Testing toolchain defined.** Open `docs/TESTING_GUIDE.md` and confirm it describes either a **real** test/lint setup (framework, file convention, how to run, coverage expectation) or — for a repo without one — a concrete **proposed** stack-appropriate setup (`../spec/DOCUMENTATION_STANDARD.md` §3.3). An empty file, a generic stub, or "no tests" **fails** this check: the repo then has no objective validation gate for future plans.
 - **Catalog matches disk.** Confirm `.agents/docs/` (the skills/agents catalog) lists exactly the skills, agents, and commands that exist under `.agents/` — no dead links, no missing entries.
 - **Skill resolvable.** Confirm the DeepWorkPlan skill is installed or referenced so its sub-skills can be invoked.
 
@@ -82,6 +83,7 @@ Then, by reading rather than grepping:
 For each plan under `.dwp/plans/PLAN_{name}/`:
 
 - Every task file declares an explicit scope, **acceptance criteria**, and at least one **validation gate** (a runnable command or check).
+- **Test discipline.** Tasks that add new core functionality or change product behavior require automated test coverage in their Acceptance Criteria and run the repo's tests + lint/type-check in their Validation (`DWP_SPECIFICATION.md` §5.1.1). A behavior-changing plan with zero test work is a finding, not a pass.
 - `PROGRESS.md` exists and is updated, so the plan is resumable.
 - The two mandatory final tasks are present — Skills & Agents Discovery and the Executive Report.
 - Tasks re-anchor to the plan goal before executing.
