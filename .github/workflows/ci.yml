@@ -37,9 +37,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run shellcheck on shipped + repo-dev scripts
         run: |
-          # setup.sh is the only repo-root script; shared/context.sh is the
-          # only shipped runtime script. Lint both, plus any scripts/*.sh.
-          shellcheck setup.sh skills/deepworkplan/shared/context.sh
+          # setup.sh is the only repo-root script; the shipped runtime scripts
+          # are shared/context.sh and verify/conformance.sh. Lint all of them,
+          # plus any scripts/*.sh.
+          shellcheck setup.sh skills/deepworkplan/shared/context.sh skills/deepworkplan/verify/conformance.sh
           if ls scripts/*.sh >/dev/null 2>&1; then
             shellcheck scripts/*.sh
           fi
