@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.8.0] — 2026-06-09
+
+### Changes
+
+- Merge pull request #14 from DailybotHQ/feat/test-validation-discipline
+- feat(spec): make test & validation discipline a first-class part of the loop
+
+
 ## [2.7.0] — 2026-06-07
 
 ### Changes
