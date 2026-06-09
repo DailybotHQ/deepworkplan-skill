@@ -19,7 +19,7 @@ baseline AI-first conformance.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.0.0 |
+| **Version** | 2.1.0 |
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `methodology-spec/ADDONS.md` |
 | **License** | MIT |
@@ -201,4 +201,4 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.1.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

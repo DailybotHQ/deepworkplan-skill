@@ -1,7 +1,7 @@
-# DeepWorkPlan Methodology Specification — v2.0.0
+# DeepWorkPlan Methodology Specification — v2.1.0
 
 > The canonical normative standard for an **AI-first autopilot repository** and the
-> **Deep Work Plan (DWP)** workflow. Version **2.0.0**. This v2 spec **supersedes**
+> **Deep Work Plan (DWP)** workflow. Version **2.1.0**. This v2 spec **supersedes**
 > the v1 baseline specs in `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/`
 > (and the upstream `repo-ready/` and `opensource` drafts). Reconciled from that
 > baseline plus the 6 (+1) new ideas per `../RECONCILIATION.md`.
@@ -32,6 +32,15 @@ orchestrator hub — are addressed throughout.
 7. **Opt-in addons** mechanism, devcontainer first (idea #7).
 8. Version **1.0.0 → 2.0.0** (major, breaking).
 
+## Minor revisions in 2.1.0
+
+- **Test & validation discipline made first-class** (minor, additive): tasks that
+  add or change product behavior MUST carry automated test coverage in their
+  acceptance criteria and run the repo's tests + lint/type-check in their
+  validation gate (`DWP_SPECIFICATION.md` §5.1.1); onboarding MUST define a real
+  or proposed test/lint toolchain so every future plan has an objective gate
+  (`DOCUMENTATION_STANDARD.md` §3.3).
+
 ---
 
-*DeepWorkPlan methodology v2.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*DeepWorkPlan methodology v2.1.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
