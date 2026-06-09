@@ -9,6 +9,16 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.9.0] — 2026-06-09
+
+### Changes
+
+- Merge pull request #16 from DailybotHQ/docs/spec-version-2.1.0
+- Merge branch 'main' into docs/spec-version-2.1.0
+- feat(onboard): add plan-driven onboarding for large repos (Phase 2b)
+- chore(skill): dogfood DWP by adding the .agents/ kit + .claude symlink
+
+
 ## [2.8.1] — 2026-06-09
 
 ### Changes
