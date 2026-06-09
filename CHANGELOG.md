@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.11.0] — 2026-06-09
+
+### Changes
+
+- Merge pull request #19 from DailybotHQ/feat/next-level-spec
+- feat(verify): automated conformance checker (conformance.sh) with bats coverage
+- feat(skill): spec 2.2.0 — plan state layer, rigor tiers, resume protocol, agent-workspace archetype
+
+
 ## [2.10.1] — 2026-06-09
 
 ### Changes
