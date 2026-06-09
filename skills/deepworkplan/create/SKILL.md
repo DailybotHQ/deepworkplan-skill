@@ -226,7 +226,13 @@ Follow `../guide/GUIDE.md`. Create:
 6. **User-defined task files** — `N.task_{title}.md`, each with Context, Read
    Before Starting (optional), Goal, Instructions (with re-anchoring),
    Acceptance Criteria, Outputs (optional), Validation, Rollback (optional),
-   Execution Checklist, Completion & Log.
+   Execution Checklist, Completion & Log. For any task that adds new core
+   functionality or changes product behavior, bake the **test discipline** into
+   it (`../guide/GUIDE.md` §5.3): its Acceptance Criteria **must** require
+   automated test coverage for the new/changed behavior, and its Validation
+   **must** run the repo's tests plus lint/type-check/format checks (not the
+   build alone). Where related work is substantial, prefer a dedicated
+   `N.task_add_tests_for_{feature}.md` task right after the implementation task.
 
 **Two mandatory final tasks (always):**
 - **Skills & Agents Discovery** (MANDATORY, **second-to-last**, task `N-1`,
@@ -245,7 +251,9 @@ Add to the README a note: "Every plan includes Skills & Agents Discovery
 
 **Quality gates:** atomic, ordered tasks; both mandatory files present;
 `analysis_results/` exists; `PROGRESS.md` exists; numbering correct (user tasks →
-skills discovery → executive report).
+skills discovery → executive report); behavior-changing tasks carry test coverage
+in their Acceptance Criteria and tests + lint/type-check in their Validation
+(`../guide/GUIDE.md` §5.3).
 
 **Accelerate generation with team agents (Claude Code only, automatic):** for
 5+ user-defined task files, the lead creates README/PROMPTS/PROGRESS/
