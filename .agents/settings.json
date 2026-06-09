@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(python3 scripts/validate-frontmatter.py)",
+      "Bash(shellcheck:*)",
+      "Bash(bats:*)",
+      "Bash(bash skills/deepworkplan/shared/context.sh)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Read",
+      "Grep",
+      "Glob"
+    ],
+    "deny": []
+  }
+}
