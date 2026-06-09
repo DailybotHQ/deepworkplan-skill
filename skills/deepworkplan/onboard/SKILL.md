@@ -53,6 +53,10 @@ work reliably without per-session human hand-holding.
   **Presets are reasoning aids, not templates.**
 - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the DWP methodology you reference
   when wiring the skill and (for hubs) the orchestrator/child-DWP capability.
+- [`templates/onboarding-plan.md`](templates/onboarding-plan.md) — the
+  **reasoning aid** for the plan-driven path (Phase 2b): the shape of a "finish
+  onboarding myself" Deep Work Plan a **large** repo emits instead of generating
+  everything inline. A template to reason from, **never** to copy verbatim.
 
 > **Ship purity:** every path this flow references is relative inside
 > `skills/deepworkplan/` (`../shared/*`, `presets/*`, `../guide/GUIDE.md`,
@@ -94,6 +98,13 @@ Plus, opt-in (Phase 7b): any accepted **addons** (the first is devcontainer).
 Run the phases in order. Write your working notes to `.dwp/onboard/RECON.md` as
 you go so generation is auditable and resumable. Treat every "detect" step as
 **reason about the real repo**, never assume.
+
+After recon and the archetype decision, **Phase 2b** picks the onboarding
+*strategy*: generate everything **inline** in this session (small/medium repos —
+the default), or, for a **large** repo, **emit a Deep Work Plan that completes
+the onboarding task-by-task** with per-artifact gates and full resumability (the
+recommended path at scale). The phase descriptions below are written for the
+inline path; on the plan-driven path the **same work** runs as plan tasks.
 
 ## Phase 0 — Preconditions & consent
 
@@ -204,6 +215,68 @@ Classify the repo using `../spec/ARCHETYPES.md` signals (summarized in
 
 Record the decision and the evidence in `.dwp/onboard/RECON.md`. Every phase
 below branches on this decision where noted.
+
+## Phase 2b — Onboarding strategy: inline vs plan-driven (scale decision)
+
+Onboarding a repo means analyzing the **whole** codebase and **documenting all
+of it**: every `docs/` category, a per-module `README.md` for each major module,
+and the full `.agents/` kit (agents, skills, commands, catalogs). For a small or
+medium repo, generating all of that **inline** in this session (Phases 3–8) is
+the right, fast default.
+
+For a **large** repo, doing it all inline is the wrong tool: it strains a single
+context window, gives no per-artifact validation gate, can't be audited
+task-by-task, and loses all progress if the session is interrupted. That is
+**exactly** the problem Deep Work Plans solve. So for a large repo, **onboarding
+becomes its own Deep Work Plan** — the repo's first plan is "finish onboarding
+myself," executed task-by-task with gates and full resumability. This is the
+methodology dogfooding itself: the onboarding uses the very loop it installs.
+
+**Decide the strategy from recon (reason, don't default).** Choose
+**plan-driven** when a clear majority of these hold (or the developer asks):
+
+- More than ~8 major modules needing their own per-module docs (Phase 5).
+- A monorepo / multi-package workspace, or an orchestrator hub.
+- Docs + per-module docs + `.agents/` add up to ~15+ artifacts to generate.
+- The work plainly won't fit one focused session, or must survive across
+  sessions/agents.
+
+Otherwise stay **inline** (the typical case) — run Phases 3–8 directly.
+
+**The plan-driven path:**
+
+1. Still complete **Phase 1 recon** and **Phase 2 archetype** here — the recon
+   (`.dwp/onboard/RECON.md`) is the analysis the plan is built from. Never skip
+   it.
+2. Generate **`AGENTS.md` + `CLAUDE.md` (Phase 3) up front** (or as task 1) so
+   the plan's tasks have the index and mandatory rules to anchor to.
+3. Instead of generating the rest inline, **emit a Deep Work Plan draft** under
+   `.dwp/drafts/` whose atomic tasks are reasoned from recon — see
+   [`templates/onboarding-plan.md`](templates/onboarding-plan.md) for the shape
+   (a **reasoning aid**, not a copy-paste). Typical decomposition:
+   - one task **per `docs/` category** (Phase 4), each gated on "no placeholders
+     + real commands + links resolve";
+   - **one task per major module** for its `README.md` (Phase 5) — the part that
+     scales worst inline;
+   - one task for the **`.agents/` kit** (agents + skills + commands + catalogs,
+     Phase 6), gated on "catalog matches disk";
+   - one task to **install the skill + scaffold `.dwp/` and `tmp/`** (Phase 7);
+   - the **Phase 8 self-check as the mandatory final task**, alongside the spec's
+     two mandatory final tasks (Skills & Agents Discovery, Executive Report).
+
+   Each task carries explicit **Acceptance Criteria** and a runnable
+   **validation gate** (the repo's real lint / `md`-check / test).
+4. Hand off to the normal loop: refine the draft with `/dwp-refine`, finalize,
+   then `/dwp-execute` it task-by-task. It is resumable with `/dwp-resume` and
+   inspectable with `/dwp-status`.
+
+> The Phase 0 rules — non-destructive, idempotent, **no placeholders**, consent —
+> apply **identically** on the plan-driven path. They move into each task's
+> Acceptance Criteria and gate rather than disappearing. A plan-driven onboarding
+> that ships a placeholder doc is the same failure as an inline one.
+
+Record the chosen strategy (inline vs plan-driven) and its evidence in
+`.dwp/onboard/RECON.md`.
 
 ## Phase 3 — Generate `AGENTS.md` + `CLAUDE.md` symlink
 
@@ -483,7 +556,10 @@ See the dedicated section below.
 # Phase 8 — Self-check / validation (run in the TARGET repo)
 
 After generating, run this checklist in the target repo. On any failure,
-**fix-then-recheck** before reporting done.
+**fix-then-recheck** before reporting done. On the **plan-driven path**
+(Phase 2b), this checklist **is the plan's mandatory final task** — run it after
+the plan's other tasks complete, gating the whole onboarding before reporting
+done.
 
 1. **`AGENTS.md` exists** and contains a Quick Commands block whose commands are
    **real and runnable** (not placeholders). Spot-check that referenced commands
@@ -540,6 +616,10 @@ the smoke-test result, and any deferred items — pointing them at
   writes** (Phase 0.5).
 - `trust` / `auto` — proceed without per-step confirmations, but still get the
   one consent gate in Phase 0 before the first write and still surface addons.
+- `plan` / "onboard this as a deep work plan" — force the **plan-driven path**
+  (Phase 2b) regardless of size: do recon + `AGENTS.md`, then emit an onboarding
+  Deep Work Plan and hand off to `/dwp-execute`. The flow **auto-selects** this
+  path for large repos even without the flag.
 
 ## Failure-mode guardrails (do not violate)
 
