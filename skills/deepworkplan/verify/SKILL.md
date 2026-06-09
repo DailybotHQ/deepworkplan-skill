@@ -19,6 +19,24 @@ normative criteria are defined in the specification's Conformance document
 
 - [`../shared/context.sh`](../shared/context.sh) — resolve the repo root and `.dwp/`.
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans live at `.dwp/plans/PLAN_{name}/`.
+- [`conformance.sh`](conformance.sh) — the mechanical conformance layer (run it first).
+- [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) — the machine-readable state layer the desync checks enforce.
+
+## Run the mechanical layer first
+
+Start every verification by running the automated checker — it covers the
+structural checks below objectively, exits `0`/`1`, and detects
+markdown-vs-`state.json` desync:
+
+```bash
+bash {skill_dir}/verify/conformance.sh            # repo + every plan
+bash {skill_dir}/verify/conformance.sh --repo-only
+bash {skill_dir}/verify/conformance.sh --plan PLAN_{name}
+```
+
+Its exit code is CI-friendly: a repo can run it as a pipeline gate. Then layer
+the judgment checks (real commands, real toolchain, catalog-matches-disk) on
+top — the script verifies *structure*; you verify *substance*.
 
 ## Parameter support
 
@@ -87,6 +105,11 @@ For each plan under `.dwp/plans/PLAN_{name}/`:
 - `PROGRESS.md` exists and is updated, so the plan is resumable.
 - The two mandatory final tasks are present — Skills & Agents Discovery and the Executive Report.
 - Tasks re-anchor to the plan goal before executing.
+- **State layer (when present).** `state.json` and `manifest.json` parse, and
+  `state.json` agrees with the README checkboxes — on desync the markdown wins
+  and the state file must be regenerated (`../spec/PLAN_STATE.md` §5).
+  `conformance.sh` automates this. In a workspace without git
+  (`../spec/ARCHETYPES.md` §4) the state layer is REQUIRED, not optional.
 
 ## Output
 
