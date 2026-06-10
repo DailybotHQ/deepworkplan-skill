@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.12.0] — 2026-06-10
+
+### Changes
+
+- Merge pull request #20 from DailybotHQ/feat/dailybot-event-model
+- feat(addon): dailybot plan lifecycle event model — kickoff, blocked, and state-derived payloads
+
+
 ## [2.11.0] — 2026-06-09
 
 ### Changes

@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-design-system
 description: Optional DeepWorkPlan addon that gives a frontend/UI repo a DESIGN.md (under docs/, indexed from AGENTS.md) — a Markdown design-system file any coding agent reads to generate UI consistent with the repo's OWN design system. Reasons about the repo's ACTUAL design tokens (CSS custom properties, Tailwind config, token files, component styles) rather than copying a brand file; documents colors & roles, typography, spacing/layout, elevation, shapes, components, responsive behavior, do's & don'ts, and an agent prompt guide; checks contrast (WCAG AA) and token integrity. Frontend-scoped and default-on when a UI/design system is detected (applied in trust mode, strongly recommended in guided mode; never offered for backend/CLI/library-only repos); never required for baseline conformance; reconciles an existing DESIGN.md instead of clobbering it. Use when the developer wants agents to produce on-brand, consistent UI for a frontend repo.
-version: "2.11.0"
+version: "2.12.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
