@@ -96,6 +96,25 @@ with explicit acceptance, and each reconciled if already present (§7):
   documents).
 - A `key` (credential) field in that file is a **hard error** — the addon
   **MUST NOT** write credentials anywhere.
+- The same file **MAY** carry the committed report policy that the hook layer
+  (§3.4) honors: `"report": {"min_interval_minutes": <n>, "nudge": true|false}`.
+
+### 3.4 Optional harness hook enforcement
+
+- When the installed Dailybot agent skill is **>= 1.6.0** and the Dailybot CLI
+  is **>= 1.12.0**, the addon **SHOULD** offer — and **MAY**, with explicit
+  acceptance, commit — repo-level harness hook configs whose entries invoke the
+  `dailybot hook` lifecycle commands (`session-start`, `activity`,
+  `post-commit`, `stop`), e.g. Claude Code `.claude/settings.json`, Cursor
+  `.cursor/hooks.json`.
+- The hook templates, output dialects, anti-noise gates, and uninstall path are
+  owned by the Dailybot skill's `report/hooks.md` — the addon **MUST** defer to
+  it and **MUST NOT** duplicate or diverge from those templates.
+- The addon **MUST NOT** write hook configs without explicit acceptance, and
+  **MUST** merge into existing config files — never overwrite (§7). Existing
+  `dailybot hook` entries **MUST** be preserved, not duplicated.
+- When versions are older, the addon **MUST** skip this offer (the §5 wiring
+  stands alone) and **MAY** suggest `dailybot upgrade` once.
 
 ---
 
@@ -174,6 +193,12 @@ The report command shape is
   only adds optional, conditional reporting hooks described in the repo's docs.
 - The addon **SHOULD** respect Dailybot's per-repo opt-out
   (`.dailybot/disabled`): if present, no report is sent — for any event.
+- **Synergy with hook enforcement (§3.4):** a successful
+  `dailybot agent update` — any lifecycle event — resets the Dailybot hook
+  ledger, so the two layers never double-report. The hooks are the
+  deterministic backstop for a missed lifecycle event; a hook reminder
+  mid-plan **MUST** be answered with either a lifecycle-appropriate report or
+  `dailybot hook dismiss`, never ignored silently.
 
 ---
 
@@ -186,6 +211,9 @@ The report command shape is
   **not** enter a diagnostic loop. This mirrors the Dailybot skill's own
   non-blocking guarantee.
 - Plan execution **MUST** succeed regardless of whether the report was sent.
+- The `dailybot hook` commands (§3.4) read only local state and always exit
+  `0` by contract, so installing hook enforcement cannot violate this rule;
+  the hooks also honor `.dailybot/disabled` and the committed report policy.
 
 ---
 
@@ -193,8 +221,8 @@ The report command shape is
 
 - The addon **MUST** detect existing setup before acting: an already-installed
   Dailybot skill, a `dailybot` CLI on PATH, a committed `.dailybot/profile.json`
-  / `.dailybot_example/profile.json`, or an existing report step in the repo's
-  DWP docs.
+  / `.dailybot_example/profile.json`, an existing report step in the repo's
+  DWP docs, or harness hook configs already carrying `dailybot hook` entries.
 - Where a piece already exists, the addon **MUST** preserve it and only fill
   gaps — it **MUST NOT** reinstall, re-prompt auth, overwrite a working identity,
   or duplicate the report step.
@@ -233,8 +261,10 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Dailybot skill: [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)
-  — `SKILL.md`, `shared/auth.md`, `report/SKILL.md`
+  — `SKILL.md`, `shared/auth.md`, `report/SKILL.md`, `report/hooks.md` (hook
+  enforcement templates, >= 1.6.0)
 - Dailybot CLI: [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli), PyPI `dailybot-cli`
+  — `docs/AGENT_HOOKS.md` (the `dailybot hook` command group + report ledger, >= 1.12.0)
 - [`../../spec/PLAN_STATE.md`](../../spec/PLAN_STATE.md) (the state layer the payloads derive from), `../../spec/AGENT_PROTOCOL.md` §7 (unattended profile + stop conditions)
 
 ---

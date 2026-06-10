@@ -31,6 +31,9 @@ command -v dailybot >/dev/null 2>&1 && dailybot status --auth 2>&1
 
 # Has Dailybot been disabled for this repo? (respect the opt-out — send nothing)
 ls .dailybot/disabled 2>/dev/null
+
+# Are harness hooks already wired? (the command string is the uninstall marker)
+grep -l 'dailybot hook' .claude/settings.json .agents/settings.json .cursor/hooks.json 2>/dev/null
 ```
 
 Decision notes:
@@ -143,9 +146,45 @@ Decision notes:
 
 ---
 
+## 4b. Offer deterministic hook enforcement (skill >= 1.6.0, CLI >= 1.12.0)
+
+The §4 wiring is prompt-layer — it relies on the model remembering. When the
+installed Dailybot skill/CLI versions support it, also offer (opt-in, show the
+exact config first) to commit the repo-level harness hook config so the harness
+itself reminds the agent about unreported work at end of turn:
+
+```bash
+# Version gate — only offer when both hold
+dailybot --version          # >= 1.12.0 (the `dailybot hook` command group)
+grep -m1 'version:' ~/.*/skills/dailybot/SKILL.md   # >= 1.6.0 (report/hooks.md)
+```
+
+Reason against the repo, then merge (never overwrite) the config the Dailybot
+skill's `report/hooks.md` documents — Claude Code `.claude/settings.json` (or
+`.agents/settings.json` where `.claude → .agents`), Cursor `.cursor/hooks.json`,
+other harnesses per its table. Decision notes:
+
+- **Defer the mechanics** — templates, output formats (`--format claude|cursor|generic`),
+  anti-noise gates, and uninstall all live in the Dailybot skill's
+  `report/hooks.md`; do not duplicate them into the repo docs.
+- **No double-reporting by construction:** every successful
+  `dailybot agent update` (any §4 lifecycle event) resets the hook ledger.
+  The hooks are the deterministic backstop for a missed lifecycle event.
+- **Document the response contract** in the repo's reporting note: a hook
+  reminder is answered with a report (if a meaningful unit is done) or
+  `dailybot hook dismiss` (if not) — never ignored silently, never blocking.
+- **Committed policy knobs** live in `.dailybot/profile.json`:
+  `"report": {"min_interval_minutes": 30, "nudge": false}` turns reminders off
+  for the repo while keeping manual reporting.
+- **Older versions:** skip the offer, suggest `dailybot upgrade` once, and let
+  the §4 wiring stand alone.
+
+---
+
 ## 5. Consent + never-block rules (do not violate)
 
-- **Opt-in:** install nothing and write no identity without explicit acceptance.
+- **Opt-in:** install nothing, write no identity, and commit no hook config
+  without explicit acceptance.
 - **Defer auth:** never prompt for or store credentials; point at the Dailybot
   skill's `shared/auth.md`.
 - **Verified install only:** never recommend `curl ... install.sh | bash`
