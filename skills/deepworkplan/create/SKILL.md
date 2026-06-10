@@ -307,6 +307,14 @@ For a full plan, report success and the location
 sub-skill (`../execute/SKILL.md`); (2) review the README first, then ask again;
 (3) done for now → tell them to run `/dwp-execute {name}` later.
 
+**Dailybot kickoff (only when the Dailybot addon is wired — best-effort,
+non-blocking):** after the plan is materialized and approved, send a **regular**
+(non-milestone) kickoff report via the dailybot `report` sub-skill — "Starting:
+\<what is being built and why it matters\>" — per the addon's lifecycle event
+model (`../addons/dailybot/SPEC.md` §5.1). One kickoff per plan; skip silently
+if Dailybot is absent, unauthenticated, or `.dailybot/disabled` exists. Never
+block on this.
+
 For `refined-draft-only` mode, report the single refined draft saved at
 `.dwp/drafts/PLAN_{name}_draft_refined.md` and the next step: run
 `/dwp-create from PLAN_{name}_draft_refined.md` to build the final plan.

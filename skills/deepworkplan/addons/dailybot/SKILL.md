@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-dailybot
-description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill and/or the Dailybot CLI, and wiring a best-effort progress/milestone report into DWP execution so a plan completion surfaces to the team. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
+description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill (DailybotHQ/agent-skill) and/or the Dailybot CLI (DailybotHQ/cli), and wiring the plan lifecycle into best-effort agent updates - kickoff when a plan starts, significant task completions, a blocked report when an unattended run halts, and a milestone on plan completion - with payloads derived from the plan's state layer. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
 version: "2.11.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -80,9 +80,10 @@ flow applies, defer to it rather than prompting yourself.
   - `npx skills add DailybotHQ/agent-skill` (cross-agent, recommended), or
   - OpenClaw native: `openclaw skills install dailybot`, or
   - `git clone https://github.com/DailybotHQ/agent-skill.git` + run its `setup.sh`.
-- **Dailybot CLI** (the underlying bridge; the skill installs it on first use
-  via its own SHA-256-verified consent flow — you generally do **not** install
-  it separately, but these are the supported paths if asked):
+- **Dailybot CLI** (the underlying bridge, from
+  [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli); the skill installs it
+  on first use via its own SHA-256-verified consent flow — you generally do
+  **not** install it separately, but these are the supported paths if asked):
   - `curl -sSL https://cli.dailybot.com/install.sh | bash` — pair with the
     **checksum/consent verification** the Dailybot skill documents in
     `shared/auth.md` (cross-origin diff + `.sha256` sidecar check; never run it
@@ -103,20 +104,33 @@ credential. Authentication is owned by the Dailybot skill's
 Point the developer at that flow; the skill handles login, profile, and the
 HTTP fallback. If they decline auth, skip reporting — never block.
 
-### Step 3 — Wire the optional progress-report step into DWP execution
+### Step 3 — Wire the plan lifecycle events into DWP execution
 This is the integration value. Reasoning guidance is in
 `templates/INTEGRATION.md` — adapt it to the repo; do not copy verbatim.
 
 - Add a short, clearly-optional note to the repo's DWP execution docs (e.g. the
   generated `AGENTS.md` reporting section and/or `docs/AI_AGENT_COLLAB.md`)
-  stating: **when the Dailybot skill is installed, a DWP plan completion SHOULD
-  emit a Dailybot report** — a **milestone** report via the dailybot `report`
-  sub-skill (`dailybot agent update ... --milestone --json-data ...`),
-  describing **what was built**, never "completed a plan."
-- The step MUST be **best-effort and conditional**: it fires only if the
+  describing the **four lifecycle events** (SPEC §5.1) that fire when the
+  Dailybot skill is installed:
+  1. **Kickoff** (SHOULD, regular) — when a plan is materialized and approved,
+     report *what is being built and why* ("Starting: …").
+  2. **Significant task** (MAY, regular) — a feature/bug fix/major refactor
+     completes; intermediate setup tasks are never reported.
+  3. **Blocked** (SHOULD, regular with `blockers`) — the plan halts on a stop
+     condition and `state.json.blocked` is populated (typical of unattended
+     runs): the team sees *what is stuck and what it needs* in the standup
+     instead of discovering a silent overnight halt.
+  4. **Completion** (SHOULD, the only **milestone**) — via the dailybot
+     `report` sub-skill (`dailybot agent update ... --milestone --json-data
+     ...`), describing **what was built**, never "completed a plan."
+- Where the plan carries the machine-readable state layer
+  (`../../spec/PLAN_STATE.md`), derive the `--json-data` payload from
+  `state.json`: `completed` from completed tasks (phrased as outcomes),
+  `in_progress` from the current task, `blockers` from `state.json.blocked`.
+- Every event MUST be **best-effort and conditional**: it fires only if the
   Dailybot skill/CLI is present and authenticated, and it **MUST NOT block**
-  `execute` if Dailybot is absent, unauthenticated, or unreachable — warn once
-  and continue (see SPEC §Never-block).
+  `create` or `execute` if Dailybot is absent, unauthenticated, or unreachable —
+  warn once and continue (see SPEC §Never-block).
 - Optionally commit a repo identity so every contributor/agent signs reports the
   same way: `.dailybot/profile.json` (or the gitignore-friendly
   `.dailybot_example/profile.json` template) — **never** with a `key` field
