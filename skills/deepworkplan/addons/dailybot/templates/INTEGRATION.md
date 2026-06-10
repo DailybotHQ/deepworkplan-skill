@@ -71,38 +71,67 @@ the developer the Dailybot skill drives this:
 
 ---
 
-## 4. Wire the OPTIONAL report step into DWP execution
+## 4. Wire the plan lifecycle events into DWP execution
 
-The integration value: a **plan completion** emits a **milestone** report when
-Dailybot is present. Reason the exact wording for the repo, then add a short,
-clearly-optional note to the repo's reporting docs (the generated `AGENTS.md`
-reporting section and/or `docs/AI_AGENT_COLLAB.md`). The shape to convey:
+The integration value: the **plan lifecycle surfaces to the team** when
+Dailybot is present (SPEC §5.1). Reason the exact wording for the repo, then
+add a short, clearly-optional note to the repo's reporting docs (the generated
+`AGENTS.md` reporting section and/or `docs/AI_AGENT_COLLAB.md`). The shape to
+convey:
 
 > **Optional — Dailybot reporting (best-effort, never blocks):** when the
-> Dailybot skill/CLI is installed and authenticated, on **DWP plan completion**
-> send a **milestone** report via the dailybot `report` sub-skill, describing
-> what was built. If Dailybot is absent, unauthenticated, or unreachable — or if
-> `.dailybot/disabled` is present — skip silently and continue. Reporting MUST
-> NOT block `execute`.
+> Dailybot skill/CLI is installed and authenticated, DWP work emits agent
+> updates at four points — **kickoff** (plan approved: what is being built),
+> **significant task** (a feature/fix ships mid-plan), **blocked** (the plan
+> halts and `state.json.blocked` says what it needs), and **completion** (the
+> only **milestone**: what was built). If Dailybot is absent, unauthenticated,
+> or unreachable — or if `.dailybot/disabled` is present — skip silently and
+> continue. Reporting MUST NOT block `create` or `execute`.
 
-Reference command shape (the actual content is reasoned from the work, not
+Reference command shapes (the actual content is reasoned from the work, not
 templated; route through the `report` sub-skill when the skill is installed):
 
 ```bash
-# Conditional + best-effort — only when the CLI is present and authed.
+# Guard shared by every event — only when the CLI is present and authed.
 if command -v dailybot >/dev/null 2>&1 && [ ! -f .dailybot/disabled ]; then
+
+  # 1) Kickoff (regular) — plan materialized and approved
+  dailybot agent update "Starting: <what is being built and why it matters>" \
+    --json-data '{"completed":[],"in_progress":["<the goal, as an outcome>"],"blockers":[]}' \
+    --metadata '{"model":"<your-model>","repo":"<repo>","branch":"<branch>"}' \
+    || echo "Dailybot report skipped (non-blocking)."
+
+  # 2) Significant task (regular) — a feature/fix shipped mid-plan
+  dailybot agent update "<what shipped, in plain standup English>" \
+    --json-data '{"completed":["<outcome>"],"in_progress":["<next outcome>"],"blockers":[]}' \
+    || echo "Dailybot report skipped (non-blocking)."
+
+  # 3) Blocked (regular, blockers populated) — derive from state.json.blocked
+  dailybot agent update "<what is stuck and what it needs>" \
+    --json-data '{"completed":["<done so far>"],"in_progress":[],"blockers":["<reason> — needs <needs>"]}' \
+    || echo "Dailybot report skipped (non-blocking)."
+
+  # 4) Completion (the only --milestone)
   dailybot agent update "<what was built, in plain standup English>" \
     --milestone \
     --json-data '{"completed":["..."],"in_progress":[],"blockers":[]}' \
     --metadata '{"model":"<your-model>","repo":"<repo>","branch":"<branch>"}' \
-    || echo "Dailybot report skipped (non-blocking)."  # never fail execute on this
+    || echo "Dailybot report skipped (non-blocking)."
 fi
 ```
 
 Decision notes:
 
-- **Milestone vs regular:** plan completion → `--milestone`. A single mid-plan
-  task, if reported at all, is a regular report (no `--milestone`).
+- **Milestone vs regular:** plan completion → `--milestone`, and nothing else.
+  Kickoff, significant tasks, and blocked are regular reports.
+- **Payload from the state layer:** when the plan carries `state.json`
+  (`PLAN_STATE.md`), derive `--json-data` from it — `completed` from completed
+  tasks phrased as outcomes, `in_progress` from the current task, `blockers`
+  from `state.json.blocked` (`reason`, `needs`). Without the state layer,
+  derive from the plan README's checkboxes. Never maintain a separate progress
+  ledger just for reporting.
+- **One kickoff, one completion** per plan — re-runs and resumes do not
+  re-announce the kickoff.
 - **Writing rules:** describe outcomes + why, English, 1–3 sentences. Never
   "completed a plan", never file paths / git stats / branch names / plan IDs.
   Let the dailybot `report` sub-skill enforce the style.

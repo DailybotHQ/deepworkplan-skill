@@ -125,8 +125,12 @@ passes `trust` / `auto`):
   continue?" between tasks.
 - **Stop only on a real boundary:** a failed validation gate, genuine ambiguity,
   a blocking dependency, an unsafe/destructive action outside the plan's scope, or
-  plan completion. On a stop, log the reason in the task's Completion & Log and
-  report.
+  plan completion. On a stop, log the reason in the task's Completion & Log,
+  populate `state.json.blocked` (task, reason, what it needs), and report.
+  **When the Dailybot addon is wired**, also send a **regular** report with the
+  `blockers` field derived from `state.json.blocked` — the team sees what is
+  stuck and what it needs instead of discovering a silent halt
+  (`../addons/dailybot/SPEC.md` §5.1). Best-effort, never blocks.
 - **Checkpoint every task.** Progress lives on disk — the README checkboxes, each
   task's Completion & Log, and `PROGRESS.md` (summaries, key decisions, important
   values/paths). After each task this state MUST be current, because it is the
@@ -230,8 +234,11 @@ counts, DWP terminology).
 
 Craft it: read the plan README's Goal; summarize WHAT was accomplished in terms
 the team cares about; add WHY it matters; 1–3 sentences; always English; always a
-milestone. The `dailybot` skill is installed alongside this skill — invoke it
-there. If reporting fails, continue without blocking.
+milestone. Where the plan carries the state layer (`../spec/PLAN_STATE.md`),
+derive the report's `--json-data` from `state.json` — `completed` from completed
+tasks phrased as outcomes, `blockers` empty on a clean finish — rather than
+recounting from memory. The `dailybot` skill is installed alongside this skill —
+invoke it there. If reporting fails, continue without blocking.
 
 ### Step 7.1 — Orchestrator Plan Completion
 Report per mode (Distributed: all child DWPs created and ready, with the

@@ -19,10 +19,16 @@ baseline AI-first conformance.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.1.0 |
+| **Version** | 2.2.0 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `methodology-spec/ADDONS.md` |
+| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `methodology-spec/ADDONS.md`, `../../spec/PLAN_STATE.md` |
 | **License** | MIT |
+
+> **Additive in 2.2.0.** Reporting grows from a single completion hook into a
+> **plan lifecycle event model** (§5.1): kickoff, significant task, blocked, and
+> completion — with the report's `--json-data` payload derived from the plan's
+> machine-readable state layer (`PLAN_STATE.md`). All events remain opt-in,
+> conditional, and non-blocking; the completion milestone is unchanged.
 
 ## 1. Conventions
 
@@ -33,7 +39,7 @@ The RFC 2119 keywords (**MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**,
 Throughout, the **Dailybot skill** is the official agent skill pack
 ([`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)); the
 **Dailybot CLI** is its companion binary
-([`DailyBotHQ/cli`](https://github.com/DailyBotHQ/cli), PyPI `dailybot-cli`).
+([`DailybotHQ/cli`](https://github.com/DailybotHQ/cli), PyPI `dailybot-cli`).
 
 ---
 
@@ -107,37 +113,67 @@ with explicit acceptance, and each reconciled if already present (§7):
 
 ---
 
-## 5. The Integration Value — Optional Progress/Milestone Reporting
+## 5. The Integration Value — The Plan Lifecycle Event Model
 
-This is the "why": when present, DWP **execution reports progress/milestones to
-the developer's Dailybot team**.
+This is the "why": when present, the **full DWP plan lifecycle surfaces to the
+developer's Dailybot team** as standup-style agent updates — what is starting,
+what is progressing, what is stuck, and what shipped.
 
-### 5.1 What gets wired
+### 5.1 The four lifecycle events
 
-- The addon **MUST** wire a clearly-**optional** report step into the repo's DWP
-  execution documentation (the generated `AGENTS.md` reporting section and/or
-  `docs/AI_AGENT_COLLAB.md`), describing: **when the Dailybot skill is installed,
-  a DWP plan completion SHOULD emit a Dailybot report.**
-- A **DWP plan completion** **SHOULD** be sent as a **milestone** report via the
-  dailybot `report` sub-skill (`dailybot agent update "<what was built>"
-  --milestone --json-data '<completed/in_progress/blockers>' --metadata
-  '<repo/branch/model>'`). Intermediate single-task completions, when reported at
-  all, are **regular** reports, not milestones.
+The addon **MUST** wire a clearly-**optional** report step into the repo's DWP
+execution documentation (the generated `AGENTS.md` reporting section and/or
+`docs/AI_AGENT_COLLAB.md`) describing these events. Every event is conditional
+(§5.3) and non-blocking (§6).
+
+| Event | Trigger | Level | Requirement |
+|-------|---------|-------|-------------|
+| **Kickoff** | A plan is materialized and approved (`create` Step 5), or its first `execute` turn begins | regular | **SHOULD** |
+| **Significant task** | A task that is independently significant completes — a feature, a bug fix, a major refactor (`execute` Step 5). Intermediate setup tasks are **not** reported. | regular | **MAY** |
+| **Blocked** | The plan halts on a stop condition and `state.json.blocked` is populated (`AGENT_PROTOCOL.md` §7.3, `PLAN_STATE.md` §4.4) — typical of unattended runs | regular, with `blockers` populated | **SHOULD** |
+| **Completion** | All tasks `[x]`; the plan finishes (`execute` Step 7) | **milestone** | **SHOULD** |
+
+- The **kickoff** report describes *what is being built and why it matters*
+  ("Starting: …"), giving the team forward visibility — never "created
+  PLAN_x with N tasks".
+- The **blocked** report is the unattended profile's escalation made human: the
+  team sees *what is stuck and what it needs* in the standup channel instead of
+  discovering a silent overnight halt. Its content **MUST** come from
+  `state.json.blocked` (`reason`, `needs`).
+- A plan **completion** is the only **milestone**; every other event is a
+  regular report. A plan **MUST NOT** emit more than one kickoff and one
+  completion report.
+
+### 5.2 Payload — derived from the plan state layer
+
+The report command shape is
+`dailybot agent update "<message>" [--milestone] --json-data
+'<completed/in_progress/blockers>' --metadata '<repo/branch/model>'`.
+
+- When the plan carries the machine-readable state layer (`PLAN_STATE.md`),
+  `--json-data` **SHOULD** be derived from `state.json`: `completed` from the
+  completed tasks (phrased as outcomes, not task numbers), `in_progress` from
+  the task currently `in_progress`, and `blockers` from `state.json.blocked`.
+  The state layer is the single source the payload is projected from — the
+  addon **MUST NOT** invent a second progress-tracking mechanism.
+- Without the state layer, the payload is derived from the plan README's
+  checkbox list. The message and payload **MUST** still follow the writing
+  rules below.
 - Report content **MUST** follow the dailybot `report` writing rules: describe
   **what was built and why**, in English, 1–3 sentences, never "completed a
   plan", never file paths / git stats / branch names / plan IDs.
 
-### 5.2 How `execute` / plan-completion emits it
+### 5.3 How the events are emitted
 
-- The step is **conditional**: it fires **only** when the Dailybot skill/CLI is
-  present and authenticated. The addon **MUST** document the detection check
+- Every event is **conditional**: it fires **only** when the Dailybot skill/CLI
+  is present and authenticated. The addon **MUST** document the detection check
   (e.g. `command -v dailybot`, or the skill installed at
   `~/.<agent>/skills/dailybot/`) and that the report routes through the dailybot
   `report` sub-skill, not a hand-rolled API call.
-- The addon **MUST NOT** change the DWP `execute` public surface; it only adds an
-  optional, conditional reporting hook described in the repo's docs.
+- The addon **MUST NOT** change the DWP `create`/`execute` public surface; it
+  only adds optional, conditional reporting hooks described in the repo's docs.
 - The addon **SHOULD** respect Dailybot's per-repo opt-out
-  (`.dailybot/disabled`): if present, no report is sent.
+  (`.dailybot/disabled`): if present, no report is sent — for any event.
 
 ---
 
@@ -177,8 +213,9 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 2. Authentication was **deferred** to the Dailybot skill's `shared/auth.md` — no
    email/OTP/API-key prompting and **no credential** written by this addon.
 3. The repo's DWP execution docs describe the **optional, conditional,
-   non-blocking** report step, sending a **milestone** on plan completion via the
-   dailybot `report` sub-skill.
+   non-blocking** lifecycle events (§5.1): kickoff, significant task, blocked,
+   and the **milestone** on plan completion — all via the dailybot `report`
+   sub-skill, with payloads derived from the plan state layer where present.
 4. If a repo identity was committed, it is credential-free (no `key` field) and
    resolves consistently for all contributors/agents.
 5. Existing skill/CLI/identity/report-step were **reconciled**, not clobbered.
@@ -197,8 +234,9 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Dailybot skill: [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)
   — `SKILL.md`, `shared/auth.md`, `report/SKILL.md`
-- Dailybot CLI: [`DailyBotHQ/cli`](https://github.com/DailyBotHQ/cli), PyPI `dailybot-cli`
+- Dailybot CLI: [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli), PyPI `dailybot-cli`
+- [`../../spec/PLAN_STATE.md`](../../spec/PLAN_STATE.md) (the state layer the payloads derive from), `../../spec/AGENT_PROTOCOL.md` §7 (unattended profile + stop conditions)
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.1.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.2.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
