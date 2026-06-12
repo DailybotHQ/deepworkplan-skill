@@ -68,8 +68,9 @@ structure.
    (no new `_refined` file).
 2. **Convert to a final plan** — extract plan info; create the plan folder and all
    files following `../guide/GUIDE.md`; **auto-add the mandatory elements** (same
-   as create): `analysis_results/` folder, `PROGRESS.md` initial template, Skills
-   & Agents Discovery task (second-to-last), Executive Report task (last),
+   as create): `analysis_results/` folder, `PROGRESS.md` initial template, Security Review
+   task (third-to-last), Skills & Agents Discovery task (second-to-last),
+   Executive Report task (last),
    Analysis Outputs section in the README; then offer to execute via the
    **Execute** sub-skill (`../execute/SKILL.md`).
 
@@ -92,16 +93,16 @@ location `.dwp/plans/PLAN_{name}/`.
 **3.5 Execute modifications**
 
 **Mandatory-task protection (applies throughout):**
-- **Skills & Agents Discovery** must remain second-to-last; **Executive Report**
-  must remain last.
+- **Security Review** must remain third-to-last; **Skills & Agents Discovery**
+  second-to-last; **Executive Report** last.
 - They **CANNOT be deleted or reordered**, but they **CAN be edited** (e.g. to add
   plan-specific evaluation criteria or report sections). If the user tries to
   delete or move them, explain: "These are mandatory tasks. They can be edited but
   not deleted or reordered."
 
-- **Add task(s):** new tasks may only be inserted BEFORE the two mandatory final
-  tasks. Ask for the insert position (a number `1..N-2`, `before-mandatory`, or
-  `after {k}` where `k ≤ N-2`), gather task details, create the task file (full
+- **Add task(s):** new tasks may only be inserted BEFORE the three mandatory final
+  tasks. Ask for the insert position (a number `1..N-3`, `before-mandatory`, or
+  `after {k}` where `k ≤ N-3`), gather task details, create the task file (full
   standard structure), and renumber subsequent files. Keep the mandatory tasks as
   the final two. Update the README task list.
 - **Edit task:** show current content; apply changes to title / instructions /

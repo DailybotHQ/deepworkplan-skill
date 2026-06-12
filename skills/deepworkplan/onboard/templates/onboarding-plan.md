@@ -56,7 +56,7 @@ for every task is `.dwp/onboard/RECON.md`.
 - [ ] N-2. .agents/ kit (agents + skills + commands + catalogs)
 - [ ] N-1. Install skill + scaffold .dwp/ and tmp/ + addons offered
 - [ ] N.  MANDATORY FINAL: Phase 8 self-check (conformance gate)
-          + Skills & Agents Discovery + Executive Report
+          + Security Review + Skills & Agents Discovery + Executive Report
 
 ## 5. Execution Rules for the Agent
 Re-anchor to this goal before each task. One task at a time. Run the task's
@@ -132,13 +132,16 @@ tested (onboard Phase 5). Add a docs/ subfolder only if the module is complex
 # Task {N}: Conformance gate + mandatory final tasks
 
 ## 3. Goal
-Run onboard Phase 8 self-check across everything generated; then the spec's two
-mandatory final tasks: Skills & Agents Discovery and the Executive Report.
+Run onboard Phase 8 self-check across everything generated; then the spec's
+three mandatory final tasks: Security Review, Skills & Agents Discovery, and
+the Executive Report.
 
 ## 5. Acceptance Criteria
 - [ ] `/dwp-verify` (or the Phase 8 checklist) reports CONFORMANT.
 - [ ] Smoke test: the repo's own validation command runs clean once.
 - [ ] `.agents/docs/` catalog matches what exists on disk (no phantom entries).
+- [ ] Security Review written to `analysis_results/SECURITY_REVIEW.md`;
+      `docs/SECURITY.md` verified current; no unresolved critical finding.
 - [ ] Executive Report written to `.dwp/plans/PLAN_onboard_{repo}/` summarizing
       archetype, stack, artifacts generated, smoke-test result, deferred items.
 
