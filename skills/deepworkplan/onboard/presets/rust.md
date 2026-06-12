@@ -29,6 +29,10 @@
   are enabled (`--all-features`, `--no-default-features`, specific `--features`).
 - Feature flags and their meaning; `unsafe` blocks and FFI boundaries; any
   `build.rs` codegen. Async runtime if present (`tokio`/`async-std`).
+- **Interface surface for the design-system addon:** a `clap` binary styled with
+  `colored`/`owo-colors`/`indicatif`/`ratatui` (or a centralized output module
+  with semantic styles) is a `cli-output` signal — in Phase 7b, recommend the
+  design-system addon's `cli-output` profile (ask, never auto-apply).
 
 ## Stack-specific skills/agents/commands to generate
 
