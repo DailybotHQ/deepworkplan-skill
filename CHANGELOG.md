@@ -9,6 +9,16 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.14.0] — 2026-06-12
+
+### Changes
+
+- Merge pull request #22 from DailybotHQ/feat/mandatory-security-review-final-task
+- test(skill): update conformance fixtures to the three-final-task protocol
+- feat(skill): per-task security discipline — shift security left of the tests task
+- feat(skill): add mandatory Security Review final task and harden the SECURITY.md requirement
+
+
 ## [2.13.0] — 2026-06-10
 
 ### Changes
