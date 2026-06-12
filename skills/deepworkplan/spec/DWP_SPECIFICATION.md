@@ -67,7 +67,7 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 | **Task** | An atomic unit of work, defined in `{N}.task_{title}.md`. |
 | **Refined draft** | The single reviewable artifact produced by `create`, written to `.dwp/drafts/`. |
 | **Plan README** | The `README.md` inside a plan; source of truth for "what is done". |
-| **Mandatory final tasks** | The two tasks every plan ends with: Skills & Agents Discovery, then Executive Report. |
+| **Mandatory final tasks** | The three tasks every plan ends with: Security Review, then Skills & Agents Discovery, then Executive Report. |
 | **Orchestrator plan** | A plan in an orchestrator hub that creates and coordinates **child DWPs** in sub-repos. |
 | **`.dwp/`** | The gitignored repo-root output directory: `.dwp/plans/`, `.dwp/drafts/`. |
 
@@ -136,7 +136,7 @@ A conformant plan directory **MUST** contain:
 
 - Plan names **MUST** follow `PLAN_{snake_case_name}` (lowercase, underscore-separated, 2–5 words).
 - `README.md`, `PROMPTS.md`, `PROGRESS.md`, and `analysis_results/` **MUST** all be present.
-- At least one user-defined task plus the two mandatory final tasks **MUST** be present.
+- At least one user-defined task plus the three mandatory final tasks **MUST** be present.
 
 The plan `README.md` **MUST** contain: title + goal; context; plan variables (if
 the tasks reference `{{...}}`); global guidelines; a task list with checkboxes and a
@@ -239,6 +239,31 @@ toolchain, the agent **MUST NOT** silently skip this discipline — it surfaces 
 gap and relies on the toolchain established or **proposed** during onboarding
 (`DOCUMENTATION_STANDARD.md` §3.1, §7).
 
+### 5.1.2. Security Discipline — Risk-Touching Changes
+
+Security follows the same two-layer model as testing: per-task discipline while
+the work happens, plus the mandatory Security Review gate (§6.1) over the full
+accumulated change set at the end. Whenever a task touches authentication or
+authorization, input handling, secrets or configuration, network/file/shell
+surface, or dependencies, the agent **MUST**:
+
+- Include, in the task's **Acceptance Criteria**, the security expectations of
+  the change (input validated/escaped, no secret material in code or fixtures,
+  auth checks preserved or strengthened), consistent with `docs/SECURITY.md`.
+- Confirm, before each commit, that the diff contains **no secrets or
+  credentials** — test fixtures and documentation examples included. A secret in
+  a pushed commit **MUST** be treated as leaked and rotated, not merely removed.
+- Where the security-sensitive work is substantial, prefer a dedicated
+  `N.task_security_hardening_{feature}.md` task placed **immediately after the
+  implementation tasks and before the comprehensive-tests task** — so findings
+  are fixed before tests encode the behavior, and each finding becomes a
+  regression test case rather than rework.
+
+Pure-documentation or research tasks are exempt unless they handle sensitive
+material. This discipline does **not** replace the Security Review final task
+(§6.1): per-task checks catch issues in the commit where they are born; the
+final gate audits the whole plan, including the tests and docs tasks themselves.
+
 ### 5.2. Task Completion Protocol
 
 After passing validation and before advancing, the agent **MUST**, in order:
@@ -288,9 +313,30 @@ that implicates a completed task.
 
 ## 6. Mandatory Final Tasks
 
-Every conformant plan **MUST** end with exactly two mandatory tasks, in this order:
+Every conformant plan **MUST** end with exactly three mandatory tasks, in this order:
 
-### 6.1. Task N-1 — Skills & Agents Discovery
+### 6.1. Task N-2 — Security Review
+
+- **MUST** review the plan's full accumulated change set (every commit the plan
+  produced) for: hardcoded secrets or credentials, injection risks and unsafe
+  input handling, new attack surface (endpoints, file/network access, shell
+  execution), weakened authentication/authorization, and sensitive data leaking
+  into logs, docs, or plan outputs.
+- **MUST** review dependencies the plan introduced or upgraded; where the
+  ecosystem provides an audit command (e.g. `npm audit`, `pip-audit`,
+  `cargo audit`), run it best-effort and record the result.
+- **MUST** verify `docs/SECURITY.md` still reflects reality and update it when
+  the plan changed secrets handling, the auth model, or sensitive-data
+  boundaries (`DOCUMENTATION_STANDARD.md` §3, category 5). If the repo lacks
+  `docs/SECURITY.md` entirely, record a finding recommending onboarding.
+- **MUST** write `analysis_results/SECURITY_REVIEW.md`, even when the conclusion
+  is "no findings."
+- A **critical** finding (e.g. a committed secret, an exposed credential, an
+  unauthenticated sensitive endpoint) **MUST** be fixed — or explicitly
+  escalated to and accepted by the user — before the plan can complete.
+  Non-critical findings are recorded and carried into the Executive Report.
+
+### 6.2. Task N-1 — Skills & Agents Discovery
 
 - **MUST** review `PROGRESS.md` for patterns used two or more times across the plan.
 - **MUST** check the existing `.agents/` skills/agents catalog for duplicates.
@@ -299,15 +345,20 @@ Every conformant plan **MUST** end with exactly two mandatory tasks, in this ord
 - **MUST** write `analysis_results/SKILLS_AGENTS_DISCOVERY.md`, even when the
   conclusion is "no new skills warranted."
 
-### 6.2. Task N — Executive Report
+### 6.3. Task N — Executive Report
 
 - **MUST** produce `analysis_results/EXECUTIVE_REPORT.md`, a stakeholder-ready
   summary covering at minimum: executive summary, plan overview, deliverables
   table, product impact, technical details, QA/verification guide, key decisions
-  and trade-offs, risks/open questions, next steps.
+  and trade-offs, risks/open questions (including non-critical security findings), next steps.
 
-Both final tasks **MUST** run sequentially after all other tasks (including any
-parallel groups) and **MUST NOT** be placed in a parallel group.
+All three final tasks **MUST** run sequentially after all other tasks (including
+any parallel groups) and **MUST NOT** be placed in a parallel group.
+
+> **Divergence from v2.13.** Security Review added as a third mandatory final
+> task: completion now requires an explicit security pass over the plan's own
+> changes, keeping `docs/SECURITY.md` (a conformance-floor MUST) current instead
+> of write-once.
 
 ---
 

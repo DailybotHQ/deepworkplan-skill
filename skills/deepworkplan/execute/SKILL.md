@@ -88,6 +88,10 @@ Rules (strict):
    lint/type-check (not just the build). If a behavior change shipped with no test
    coverage where the repo supports tests, treat it as an incomplete gate — add the
    missing tests before marking `[x]`, or log it as a blocker.
+   **Security discipline (`../guide/GUIDE.md` §5.4):** if the task touched auth,
+   input handling, secrets/config, network surface, or dependencies, confirm its
+   security acceptance criteria are met and the diff contains no secret material
+   before committing.
 4. **Mark complete** — only when all acceptance criteria are met and all
    validations pass. Update the README `[ ] → [x]` and fill the task's Completion
    & Log (status, timestamp, summary, files changed, validation results, notes).
@@ -218,6 +222,12 @@ the error, blocked status, and `[ ]` retained.
 When all tasks are `[x]`, report the completion summary (all tasks, totals,
 commits, final commit).
 
+**Security gate:** a plan is complete only when the Security Review task's
+`analysis_results/SECURITY_REVIEW.md` exists and reports no unresolved critical
+finding (`../spec/DWP_SPECIFICATION.md` §6.1). If a critical finding is open,
+the plan is **blocked**, not complete — fix it or obtain the user's explicit
+acceptance before reporting completion.
+
 **🔔 GOLDEN RULE — Dailybot Plan-Completion Report (MANDATORY):**
 
 > When a DWP plan finishes execution, you MUST ALWAYS send a Dailybot progress
@@ -258,8 +268,8 @@ the feature achieved across repos, never "N child DWPs executed."
 - **Manifest:** read it at the start of orchestrator execution; update it after
   each `execute_child_dwp`. Verify predecessors before any `execute_child_dwp`.
 - **Team agents:** detect, offer, fall back to sequential on failure, and always
-  clean up the team after each parallel group. Mandatory final tasks (Skills
-  Discovery, Executive Report) are ALWAYS sequential under the lead.
+  clean up the team after each parallel group. Mandatory final tasks (Security
+  Review, Skills Discovery, Executive Report) are ALWAYS sequential under the lead.
 
 ## Error Handling
 - Missing task file → report; ask whether to skip or create.

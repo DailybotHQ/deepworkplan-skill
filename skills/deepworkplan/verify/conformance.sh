@@ -133,6 +133,11 @@ check_repo() {
 
   if [ -d docs ]; then
     pass "docs/"
+    if [ -f docs/SECURITY.md ]; then
+      pass "docs/SECURITY.md"
+    else
+      warn "docs/SECURITY.md missing (conformance-floor MUST per DOCUMENTATION_STANDARD §3)"
+    fi
   else
     warn "docs/ missing (agent workspaces adapt this; repos MUST have it)"
   fi
@@ -185,10 +190,16 @@ check_plan() {
     [ -f "$f" ] || continue
     task_count=$((task_count + 1))
   done
-  if [ "$task_count" -ge 3 ]; then
+  if [ "$task_count" -ge 4 ]; then
     pass "task files present ($task_count)"
   else
-    fail "task files present ($task_count; need >= 1 user task + 2 mandatory final tasks)"
+    fail "task files present ($task_count; need >= 1 user task + 3 mandatory final tasks)"
+  fi
+
+  if ls "$plan_dir"/[0-9]*.task_security_review.md >/dev/null 2>&1; then
+    pass "mandatory task: security review"
+  else
+    fail "mandatory task: security review"
   fi
 
   if ls "$plan_dir"/[0-9]*.task_skills_agents_discovery.md >/dev/null 2>&1; then

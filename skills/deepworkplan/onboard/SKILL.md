@@ -284,7 +284,8 @@ developer break the tie.
      Phase 6), gated on "catalog matches disk";
    - one task to **install the skill + scaffold `.dwp/` and `tmp/`** (Phase 7);
    - the **Phase 8 self-check as the mandatory final task**, alongside the spec's
-     two mandatory final tasks (Skills & Agents Discovery, Executive Report).
+     three mandatory final tasks (Security Review, Skills & Agents Discovery,
+     Executive Report).
 
    Each task carries explicit **Acceptance Criteria** and a runnable
    **validation gate** (the repo's real lint / `md`-check / test).
