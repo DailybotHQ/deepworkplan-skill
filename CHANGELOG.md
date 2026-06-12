@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.15.0] — 2026-06-12
+
+### Changes
+
+- Merge pull request #24 from DailybotHQ/feat/design-system-interface-profiles
+- feat(addon): generalize design-system gate to interface surfaces (visual-ui, cli-output, conversational profiles)
+
+
 ## [2.14.1] — 2026-06-12
 
 ### Changes

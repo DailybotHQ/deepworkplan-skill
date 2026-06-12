@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-dailybot
 description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill (DailybotHQ/agent-skill) and/or the Dailybot CLI (DailybotHQ/cli), wiring the plan lifecycle into best-effort agent updates - kickoff when a plan starts, significant task completions, a blocked report when an unattended run halts, and a milestone on plan completion - with payloads derived from the plan's state layer, and optionally committing the Dailybot skill's deterministic hook enforcement (dailybot hook lifecycle hooks, CLI >= 1.12.0) so the agent harness itself reminds agents about unreported work. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
-version: "2.14.1"
+version: "2.15.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
