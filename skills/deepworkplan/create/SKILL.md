@@ -233,6 +233,13 @@ Follow `../guide/GUIDE.md`. Create:
    **must** run the repo's tests plus lint/type-check/format checks (not the
    build alone). Where related work is substantial, prefer a dedicated
    `N.task_add_tests_for_{feature}.md` task right after the implementation task.
+   Likewise, for any task that touches auth, input handling, secrets/config,
+   network surface, or dependencies, bake the **security discipline** into it
+   (`../guide/GUIDE.md` §5.4); where the security-sensitive work is substantial,
+   prefer a dedicated `N.task_security_hardening_{feature}.md` task placed after
+   the implementation tasks and **before** the comprehensive-tests task, so
+   findings are fixed before tests encode the behavior and become regression
+   test cases rather than rework.
 
 7. **State layer (RECOMMENDED, `../spec/PLAN_STATE.md`)** — write
    `manifest.json` (plan identity: name, archetype, rigor tier, spec version,

@@ -38,8 +38,9 @@ The child DWP should cover approximately {N} tasks, including:
 - {high-level task 1 — e.g., "Add data model and migration"}
 - {high-level task 2 — e.g., "Create serializer/validation"}
 - {high-level task 3 — e.g., "Add API views/endpoints"}
-- {high-level task 4 — e.g., "Write comprehensive tests"}
-- {high-level task 5 — e.g., "Update documentation"}
+- {high-level task 4 — e.g., "Security hardening pass over the new endpoints"}
+- {high-level task 5 — e.g., "Write comprehensive tests"}
+- {high-level task 6 — e.g., "Update documentation"}
 - Plus mandatory final tasks (Security Review + Skills & Agents Discovery + Executive Report)
 
 ## 2. Read Before Starting

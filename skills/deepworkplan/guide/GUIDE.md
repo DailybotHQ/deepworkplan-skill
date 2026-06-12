@@ -444,6 +444,28 @@ applies on every plan, in addition to the per-task validation gates above:
 > work was not behavior-changing, or the test discipline was skipped. Call it out
 > in the Executive Report rather than hiding it.
 
+### 5.4. Security Discipline (MANDATORY)
+
+Security follows the same two-layer model as testing: woven into the tasks while
+the work happens, plus the mandatory Security Review final task over the whole
+plan at the end (`spec/DWP_SPECIFICATION.md` §6.1):
+
+- **Risk-touching task ⇒ security criteria.** When a task touches auth, input
+  handling, secrets/config, network/file/shell surface, or dependencies, bake the
+  security expectations into its **Acceptance Criteria** (input validated, no
+  secret material anywhere in the diff — fixtures and docs included, auth checks
+  preserved), consistent with `docs/SECURITY.md`.
+- **No secrets in any commit.** Before each per-task commit, confirm the diff
+  carries no credentials or secret material. A committed secret in a pushed
+  commit must be treated as leaked — rotate it, don't just remove it.
+- **Substantial security work gets its own task — before the tests task.** Order
+  the plan implement → security hardening → comprehensive tests → docs: fixes
+  land before the tests encode the behavior, and each finding becomes a
+  regression test case instead of rework.
+- **The final gate still runs.** Per-task discipline does not replace the
+  Security Review final task — that gate audits the full accumulated diff,
+  including what the tests and docs tasks themselves changed.
+
 ---
 
 ## 6. Agent Execution Rules (Critical Behavior)

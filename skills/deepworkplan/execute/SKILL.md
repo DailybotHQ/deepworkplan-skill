@@ -88,6 +88,10 @@ Rules (strict):
    lint/type-check (not just the build). If a behavior change shipped with no test
    coverage where the repo supports tests, treat it as an incomplete gate — add the
    missing tests before marking `[x]`, or log it as a blocker.
+   **Security discipline (`../guide/GUIDE.md` §5.4):** if the task touched auth,
+   input handling, secrets/config, network surface, or dependencies, confirm its
+   security acceptance criteria are met and the diff contains no secret material
+   before committing.
 4. **Mark complete** — only when all acceptance criteria are met and all
    validations pass. Update the README `[ ] → [x]` and fill the task's Completion
    & Log (status, timestamp, summary, files changed, validation results, notes).

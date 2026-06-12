@@ -239,6 +239,31 @@ toolchain, the agent **MUST NOT** silently skip this discipline — it surfaces 
 gap and relies on the toolchain established or **proposed** during onboarding
 (`DOCUMENTATION_STANDARD.md` §3.1, §7).
 
+### 5.1.2. Security Discipline — Risk-Touching Changes
+
+Security follows the same two-layer model as testing: per-task discipline while
+the work happens, plus the mandatory Security Review gate (§6.1) over the full
+accumulated change set at the end. Whenever a task touches authentication or
+authorization, input handling, secrets or configuration, network/file/shell
+surface, or dependencies, the agent **MUST**:
+
+- Include, in the task's **Acceptance Criteria**, the security expectations of
+  the change (input validated/escaped, no secret material in code or fixtures,
+  auth checks preserved or strengthened), consistent with `docs/SECURITY.md`.
+- Confirm, before each commit, that the diff contains **no secrets or
+  credentials** — test fixtures and documentation examples included. A secret in
+  a pushed commit **MUST** be treated as leaked and rotated, not merely removed.
+- Where the security-sensitive work is substantial, prefer a dedicated
+  `N.task_security_hardening_{feature}.md` task placed **immediately after the
+  implementation tasks and before the comprehensive-tests task** — so findings
+  are fixed before tests encode the behavior, and each finding becomes a
+  regression test case rather than rework.
+
+Pure-documentation or research tasks are exempt unless they handle sensitive
+material. This discipline does **not** replace the Security Review final task
+(§6.1): per-task checks catch issues in the commit where they are born; the
+final gate audits the whole plan, including the tests and docs tasks themselves.
+
 ### 5.2. Task Completion Protocol
 
 After passing validation and before advancing, the agent **MUST**, in order:
