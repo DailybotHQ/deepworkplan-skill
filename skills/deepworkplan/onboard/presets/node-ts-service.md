@@ -24,6 +24,11 @@
   or a **long-running service** (HTTP server, container) — this strongly shapes
   `ARCHITECTURE.md`, `PERFORMANCE.md`, and the skills to generate.
 - Integrations / external APIs the service talks to; where secrets/config live.
+- **Interface surface for the design-system addon:** an ops CLI styled with
+  `chalk`/`ink`/`ora` behind a shared output helper is a `cli-output` signal,
+  and a chat-platform SDK (Slack Bolt, `discord.js`, `botbuilder`) with a
+  message-composition layer is a `conversational` signal — in Phase 7b,
+  recommend the matching design-system profile (ask, never auto-apply).
 
 ## Stack-specific skills/agents/commands to generate
 

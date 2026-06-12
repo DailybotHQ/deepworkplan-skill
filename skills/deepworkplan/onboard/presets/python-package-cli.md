@@ -22,6 +22,11 @@
   the command/subcommand structure.
 - Whether it's published (PyPI) — drives a packaging/release doc emphasis and a
   `SECURITY.md` note on supply-chain (a public OSS surface).
+- **Interface surface for the design-system addon:** a `rich`/`textual`/
+  `questionary` dependency plus a deliberate display layer (a `display.py`-style
+  module with semantic print helpers) is a `cli-output` signal — in Phase 7b,
+  recommend the design-system addon's `cli-output` profile (ask, never
+  auto-apply). A bare `argparse` script with raw prints is not a signal.
 
 ## Stack-specific skills/agents/commands to generate
 

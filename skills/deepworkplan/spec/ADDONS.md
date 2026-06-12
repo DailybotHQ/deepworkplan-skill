@@ -189,21 +189,28 @@ is fully conformant with **zero** addons installed.
   skills/deepworkplan/addons/design-system/
   ```
 
-- Scope: a **frontend/UI-scoped**, **opt-in** capability that gives a repo a
+- Scope: an **interface-surface-scoped**, **opt-in** capability that gives a repo a
   **`DESIGN.md`** — placed at **`docs/DESIGN.md`** alongside the repo's other specs
   (root only if the repo has no `docs/` tree) and **indexed from `AGENTS.md`** — a
-  Markdown design-system file any coding agent reads to generate UI consistent with
-  the repo's **own** design system. When accepted,
-  it **reasons about the repo's actual design tokens** (CSS custom properties, a
-  Tailwind config, token files, component styles) — **never** copying a brand file —
-  documents the canonical sections (colors & roles, typography, layout/spacing,
-  elevation, shapes, components, responsive behavior, do's & don'ts, agent prompt
-  guide), checks **WCAG AA** contrast and token integrity, and reconciles an
-  existing `DESIGN.md` instead of clobbering it. It is **default-on when detected**
-  (addon SPEC §3.1): when a UI surface / design system **is** detected the `onboard`
-  flow **applies** it in trust mode and **strongly recommends** it in guided mode;
-  when no UI surface is present it is **not** offered. It remains **never required** —
-  a zero-addon repo is fully conformant.
+  Markdown design-system file any coding agent reads to generate interface output
+  consistent with the repo's **own** conventions. It covers three **profiles**,
+  detected independently from real files and stacked into the same single file:
+  **visual-ui** (rendered web/mobile/desktop UI), **cli-output** (styled terminal
+  output: semantic colors, panels, spinners, prompts, TTY/`NO_COLOR` degradation),
+  and **conversational** (chat/email messaging: voice & register, message anatomy,
+  per-platform rendering). When accepted, it **reasons about the repo's actual
+  design source** (CSS custom properties, a Tailwind config, token files, component
+  styles — or a CLI display/theme module, or message-composition helpers) — **never**
+  copying a brand file — documents each accepted profile's canonical sections,
+  checks per-profile integrity (**WCAG AA** contrast; color never the sole carrier
+  of meaning; plain-text fallbacks; token references resolve), and reconciles an
+  existing `DESIGN.md` instead of clobbering it. Profile strength differs (addon
+  SPEC §3.5): **visual-ui** is **default-on when detected** — the `onboard` flow
+  **applies** it in trust mode and **strongly recommends** it in guided mode —
+  while **cli-output** and **conversational** are **recommended when detected and
+  always asked about, never auto-applied**. When no interface surface of any kind
+  is present (pure library, headless service, infra-only) the addon is **not**
+  offered. It remains **never required** — a zero-addon repo is fully conformant.
 - **Distinct from per-feature design docs:** this addon provides a **repo-level,
   persistent** design-system file; it is **not** a per-feature technical design
   document (the "requirements → design → tasks" `design.md` of tool-bound

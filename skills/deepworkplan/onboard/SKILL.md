@@ -488,7 +488,7 @@ Four addons ship today; enumerate **all** and offer each independently:
 | **Devcontainer support** | [`../addons/devcontainer/`](../addons/devcontainer/SKILL.md) | the repo benefits from a reproducible isolated dev container (most repos with Docker/services). |
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | the repo has a lockfile + a dependency-heavy stack and wants safe, batched, validated upgrades — recommend only when a lockfile is present; **never auto-install for everyone**. |
-| **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | **default-on when detected** — whenever the repo has a **UI surface / design system** (a stylesheet with CSS custom properties, a Tailwind config or `@theme` block, UI components, or a brand/style guide), in trust mode **apply** it (generate `DESIGN.md`); in guided mode **strongly recommend** and ask. **Never offer for a backend/CLI/library-only repo.** |
+| **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **default-on when detected** — in trust mode **apply** it (generate `DESIGN.md`), in guided mode **strongly recommend** and ask; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended when detected, always asked, never auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
 
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
@@ -545,30 +545,44 @@ repo stays baseline-conformant and no command is installed.
 
 The fourth addon is **design system**
 ([`../addons/design-system/SKILL.md`](../addons/design-system/SKILL.md) +
-[`SPEC.md`](../addons/design-system/SPEC.md)). It is **frontend-scoped** and
-**default-on when detected** (addon SPEC §3.1) — during Phase 1 detection, check
-whether the repo has a **UI surface / design system**: a stylesheet with CSS custom
-properties, a Tailwind config or a Tailwind v4 `@theme {}` block, UI components
-(`.tsx`/`.vue`/`.svelte`/`.astro`), a design-token file, or a brand/style guide.
-When that signal **is** present, do not merely list the addon: in **trust mode
-apply it automatically** (generate `DESIGN.md`, developer may still decline), and in
-**guided mode present it as a strong recommendation** and ask. When the signal is
-**absent**, **do not offer it** (a backend/CLI/library-only repo must never get a
-`DESIGN.md`). Declining always leaves a baseline-conformant repo. If accepted (or
-auto-applied): read that addon's `SKILL.md` and run
-its flow — locate the repo's **real** design source, **reason out** each canonical
-section of `DESIGN.md` from those tokens (Overview/atmosphere, colors & roles incl.
-dark mode, typography, layout & spacing, elevation, shapes, components, responsive
-behavior, do's & don'ts incl. the repo's accessibility rules, agent prompt guide),
-and write it at **`docs/DESIGN.md`** (alongside the other specs you generated in
-Phase 4 — root only if the repo has no `docs/` tree) — **never** copying a
-third-party brand file. Then **add a `DESIGN.md` reference to the `AGENTS.md`
-documentation index** (and `CLAUDE.md`) so agents discover it like the rest of
-`docs/`. An **existing `DESIGN.md`/token source MUST be reconciled, not clobbered**.
-After applying, run the addon's validation step (SPEC §11: file at `docs/DESIGN.md`
-or root with all sections, AGENTS.md references it, values traceable to the real
-source, WCAG AA contrast, token references resolve). If declined, skip it — the repo
-stays baseline-conformant.
+[`SPEC.md`](../addons/design-system/SPEC.md)). It is **interface-surface-scoped**
+with per-profile strength (addon SPEC §3, §3.5) — during Phase 1 detection, check
+each profile independently from **real files**: **visual-ui** (a stylesheet with
+CSS custom properties, a Tailwind config or a Tailwind v4 `@theme {}` block, UI
+components (`.tsx`/`.vue`/`.svelte`/`.astro`), a design-token file, or a
+brand/style guide); **cli-output** (a CLI/TUI rendering library — rich, chalk,
+ink, lipgloss, ratatui — **plus** a deliberate rendering layer such as a
+`display.*`/`ui.*` helper module with semantic print helpers; a bare argument
+parser with raw prints does NOT qualify); and **conversational** (a chat-platform
+SDK — Slack, Discord, Teams, … — a message-composition layer, or documented
+outbound-message voice rules). When **visual-ui** is detected, do not merely list
+the addon: in **trust mode apply it automatically** (generate `DESIGN.md`,
+developer may still decline), and in **guided mode present it as a strong
+recommendation** and ask. When **cli-output** or **conversational** is detected,
+**recommend it and ask in both modes — never auto-apply** those profiles. When
+**no** profile is detected, **do not offer the addon** (a repo with no interface
+surface must never get a `DESIGN.md`). Declining always leaves a
+baseline-conformant repo. If accepted (or auto-applied): read that addon's
+`SKILL.md` and run its flow — locate the repo's **real** design source per
+accepted profile, **reason out** that profile's canonical sections of `DESIGN.md`
+(visual-ui: colors & roles incl. dark mode, typography, layout & spacing,
+elevation, shapes, components, responsive behavior; cli-output: output voice,
+semantic colors & styles, output components, layout conventions, degradation &
+environment; conversational: voice & register, message anatomy, platform
+rendering — each plus do's & don'ts, with one shared Overview and one agent
+prompt guide), and write it at **`docs/DESIGN.md`** (alongside the other specs
+you generated in Phase 4 — root only if the repo has no `docs/` tree; multiple
+accepted profiles stack as sections in the **same single file**, never sibling
+files) — **never** copying a third-party brand file. Then **add a `DESIGN.md`
+reference to the `AGENTS.md` documentation index** (and `CLAUDE.md`) so agents
+discover it like the rest of `docs/`. An **existing `DESIGN.md`/token source MUST
+be reconciled, not clobbered** — adding a new profile to an existing file is
+additive. After applying, run the addon's validation step (SPEC §11: file at
+`docs/DESIGN.md` or root with all sections per accepted profile, AGENTS.md
+references it, values traceable to the real source, per-profile integrity —
+WCAG AA contrast / degradation rules / plain-text fallbacks — token references
+resolve, new profiles were asked about). If declined, skip it — the repo stays
+baseline-conformant.
 
 ## Phase 8 — Self-check / validation (mandatory)
 

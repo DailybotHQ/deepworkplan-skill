@@ -20,27 +20,31 @@ description: Create or refresh this repo's DESIGN.md (design tokens + rules for 
 # /design-system
 
 Create or refresh this repository's `DESIGN.md` (at `docs/DESIGN.md`, indexed from
-`AGENTS.md`) so coding agents generate
-UI consistent with this repo's **own** design system. This command is a **thin
-delegator** to the DeepWorkPlan `deepworkplan-addon-design-system` addon — it does
-not contain the logic itself.
+`AGENTS.md`) so coding agents generate interface output — visual UI, terminal
+output, or outbound messages — consistent with this repo's **own** conventions.
+This command is a **thin delegator** to the DeepWorkPlan
+`deepworkplan-addon-design-system` addon — it does not contain the logic itself.
 
 ## Steps
 
 1. Invoke the `deepworkplan-addon-design-system` addon (via
    `/deepworkplan-addon-design-system` or by reading the addon's `SKILL.md`).
-2. Follow the addon's flow: locate this repo's real design source
+2. Follow the addon's flow: locate this repo's real design source per profile
    (<e.g. CSS custom properties in `src/styles/global.css` + a Tailwind `@theme`
-   block>), reason out each canonical section of `DESIGN.md` from those tokens,
-   and write or **reconcile** `DESIGN.md` at its location (`docs/DESIGN.md` for a
-   repo with a `docs/` tree; root otherwise), ensuring `AGENTS.md` references it.
-3. Run the addon's validation step (sections present, values traceable to the real
-   source, WCAG AA contrast, token references resolve).
+   block; or the CLI display module; or the message-composition helpers>), reason
+   out each accepted profile's canonical sections of `DESIGN.md` from that
+   source, and write or **reconcile** `DESIGN.md` at its location
+   (`docs/DESIGN.md` for a repo with a `docs/` tree; root otherwise), ensuring
+   `AGENTS.md` references it.
+3. Run the addon's validation step (sections present per accepted profile, values
+   traceable to the real source, per-profile integrity — WCAG AA contrast /
+   degradation rules / plain-text fallbacks — and token references resolve).
 
 ## Notes
 
-- Design source for this repo: <fill in — e.g. Tailwind config / CSS vars / token file>.
-- Accessibility rules to enforce: <fill in — e.g. WCAG AA, approved/forbidden text colors>.
+- Profiles in this repo: <fill in — e.g. visual-ui / cli-output / conversational>.
+- Design source for this repo: <fill in — e.g. Tailwind config / CSS vars / token file / CLI display module / message helpers>.
+- Integrity rules to enforce: <fill in — e.g. WCAG AA + approved/forbidden text colors; NO_COLOR degradation; plain-text fallbacks>.
 - Reason about the real tokens — never paste a third-party brand's `DESIGN.md`.
 - Reconcile an existing `DESIGN.md`; ask before any destructive change.
 ```

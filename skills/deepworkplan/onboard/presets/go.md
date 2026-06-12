@@ -29,6 +29,10 @@
 - The **real** build: `go build ./...`, plus any release wiring (`-ldflags`,
   `CGO_ENABLED`, cross-compilation via `GOOS`/`GOARCH`).
 - The module path, exported vs `internal/` boundaries, and where binaries live.
+- **Interface surface for the design-system addon:** a `cobra` binary styled
+  with `lipgloss`/`bubbletea` (or a centralized output package with semantic
+  styles) is a `cli-output` signal — in Phase 7b, recommend the design-system
+  addon's `cli-output` profile (ask, never auto-apply).
 
 ## Stack-specific skills/agents/commands to generate
 
