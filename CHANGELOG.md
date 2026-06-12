@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.14.1] — 2026-06-12
+
+### Changes
+
+- Merge pull request #23 from DailybotHQ/fix/dogfood-docs-security-md
+- docs(security): add docs/SECURITY.md so the repo dogfoods its own conformance floor
+
+
 ## [2.14.0] — 2026-06-12
 
 ### Changes
