@@ -28,7 +28,8 @@ the same instructions other agents do.
 | Install guide (compare / update / uninstall) | [docs/INSTALLATION.md](docs/INSTALLATION.md) |
 | OpenClaw-specific notes | [docs/OPENCLAW.md](docs/OPENCLAW.md) |
 | Adding a new sub-skill (step-by-step) | [docs/SUB_SKILL_GUIDE.md](docs/SUB_SKILL_GUIDE.md) |
-| Security policy | [SECURITY.md](SECURITY.md) |
+| Security posture (secrets handling, boundaries, dogfooded review) | [docs/SECURITY.md](docs/SECURITY.md) |
+| Security policy (report a vulnerability) | [SECURITY.md](SECURITY.md) |
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
 | Launch / publishing playbook | [PUBLISHING.md](PUBLISHING.md) |
 | Router meta-skill (version source of truth) | [skills/deepworkplan/SKILL.md](skills/deepworkplan/SKILL.md) |
