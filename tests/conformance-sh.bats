@@ -22,6 +22,7 @@ make_conformant_repo() {
     printf '# AGENTS.md\n\n## Quick Commands\n\n- `make test`\n' > AGENTS.md
     ln -s AGENTS.md CLAUDE.md
     mkdir -p .agents/agents .agents/commands .agents/skills .agents/docs docs
+    printf '# Security\n\nNo secrets in this fixture.\n' > docs/SECURITY.md
     ln -s .agents .claude
     mkdir -p .dwp/plans .dwp/drafts
     echo '.dwp/' > .gitignore
@@ -41,14 +42,16 @@ Test fixture.
 - [x] Task 1
 - [ ] Task 2
 - [ ] Task 3
+- [ ] Task 4
 
-Plan Status: 1/3 completed
+Plan Status: 1/4 completed
 EOF
     echo 'prompts' > "$plan/PROMPTS.md"
     echo 'progress' > "$plan/PROGRESS.md"
     printf '# Task 1\n\n## Validation\n\n- `make test`\n' > "$plan/1.task_first_thing.md"
-    printf '# Task 2\n\n## Validation\n\n- manual checklist\n' > "$plan/2.task_skills_agents_discovery.md"
-    printf '# Task 3\n\n## Validation\n\n- manual checklist\n' > "$plan/3.task_executive_report.md"
+    printf '# Task 2\n\n## Validation\n\n- manual checklist\n' > "$plan/2.task_security_review.md"
+    printf '# Task 3\n\n## Validation\n\n- manual checklist\n' > "$plan/3.task_skills_agents_discovery.md"
+    printf '# Task 4\n\n## Validation\n\n- manual checklist\n' > "$plan/4.task_executive_report.md"
 }
 
 @test "conformant repo with no plans passes (exit 0)" {
@@ -87,13 +90,14 @@ EOF
     run bash "$CONFORMANCE_SH"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "PLAN_test_fixture" ]]
+    [[ "$output" =~ "mandatory task: security review" ]]
     [[ "$output" =~ "mandatory task: executive report" ]]
 }
 
 @test "plan missing the mandatory final tasks fails" {
     make_conformant_repo
     make_conformant_plan
-    rm .dwp/plans/PLAN_test_fixture/3.task_executive_report.md
+    rm .dwp/plans/PLAN_test_fixture/4.task_executive_report.md
     run bash "$CONFORMANCE_SH"
     [ "$status" -eq 1 ]
 }
