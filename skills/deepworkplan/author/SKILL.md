@@ -38,7 +38,7 @@ the mandatory "Skills & Agents Discovery" plan task.
 Before authoring anything, discover where this repo keeps its kit. Do not hardcode any single repo's
 conventions.
 
-1. Find the agent root: look for `.agents/`, then `.claude/` (often a symlink to `.agents/`), then any
+1. Find the agent root: look for `.agents/`, then `.claude/` or `.cursor/` (often symlinks to `.agents/`), then any
    `AGENTS.md` / `CLAUDE.md` at the repo root for documented paths.
 2. Within it, locate `skills/`, `agents/`, `commands/`, and a catalog under `docs/`.
 3. Inspect 1-2 existing skills/agents to learn the repo's **local conventions** (frontmatter keys it

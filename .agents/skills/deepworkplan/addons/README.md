@@ -8,7 +8,7 @@ addons installed. (Normative source: Task 2's `methodology-spec/ADDONS.md`.)
 An **addon** is a self-contained, optional capability that the `onboard` flow
 can layer onto a repo *after* the mandatory AI-first scaffolding
 (`AGENTS.md` + `docs/` + per-module docs + `.agents/` + `.claude → .agents` +
-the DWP skill + `.dwp/`). Addons encode high-value best practices that the
+`.cursor → .agents` + the DWP skill + `.dwp/`). Addons encode high-value best practices that the
 audit found consistently across Dailybot repos but that a repo does **not** need
 in order to be AI-first.
 

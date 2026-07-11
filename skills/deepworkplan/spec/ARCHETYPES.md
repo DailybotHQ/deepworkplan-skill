@@ -51,7 +51,8 @@ interpreted as in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
   is clearly an orchestrator hub (§4).
 - An individual repo **MUST** satisfy `DOCUMENTATION_STANDARD.md` §§2–7: `AGENTS.md`
   (index + mandatory rules + quick commands), the `docs/` categories, per-module
-  nested docs, `.agents/`, and the `.claude → .agents` symlink.
+  nested docs, `.agents/`, and the `.claude → .agents` and `.cursor → .agents`
+  symlinks.
 - Its DWP usage **MUST** stay within the single repository; orchestrator capability
   (`DWP_SPECIFICATION.md` §8) is typically unused.
 - Live examples: all five Dailybot product repos — `api-services`, `web-app`,

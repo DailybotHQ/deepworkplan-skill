@@ -24,6 +24,7 @@ make_conformant_repo() {
     mkdir -p .agents/agents .agents/commands .agents/skills .agents/docs docs
     printf '# Security\n\nNo secrets in this fixture.\n' > docs/SECURITY.md
     ln -s .agents .claude
+    ln -s .agents .cursor
     mkdir -p .dwp/plans .dwp/drafts
     echo '.dwp/' > .gitignore
 }

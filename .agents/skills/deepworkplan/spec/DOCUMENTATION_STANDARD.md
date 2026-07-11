@@ -298,26 +298,35 @@ The distinction matters: `.dwp/` is the methodology's **structured** output (pla
 
 ---
 
-## 6. The `.claude → .agents` Symlink
+## 6. Agent-Facing Directory Symlinks
 
-- A conformant repository **MUST** provide a `.claude` directory-level symlink
-  pointing at `.agents/` (`.claude → .agents`), so Claude Code finds configuration
-  at the path it expects natively while `.agents/` remains the canonical store.
+A conformant repository **MUST** provide directory-level symlinks so that each
+agent finds its expected configuration path while `.agents/` remains the single
+canonical store:
+
+- **`.claude → .agents`** (for Claude Code) — **MUST**. Claude Code reads
+  configuration from `.claude/`; this symlink satisfies that expectation.
   (Observed live: the Core Hub's `.claude → .agents`.)
-- This mirrors the file-level `CLAUDE.md → AGENTS.md` convention (§2.5): the
-  canonical artifact carries the agent-neutral name; the Claude-facing name is a
-  symlink.
-- `.agents/` content **MUST** be authored as cross-agent (consumed by Cursor,
-  Codex, Gemini, Copilot, Antigravity through their own conventions per
-  `AGENT_PROTOCOL.md`); the `.claude` symlink **MUST NOT** introduce
-  Claude-only divergence in shared files.
+- **`.cursor → .agents`** (for Cursor) — **MUST**. Cursor reads configuration
+  from `.cursor/`; this symlink satisfies that expectation.
+
+Both symlinks follow the same principle as the file-level `CLAUDE.md → AGENTS.md`
+convention (§2.5): the canonical artifact carries the agent-neutral name
+(`.agents/`); agent-facing names are symlinks into it.
+
+- `.agents/` content **MUST** be authored as cross-agent (consumed by Claude Code,
+  Cursor, Codex, Gemini, Copilot, Antigravity through their own conventions per
+  `AGENT_PROTOCOL.md`); neither the `.claude` nor `.cursor` symlink **MUST NOT**
+  introduce agent-specific divergence in shared files.
 - Where symlinks are unsupported by the host, the repository **MAY** substitute a
   tool-native pointer, but **MUST** keep `.agents/` canonical and document the
   substitution.
 
 > **Divergence from v1.** v1 documented only the *file* symlink
 > `CLAUDE.md → AGENTS.md` (in the Claude adapter). The *directory* symlink
-> `.claude → .agents` is **net-new in v2** (`RECONCILIATION.md` divergence #4, idea #1).
+> `.claude → .agents` is **net-new in v2** (`RECONCILIATION.md` divergence #4,
+> idea #1). The `.cursor → .agents` symlink is **net-new in this version**,
+> extending the same principle to Cursor.
 
 ---
 

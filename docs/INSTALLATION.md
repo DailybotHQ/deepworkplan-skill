@@ -183,7 +183,7 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
 
 - **Onboarding** reasons about your repo's stack and archetype and generates an
   adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and the
-  `.claude → .agents` symlink. It's non-destructive and idempotent, and it adds
+  `.claude → .agents` / `.cursor → .agents` symlinks. It's non-destructive and idempotent, and it adds
   `.dwp/` to your `.gitignore`.
 - **Plans** land under a gitignored `.dwp/` directory at the repo root
   (`.dwp/plans/PLAN_<slug>/`, `.dwp/drafts/`), overridable via the `DWP_DIR`
