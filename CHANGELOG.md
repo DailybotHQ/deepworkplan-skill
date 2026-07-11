@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.15.1] — 2026-07-11
+
+### Changes
+
+- Merge pull request #25 from DailybotHQ/docs/dailybot-addon-align-3.4.0
+- ci: ignore no-color.org in markdown link check
+- docs(addon): align Dailybot addon with agent-skill 3.4.0 and CLI >= 3.1.2
+
+
 ## [2.15.0] — 2026-06-12
 
 ### Changes
