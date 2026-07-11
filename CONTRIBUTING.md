@@ -33,7 +33,7 @@ The **official DeepWorkPlan agent skill pack**, maintained by
 teaches AI coding agents (Claude Code, Cursor, OpenAI Codex, Gemini CLI, GitHub
 Copilot, Cline, Windsurf, OpenClaw) how to (1) turn any repository AI-first —
 generating an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and the
-`.claude → .agents` symlink — and (2) run structured multi-task **Deep Work
+`.claude → .agents` / `.cursor → .agents` symlinks — and (2) run structured multi-task **Deep Work
 Plans** whose output lands in a gitignored `.dwp/` directory. The skill follows
 the [Open Agent Skills](https://agentskills.io) standard.
 

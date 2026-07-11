@@ -41,7 +41,7 @@ report on long-running work, with all plan output living in a gitignored
 
 | Skill | What it does |
 |-------|-------------|
-| **deepworkplan-onboard** | Make any repo AI-first. Reasons about the repo's stack and archetype (orchestrator hub vs individual repo), then generates an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and the `.claude → .agents` symlink. Offers opt-in addons. |
+| **deepworkplan-onboard** | Make any repo AI-first. Reasons about the repo's stack and archetype (orchestrator hub vs individual repo), then generates an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and the `.claude → .agents` / `.cursor → .agents` symlinks. Offers opt-in addons. |
 | **deepworkplan-create** | Create a Deep Work Plan. Gathers context, drafts, and refines into a single final plan under `.dwp/plans/`, with the refined draft staged in `.dwp/drafts/`. |
 | **deepworkplan-execute** | Execute an existing plan task-by-task, run each task's validation, and log progress. |
 | **deepworkplan-refine** | Refine a plan draft, or modify the scope/tasks of an existing final plan. |

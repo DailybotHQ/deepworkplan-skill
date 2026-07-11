@@ -75,6 +75,7 @@ for d in .agents/agents .agents/commands .agents/skills .agents/docs; do
   test -d "$d" && echo "$d: ok" || echo "$d: FAIL"
 done
 [ -e .claude ] && echo ".claude resolves: ok" || echo ".claude resolves: FAIL"
+[ -e .cursor ] && echo ".cursor resolves: ok" || echo ".cursor resolves: FAIL"
 
 # 5. dwp-* commands are thin delegators (≤ ~30 lines, reference the skill)
 for f in .agents/commands/dwp-*.md; do
@@ -124,6 +125,7 @@ Repository
   [x] CLAUDE.md -> AGENTS.md
   [ ] docs/ — missing SECURITY.md
   [x] .agents/ + catalog matches disk
+  [x] .cursor -> .agents
   [x] .dwp/ gitignored (plans/, drafts/)
   [x] tmp/ gitignored
   [x] skill resolvable

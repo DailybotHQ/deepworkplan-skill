@@ -15,7 +15,7 @@ orchestrator hub, and agent workspace — are addressed throughout.
 
 | Document | Defines |
 |----------|---------|
-| [`DOCUMENTATION_STANDARD.md`](DOCUMENTATION_STANDARD.md) | Repo structure: `AGENTS.md` (index + mandatory rules + quick commands), `CLAUDE.md → AGENTS.md`, the 10 `docs/` categories, per-module nested docs, `.agents/` layout, `.claude → .agents` symlink, and the reason-per-repo 10%. |
+| [`DOCUMENTATION_STANDARD.md`](DOCUMENTATION_STANDARD.md) | Repo structure: `AGENTS.md` (index + mandatory rules + quick commands), `CLAUDE.md → AGENTS.md`, the 10 `docs/` categories, per-module nested docs, `.agents/` layout, `.claude → .agents` and `.cursor → .agents` symlinks, and the reason-per-repo 10%. |
 | [`DWP_SPECIFICATION.md`](DWP_SPECIFICATION.md) | The DWP workflow: single-step refined-draft create flow, `.dwp/` output, the 9-section task anatomy (+ optional Delta section), validation/completion, the DWP Resume Protocol, proportional rigor tiers, the three mandatory final tasks, orchestrator + team-agents support. |
 | [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md) | Cross-agent behavior: the supported agents (interactive + autonomous platforms), the `/` vs `#` command mapping, shared `.agents/` reading, progress reporting, and the interactive vs **unattended** execution profiles. |
 | [`ARCHETYPES.md`](ARCHETYPES.md) | The three archetypes (individual repo, orchestrator hub, agent workspace), the classification heuristic, and how onboarding differs. |
@@ -27,7 +27,7 @@ orchestrator hub, and agent workspace — are addressed throughout.
 1. Distribution: WebFetch framework repo → **installed skill pack** (idea #2).
 2. Output path: `.agent_commands/.../results/` → gitignored **`.dwp/`** (idea #3).
 3. Create flow: two-step draft → **single refined draft** (idea #4).
-4. **`.claude → .agents`** directory symlink + canonical `.agents/` (idea #1).
+4. **`.claude → .agents`** and **`.cursor → .agents`** directory symlinks + canonical `.agents/` (idea #1).
 5. **Two archetypes** made first-class (idea #5).
 6. **Per-module `README.md` + `docs/`** formalized as normative (idea #6).
 7. **Opt-in addons** mechanism, devcontainer first (idea #7).

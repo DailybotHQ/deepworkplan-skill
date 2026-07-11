@@ -26,8 +26,8 @@ Concretely, before writing anything, a flow **MUST** discover:
   than clobbering it (approval required before destructive changes).
 
 The fixed ~90% (the baseline shape — `AGENTS.md` as index + rules + quick
-commands, the `docs/` categories, `.agents/` with the `.claude → .agents`
-symlink, the `.dwp/` output convention) is applied as-is; the variable ~10% is
+commands, the `docs/` categories, `.agents/` with the `.claude → .agents` and `.cursor → .agents`
+symlinks, the `.dwp/` output convention) is applied as-is; the variable ~10% is
 filled by reasoning.
 
 ## The two archetypes

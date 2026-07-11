@@ -240,11 +240,12 @@ The agent must execute tasks **in order** and **one at a time**.
 
 | Task | Skill/Agent | File Path | Purpose |
 |------|-------------|-----------|---------|
-| Task N | `/skill-name` skill | `.claude/skills/skill-name/SKILL.md` | Brief purpose |
-| Task M | `agent-name` agent | `.claude/agents/agent-name.md` | Brief purpose |
+| Task N | `/skill-name` skill | `.agents/skills/skill-name/SKILL.md` | Brief purpose |
+| Task M | `agent-name` agent | `.agents/agents/agent-name.md` | Brief purpose |
 
 > **Note:** Skills provide step-by-step procedures. Agents provide validation checklists.
-> See `.claude/docs/skills_agents_catalog.md` for the full registry.
+> See `.agents/docs/skills_agents_catalog.md` for the full registry.
+> (`.claude/` and `.cursor/` are symlinks to `.agents/` — all three paths resolve identically.)
 
 ## 7. Plan Status / Notes
 
@@ -804,7 +805,7 @@ When you want Cursor, Claude, or another agent to **generate a new deep-work pla
 > - Then, create a new plan folder:
 >   - `.dwp/plans/PLAN_{plan_title}/`
 > - Inside that plan folder:
->   - **BEFORE creating any files**, read the skills/agents catalog at `.claude/docs/skills_agents_catalog.md` to identify relevant skills and agents for the plan's tasks
+>   - **BEFORE creating any files**, read the skills/agents catalog at `.agents/docs/skills_agents_catalog.md` (also reachable via `.claude/` or `.cursor/` symlinks) to identify relevant skills and agents for the plan's tasks
 >   - Create `README.md` describing:
 >     - The overall goal
 >     - Context
@@ -1042,14 +1043,16 @@ When creating deep work plans, the plan generator **MUST** consult the project's
 
 Before creating any plan, the generator **MUST** read:
 
-1. **Skills catalog:** `.claude/docs/skills_agents_catalog.md`
+1. **Skills catalog:** `.agents/docs/skills_agents_catalog.md`
    - Lists all available skills with names, tiers, models, file paths, and descriptions
-2. **Individual skill files:** `.claude/skills/{skill-name}/SKILL.md`
+2. **Individual skill files:** `.agents/skills/{skill-name}/SKILL.md`
    - Contains detailed step-by-step procedures, guardrails, and validation
    - Frontmatter includes `model`, `allowed-tools`, and other routing metadata
-3. **Agent files:** `.claude/agents/{agent-name}.md`
+3. **Agent files:** `.agents/agents/{agent-name}.md`
    - Contains specialized checklists, workflows, and validation criteria
    - Frontmatter includes `tools`, `model`, and `permissionMode`
+
+> `.claude/` and `.cursor/` are symlinks to `.agents/` — all three paths work.
 
 ### How to Integrate Skills into Task Files
 
@@ -1163,8 +1166,8 @@ The full cycle: Catalog → Plan (input) → Execution → Discovery → Catalog
 
 - When a plan creates new skills or agents, update the catalog immediately
 - When a skill or agent is deprecated, remove it from the catalog
-- The catalog (`.claude/docs/skills_agents_catalog.md`) is the **SINGLE SOURCE OF TRUTH** for what's available
-- Also update `.claude/README.md`'s quick reference tables when the catalog changes
+- The catalog (`.agents/docs/skills_agents_catalog.md`) is the **SINGLE SOURCE OF TRUTH** for what's available
+- Also update `.agents/README.md`'s quick reference tables when the catalog changes
 - If the catalog is outdated, plans will reference non-existent procedures or miss available ones
 
 ---
@@ -1977,7 +1980,7 @@ Claude Code hooks can enforce quality during team execution:
 - **`TeammateIdle`**: Runs when a teammate is about to go idle. Exit code 2 sends feedback and keeps the teammate working.
 - **`TaskCompleted`**: Runs when a task is being marked complete. Exit code 2 prevents completion and sends feedback.
 
-Example hook in `.claude/settings.json`:
+Example hook in `.agents/settings.json` (Claude Code reads via the `.claude → .agents` symlink; Cursor reads `.cursor/hooks.json` via the `.cursor → .agents` symlink):
 ```json
 {
   "hooks": {
@@ -1986,7 +1989,7 @@ Example hook in `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/validate-task-completion.sh",
+            "command": "bash .agents/hooks/validate-task-completion.sh",
             "timeout": 30
           }
         ]

@@ -56,7 +56,8 @@ by [Dailybot](https://www.dailybot.com) and distributed via
 [skills.sh](https://skills.sh), [OpenClaw](https://www.openclaw.dev), and
 direct git clone. It is a **Markdown-first** skill: it teaches AI coding agents
 how to (1) turn any repository AI-first — generating an adapted `AGENTS.md`,
-`docs/`, per-module docs, `.agents/`, and the `.claude → .agents` symlink — and
+`docs/`, per-module docs, `.agents/`, and the `.claude → .agents` /
+`.cursor → .agents` symlinks — and
 (2) run structured multi-task **Deep Work Plans** whose outputs land in a
 gitignored `.dwp/` directory. The skill follows the
 [Open Agent Skills](https://agentskills.io) standard.

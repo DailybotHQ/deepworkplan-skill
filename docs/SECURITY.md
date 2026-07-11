@@ -15,7 +15,7 @@ POSIX shell helpers (`setup.sh`, `scripts/`, `skills/deepworkplan/shared/context
 and Bats tests. There is **no runtime service, no HTTP API, no auth flow, and no
 network egress.** The only security-relevant action the skill performs is that it
 **mutates the user's repository** (onboarding writes/reconciles `AGENTS.md`,
-`docs/`, `.agents/`, the `.claude → .agents` symlink; plan flows write under the
+`docs/`, `.agents/`, the `.claude → .agents` / `.cursor → .agents` symlinks; plan flows write under the
 gitignored `.dwp/`). The full threat model, consent/dry-run posture, and
 in-scope/out-of-scope boundaries live in the root [`SECURITY.md`](../SECURITY.md);
 this document covers the **handling rules** agents must follow when working in

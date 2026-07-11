@@ -22,6 +22,12 @@ setup() {
     [ -f "$REPO_ROOT/.claude/skills/deepworkplan/SKILL.md" ]
 }
 
+@test ".cursor symlink resolves to .agents and reaches the pack" {
+    [ -L "$REPO_ROOT/.cursor" ]
+    [ "$(readlink "$REPO_ROOT/.cursor")" = ".agents" ]
+    [ -f "$REPO_ROOT/.cursor/skills/deepworkplan/SKILL.md" ]
+}
+
 @test ".agents/skills/deepworkplan contains the dogfooded skill pack" {
     [ -d "$AGENTS_DIR/skills/deepworkplan" ]
     [ -f "$AGENTS_DIR/skills/deepworkplan/SKILL.md" ]

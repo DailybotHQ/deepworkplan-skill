@@ -111,6 +111,16 @@ jobs:
             test -L "$HOME/.claude/skills/deepworkplan-$v" || { echo "FAIL: deepworkplan-$v symlink missing"; exit 1; }
           done
           echo "OK: pack + six sub-skill symlinks created"
+      - name: setup.sh --host cursor creates pack + sub-skill symlinks
+        run: |
+          export HOME=$(mktemp -d)
+          mkdir -p "$HOME/.cursor"
+          bash setup.sh --host cursor
+          test -L "$HOME/.cursor/skills/deepworkplan" || { echo "FAIL: pack symlink missing"; exit 1; }
+          for v in create execute refine resume status onboard; do
+            test -L "$HOME/.cursor/skills/deepworkplan-$v" || { echo "FAIL: deepworkplan-$v symlink missing"; exit 1; }
+          done
+          echo "OK: cursor pack + six sub-skill symlinks created"
 
   markdown-links:
     name: Markdown link check
