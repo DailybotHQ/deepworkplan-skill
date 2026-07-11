@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-state/v1.json",
+  "title": "DeepWorkPlan plan state",
+  "description": "Live execution state of a Deep Work Plan, derived from the plan markdown. See PLAN_STATE.md.",
+  "type": "object",
+  "required": ["schema", "plan", "updated_at", "status", "completed_count", "task_count", "tasks"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "https://deepworkplan.com/schema/plan-state/v1.json"
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agent": { "type": "string", "maxLength": 100 },
+        "model": { "type": "string", "maxLength": 100 }
+      }
+    },
+    "status": {
+      "enum": ["pending", "in_progress", "completed", "blocked"]
+    },
+    "completed_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "task_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/task" }
+    },
+    "checkpoint": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["task", "at"],
+      "properties": {
+        "task": { "type": "integer", "minimum": 1 },
+        "step": { "type": "string", "maxLength": 200 },
+        "at": { "type": "string", "format": "date-time" },
+        "note": { "type": "string", "maxLength": 500 }
+      }
+    },
+    "blocked": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["task", "reason", "since"],
+      "properties": {
+        "task": { "type": "integer", "minimum": 1 },
+        "reason": { "type": "string", "maxLength": 1000 },
+        "since": { "type": "string", "format": "date-time" },
+        "needs": { "type": "string", "maxLength": 500 }
+      }
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "required": ["id", "file", "title", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "file": { "type": "string", "pattern": "^\\d+\\.task_[a-z0-9_]+\\.md$" },
+        "title": { "type": "string", "maxLength": 200 },
+        "status": { "enum": ["pending", "in_progress", "completed", "blocked", "skipped"] },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "gates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gate" }
+        },
+        "outcome": { "$ref": "#/$defs/outcome" }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": ["command", "passes", "last_run"],
+      "additionalProperties": false,
+      "properties": {
+        "command": { "type": "string", "maxLength": 500 },
+        "passes": { "type": "boolean" },
+        "exit_code": { "type": "integer" },
+        "last_run": { "type": "string", "format": "date-time" },
+        "evidence": { "type": "string", "maxLength": 500 }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tried": { "type": "array", "items": { "type": "string", "maxLength": 300 } },
+        "failed": { "type": "array", "items": { "type": "string", "maxLength": 300 } },
+        "worked": { "type": "string", "maxLength": 500 },
+        "notes": { "type": "string", "maxLength": 1000 }
+      }
+    }
+  }
+}

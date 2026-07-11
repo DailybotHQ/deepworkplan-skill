@@ -8,7 +8,7 @@ follow it exactly — the file is the spec.
 
 ## DeepWorkPlan delegators (thin aliases → installed skill)
 
-These route to the `deepworkplan` skill (symlinked at
+These route to the `deepworkplan` skill (committed dogfood copy at
 `.agents/skills/deepworkplan`). The flow lives in the skill; these files only
 route, so there is a single source of truth.
 

@@ -13,9 +13,13 @@ any other agent that reads local skills/commands.
 > `tests/`, `scripts/`, and `docs/`. See `AGENTS.md` §2.
 
 This repo **dogfoods the methodology it ships**: the DeepWorkPlan pack is
-symlinked at [`skills/deepworkplan`](skills/deepworkplan) →
-`../../skills/deepworkplan`, so the `/dwp-*` commands and agents here pilot this
-very repo using its own skill.
+**committed** at `.agents/skills/deepworkplan` (restored from `skills-lock.json`
+via the same `npx skills` consumer path end users follow; canonical source at
+[`skills/deepworkplan/`](../skills/deepworkplan)), so the `/dwp-*` commands and
+agents here pilot this very repo using its own skill. After changing the shipped
+pack or pulling `main`, refresh the dogfood copy with
+`./scripts/refresh-dogfood-skill.sh` (or `npx skills update deepworkplan -y -p`
+to pull the latest published release) and commit the updated tree.
 
 ```
 .agents/
@@ -23,7 +27,7 @@ very repo using its own skill.
 ├── settings.json            ← harness config (sensible permissions; no secrets)
 ├── agents/                  ← reviewer, architect, executor, frontmatter-guardian, shell-auditor
 ├── commands/                ← dwp-* delegators + skill-create/agent-create + validate-frontmatter/run-tests/commit
-├── skills/                  ← fix-frontmatter, shellcheck-fix, write-bats-test + deepworkplan (symlink)
+├── skills/                  ← fix-frontmatter, shellcheck-fix, write-bats-test + deepworkplan (committed)
 └── docs/                    ← skills_agents_catalog.md, COMMANDS_REFERENCE.md
 .claude → .agents            ← backward-compat symlink (Claude Code reads .claude/)
 ```

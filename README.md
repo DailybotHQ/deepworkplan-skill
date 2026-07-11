@@ -147,9 +147,11 @@ When you install at **project scope** (e.g. `npx skills add` run inside a
 workspace), the skills.sh CLI writes the resolved skill source, path, and a
 content hash to a `skills-lock.json` at your workspace root. Commit that file to
 pin the exact version of DeepWorkPlan your team uses — re-running the installer
-later restores the same revision. This skill repo does **not** ship a
-`skills-lock.json` of its own; it is a consumer-side artifact that lives in
-*your* workspace, not in the skill pack.
+later restores the same revision. End-user workspaces keep that lock file at the
+workspace root; **this development repo** also commits `skills-lock.json` plus
+the dogfood copy at `.agents/skills/deepworkplan/` so contributors clone a
+ready-to-use `.agents/` kit (refresh with `./scripts/refresh-dogfood-skill.sh`
+when the shipped pack changes). Neither file ships inside `skills/deepworkplan/`.
 
 ## Update
 

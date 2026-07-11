@@ -117,14 +117,18 @@ searchable directory / get re-indexed:
 
 ## 7. `skills-lock.json` (consumer-side)
 
-DeepWorkPlan does **not** ship a `skills-lock.json` of its own — that's a
-**consumer-side** artifact. When a team installs at project scope (e.g.
-`npx skills add DailybotHQ/deepworkplan-skill` inside a workspace), the
-skills.sh CLI writes an entry (source, `skills/deepworkplan/SKILL.md` path, and
-a content hash) to a `skills-lock.json` at *their* workspace root, mirroring how
-the Dailybot Core Hub tracks its own `skills-lock.json` for reproducible
-installs. Document this in onboarding, but never commit a fabricated lock file
-into this skill repo.
+DeepWorkPlan does **not** ship a `skills-lock.json` inside the installed skill
+pack — that's a **consumer-side** artifact. When a team installs at project
+scope (e.g. `npx skills add DailybotHQ/deepworkplan-skill` inside a workspace),
+the skills.sh CLI writes an entry (source, `skills/deepworkplan/SKILL.md` path,
+and a content hash) to a `skills-lock.json` at *their* workspace root, mirroring
+how the Dailybot Core Hub tracks its own `skills-lock.json` for reproducible
+installs. Document this in onboarding for end-user repos.
+
+**Exception — this repo:** we commit a root `skills-lock.json` and the dogfood
+copy at `.agents/skills/deepworkplan/` so contributors get a working `.agents/`
+kit from `git clone`. Refresh with `./scripts/refresh-dogfood-skill.sh` after
+pack changes; do not hand-edit the lock hash.
 
 ## 8. Post-launch update path for end users
 

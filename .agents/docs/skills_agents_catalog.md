@@ -25,10 +25,10 @@ Repo-development skills (not shipped):
 | [shellcheck-fix](../skills/shellcheck-fix/SKILL.md) | Shellcheck the shell scripts and fix while keeping bash 3.2 compatibility |
 | [write-bats-test](../skills/write-bats-test/SKILL.md) | Add/extend bats-core tests following the `tests/` convention |
 
-Plus the **installed DeepWorkPlan pack**, symlinked at
-[`.agents/skills/deepworkplan`](../skills/deepworkplan) →
-`../../skills/deepworkplan` (the repo's own shipped artifact, dogfooded). It
-provides the router and sub-skills `create`, `execute`, `refine`, `resume`,
+Plus the **dogfooded DeepWorkPlan pack** at `.agents/skills/deepworkplan`
+(committed copy restored from `skills-lock.json` via
+`./scripts/refresh-dogfood-skill.sh`; canonical source
+[`skills/deepworkplan/`](../../skills/deepworkplan)). It provides the router and sub-skills `create`, `execute`, `refine`, `resume`,
 `status`, `verify`, `onboard`, `author`, plus addons under `addons/`. The
 `/dwp-*`, `/skill-create`, and `/agent-create` commands route here.
 

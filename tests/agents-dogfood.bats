@@ -2,11 +2,11 @@
 # Tests for this repo's own .agents/ dogfood kit.
 #
 # This repo dogfoods the onboarding methodology it ships: it carries its own
-# .agents/ kit + .claude -> .agents symlink + a symlink to the pack, exactly as
-# the `onboard` sub-skill generates for a target repo. These tests lock that
-# structure in so a future change can't silently break the dogfood — the same
-# integrity the `verify` sub-skill checks, made a CI gate (test & validation
-# discipline, DWP_SPECIFICATION.md 5.1.1).
+# .agents/ kit + .claude -> .agents symlink + the DeepWorkPlan pack installed
+# at .agents/skills/deepworkplan (committed consumer-install copy from skills-lock.json).
+# These tests lock that structure in so a future change can't silently break
+# the dogfood — the same integrity the `verify` sub-skill checks, made a CI
+# gate (test & validation discipline, DWP_SPECIFICATION.md 5.1.1).
 #
 # Run with:  bats tests/
 
@@ -22,8 +22,14 @@ setup() {
     [ -f "$REPO_ROOT/.claude/skills/deepworkplan/SKILL.md" ]
 }
 
-@test ".agents/skills/deepworkplan symlinks to the shipped pack (dogfood)" {
-    [ -L "$AGENTS_DIR/skills/deepworkplan" ]
+@test "skills-lock.json pins the dogfooded deepworkplan install" {
+    [ -f "$REPO_ROOT/skills-lock.json" ]
+    grep -q '"deepworkplan"' "$REPO_ROOT/skills-lock.json"
+}
+
+@test ".agents/skills/deepworkplan is a committed consumer-install copy" {
+    [ -d "$AGENTS_DIR/skills/deepworkplan" ]
+    [ ! -L "$AGENTS_DIR/skills/deepworkplan" ]
     [ -f "$AGENTS_DIR/skills/deepworkplan/create/SKILL.md" ]
     [ -f "$AGENTS_DIR/skills/deepworkplan/author/SKILL.md" ]
 }
