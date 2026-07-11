@@ -22,9 +22,11 @@ setup() {
     [ -f "$REPO_ROOT/.claude/skills/deepworkplan/SKILL.md" ]
 }
 
-@test ".agents/skills/deepworkplan symlinks to the shipped pack (dogfood)" {
-    [ -L "$AGENTS_DIR/skills/deepworkplan" ]
+@test ".agents/skills/deepworkplan contains the dogfooded skill pack" {
+    [ -d "$AGENTS_DIR/skills/deepworkplan" ]
+    [ -f "$AGENTS_DIR/skills/deepworkplan/SKILL.md" ]
     [ -f "$AGENTS_DIR/skills/deepworkplan/create/SKILL.md" ]
+    [ -f "$AGENTS_DIR/skills/deepworkplan/execute/SKILL.md" ]
     [ -f "$AGENTS_DIR/skills/deepworkplan/author/SKILL.md" ]
 }
 

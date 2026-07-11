@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-manifest/v1.json",
+  "title": "DeepWorkPlan plan manifest",
+  "description": "Static identity of a Deep Work Plan, written once at materialization. See PLAN_STATE.md.",
+  "type": "object",
+  "required": ["schema", "spec_version", "name", "archetype", "rigor", "created_at", "task_count"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "https://deepworkplan.com/schema/plan-manifest/v1.json"
+    },
+    "spec_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "DWP spec version the plan was created under."
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$",
+      "description": "Plan directory name: PLAN_{snake_case_name}, 2-5 words."
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "archetype": {
+      "enum": ["individual", "orchestrator-hub", "agent-workspace"]
+    },
+    "rigor": {
+      "enum": ["micro", "standard", "deep"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agent": { "type": "string", "maxLength": 100 },
+        "model": { "type": "string", "maxLength": 100 }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 50 },
+      "maxItems": 20
+    },
+    "task_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parent_plan": {
+      "type": ["string", "null"],
+      "description": "For child DWPs: '{repo}:{plan_name}' of the orchestrator plan, else null."
+    }
+  }
+}
