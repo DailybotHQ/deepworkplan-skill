@@ -35,8 +35,13 @@ jobs:
   release:
     name: Bump version, tag, release
     runs-on: ubuntu-latest
-    # Skip our own release commits to prevent an infinite loop.
-    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    # Skip our own release commits (infinite-loop guard) and any commit
+    # explicitly tagged [skip release] (e.g. repo-infra-only changes).
+    if: >-
+      ${{
+        !startsWith(github.event.head_commit.message, 'chore(release):')
+        && !contains(github.event.head_commit.message, '[skip release]')
+      }}
     steps:
       - uses: actions/checkout@v5
         with:
