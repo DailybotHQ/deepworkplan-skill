@@ -9,6 +9,17 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.16.0] — 2026-07-11
+
+### Changes
+
+- Merge pull request #28 from DailybotHQ/feat/cursor-agents-symlink
+- chore(skill): sync dogfood copy with .cursor symlink changes [skip release]
+- feat: add .cursor → .agents directory symlink alongside .claude → .agents
+- Merge pull request #27 from DailybotHQ/chore/dogfood-skill-copy
+- chore(skill): replace dogfood symlink with full skill copy [skip release]
+
+
 ## [2.15.1] — 2026-07-11
 
 ### Changes
