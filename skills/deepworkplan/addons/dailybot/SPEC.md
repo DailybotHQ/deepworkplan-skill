@@ -19,7 +19,7 @@ baseline AI-first conformance.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.2.0 |
+| **Version** | 2.3.0 |
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `methodology-spec/ADDONS.md`, `../../spec/PLAN_STATE.md` |
 | **License** | MIT |
@@ -29,6 +29,11 @@ baseline AI-first conformance.
 > completion — with the report's `--json-data` payload derived from the plan's
 > machine-readable state layer (`PLAN_STATE.md`). All events remain opt-in,
 > conditional, and non-blocking; the completion milestone is unchanged.
+>
+> **Additive in 2.3.0.** Version gates align with the Dailybot agent skill **3.4.0**
+> and `dailybot-cli` **>= 3.1.2** (unified floor — hooks, chat, authoring, and
+> browse/read surface ship together). §3.5 documents the paired skill's full
+> capability surface; this addon still wires only the `report` sub-skill.
 
 ## 1. Conventions
 
@@ -83,8 +88,10 @@ with explicit acceptance, and each reconciled if already present (§7):
     Dailybot skill's `shared/auth.md` (cross-origin diff against the GitHub
     source + `.sha256` sidecar match, optional cosign). The addon **MUST NOT**
     recommend piping the script to a shell **unverified**, **or**
-  - `pip install dailybot-cli` (Python 3.10+), **or**
-  - `brew install dailybothq/tap/dailybot` (macOS).
+  - `pip install 'dailybot-cli>=3.1.2'` (Python 3.10+), **or**
+  - `brew install dailybothq/tap/dailybot` (macOS), **or**
+  - Windows PowerShell: `irm https://cli.dailybot.com/install.ps1 | iex` (when
+    WSL2 / Git Bash unavailable).
 - The addon **MUST NOT** reimplement the verified installer; it points at the
   Dailybot skill's flow.
 
@@ -101,20 +108,36 @@ with explicit acceptance, and each reconciled if already present (§7):
 
 ### 3.4 Optional harness hook enforcement
 
-- When the installed Dailybot agent skill is **>= 1.6.0** and the Dailybot CLI
-  is **>= 1.12.0**, the addon **SHOULD** offer — and **MAY**, with explicit
-  acceptance, commit — repo-level harness hook configs whose entries invoke the
-  `dailybot hook` lifecycle commands (`session-start`, `activity`,
-  `post-commit`, `stop`), e.g. Claude Code `.claude/settings.json`, Cursor
-  `.cursor/hooks.json`.
-- The hook templates, output dialects, anti-noise gates, and uninstall path are
-  owned by the Dailybot skill's `report/hooks.md` — the addon **MUST** defer to
-  it and **MUST NOT** duplicate or diverge from those templates.
+- When `dailybot-cli` is **>= 3.1.2** (the unified floor for the current skill
+  pack, currently **3.4.0**), the addon **SHOULD** offer — and **MAY**, with
+  explicit acceptance, commit — repo-level harness hook configs whose entries
+  invoke the `dailybot hook` lifecycle commands (`session-start`, `activity`,
+  `post-commit`, `stop`, `dismiss`), e.g. Claude Code `.claude/settings.json`,
+  Cursor `.cursor/hooks.json`.
+- The hook templates, output dialects, anti-noise gates, auto-activation triggers
+  (`report/triggers.md`), and uninstall path are owned by the Dailybot skill's
+  `report/hooks.md` — the addon **MUST** defer to it and **MUST NOT** duplicate
+  or diverge from those templates.
 - The addon **MUST NOT** write hook configs without explicit acceptance, and
   **MUST** merge into existing config files — never overwrite (§7). Existing
   `dailybot hook` entries **MUST** be preserved, not duplicated.
-- When versions are older, the addon **MUST** skip this offer (the §5 wiring
-  stands alone) and **MAY** suggest `dailybot upgrade` once.
+- When the CLI is below 3.1.2, the addon **MUST** skip this offer (the §5
+  wiring stands alone) and **MAY** suggest `dailybot upgrade` once.
+- The committed `.dailybot/profile.json` **MAY** include
+  `"report": {"mode": "continuous"}` for research/docs-heavy repos so non-commit
+  work is nudged sooner (Dailybot skill `report/hooks.md` § Per-repo controls).
+
+### 3.5 Paired Dailybot skill — full capability surface (informational)
+
+The Dailybot agent skill (currently **3.4.0**, source
+[`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)) exposes
+**13 coordinated sub-skills**: report, ask, messages, email, chat,
+conversations, health, check-ins (complete + authoring), kudos (give + browse),
+teams (list/resolve + `me`/`org`/`user get`), forms (lifecycle + authoring),
+workflows (read-only list/get), and report channels. **This addon wires only the
+`report` sub-skill** into DWP plan execution (§5). The other capabilities are
+available when the developer invokes the Dailybot skill directly — the addon
+**MUST NOT** wire them into DWP execution unless the developer explicitly asks.
 
 ---
 
@@ -261,12 +284,13 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Dailybot skill: [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)
-  — `SKILL.md`, `shared/auth.md`, `report/SKILL.md`, `report/hooks.md` (hook
-  enforcement templates, >= 1.6.0)
+  — `SKILL.md` (currently **3.4.0**), `shared/auth.md`, `TRUST.md`,
+  `report/SKILL.md`, `report/hooks.md`, `report/triggers.md`
 - Dailybot CLI: [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli), PyPI `dailybot-cli`
-  — `docs/AGENT_HOOKS.md` (the `dailybot hook` command group + report ledger, >= 1.12.0)
+  — minimum **>= 3.1.2**; `docs/AGENT_HOOKS.md` (the `dailybot hook` command group
+  + report ledger)
 - [`../../spec/PLAN_STATE.md`](../../spec/PLAN_STATE.md) (the state layer the payloads derive from), `../../spec/AGENT_PROTOCOL.md` §7 (unattended profile + stop conditions)
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.2.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

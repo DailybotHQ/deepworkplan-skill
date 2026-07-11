@@ -136,14 +136,17 @@ is fully conformant with **zero** addons installed.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx skills add DailybotHQ/agent-skill`, OpenClaw, or git clone + `setup.sh`)
-  and/or the **Dailybot CLI** (`pip install dailybot-cli`,
-  `brew install dailybothq/tap/dailybot`, or the SHA-256-verified
-  `cli.dailybot.com/install.sh`); **defers all authentication** to the Dailybot
-  skill's own consent flow (`shared/auth.md` — `dailybot login` or
-  `DAILYBOT_API_KEY`); and wires an **optional, best-effort, never-blocking**
-  progress-report step into DWP execution so a **plan completion** emits a
-  Dailybot **milestone** report via the dailybot `report` sub-skill.
+  (`npx skills add DailybotHQ/agent-skill`, currently **3.4.0**; OpenClaw, or
+  git clone + `setup.sh`) and/or the **Dailybot CLI** (`dailybot-cli >= 3.1.2`,
+  via pip, Homebrew, the SHA-256-verified `cli.dailybot.com/install.sh`, or
+  Windows PowerShell); **defers all authentication** to the Dailybot skill's own
+  consent flow (`shared/auth.md` — `dailybot login` or `DAILYBOT_API_KEY`); wires
+  **four lifecycle events** (kickoff, significant task, blocked, completion) as
+  **optional, best-effort, never-blocking** progress reports via the dailybot
+  `report` sub-skill; and **MAY** commit deterministic hook enforcement
+  (`dailybot hook` lifecycle hooks, CLI >= 3.1.2). The paired Dailybot skill
+  exposes 13 capabilities (chat, check-ins, forms authoring, ask AI, and more);
+  this addon wires only **report** into DWP execution.
 - **Vendor-neutral guardrail:** the core DeepWorkPlan methodology has **zero**
   Dailybot dependency. This addon **MUST NOT** be auto-installed for everyone —
   the `onboard` flow recommends it only when the developer/team already uses

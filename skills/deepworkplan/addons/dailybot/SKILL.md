@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-dailybot
-description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill (DailybotHQ/agent-skill) and/or the Dailybot CLI (DailybotHQ/cli), wiring the plan lifecycle into best-effort agent updates - kickoff when a plan starts, significant task completions, a blocked report when an unattended run halts, and a milestone on plan completion - with payloads derived from the plan's state layer, and optionally committing the Dailybot skill's deterministic hook enforcement (dailybot hook lifecycle hooks, CLI >= 1.12.0) so the agent harness itself reminds agents about unreported work. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
-version: "2.15.0"
+description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill (DailybotHQ/agent-skill, currently 3.4.0) and/or the Dailybot CLI (DailybotHQ/cli, >= 3.1.2), wiring the plan lifecycle into best-effort agent updates - kickoff when a plan starts, significant task completions, a blocked report when an unattended run halts, and a milestone on plan completion - with payloads derived from the plan's state layer, and optionally committing the Dailybot skill's deterministic hook enforcement (dailybot hook lifecycle hooks) so the agent harness itself reminds agents about unreported work. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
+version: "2.16.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -11,19 +11,21 @@ metadata: {"openclaw":{"emoji":"📡","homepage":"https://deepworkplan.com","req
 # DeepWorkPlan — Dailybot Addon
 
 Connect the target repo to the developer's **Dailybot team** so that DWP work —
-especially a **plan completion** — surfaces to humans as a standup-style
-**progress/milestone report**. This is an **opt-in addon**; it is **never**
-required for a repo to be AI-first, and it **never blocks** the actual work.
+the full plan lifecycle — surfaces to humans as standup-style **progress
+reports**. This is an **opt-in addon**; it is **never** required for a repo to
+be AI-first, and it **never blocks** the actual work.
 
 > ## The rule that overrides everything: this addon DEFERS, it does not reinvent
 >
-> The official **Dailybot agent skill** already owns install, consent, auth,
-> context detection, the writing style, and the non-blocking guarantee. This
-> addon's job is narrow: (1) **offer** to install the Dailybot skill/CLI through
-> their own consent flows, and (2) **wire** an optional report step into DWP
-> `execute`/plan-completion that routes through the dailybot `report` sub-skill.
-> It MUST NOT duplicate, bypass, or weaken any Dailybot consent or auth flow —
-> it points at them. (Normative source: [`SPEC.md`](SPEC.md).)
+> The official **Dailybot agent skill** (currently **3.4.0**) already owns
+> install, consent, auth, context detection, the writing style, and the
+> non-blocking guarantee. It exposes **13 coordinated capabilities** (report,
+> ask, messages, email, chat, conversations, health, check-ins, kudos, teams,
+> forms, workflows, report channels) — but **this addon's job is narrow**: (1)
+> **offer** to install the Dailybot skill/CLI through their own consent flows,
+> and (2) **wire** the optional **report** sub-skill into DWP `execute`/plan
+> lifecycle. It MUST NOT duplicate, bypass, or weaken any Dailybot consent or
+> auth flow — it points at them. (Normative source: [`SPEC.md`](SPEC.md).)
 
 ## Positioning guardrail (read before anything)
 
@@ -78,20 +80,24 @@ without their explicit acceptance** — and where the Dailybot skill's own conse
 flow applies, defer to it rather than prompting yourself.
 
 - **Dailybot agent skill** (the recommended path — it brings the consent/auth
-  flow with it):
+  flow and the full 13-capability pack; currently **3.4.0**):
   - `npx skills add DailybotHQ/agent-skill` (cross-agent, recommended), or
+  - `npx skills update dailybot` when already installed, or
   - OpenClaw native: `openclaw skills install dailybot`, or
   - `git clone https://github.com/DailybotHQ/agent-skill.git` + run its `setup.sh`.
 - **Dailybot CLI** (the underlying bridge, from
-  [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli); the skill installs it
-  on first use via its own SHA-256-verified consent flow — you generally do
-  **not** install it separately, but these are the supported paths if asked):
-  - `curl -sSL https://cli.dailybot.com/install.sh | bash` — pair with the
-    **checksum/consent verification** the Dailybot skill documents in
-    `shared/auth.md` (cross-origin diff + `.sha256` sidecar check; never run it
+  [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli); minimum **`>= 3.1.2`**
+  for the whole skill pack; the skill installs it on first use via its own
+  SHA-256-verified consent flow — you generally do **not** install it separately,
+  but these are the supported paths if asked):
+  - Verified install via the Dailybot skill's `shared/auth.md` (preferred), or
+  - `pip install 'dailybot-cli>=3.1.2'` (Python 3.10+), or
+  - `brew install dailybothq/tap/dailybot` (macOS), or
+  - `curl -fsSL https://cli.dailybot.com/install.sh | bash` — **only** with the
+    checksum/consent verification the Dailybot skill documents (never run
     unverified), or
-  - `pip install dailybot-cli` (Python 3.10+), or
-  - `brew install dailybothq/tap/dailybot` (macOS).
+  - Windows PowerShell: `irm https://cli.dailybot.com/install.ps1 | iex` (when
+    WSL2 / Git Bash unavailable).
 
 > **Do not reimplement the verified installer.** If the Dailybot skill is being
 > installed, let *its* `shared/auth.md` flow drive the CLI install + checksum
@@ -139,29 +145,32 @@ This is the integration value. Reasoning guidance is in
   (credentials in that file are a hard error per the CLI). The same file MAY
   carry the committed report policy the hooks honor:
   `"report": {"min_interval_minutes": 30, "nudge": true}` (`"nudge": false`
-  is the soft opt-out that keeps manual reporting available).
+  is the soft opt-out that keeps manual reporting available). For
+  research/docs-heavy repos, `"mode": "continuous"` nudges non-commit work
+  sooner — see the Dailybot skill's `report/hooks.md` § Per-repo controls.
 
 ### Step 3b — Offer deterministic hook enforcement (OPT-IN, defer to the Dailybot skill)
 The lifecycle wiring above is prompt-layer: it relies on the model remembering
-to report. Since Dailybot agent skill **>= 1.6.0** with `dailybot-cli`
-**>= 1.12.0**, the Dailybot skill also ships **deterministic hook enforcement**
+to report. With `dailybot-cli` **>= 3.1.2** (included in the current **3.4.0**
+skill pack), the Dailybot skill ships **deterministic hook enforcement**
 (`report/hooks.md`): harness lifecycle hooks (`dailybot hook session-start |
 activity | post-commit | stop | dismiss`) backed by a local per-repo report
 ledger, so the harness itself detects unreported work and reminds the agent at
-end of turn — even in the long unattended sessions where prompt instructions
-decay. This is the strongest version of the visibility this addon exists for.
+end of turn — even in long unattended sessions where prompt instructions decay.
+This is the strongest version of the visibility this addon exists for.
 
-- **Offer it** (consent-gated, show the exact config before writing) when the
-  installed Dailybot skill/CLI versions support it: commit the repo-level hook
-  config — Claude Code `.claude/settings.json` (or `.agents/settings.json`
-  where `.claude → .agents`), Cursor `.cursor/hooks.json`, other harnesses per
-  the table in the Dailybot skill's `report/hooks.md` — so every contributor
-  and fresh container gets autonomous reporting on clone; the only per-person
-  step left is `dailybot login`.
+- **Offer it** (consent-gated, show the exact config before writing) when
+  `dailybot --version` reports **>= 3.1.2**: commit the repo-level hook config —
+  Claude Code `.claude/settings.json` (or `.agents/settings.json` where
+  `.claude → .agents`), Cursor `.cursor/hooks.json`, other harnesses per the
+  table in the Dailybot skill's `report/hooks.md` — so every contributor and
+  fresh container gets autonomous reporting on clone; the only per-person step
+  left is `dailybot login`.
 - **Defer the mechanics.** The hook templates, output formats, anti-noise
   gates, and uninstall path are owned by the Dailybot skill's
   [`report/hooks.md`](https://github.com/DailybotHQ/agent-skill/blob/main/skills/dailybot/report/hooks.md)
-  — point at it; do not duplicate or hand-roll the JSON beyond merging it in.
+  and [`report/triggers.md`](https://github.com/DailybotHQ/agent-skill/blob/main/skills/dailybot/report/triggers.md)
+  — point at them; do not duplicate or hand-roll the JSON beyond merging it in.
   Merge into existing config files, never overwrite (§Reconcile).
 - **The two layers compose — no double-reporting.** A successful
   `dailybot agent update` (any lifecycle event from Step 3) resets the hook
@@ -169,17 +178,17 @@ decay. This is the strongest version of the visibility this addon exists for.
   deterministic backstop when a lifecycle event was missed. A hook reminder
   mid-plan is answered with either a lifecycle-appropriate report or
   `dailybot hook dismiss` — never ignored, never blocking.
-- **Degrade gracefully.** Older skill/CLI → skip this step (the Step 3 wiring
+- **Degrade gracefully.** CLI below 3.1.2 → skip this step (the Step 3 wiring
   stands alone) and mention `dailybot upgrade` once. The `dailybot hook`
   commands are local-only and always exit 0, so installing them cannot violate
   the never-block rule; they also respect `.dailybot/disabled`.
 
 ### Step 4 — Validate (SPEC §Validation)
-Run the validation checklist and report: whether the skill/CLI is present, that
-auth was deferred (not reinvented), that the report step is wired as
-**optional + non-blocking**, whether hook enforcement was offered/installed
-(and the versions that gated it), the identity source if any, and any deferred
-items.
+Run the validation checklist and report: whether the skill/CLI is present (skill
+**>= 3.4.0** recommended, CLI **>= 3.1.2**), that auth was deferred (not
+reinvented), that the report step is wired as **optional + non-blocking**,
+whether hook enforcement was offered/installed, the identity source if any, and
+any deferred items.
 If nothing could be installed here (sandbox/CI), say why — do not silently skip,
 and do not fail the onboarding.
 

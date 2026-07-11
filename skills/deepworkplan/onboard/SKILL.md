@@ -517,15 +517,19 @@ reporting; in trust mode, recommend it **only** on that signal and **never
 auto-install it for everyone**. If accepted: read that addon's `SKILL.md` and run
 its flow — detect whether the Dailybot skill/CLI is already present
 (reconcile-don't-clobber), offer the **opt-in** install paths (Dailybot agent
-skill via `npx skills add DailybotHQ/agent-skill` / OpenClaw / git clone +
-`setup.sh`, or the Dailybot CLI), **defer all authentication** to the Dailybot
-skill's own consent flow (`shared/auth.md` — `dailybot login` or
-`DAILYBOT_API_KEY`; never reinvent or store credentials), and wire the
-**optional** progress-report step into DWP execution so a **plan completion**
-emits a Dailybot **milestone** report via the dailybot `report` sub-skill. That
-report step is strictly **best-effort and never blocks** the work if Dailybot is
-absent, unauthenticated, or unreachable. The core DeepWorkPlan methodology has
-**zero Dailybot dependency** — this addon is purely optional team visibility.
+skill via `npx skills add DailybotHQ/agent-skill` / `npx skills update dailybot`
+/ OpenClaw / git clone + `setup.sh`, or the Dailybot CLI **>= 3.1.2**), **defer
+all authentication** to the Dailybot skill's own consent flow (`shared/auth.md`
+— `dailybot login` or `DAILYBOT_API_KEY`; never reinvent or store credentials),
+wire the **four lifecycle events** (kickoff, significant task, blocked,
+completion) as optional progress reports via the dailybot `report` sub-skill,
+and **MAY** offer deterministic hook enforcement (`dailybot hook`, CLI >=
+3.1.2). The paired Dailybot skill (**3.4.0**) exposes 13 capabilities (chat,
+check-ins, forms authoring, ask AI, and more); this addon wires only **report**
+into DWP execution. Every report is strictly **best-effort and never blocks**
+the work if Dailybot is absent, unauthenticated, or unreachable. The core
+DeepWorkPlan methodology has **zero Dailybot dependency** — this addon is purely
+optional team visibility.
 After applying, run the addon's validation step (SPEC §8). If declined, skip it
 and continue — the repo stays baseline-conformant.
 

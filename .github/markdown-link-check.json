@@ -11,6 +11,9 @@
     },
     {
       "pattern": "^https?://skills\\.sh"
+    },
+    {
+      "pattern": "^https?://no-color\\.org"
     }
   ],
   "timeout": "10s",

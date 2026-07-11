@@ -57,7 +57,7 @@ skill's own `shared/auth.md` flow.
 | Want | Offer |
 |------|-------|
 | **Dailybot skill** (recommended — brings consent/auth + `report`) | `npx skills add DailybotHQ/agent-skill` · OpenClaw `openclaw skills install dailybot` · `git clone https://github.com/DailybotHQ/agent-skill.git` + `./setup.sh` |
-| **Dailybot CLI only** (developer explicitly wants the binary) | `pip install dailybot-cli` (Py 3.10+) · `brew install dailybothq/tap/dailybot` (macOS) · `curl -sSL https://cli.dailybot.com/install.sh \| bash` **only with the skill's checksum/consent verification** |
+| **Dailybot CLI only** (developer explicitly wants the binary) | `pip install 'dailybot-cli>=3.1.2'` (Py 3.10+) · `brew install dailybothq/tap/dailybot` (macOS) · verified install via `shared/auth.md` · Windows: `irm https://cli.dailybot.com/install.ps1 \| iex` |
 
 > Prefer installing the **skill** — it owns the SHA-256-verified CLI install and
 > the OTP/API-key auth flow. Only surface the raw CLI commands when the developer
@@ -146,17 +146,18 @@ Decision notes:
 
 ---
 
-## 4b. Offer deterministic hook enforcement (skill >= 1.6.0, CLI >= 1.12.0)
+## 4b. Offer deterministic hook enforcement (CLI >= 3.1.2)
 
-The §4 wiring is prompt-layer — it relies on the model remembering. When the
-installed Dailybot skill/CLI versions support it, also offer (opt-in, show the
-exact config first) to commit the repo-level harness hook config so the harness
-itself reminds the agent about unreported work at end of turn:
+The §4 wiring is prompt-layer — it relies on the model remembering. When
+`dailybot-cli` is **>= 3.1.2** (the unified floor for the current skill pack,
+currently **3.4.0**), also offer (opt-in, show the exact config first) to commit
+the repo-level harness hook config so the harness itself reminds the agent about
+unreported work at end of turn:
 
 ```bash
-# Version gate — only offer when both hold
-dailybot --version          # >= 1.12.0 (the `dailybot hook` command group)
-grep -m1 'version:' ~/.*/skills/dailybot/SKILL.md   # >= 1.6.0 (report/hooks.md)
+# Version gate — only offer when the CLI meets the floor
+dailybot --version          # >= 3.1.2 (hooks, chat, authoring, browse/read)
+dailybot version --check      # confirms whether an upgrade is available
 ```
 
 Reason against the repo, then merge (never overwrite) the config the Dailybot
@@ -165,8 +166,9 @@ skill's `report/hooks.md` documents — Claude Code `.claude/settings.json` (or
 other harnesses per its table. Decision notes:
 
 - **Defer the mechanics** — templates, output formats (`--format claude|cursor|generic`),
-  anti-noise gates, and uninstall all live in the Dailybot skill's
-  `report/hooks.md`; do not duplicate them into the repo docs.
+  auto-activation triggers (`report/triggers.md`), anti-noise gates, and uninstall
+  all live in the Dailybot skill's `report/hooks.md`; do not duplicate them into
+  the repo docs.
 - **No double-reporting by construction:** every successful
   `dailybot agent update` (any §4 lifecycle event) resets the hook ledger.
   The hooks are the deterministic backstop for a missed lifecycle event.
@@ -175,9 +177,10 @@ other harnesses per its table. Decision notes:
   `dailybot hook dismiss` (if not) — never ignored silently, never blocking.
 - **Committed policy knobs** live in `.dailybot/profile.json`:
   `"report": {"min_interval_minutes": 30, "nudge": false}` turns reminders off
-  for the repo while keeping manual reporting.
-- **Older versions:** skip the offer, suggest `dailybot upgrade` once, and let
-  the §4 wiring stand alone.
+  for the repo while keeping manual reporting; `"mode": "continuous"` nudges
+  non-commit work (research, docs, plans) sooner in research-heavy repos.
+- **Older CLI:** below 3.1.2 → skip the offer, suggest `dailybot upgrade` once,
+  and let the §4 wiring stand alone.
 
 ---
 
