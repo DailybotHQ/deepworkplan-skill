@@ -131,6 +131,12 @@ check_repo() {
     warn ".claude missing (symlink to .agents)"
   fi
 
+  if [ -e .cursor ]; then
+    pass ".cursor resolves"
+  else
+    warn ".cursor missing (symlink to .agents)"
+  fi
+
   if [ -d docs ]; then
     pass "docs/"
     if [ -f docs/SECURITY.md ]; then

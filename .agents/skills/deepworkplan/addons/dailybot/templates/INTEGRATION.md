@@ -162,7 +162,8 @@ dailybot version --check      # confirms whether an upgrade is available
 
 Reason against the repo, then merge (never overwrite) the config the Dailybot
 skill's `report/hooks.md` documents — Claude Code `.claude/settings.json` (or
-`.agents/settings.json` where `.claude → .agents`), Cursor `.cursor/hooks.json`,
+`.agents/settings.json` where `.claude → .agents`), Cursor `.cursor/hooks.json`
+(or via `.cursor → .agents`),
 other harnesses per its table. Decision notes:
 
 - **Defer the mechanics** — templates, output formats (`--format claude|cursor|generic`),

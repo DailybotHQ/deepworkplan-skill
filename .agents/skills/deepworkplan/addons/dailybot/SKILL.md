@@ -162,7 +162,8 @@ This is the strongest version of the visibility this addon exists for.
 - **Offer it** (consent-gated, show the exact config before writing) when
   `dailybot --version` reports **>= 3.1.2**: commit the repo-level hook config —
   Claude Code `.claude/settings.json` (or `.agents/settings.json` where
-  `.claude → .agents`), Cursor `.cursor/hooks.json`, other harnesses per the
+  `.claude → .agents`), Cursor `.cursor/hooks.json` (or via `.cursor → .agents`),
+  other harnesses per the
   table in the Dailybot skill's `report/hooks.md` — so every contributor and
   fresh container gets autonomous reporting on clone; the only per-person step
   left is `dailybot login`.

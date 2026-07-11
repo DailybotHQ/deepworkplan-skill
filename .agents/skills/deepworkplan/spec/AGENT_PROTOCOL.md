@@ -61,7 +61,7 @@ breaking change.
 | Agent | Native config convention | Command prefix |
 |-------|--------------------------|----------------|
 | **Claude Code** | `.claude/` (symlinked to `.agents/`), `CLAUDE.md` (symlinked to `AGENTS.md`) | `/` (native) |
-| **Cursor** | `.cursor/rules/*.mdc` referencing `AGENTS.md` | `#` or plain text |
+| **Cursor** | `.cursor/` (symlinked to `.agents/`), `.cursor/rules/*.mdc` | `#` or plain text |
 | **OpenAI Codex** | `.codex/` / `CODEX.md` referencing `AGENTS.md` | `#` or plain text |
 | **Google Gemini** | `.gemini/` referencing `AGENTS.md` | `#` or plain text |
 | **GitHub Copilot** | `.github/copilot-instructions.md` referencing `AGENTS.md` | `#` or plain text |
@@ -117,8 +117,8 @@ On any command invocation, an agent **MUST**:
 
 - All supported agents **MUST** read the same configuration content from `.agents/`
   (agents, commands, skills, docs, settings), each through its own convention:
-  Claude Code via the `.claude → .agents` symlink (`DOCUMENTATION_STANDARD.md` §6),
-  others via their referencing config files.
+  Claude Code via `.claude → .agents` and Cursor via `.cursor → .agents`
+  (`DOCUMENTATION_STANDARD.md` §6), others via their referencing config files.
 - `.agents/` content **MUST** be authored agent-neutral. An agent **MUST NOT**
   introduce agent-specific divergence into shared files; agent-only settings (e.g.
   Claude Code's `settings.json` harness config) **MUST** be ignored by agents that

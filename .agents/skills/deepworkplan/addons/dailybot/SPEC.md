@@ -112,8 +112,9 @@ with explicit acceptance, and each reconciled if already present (§7):
   pack, currently **3.4.0**), the addon **SHOULD** offer — and **MAY**, with
   explicit acceptance, commit — repo-level harness hook configs whose entries
   invoke the `dailybot hook` lifecycle commands (`session-start`, `activity`,
-  `post-commit`, `stop`, `dismiss`), e.g. Claude Code `.claude/settings.json`,
-  Cursor `.cursor/hooks.json`.
+  `post-commit`, `stop`, `dismiss`), e.g. Claude Code `.claude/settings.json`
+  (or `.agents/settings.json` where `.claude → .agents`),
+  Cursor `.cursor/hooks.json` (or via `.cursor → .agents`).
 - The hook templates, output dialects, anti-noise gates, auto-activation triggers
   (`report/triggers.md`), and uninstall path are owned by the Dailybot skill's
   `report/hooks.md` — the addon **MUST** defer to it and **MUST NOT** duplicate
