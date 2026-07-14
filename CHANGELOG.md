@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.16.1] — 2026-07-14
+
+### Changes
+
+- Merge pull request #29 from DailybotHQ/docs/dailybot-addon-3.10.3
+- docs(addon): align Dailybot addon with agent-skill 3.10.3 and CLI >= 3.7.0
+
+
 ## [2.16.0] — 2026-07-11
 
 ### Changes

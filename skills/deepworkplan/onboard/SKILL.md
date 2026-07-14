@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-onboard
 description: Make a repository AI-first by reasoning about its stack and archetype, then generating adapted AGENTS.md, docs/, per-module docs, .agents/, and the .claude/.cursor to .agents symlinks. Offers opt-in addons. Use when the developer wants to onboard or AI-enable a repo.
-version: "2.16.0"
+version: "2.16.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
