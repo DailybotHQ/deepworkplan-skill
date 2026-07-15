@@ -12,10 +12,13 @@ any other agent that reads local skills/commands.
 > lives only on GitHub and on contributors' machines, exactly like `.github/`,
 > `tests/`, `scripts/`, and `docs/`. See `AGENTS.md` §2.
 
-This repo **dogfoods the methodology it ships**: the DeepWorkPlan pack is
-symlinked at [`skills/deepworkplan`](skills/deepworkplan) →
-`../../skills/deepworkplan`, so the `/dwp-*` commands and agents here pilot this
-very repo using its own skill.
+This repo **dogfoods the methodology it ships**: the DeepWorkPlan pack lives
+at [`skills/deepworkplan`](skills/deepworkplan) as a **vendored copy** fetched
+via `npx skills add DailybotHQ/deepworkplan-skill@vX.Y.Z` and pinned in
+[`skills-lock.json`](../skills-lock.json), so the `/dwp-*` commands and agents
+here pilot this very repo using **exactly what a consumer would install**.
+That copy is refreshed automatically by the auto-release workflow after each
+tag lands — never hand-edit it (see AGENTS.md §4).
 
 ```
 .agents/
@@ -23,9 +26,10 @@ very repo using its own skill.
 ├── settings.json            ← harness config (sensible permissions; no secrets)
 ├── agents/                  ← reviewer, architect, executor, frontmatter-guardian, shell-auditor
 ├── commands/                ← dwp-* delegators + skill-create/agent-create + validate-frontmatter/run-tests/commit
-├── skills/                  ← fix-frontmatter, shellcheck-fix, write-bats-test + deepworkplan (symlink)
+├── skills/                  ← fix-frontmatter, shellcheck-fix, write-bats-test + deepworkplan (vendored, bot-managed)
 └── docs/                    ← skills_agents_catalog.md, COMMANDS_REFERENCE.md
 .claude → .agents            ← backward-compat symlink (Claude Code reads .claude/)
+.cursor → .agents            ← backward-compat symlink (Cursor reads .cursor/)
 ```
 
 ## Backward compatibility — the `.claude` symlink

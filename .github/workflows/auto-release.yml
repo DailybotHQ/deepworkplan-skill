@@ -18,7 +18,11 @@ name: Auto-release on merge to main
 #   4. Prepends a new section to CHANGELOG.md with the merged commits as bullets
 #   5. Commits as "Dailybot Automations" with `[skip ci]` to break the loop
 #   6. Tags `vX.Y.Z` and pushes
-#   7. Creates a GitHub Release with auto-generated notes
+#   7. Dogfoods the just-published tag by fetching it via `npx skills add` into
+#      .agents/skills/deepworkplan/ — doubles as a live smoke test of the
+#      release AND keeps the in-repo dogfood copy at HEAD equal to the latest
+#      released tag with no manual refresh commits (see Step "Dogfood").
+#   8. Creates a GitHub Release with auto-generated notes
 
 on:
   push:
@@ -183,6 +187,81 @@ jobs:
           # push the tag on its own.
           git tag -a "$NEW_TAG" -m "Release ${NEW_VERSION}"
           git push origin "refs/tags/${NEW_TAG}"
+
+      - name: Dogfood — refresh vendored deepworkplan from the just-published tag
+        # This repo dogfoods its own skill: `.agents/skills/deepworkplan/` is a
+        # vendored copy managed via `skills-lock.json`, fetched exactly the way
+        # any consumer would install it (`npx skills add`). Refreshing right
+        # after the tag lands serves three purposes:
+        #   1. Live smoke test — proves the just-pushed tag actually installs
+        #      cleanly via `npx skills`. If the install script or the tag
+        #      layout is broken, the workflow fails HERE (loudly) instead of a
+        #      consumer discovering it silently.
+        #   2. Keeps the in-repo dogfood copy at HEAD equal to the latest
+        #      release (rather than the release before the one we just cut), so
+        #      any contributor cloning fresh gets the current skill by default.
+        #   3. Refreshes `skills-lock.json` with the new content hash so
+        #      restore/verify flows stay accurate.
+        # The commit message carries `[skip release]` so this push does NOT
+        # re-trigger this workflow (the `if:` guard on the job catches it).
+        if: steps.version.outputs.skip != 'true'
+        env:
+          NEW_TAG: ${{ steps.version.outputs.new_tag }}
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        run: |
+          set -euo pipefail
+
+          # Give GitHub a moment to propagate the just-pushed tag through the
+          # API layer that backs `npx skills` (git-protocol tag reads are
+          # instant; the REST/graphql surface occasionally lags a few seconds).
+          sleep 5
+
+          # Pin to the exact tag we just cut instead of letting `skills`
+          # resolve "the newest matching tag". If the tag isn't visible yet
+          # (propagation lag, publish failure), `npx skills add @<tag>` fails
+          # loudly here — that's the whole point of the smoke test. A silent
+          # "already up to date" would let a broken release slip through.
+          #
+          # Two separate `-y` / `--yes` flags below — they mean different
+          # things and both are required in a non-TTY (Actions) environment:
+          #   * `npx --yes` — auto-installs the `skills` npm package without
+          #     the "Ok to proceed?" download prompt.
+          #   * `skills add ... -y` — auto-selects the default install targets
+          #     without the interactive agent-picker.
+          echo "::group::npx skills add DailybotHQ/deepworkplan-skill@${NEW_TAG} --skill deepworkplan --force -y"
+          npx --yes skills add "DailybotHQ/deepworkplan-skill@${NEW_TAG}" \
+            --skill deepworkplan --force -y
+          echo "::endgroup::"
+
+          # Explicit invariant: the vendored SKILL.md's `version:` field MUST
+          # equal the tag we just published. If it doesn't, `npx skills`
+          # accepted the fetch but installed the wrong content — fail hard
+          # rather than commit a misrepresented "dogfood" state.
+          VENDORED_VERSION=$(
+            sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
+              .agents/skills/deepworkplan/SKILL.md | head -n1
+          )
+          if [ "${VENDORED_VERSION}" != "${NEW_VERSION}" ]; then
+            echo "::error::Vendored SKILL.md version is '${VENDORED_VERSION}'"
+            echo "::error::but the just-published tag is '${NEW_TAG}'"
+            echo "::error::(expected frontmatter '${NEW_VERSION}')."
+            echo "::error::Refusing to commit a stale dogfood snapshot."
+            exit 1
+          fi
+          echo "OK: vendored deepworkplan at ${NEW_TAG} (verified)"
+
+          # Empty diff after `--force` with a matching version assertion means
+          # the working copy was already at this tag — no commit needed
+          # (idempotent), but the smoke test PASSED (pinned fetch + version
+          # check both succeeded).
+          if git diff --quiet -- .agents/skills/deepworkplan skills-lock.json; then
+            echo "Vendored deepworkplan already at ${NEW_TAG}; nothing to commit."
+            exit 0
+          fi
+
+          git add .agents/skills/deepworkplan skills-lock.json
+          git commit -m "chore(release): dogfood vendored deepworkplan to ${NEW_TAG} [skip release]"
+          git push origin HEAD:main
 
       - name: Generate provenance checksums
         if: steps.version.outputs.skip != 'true'

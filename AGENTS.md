@@ -180,19 +180,30 @@ unquoted `version`.
 
 ### 4. Versioning is automatic — write good commits
 
-You do **not** edit `version:` fields, `CHANGELOG.md`, or git tags by hand.
+You do **not** edit `version:` fields, `CHANGELOG.md`, git tags, or the
+vendored dogfood copy at `.agents/skills/deepworkplan/` by hand.
 The `auto-release.yml` workflow runs on every merge to `main` and:
 
 1. Reads the current version from the **router** `skills/deepworkplan/SKILL.md`
-   frontmatter (single source of truth).
+ frontmatter (single source of truth).
 2. Looks at commits merged since the last `vX.Y.Z` tag.
 3. Decides the bump level:
-   - `feat(scope)!:` or `BREAKING CHANGE:` in body → **MAJOR**
-   - `feat(scope):` → **MINOR**
-   - everything else (`fix:`, `chore:`, no prefix, etc.) → **PATCH**
+ - `feat(scope)!:` or `BREAKING CHANGE:` in body → **MAJOR**
+ - `feat(scope):` → **MINOR**
+ - everything else (`fix:`, `chore:`, no prefix, etc.) → **PATCH**
 4. Bumps `version:` in **all** SKILL.md files in sync (router + six sub-skills
-   + addon), prepends a section to `CHANGELOG.md`, commits as
-   `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and creates a GitHub Release.
+ + addon), prepends a section to `CHANGELOG.md`, commits as
+ `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and pushes.
+5. **Dogfoods the just-published tag** — fetches
+ `DailybotHQ/deepworkplan-skill@vX.Y.Z` via `npx skills add` into
+ `.agents/skills/deepworkplan/`, verifies the vendored `SKILL.md` version
+ matches, and commits any diff (plus `skills-lock.json`) as
+ `chore(release): dogfood vendored deepworkplan to vX.Y.Z [skip release]`.
+ This doubles as a live smoke test — if the release doesn't install
+ cleanly for consumers, the workflow fails HERE. Contributors never
+ hand-refresh the vendored copy anymore.
+6. Creates a GitHub Release with auto-generated notes and the SHA256SUMS
+ provenance artifact attached.
 
 What this means for you:
 
