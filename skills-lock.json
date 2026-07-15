@@ -1,6 +1,18 @@
 {
   "version": 1,
   "skills": {
+    "ai-diff-reviewer": {
+      "source": "DailybotHQ/ai-diff-reviewer",
+      "sourceType": "github",
+      "skillPath": "skills/ai-diff-reviewer/SKILL.md",
+      "computedHash": "7f5a63c295ec6633e49fdbac23453b257c9a9f9f5abecfc9fd4a87fca42da38a"
+    },
+    "dailybot": {
+      "source": "DailybotHQ/agent-skill",
+      "sourceType": "github",
+      "skillPath": "skills/dailybot/SKILL.md",
+      "computedHash": "1831475dce575f55bd6fcc07c5d92f255b8249f621a5f5cfbef51699e4580e2a"
+    },
     "deepworkplan": {
       "source": "DailybotHQ/deepworkplan-skill",
       "sourceType": "github",
