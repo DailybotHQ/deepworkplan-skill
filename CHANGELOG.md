@@ -9,6 +9,18 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.16.2] — 2026-07-15
+
+### Changes
+
+- Merge pull request #31 from DailybotHQ/ci/auto-dogfood-after-release
+- fix(docs): drop link to skills-lock.json until first release creates it
+- ci(release): auto-dogfood vendored skill after each release
+- fix(setup): ignore OS-generated .DS_Store inside skills/ and .agents/
+- Merge pull request #30 from DailybotHQ/chore/refresh-dogfood-2.16.1
+- chore(skill): refresh dogfood copy to v2.16.1 [skip release]
+
+
 ## [2.16.1] — 2026-07-14
 
 ### Changes
