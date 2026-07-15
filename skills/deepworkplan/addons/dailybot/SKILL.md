@@ -90,19 +90,22 @@ flow applies, defer to it rather than prompting yourself.
   for the whole skill pack; the skill installs it on first use via its own
   SHA-256-verified consent flow — you generally do **not** install it separately,
   but these are the supported paths if asked):
-  - Verified install via the Dailybot skill's `shared/auth.md` (preferred), or
-  - `pip install 'dailybot-cli>=3.7.0'` (Python 3.10+), or
-  - `brew install dailybothq/tap/dailybot` (macOS), or
-  - `curl -fsSL https://cli.dailybot.com/install.sh | bash` — **only** with the
-    checksum/consent verification the Dailybot skill documents (never run
-    unverified), or
-  - Windows PowerShell: `irm https://cli.dailybot.com/install.ps1 | iex` (when
-    WSL2 / Git Bash unavailable).
+  - **Package-manager paths (preferred — pinned + checksum-verified by the
+    package registry)**:
+    - `pip install 'dailybot-cli>=3.7.0'` (Python 3.10+), or
+    - `brew install dailybothq/tap/dailybot` (macOS).
+  - **Vendor's verified installer flow** (macOS / Linux / Windows) — the
+    Dailybot skill's
+    [`shared/auth.md`](https://github.com/DailybotHQ/agent-skill/blob/main/skills/dailybot/shared/auth.md)
+    documents a three-step `download → verify checksum → execute` flow with the
+    SHA-256 sidecar (and optional cosign signature). Follow it exactly; do not
+    substitute a one-line remote-installer pipe.
 
-> **Do not reimplement the verified installer.** If the Dailybot skill is being
-> installed, let *its* `shared/auth.md` flow drive the CLI install + checksum
-> verification. Only surface the raw CLI commands when the developer explicitly
-> wants the CLI without the skill.
+> **Do not reimplement the verified installer, and never pipe a remote
+> installer to a shell.** If the Dailybot skill is being installed, let *its*
+> `shared/auth.md` flow drive the CLI install + checksum verification. Only
+> surface the raw package-manager commands when the developer explicitly wants
+> the CLI without the skill.
 
 ### Step 2 — Auth: DEFER to the Dailybot skill's own consent flow
 Do **not** prompt for email, OTP, or API keys yourself, and do **not** store any
@@ -200,8 +203,10 @@ and do not fail the onboarding.
   baseline-conformant and `execute` is never blocked by reporting.
 - **Defer auth, never store secrets.** No email/OTP/API-key prompting here; no
   credential written to any file. Point at the Dailybot skill's `shared/auth.md`.
-- **Verified install only.** Never recommend `curl ... install.sh | bash`
-  without the checksum/consent verification the Dailybot skill owns.
+- **Verified install only.** Never recommend piping a remote installer to a
+  shell (any variant of "fetch from the network and execute in one line").
+  Point at the Dailybot skill's checksum-verified `shared/auth.md` flow, or at
+  a package manager (`pip`, `brew`) that pins versions and verifies integrity.
 - **Reconcile, don't clobber.** An existing skill/CLI/identity/report step is
   preserved; only fill gaps. Any destructive change needs explicit approval.
 - **Vendor-neutral.** Never imply DWP needs Dailybot. This addon is purely

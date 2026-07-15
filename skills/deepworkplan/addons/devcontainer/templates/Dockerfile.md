@@ -13,10 +13,48 @@ Every Dockerfile, regardless of language:
    ca-certificates build-essential`.
 2. Creates the dev user (or uses the image's) with UID/GID 1000 + passwordless
    sudo — **unless** the base image already ships a suitable non-root user.
-3. Installs the **agent CLIs**: GitHub CLI (`gh`), Dailybot CLI
-   (`curl -sSL https://cli.dailybot.com/install.sh | bash`), Codex CLI, and — as
-   the dev user — Claude Code (`curl -fsSL https://claude.ai/install.sh | bash`)
-   and Cursor CLI (`curl -fsSL https://cursor.com/install | bash`).
+3. Installs the **agent CLIs** — always via a **package manager or a verified
+   two-step download-then-execute flow**, never by piping a remote installer to
+   a shell (see security note below):
+   - **GitHub CLI (`gh`)** — via `apt` on Debian/Ubuntu bases (`apt install
+     gh` from the GitHub CLI apt repo) or `brew install gh`. Pin the version
+     in the Dockerfile when reproducibility matters.
+   - **Dailybot CLI** — via `pip install 'dailybot-cli>=3.7.0'` (preferred
+     when Python is already in the image), or `brew install
+     dailybothq/tap/dailybot`, or the Dailybot skill's own verified installer
+     flow documented at
+     [`DailybotHQ/agent-skill · shared/auth.md`](https://github.com/DailybotHQ/agent-skill/blob/main/skills/dailybot/shared/auth.md).
+   - **Codex CLI** — via `npm install -g @openai/codex` (or the vendor's
+     current recommended package-manager path — check the OpenAI docs).
+   - **Claude Code** (installed as the dev user) — via `npm install -g
+     @anthropic-ai/claude-code`, following the current Anthropic docs.
+   - **Cursor CLI** (installed as the dev user) — via the current
+     package-manager path documented at
+     [cursor.com/docs](https://cursor.com/docs).
+
+> ### Security note — no remote-installer pipes in Dockerfiles
+>
+> The Dockerfile MUST NOT combine "fetch a remote installer" and "execute it"
+> into a single shell pipeline (the POSIX one-line `fetch → pipe → shell`
+> pattern, or the equivalent PowerShell `download → invoke-expression`). That
+> pattern executes whatever the vendor's server returns at build time with
+> **no version pin and no integrity check** — vendor infrastructure changes,
+> mirrors, or a compromised CDN silently reshape the image. Prefer, in order:
+> 1. **Package managers** (`apt`, `apk`, `dnf`, `brew`, `pip`, `npm`, `cargo`)
+>    — they pin versions, verify checksums, and are cacheable/reproducible.
+> 2. **A verified two-step flow when a package-manager path does not exist**:
+>    first, download the installer to a local file; then, verify its SHA-256
+>    against the vendor's published sidecar (or verify a cosign signature);
+>    then, execute the verified local file in a separate RUN step.
+> 3. **A multi-stage build** that fetches, verifies, and extracts the binary
+>    in a build stage, and only copies the verified binary into the runtime
+>    stage.
+>
+> This is a hard requirement for public / OSS images (methodology-spec §5)
+> and is what Snyk (rule E005) and Socket (Anomaly/Security alerts) audit
+> for. A Dockerfile that fetches-and-executes a remote installer in one
+> shell pipeline will fail `npx skills audit` and every mainstream container
+> security scanner.
 4. `ENV EDITOR=nano VISUAL=nano GIT_EDITOR=nano`.
 5. `WORKDIR {workspaceFolder}`.
 6. Copies `entrypoint.sh`, strips CRLF, `chmod +x`.
