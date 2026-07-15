@@ -19,12 +19,81 @@ re-scans on a delay after merge — do not treat a stale FAIL on the
 dashboard as permission to add more risk; treat the shipped tree as the
 contract that must stay clean.
 
-The load-bearing rules live in [`AGENTS.md`](../AGENTS.md) and
-[`skills/deepworkplan/TRUST.md`](../skills/deepworkplan/TRUST.md); this file
-overrides the base prompt for the patterns most likely to slip a review in
-this codebase.
+The load-bearing rules live in [`AGENTS.md`](../AGENTS.md),
+[`skills/deepworkplan/TRUST.md`](../skills/deepworkplan/TRUST.md), and the
+normative methodology at
+[`skills/deepworkplan/spec/DWP_SPECIFICATION.md`](../skills/deepworkplan/spec/DWP_SPECIFICATION.md).
+This file overrides the base prompt for the patterns most likely to slip a
+review in this codebase.
+
+**Primary review mission:** protect the methodology so consumers can keep
+creating and executing **long-horizon Deep Work Plans** — durable plans that
+survive across sessions and agents, with atomic tasks, acceptance criteria,
+validation gates, and resumability. A PR that ships a neat addon or CI
+improvement but quietly breaks `create` / `execute` / `resume` / the
+mandatory finals / `.dwp/` / zero-addon conformance is a **methodology
+regression** and must fail the review.
 
 ## Severity overrides for this codebase
+
+### Methodology integrity (long-horizon plans must keep working)
+
+When the diff touches ANY of
+`skills/deepworkplan/{create,execute,refine,resume,status,verify,onboard,author}/`,
+`skills/deepworkplan/spec/**`, `skills/deepworkplan/guide/**`, or the router
+`skills/deepworkplan/SKILL.md`, the review **MUST** run the **Methodology
+integrity checklist** (below) and surface failures as findings — not as a
+silent pass. Addons and CI may change; the core loop must not.
+
+- **Always `critical` (methodology / long-horizon loop):** removing,
+  renaming, or collapsing any of the core sub-skills that make long-horizon
+  work possible — `create`, `execute`, `refine`, `resume`, `status`,
+  `verify`, `onboard` — or teaching agents that any of them are optional /
+  deprecated without a `feat(...)!:` migration. Consumers run multi-hour
+  plans by chaining these; losing `resume` or `execute`'s gate discipline
+  breaks the product.
+- **Always `critical` (methodology / plan durability):** changing the
+  `.dwp/` output convention (plans under `.dwp/plans/PLAN_{name}/`, drafts
+  under `.dwp/drafts/`, gitignored working state) or reintroducing a legacy
+  results path as the primary location. Long-horizon state lives here;
+  scattering it makes resume impossible.
+- **Always `critical` (methodology / task contract):** weakening the
+  required task anatomy so tasks can ship without **Acceptance Criteria**
+  and **Validation** (or equivalent semantic sections). Spec-driven
+  execution depends on verifiable checkboxes + gates; "just do the work and
+  mark done" is a methodology break even if prose still sounds serious.
+- **Always `critical` (methodology / completion protocol):** teaching
+  `execute` (or guide/spec parallels) to mark a task `[x]` when validation
+  failed, acceptance criteria are unmet, or a Security Review `critical`
+  finding is still open/unaccepted. Soft-fail language MUST stay scoped to
+  *invocation* failures of optional augmentations — never to gate results
+  after a check actually ran.
+- **Always `critical` (methodology / mandatory finals):** inserting a new
+  mandatory final task, removing one of the three, or reordering
+  Security Review → Skills & Agents Discovery → Executive Report in
+  `create/SKILL.md` / `spec/DWP_SPECIFICATION.md` / `guide/GUIDE.md`.
+  Addons **MAY only AUGMENT** an existing final task (e.g. local review
+  under Security Review); they **MUST NOT** become a fourth plan task file
+  or reorder the finals. Same bar as before, elevated from warning —
+  this is the spine of every plan.
+- **Always `critical` (methodology / zero-addon conformance):** any change
+  that makes an addon, commercial service, CI provider, or external skill
+  **required** for `create` / `execute` / `onboard` / `verify` to succeed
+  on a repo with zero addons installed. Baseline AI-first + long-horizon
+  plans MUST work with only the core pack.
+- **Always `critical` (methodology / resume & interruptibility):** removing
+  or gutting resume/progress semantics (`PROGRESS.md`, `[x]` trust rules,
+  blocked-task reporting, "continue from recorded state") so an interrupted
+  multi-session plan cannot be continued by a new agent. Long-horizon
+  without resume is short-horizon with marketing.
+- **Always `critical` (methodology / normative contradiction):** a change
+  where `guide/GUIDE.md` (or an addon SKILL) **contradicts**
+  `spec/*.md` / `create` / `execute` on a normative MUST/MUST NOT (detection
+  predicates, gate behavior, final-task order, `.dwp/` layout, never-block
+  scope). Friendly prose is fine; opposing contracts are not — agents pick
+  one surface and silently diverge.
+
+### Ship boundary, packaging, trust
 
 - **Always `critical`:** anything outside `skills/deepworkplan/**` that a
   runtime code path (a SKILL.md or a helper it sources) reads at execution
@@ -145,14 +214,11 @@ this codebase.
   agent fills them by inspecting the target repo's actual stack. Verbatim
   file dumps violate the four-rule "reason, don't copy-paste" constraint
   (`addons/README.md`).
-- **Always `warning`:** a new mandatory final task inserted anywhere in
-  `skills/deepworkplan/create/SKILL.md`'s "Three mandatory final tasks"
-  block, or a reorder of the existing three (Security Review → Skills &
-  Agents Discovery → Executive Report). The order is normative in
-  `spec/DWP_SPECIFICATION.md`; addons AUGMENT existing final tasks — they
-  don't add new ones. The `apply-review` sub-skill exposure in the
-  ai-diff-reviewer addon is a live example (documented as OPTIONAL
-  companion during `execute`, never a plan task).
+- **Always `warning`:** an addon that documents a "required" extra plan
+  task, a mandatory pre-create hook, or a blocking dependency on CI /
+  provider secrets for the **local** Security Review pass. Optional
+  companions during `execute` are fine; new mandatory plan steps are not
+  (see methodology criticals above).
 - **Always `warning`:** documentation change to `skills/deepworkplan/**`
   (spec, guide, addon SKILL.md, or router SKILL.md) that is not mirrored
   into either the vendored dogfood copy at `.agents/skills/deepworkplan/**`
@@ -217,8 +283,35 @@ this codebase.
   is `set -euo pipefail` + bash 3.2 compatibility + shellcheck (via CI
   when present) — no separate typing layer.
 
+## Methodology integrity checklist (mandatory when core is in the diff)
+
+If the PR touches core methodology surfaces (list under "Methodology
+integrity" above), the review body **MUST** include a short explicit
+checklist — pass/fail per row — before the verdict. Do not bury this in
+notes; failures are `critical` findings.
+
+| # | Check | Fail when… |
+|---|--------|------------|
+| M1 | **Long-horizon loop intact** | `create` → plan materialization → `execute` (gates) → `resume`/`status` path is removed, skipped, or described as optional |
+| M2 | **`.dwp/` durability** | Plans/drafts/progress no longer live under gitignored `.dwp/`, or resume cannot find recorded state |
+| M3 | **Atomic task contract** | Tasks can complete without Acceptance Criteria + Validation (or semantic equivalents) |
+| M4 | **Gate discipline** | `execute` may mark `[x]` despite failed validation, unmet AC, or unaccepted SR `critical` |
+| M5 | **Mandatory finals** | Order/count of Security Review → Skills & Agents Discovery → Executive Report changed, or an addon adds a fourth mandatory task |
+| M6 | **Zero-addon baseline** | Core flows require an addon, CI secret, or commercial service to succeed |
+| M7 | **Interruptibility** | A new agent cannot continue a partially executed plan from on-disk progress alone |
+| M8 | **Spec ↔ guide ↔ create/execute** | Normative MUST/MUST NOT disagree across those surfaces on the same rule |
+
+When the PR **only** touches addons, CI, or docs outside the core loop,
+still skim M5–M6 if the addon claims to wire into Security Review /
+`execute` — augment-only, never-block-on-invocation, no new mandatory
+task files.
+
 ## Repo-specific conventions
 
+- **Methodology first.** Packaging, dogfood, and skills.sh Pass matter —
+  but not at the expense of the long-horizon plan loop. If a change forces
+  a tradeoff, protect `create` / `execute` / `resume` / finals / `.dwp/` /
+  zero-addon conformance first.
 - **skills.sh Security Audits (user-trust invariant).** The public page
   <https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan>
   continuously shows Gen Agent Trust Hub / Socket / Snyk. Maintainers
@@ -288,9 +381,14 @@ this codebase.
 - If a `SKILL.md` under `.agents/skills/` (any of the three vendored
   skills) was edited by hand → this is almost certainly a bug; the
   vendored copies are refreshed by `auto-release.yml` or `skills update`.
-- If `skills/deepworkplan/**` changed → skills.sh-audit checklist:
-  1. No `curl … | sh` / `wget … | sh` / `irm … | iex` (or close variants)
-     as literal strings anywhere in the pack (addons included).
+- If `skills/deepworkplan/**` changed → dual checklist:
+  **(A) Methodology integrity** — run the M1–M8 table above whenever
+  create/execute/refine/resume/status/verify/onboard/spec/guide/router
+  are in the diff; for addon-only diffs, at least M5–M6.
+  **(B) skills.sh / trust** —
+  1. No one-line remote-installer / fetch-and-execute literals anywhere
+     in the pack (addons included) — describe the ban without spelling
+     the pipe command when editing docs under `skills/deepworkplan/**`.
   2. No new network clients in core or `shared/context.sh`.
   3. Every `SKILL.md` with write-capable `allowed-tools` still has a
      Trust boundary / write-scope section.
