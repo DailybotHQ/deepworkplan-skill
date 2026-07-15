@@ -138,8 +138,9 @@ is fully conformant with **zero** addons installed.
   accepted, it offers (never forces) install of the **Dailybot agent skill**
   (`npx skills add DailybotHQ/agent-skill`, currently **3.10.3**; OpenClaw, or
   git clone + `setup.sh`) and/or the **Dailybot CLI** (`dailybot-cli >= 3.7.0`,
-  via pip, Homebrew, the SHA-256-verified `cli.dailybot.com/install.sh`, or
-  Windows PowerShell); **defers all authentication** to the Dailybot skill's own
+  via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
+  never a one-line remote-installer pipe); **defers all authentication** to the
+  Dailybot skill's own
   consent flow (`shared/auth.md` — `dailybot login` or `DAILYBOT_API_KEY`); wires
   **four lifecycle events** (kickoff, significant task, blocked, completion) as
   **optional, best-effort, never-blocking** progress reports via the dailybot

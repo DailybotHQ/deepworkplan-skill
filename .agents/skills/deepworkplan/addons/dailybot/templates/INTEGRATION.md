@@ -57,11 +57,13 @@ skill's own `shared/auth.md` flow.
 | Want | Offer |
 |------|-------|
 | **Dailybot skill** (recommended — brings consent/auth + `report`) | `npx skills add DailybotHQ/agent-skill` · OpenClaw `openclaw skills install dailybot` · `git clone https://github.com/DailybotHQ/agent-skill.git` + `./setup.sh` |
-| **Dailybot CLI only** (developer explicitly wants the binary) | `pip install 'dailybot-cli>=3.7.0'` (Py 3.10+) · `brew install dailybothq/tap/dailybot` (macOS) · verified install via `shared/auth.md` · Windows: `irm https://cli.dailybot.com/install.ps1 \| iex` |
+| **Dailybot CLI only** (developer explicitly wants the binary) | `pip install 'dailybot-cli>=3.7.0'` (Py 3.10+) · `brew install dailybothq/tap/dailybot` (macOS) · vendor's verified installer flow (macOS / Linux / Windows) via [`shared/auth.md`](https://github.com/DailybotHQ/agent-skill/blob/main/skills/dailybot/shared/auth.md) — `download → verify SHA-256 → execute`, never a one-line remote-installer pipe |
 
 > Prefer installing the **skill** — it owns the SHA-256-verified CLI install and
 > the OTP/API-key auth flow. Only surface the raw CLI commands when the developer
-> wants the CLI without the skill. Never recommend `curl ... | bash` unverified.
+> wants the CLI without the skill. Never recommend piping a remote installer to
+> a shell (any variant of "fetch from the network and execute in one line") —
+> use a package manager or the vendor's documented download-then-verify flow.
 
 ## 3. Auth — point at the Dailybot skill, do not reinvent
 
@@ -191,8 +193,10 @@ other harnesses per its table. Decision notes:
   without explicit acceptance.
 - **Defer auth:** never prompt for or store credentials; point at the Dailybot
   skill's `shared/auth.md`.
-- **Verified install only:** never recommend `curl ... install.sh | bash`
-  without the skill's checksum/consent verification.
+- **Verified install only:** never recommend piping a remote installer to a
+  shell without the skill's checksum/consent verification. Prefer a package
+  manager (`pip`, `brew`) or the skill's documented `download → verify SHA-256
+  → execute` flow — never a one-line `fetch-and-execute` pipe.
 - **Never block:** the wired report step is best-effort; absence, auth failure,
   network errors, or `.dailybot/disabled` mean skip-and-continue — warn once, no
   retries, no diagnostic loop. `execute` always succeeds regardless.

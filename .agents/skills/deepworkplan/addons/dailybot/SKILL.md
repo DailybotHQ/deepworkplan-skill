@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-dailybot
 description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill (DailybotHQ/agent-skill, currently 3.10.3) and/or the Dailybot CLI (DailybotHQ/cli, >= 3.7.0), wiring the plan lifecycle into best-effort agent updates - kickoff when a plan starts, significant task completions, a blocked report when an unattended run halts, and a milestone on plan completion - with payloads derived from the plan's state layer, and optionally committing the Dailybot skill's deterministic hook enforcement (dailybot hook lifecycle hooks) so the agent harness itself reminds agents about unreported work. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
-version: "2.16.2"
+version: "2.16.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -90,19 +90,22 @@ flow applies, defer to it rather than prompting yourself.
   for the whole skill pack; the skill installs it on first use via its own
   SHA-256-verified consent flow — you generally do **not** install it separately,
   but these are the supported paths if asked):
-  - Verified install via the Dailybot skill's `shared/auth.md` (preferred), or
-  - `pip install 'dailybot-cli>=3.7.0'` (Python 3.10+), or
-  - `brew install dailybothq/tap/dailybot` (macOS), or
-  - `curl -fsSL https://cli.dailybot.com/install.sh | bash` — **only** with the
-    checksum/consent verification the Dailybot skill documents (never run
-    unverified), or
-  - Windows PowerShell: `irm https://cli.dailybot.com/install.ps1 | iex` (when
-    WSL2 / Git Bash unavailable).
+  - **Package-manager paths (preferred — pinned + checksum-verified by the
+    package registry)**:
+    - `pip install 'dailybot-cli>=3.7.0'` (Python 3.10+), or
+    - `brew install dailybothq/tap/dailybot` (macOS).
+  - **Vendor's verified installer flow** (macOS / Linux / Windows) — the
+    Dailybot skill's
+    [`shared/auth.md`](https://github.com/DailybotHQ/agent-skill/blob/main/skills/dailybot/shared/auth.md)
+    documents a three-step `download → verify checksum → execute` flow with the
+    SHA-256 sidecar (and optional cosign signature). Follow it exactly; do not
+    substitute a one-line remote-installer pipe.
 
-> **Do not reimplement the verified installer.** If the Dailybot skill is being
-> installed, let *its* `shared/auth.md` flow drive the CLI install + checksum
-> verification. Only surface the raw CLI commands when the developer explicitly
-> wants the CLI without the skill.
+> **Do not reimplement the verified installer, and never pipe a remote
+> installer to a shell.** If the Dailybot skill is being installed, let *its*
+> `shared/auth.md` flow drive the CLI install + checksum verification. Only
+> surface the raw package-manager commands when the developer explicitly wants
+> the CLI without the skill.
 
 ### Step 2 — Auth: DEFER to the Dailybot skill's own consent flow
 Do **not** prompt for email, OTP, or API keys yourself, and do **not** store any
@@ -200,8 +203,10 @@ and do not fail the onboarding.
   baseline-conformant and `execute` is never blocked by reporting.
 - **Defer auth, never store secrets.** No email/OTP/API-key prompting here; no
   credential written to any file. Point at the Dailybot skill's `shared/auth.md`.
-- **Verified install only.** Never recommend `curl ... install.sh | bash`
-  without the checksum/consent verification the Dailybot skill owns.
+- **Verified install only.** Never recommend piping a remote installer to a
+  shell (any variant of "fetch from the network and execute in one line").
+  Point at the Dailybot skill's checksum-verified `shared/auth.md` flow, or at
+  a package manager (`pip`, `brew`) that pins versions and verifies integrity.
 - **Reconcile, don't clobber.** An existing skill/CLI/identity/report step is
   preserved; only fill gaps. Any destructive change needs explicit approval.
 - **Vendor-neutral.** Never imply DWP needs Dailybot. This addon is purely

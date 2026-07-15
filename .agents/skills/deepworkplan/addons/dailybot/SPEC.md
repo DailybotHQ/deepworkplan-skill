@@ -82,16 +82,18 @@ with explicit acceptance, and each reconciled if already present (§7):
 - The Dailybot CLI is the bridge the skill uses. The Dailybot skill installs it
   on first use via **its own SHA-256-verified consent flow**, so the addon
   **SHOULD NOT** install the CLI separately when the skill is being installed.
-- When the developer explicitly wants the CLI directly, the supported paths are:
-  - `curl -sSL https://cli.dailybot.com/install.sh | bash` — which the addon
-    **MUST** pair with the **checksum/consent verification** documented in the
-    Dailybot skill's `shared/auth.md` (cross-origin diff against the GitHub
-    source + `.sha256` sidecar match, optional cosign). The addon **MUST NOT**
-    recommend piping the script to a shell **unverified**, **or**
+- When the developer explicitly wants the CLI directly, the supported paths
+  are, **in preference order**:
   - `pip install 'dailybot-cli>=3.7.0'` (Python 3.10+), **or**
   - `brew install dailybothq/tap/dailybot` (macOS), **or**
-  - Windows PowerShell: `irm https://cli.dailybot.com/install.ps1 | iex` (when
-    WSL2 / Git Bash unavailable).
+  - The Dailybot skill's **verified installer flow** (macOS / Linux /
+    Windows) — documented in the skill's `shared/auth.md` as a three-step
+    `download → verify SHA-256 sidecar (optional cosign) → execute` sequence.
+    The addon **MUST** point at that flow and **MUST NOT** substitute a
+    one-line remote-installer pipe (any variant of "fetch from the network
+    and execute in one command") — that pattern is unverifiable at the
+    reader's terminal and is flagged as a critical delivery-vector risk by
+    every mainstream security auditor (Snyk rule E005, Socket W012).
 - The addon **MUST NOT** reimplement the verified installer; it points at the
   Dailybot skill's flow.
 
