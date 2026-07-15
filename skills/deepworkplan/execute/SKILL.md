@@ -80,6 +80,17 @@ Rules (strict):
    reorder.
 2. **For each task** — open `N.task_{title}.md`, read it fully, follow its
    instructions and Execution Checklist.
+
+   **Addon augmentation of mandatory final tasks.** If the current task is a
+   mandatory final task (`{N-2}.task_security_review.md`, etc.) AND an
+   opt-in addon that augments it is installed in this repo, execute BOTH the
+   base instruction body AND the addon augmentation. Currently the only such
+   augmentation is [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md)
+   augmenting Security Review (detection: `.agents/skills/ai-diff-reviewer/`
+   present; augmentation is defined in `../create/SKILL.md` "Three mandatory
+   final tasks" and detailed in `../guide/GUIDE.md` §5.4 "AI Diff Reviewer
+   local pass"). The augmentation is best-effort and conditional — never
+   fails the task; on any upstream error, warn once and continue.
 3. **Run validations** — execute ALL validation commands. If any fail: STOP, log
    the issue in the task's Completion & Log, do NOT mark `[x]`, report and wait
    for guidance. **Test discipline (`../guide/GUIDE.md` §5.3):** if the task added
