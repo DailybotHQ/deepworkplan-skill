@@ -248,8 +248,10 @@ is fully conformant with **zero** addons installed.
   (dual-surface) explicitly and MUST NOT default**; in Flow B **defers**
   CI-workflow authoring to the upstream `setup` sub-skill (never invents
   provider secrets); wires the mandatory DWP **Security Review** to run the
-  upstream parent default flow as an **additive, best-effort, never-blocking**
-  local-review pass; and (Flow B only) surfaces `apply-review` as an optional
+  upstream parent default flow as an **additive, best-effort** local-review
+  pass (soft-fail on *invocation* only — missing skill/extension or review
+  errors; `critical` findings from a completed pass still follow the SR
+  contract); and (Flow B only) surfaces `apply-review` as an optional
   developer-invoked companion during `execute`. Detection for the Security
   Review augmentation requires **skill + an extension file** at one of the
   three recognized paths (`.review/extension.md` >
