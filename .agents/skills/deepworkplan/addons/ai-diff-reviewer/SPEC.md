@@ -257,7 +257,11 @@ an additional post-existing-checks step:
    `info` findings are appended and reported but do not block.
 
 - The step is **SHOULD**, not MUST — the addon MUST NOT fail-close the plan
-  if the upstream skill or its provider are unavailable at execution time.
+  when the local pass cannot be *invoked* (vendored skill absent, no
+  extension file, or the coding-agent / upstream-skill invocation errors).
+  Do **not** treat an unset CI provider secret as an invocation skip — that
+  secret is Flow B CI/gate only. Once a local review **did** run, severity
+  handling above (§6.1 item 4) still applies.
 - The augmentation is **additive**. The existing manual Security Review
   reasoning is preserved. On repos without the addon, the SR template body
   is unchanged.
@@ -298,23 +302,32 @@ an additional post-existing-checks step:
 
 ## 7. Never-Block Rule (mandatory)
 
-- The Security Review augmentation **MUST NOT** block the developer's
-  primary work or DWP `execute`.
-- **Local augmentation (Flow A and Flow B):** if the vendored skill is
-  **absent**, detection fails (no extension file at a recognized path), the
-  network is **down**, or any upstream skill invocation **errors**, the
-  addon's wired local-review step **MUST**: warn briefly once, continue the
-  primary task, **not** retry automatically, and **not** enter a diagnostic
-  loop. This mirrors the upstream skill's own trust-boundary guarantees.
-  The local parent default flow runs via the coding agent and does **not**
-  require a CI provider secret — an unset `CURSOR_API_KEY` (or other
-  provider secret) **MUST NOT** suppress the local Security Review pass.
+Soft-fail applies to **invocation** of the local review pass only — not to
+Security Review gate results after a review completed. Post-run severity
+is governed by §6.1 (item 4): `critical` findings block SR completion until
+fixed or explicitly accepted.
+
+- **Local augmentation — invocation soft-fail (Flow A and Flow B):** if the
+  vendored skill is **absent**, detection fails (no extension file at a
+  recognized path), the network is **down**, or any upstream skill
+  invocation **errors**, the addon's wired local-review step **MUST**: warn
+  briefly once, continue the primary task, **not** retry automatically, and
+  **not** enter a diagnostic loop. This mirrors the upstream skill's own
+  trust-boundary guarantees. The local parent default flow runs via the
+  coding agent and does **not** require a CI provider secret — an unset
+  `CURSOR_API_KEY` (or other provider secret) **MUST NOT** suppress the
+  local Security Review pass.
+- **Local augmentation — after a review ran:** open/`critical` findings
+  from that pass **MUST** follow §6.1. Agents **MUST NOT** mark Security
+  Review `[x]` while those criticals remain unfixed and unaccepted. §7 does
+  **not** override that gate.
 - **Flow B CI / gate only:** when the dual-surface workflow is installed,
   document that the provider secret must be set for the CI Action to run;
   warn maintainers when it is unset. That warning **MUST NOT** skip or
   weaken the local SR augmentation.
-- Plan execution **MUST** succeed regardless of whether the local review
-  was run.
+- Plan execution **MUST** proceed when the local review was **skipped or
+  errored** at invocation (soft-fail above). Plan execution **MUST NOT**
+  treat "review ran with open criticals" as an invocation skip.
 - The CI merge gate (Flow B) **MUST NOT** block merges when the trigger
   label is not applied — Skipped, not Failed. This is enforced by the
   upstream `setup` wizard's default output.

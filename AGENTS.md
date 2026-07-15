@@ -477,11 +477,14 @@ concrete plan.
 [`deepworkplan-execute`](skills/deepworkplan/execute/SKILL.md) sub-skills
 notice the addon and **augment the mandatory Security Review task** with an
 `ai-diff-reviewer` local pass whose findings feed into
-`.dwp/plans/<plan>/analysis_results/SECURITY_REVIEW.md`. This is additive
-and non-blocking: the mandatory-final-task order is unchanged
-(Security Review → Skills & Agents Discovery → Executive Report), the
-Security Review task itself is not replaced, and the addon is never
-required. When the addon is absent, the plan runs exactly as before.
+`.dwp/plans/<plan>/analysis_results/SECURITY_REVIEW.md`. This is additive:
+the mandatory-final-task order is unchanged (Security Review → Skills &
+Agents Discovery → Executive Report), the Security Review task itself is
+not replaced, and the addon is never required. Soft-fail applies only when
+the local pass cannot be *invoked* (missing skill/extension or invocation
+error); `critical` findings from a completed pass still follow the existing
+Security Review contract. When the addon is absent, the plan runs exactly
+as before.
 
 ---
 

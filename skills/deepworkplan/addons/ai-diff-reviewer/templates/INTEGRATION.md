@@ -305,12 +305,14 @@ Decision notes:
 - **Verified install only:** never recommend piping a remote installer to
   a shell. Use `npx --yes skills add … -y` — pinned via `skills-lock.json`
   with content-hash verification.
-- **Never block:** the wired **local** review step is best-effort; absence
-  of the skill, missing extension file, invocation/network errors — all
-  mean skip-and-continue — warn once, no retries, no diagnostic loop.
-  `execute` always succeeds regardless. An unset CI provider secret is a
-  Flow B CI/gate warning only — it MUST NOT suppress the local Security
-  Review pass (Flow A needs no secret).
+- **Never block (invocation only):** the wired **local** review step is
+  best-effort to *start*; absence of the skill, missing extension file, or
+  invocation/network errors — all mean skip-and-continue — warn once, no
+  retries, no diagnostic loop. Once a review **ran**, `critical` findings
+  follow the existing Security Review contract (block until fixed or
+  explicitly accepted) — do not mark SR `[x]` anyway. An unset CI provider
+  secret is a Flow B CI/gate warning only — it MUST NOT suppress the local
+  Security Review pass (Flow A needs no secret).
 - **Vendor-neutral:** never imply DWP requires the AI Diff Reviewer. A
   repo with zero addons is fully conformant.
 - **Both flows are first-class:** Flow A (local-only) is a supported use

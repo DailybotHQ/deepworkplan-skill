@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-ai-diff-reviewer
-description: "Optional DeepWorkPlan addon that connects an AI-first repo to the AI Diff Reviewer (DailybotHQ/ai-diff-reviewer on GitHub, \"AI Diff Reviewer\" on the Marketplace, current v1.7.0) — installing (with consent) the vendored coding-agent skill (DailybotHQ/ai-diff-reviewer, five sub-skills — parent default flow, generate-extension, setup, open-pr, apply-review) and, if the developer picks Flow B (dual-surface), letting the upstream setup sub-skill write .github/workflows/pr-review.yml so every pull request to the target repo is reviewed in CI with byte-identical parity to the local review. Wires the mandatory DWP Security Review task to run the parent default flow (\"Review my current branch\") as an additive step producing verdict + findings table + severity, appended under a dedicated heading in analysis_results/SECURITY_REVIEW.md. In Flow B, also surfaces the upstream apply-review sub-skill as an OPTIONAL developer-invoked companion during execute for walking through CI-posted findings per-finding (apply / defer / skip) with explicit consent. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, defers all install/auth/wizard details to the upstream skill's own consent flows, and lets consumers pick Flow A (local-only) or Flow B (dual-surface) — never guesses, always asks. Use when the developer or team wants structured local review + optional CI merge gate on DWP work."
+description: "Optional DeepWorkPlan addon that connects an AI-first repo to the AI Diff Reviewer (DailybotHQ/ai-diff-reviewer on GitHub, \"AI Diff Reviewer\" on the Marketplace, current v1.7.0) — installing (with consent) the vendored coding-agent skill (DailybotHQ/ai-diff-reviewer, five sub-skills — parent default flow, generate-extension, setup, open-pr, apply-review) and, if the developer picks Flow B (dual-surface), letting the upstream setup sub-skill write .github/workflows/pr-review.yml so every pull request to the target repo is reviewed in CI with byte-identical parity to the local review. Wires the mandatory DWP Security Review task to run the parent default flow (\"Review my current branch\") as an additive step producing verdict + findings table + severity, appended under a dedicated heading in analysis_results/SECURITY_REVIEW.md. In Flow B, also surfaces the upstream apply-review sub-skill as an OPTIONAL developer-invoked companion during execute for walking through CI-posted findings per-finding (apply / defer / skip) with explicit consent. Opt-in, never required, never blocks on missing skill/extension/invocation errors (completed-review critical findings still follow the Security Review contract), reconciles existing setups instead of clobbering them, defers all install/auth/wizard details to the upstream skill's own consent flows, and lets consumers pick Flow A (local-only) or Flow B (dual-surface) — never guesses, always asks. Use when the developer or team wants structured local review + optional CI merge gate on DWP work."
 version: "2.16.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -10,7 +10,7 @@ metadata: {"openclaw":{"emoji":"🔍","homepage":"https://deepworkplan.com","req
 
 # DeepWorkPlan — AI Diff Reviewer Addon
 
-Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)** (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff Reviewer"**, current **v1.7.0**) so DWP work — the mandatory **Security Review** final task — is augmented with a structured local review (verdict + findings table + severity), and (in Flow B, optionally) every pull request to the target repo is gated by a CI-side review Action pinned to the same tag for byte-identical parity. This is an **opt-in addon**; it is **never** required for a repo to be AI-first, and it **never blocks** the actual work.
+Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)** (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff Reviewer"**, current **v1.7.0**) so DWP work — the mandatory **Security Review** final task — is augmented with a structured local review (verdict + findings table + severity), and (in Flow B, optionally) every pull request to the target repo is gated by a CI-side review Action pinned to the same tag for byte-identical parity. This is an **opt-in addon**; it is **never** required for a repo to be AI-first. Missing skill/extension or invocation errors **never block** the work; `critical` findings from a **completed** local review still follow the existing Security Review contract (block until fixed or explicitly accepted).
 
 > ## The rule that overrides everything: this addon DEFERS, it does not reinvent
 >
@@ -298,10 +298,12 @@ skip, and do not fail the onboarding.
 
 ## Failure-mode guardrails
 
-- **Never required, never blocking.** If declined — or if the vendored skill
-  is missing, detection fails, or the local review invocation errors —
-  stop/continue cleanly. The repo stays baseline-conformant and `execute`
-  is never blocked by review augmentation. An unset CI provider secret does
+- **Never required; invocation never blocking.** If declined — or if the
+  vendored skill is missing, detection fails, or the local review
+  invocation errors — stop/continue cleanly. The repo stays
+  baseline-conformant. Once a local review **ran**, open `critical`
+  findings still block Security Review completion until fixed or
+  explicitly accepted (SPEC §6.1 / §7). An unset CI provider secret does
   not skip the local Security Review pass (Flow B CI/gate only).
 - **Defer to upstream.** No wizard reimplementation, no review-methodology
   reimplementation, no apply-review reimplementation. Point at the vendored
