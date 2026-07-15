@@ -14,6 +14,12 @@
     },
     {
       "pattern": "^https?://no-color\\.org"
+    },
+    {
+      "pattern": "^\\.\\./\\.\\./\\.\\./SECURITY\\.md$"
+    },
+    {
+      "pattern": "^https://github\\.com/DailybotHQ/ai-diff-reviewer[\"'].*"
     }
   ],
   "timeout": "10s",
