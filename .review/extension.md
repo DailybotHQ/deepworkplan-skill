@@ -26,11 +26,14 @@ this codebase.
   AGENTS.md Rule #4 ("Versioning is automatic — write good commits").
 - **Always `critical`:** a sub-skill `SKILL.md` frontmatter `version:` that
   drifts from the router `skills/deepworkplan/SKILL.md` `version:` on any
-  commit that touches the router. All eight files (router + 6 sub-skills +
-  4 addons) MUST move in lockstep; `scripts/validate-frontmatter.py` fails
-  CI when they don't. Applies equally to the vendored `.agents/skills/*`
-  version invariants against their upstream tags in `skills-lock.json`
-  (drift means a stale dogfood copy).
+  commit that touches the router. Every in-tree
+  `skills/deepworkplan/**/SKILL.md` (router + sub-skills + all addons —
+  currently 14 files) MUST move in lockstep; `scripts/validate-frontmatter.py`
+  fails CI when they don't. Prefer this "every SKILL.md under the pack"
+  rule over a hard-coded size so future addons don't stale the count.
+  Applies equally to the vendored `.agents/skills/*` version invariants
+  against their upstream tags in `skills-lock.json` (drift means a stale
+  dogfood copy).
 - **Always `critical`:** frontmatter that violates `validate-frontmatter.py`:
   `name:` not kebab-case, `name:` not starting with `deepworkplan`,
   `homepage:` instead of `documentation_url:`, or an unquoted `version`.

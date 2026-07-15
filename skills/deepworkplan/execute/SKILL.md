@@ -86,11 +86,19 @@ Rules (strict):
    opt-in addon that augments it is installed in this repo, execute BOTH the
    base instruction body AND the addon augmentation. Currently the only such
    augmentation is [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md)
-   augmenting Security Review (detection: `.agents/skills/ai-diff-reviewer/`
-   present; augmentation is defined in `../create/SKILL.md` "Three mandatory
-   final tasks" and detailed in `../guide/GUIDE.md` §5.4 "AI Diff Reviewer
-   local pass"). The augmentation is best-effort and conditional — never
-   fails the task; on any upstream error, warn once and continue.
+   augmenting Security Review (detection — same predicate as
+   `../create/SKILL.md` and addon SPEC §6.1: `.agents/skills/ai-diff-reviewer/`
+   present **AND** an extension file at one of the three recognized paths, in
+   precedence order: `.review/extension.md` >
+   `.github/ai-diff-reviewer/extension.md` >
+   `.github/ai-pr-reviewer/extension.md`; skill-only without an extension is
+   NOT enough — do not run the local review pass mid–Security Review and do
+   not surprise-bootstrap; if the skill is present but no extension exists,
+   warn once that Flow A/B install is incomplete and continue the base
+   Security Review). Augmentation details live in `../create/SKILL.md`
+   "Three mandatory final tasks" and `../guide/GUIDE.md` §5.4 "AI Diff
+   Reviewer local pass". The augmentation is best-effort and conditional —
+   never fails the task; on any upstream error, warn once and continue.
 3. **Run validations** — execute ALL validation commands. If any fail: STOP, log
    the issue in the task's Completion & Log, do NOT mark `[x]`, report and wait
    for guidance. **Test discipline (`../guide/GUIDE.md` §5.3):** if the task added

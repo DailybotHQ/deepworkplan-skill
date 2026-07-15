@@ -47,7 +47,7 @@ Sequenced steps (a-i below), all in one long-running job on `ubuntu-latest`:
 | Version bump script cannot read current version | **Fails** — a corrupt router SKILL.md must be fixed before any release |
 | Any `npx skills add` fails during dogfood | **Fails** — a broken upstream tag must never quietly ship inside a release |
 | Version-invariant mismatch after install (installed `SKILL.md` `version:` != requested tag) | **Fails** — refuses to commit a misrepresented dogfood snapshot |
-| Upstream `gh release view` fails for one of the two external skills (rate limit, transient outage) | Warns; skips that skill for this release. The other skill (and the release) proceed |
+| Upstream `gh release view` fails for one of the two external skills (rate limit, transient outage) | **Fails** — refuses to cut a release whose dogfood snapshot cannot resolve upstream |
 | Head commit already `chore(release):` OR carries `[skip release]` | Whole workflow skips (loop guard) |
 
 ### The `--yes` + `-y` non-interactive contract (critical)
