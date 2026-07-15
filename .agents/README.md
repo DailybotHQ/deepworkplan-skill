@@ -15,10 +15,11 @@ any other agent that reads local skills/commands.
 This repo **dogfoods the methodology it ships**: the DeepWorkPlan pack lives
 at [`skills/deepworkplan`](skills/deepworkplan) as a **vendored copy** fetched
 via `npx skills add DailybotHQ/deepworkplan-skill@vX.Y.Z` and pinned in
-[`skills-lock.json`](../skills-lock.json), so the `/dwp-*` commands and agents
-here pilot this very repo using **exactly what a consumer would install**.
-That copy is refreshed automatically by the auto-release workflow after each
-tag lands — never hand-edit it (see AGENTS.md §4).
+`skills-lock.json` at the repo root, so the `/dwp-*` commands and agents here
+pilot this very repo using **exactly what a consumer would install**. That
+copy is refreshed automatically by the auto-release workflow after each tag
+lands (`skills-lock.json` is created on the first release that runs the new
+dogfood step) — never hand-edit it (see AGENTS.md §4).
 
 ```
 .agents/
