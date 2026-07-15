@@ -454,7 +454,8 @@ concrete plan.
 
 **Two adoption flows** (documented in the addon's SKILL.md + INTEGRATION.md):
 
-- **Flow A — local-only.** Vendor the skill under `.agents/skills/` and run
+- **Flow A — local-only.** Vendor the skill under `.agents/skills/`,
+  bootstrap `.review/extension.md` (required for SR detection), and run
   the local review pre-push. No CI Action, no GitHub secret.
 - **Flow B — dual-surface.** Vendor the skill AND install `pr-review.yml`.
   Local ↔ CI parity is guaranteed because both read the same `prompt.md`
