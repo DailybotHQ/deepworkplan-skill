@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.16.3] — 2026-07-15
+
+### Changes
+
+- Merge pull request #32 from DailybotHQ/security/eliminate-remote-installer-pipes
+- fix(security): eliminate remote-installer pipes flagged by Snyk E005 / Socket W012
+
+
 ## [2.16.2] — 2026-07-15
 
 ### Changes
