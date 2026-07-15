@@ -134,21 +134,29 @@ identical bytes with `npx skills experimental_install`.
 
 ---
 
-## 4. Bootstrap the extension file (both flows)
+## 4. Bootstrap the extension file (REQUIRED — both flows, during onboarding)
+
+Security Review detection needs **skill + extension**. Finish this during
+**addon onboarding** (after the vendored skill install, before declaring
+the addon installed). Do **not** rely on mid-plan `execute` / Security
+Review to heal a missing extension — `execute/SKILL.md` forbids surprise-
+bootstrap there (warn once that Flow A/B install is incomplete, continue
+the base Security Review).
 
 Where possible, hand off to the upstream `generate-extension` sub-skill —
 its ≥12 tool-call Discovery produces a repo-specific file grounded in the
 actual codebase, not templated boilerplate.
 
-- **First-time in a repo with no extension** — the parent default flow's
-  Step 2.5 will offer to bootstrap automatically. Say "yes" and let it
-  route to `generate-extension`.
-- **Explicit invocation** — say "generate a `.review/extension.md` for this
-  repo" (one of the `generate-extension` sub-skill's activation triggers).
-  Same result, skips the bootstrap prompt.
+- **During addon onboarding, no extension yet** — invoke `generate-extension`
+  explicitly: *"generate a `.review/extension.md` for this repo"*. Do not
+  defer this to a later parent-default-flow bootstrap prompt.
 - **Hand-written** — the developer writes the file directly using the
-  upstream skill's Step 5 examples. Best when the overrides are already
-  known.
+  upstream skill's examples. Best when the overrides are already known.
+- **Already present** — reconcile; do not clobber. Do not silently migrate
+  `.github/…/extension.md` → `.review/extension.md`.
+- **`.review/.skip-bootstrap` present** — respect the opt-out; document that
+  the local SR augmentation stays inactive until the marker is removed and
+  an extension exists.
 
 Extension file location — use `.review/extension.md` when writing a new one.
 Reason: runtime-agnostic, works even for teams that don't use GitHub

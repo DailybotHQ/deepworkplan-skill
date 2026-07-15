@@ -19,7 +19,7 @@ rule (§7), the **reconcile-don't-clobber** behavior (§8), the **validation
 checklist** (§9), and the **archetype compatibility** notes (§10).
 
 The addon is governed by [`../README.md`](../README.md) and
-[`methodology-spec/ADDONS.md`](../../spec/ADDONS.md): it is **never** required
+[`spec/ADDONS.md`](../../spec/ADDONS.md): it is **never** required
 for baseline AI-first conformance.
 
 ## Status of This Document
@@ -28,7 +28,7 @@ for baseline AI-first conformance.
 |-------|-------|
 | **Version** | 2.16.3 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `methodology-spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/GUIDE.md` §5.4 |
+| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/GUIDE.md` §5.4 |
 | **License** | MIT |
 | **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v1.7.0 (marketplace: "AI Diff Reviewer") |
 
@@ -86,7 +86,11 @@ policy — ask, don't guess). This addon **MUST** offer both.
 
 - Vendored skill installed; the CI Action is **NOT** installed.
 - Sub-skills used: **parent default flow** (Security Review augmentation) +
-  optionally `generate-extension` + optionally `open-pr`.
+  **`generate-extension` (required)** + optionally `open-pr`.
+- Extension requirement: addon onboarding **MUST NOT** complete Flow A
+  without an extension file at a recognized path (or an explicit
+  `.review/.skip-bootstrap` opt-out, which means the local SR pass will not
+  fire). Skill-only install is incomplete for SR detection (§6.1).
 - Sub-skills skipped: `setup` (would install the workflow, opting the repo
   into Flow B against the developer's intent), `apply-review` (no CI review
   posts back to any PR without the Action installed).
@@ -145,11 +149,14 @@ only with explicit acceptance, and each reconciled if already present (§8):
 
 ### 4.2 Repo-tailored `.review/extension.md` (both flows)
 
-- The addon **SHOULD** offer to bootstrap a repo-tailored extension file
-  via the upstream `generate-extension` sub-skill (≥12 tool-call Discovery
-  followed by a ~100-line file of concrete overrides). This is the
-  primary customization surface — where consumers encode their own severity
-  rules and "don't comment on" scopes.
+- The addon **MUST** ensure an extension file exists (or an explicit
+  `.review/.skip-bootstrap` opt-out is recorded) **before** finishing
+  onboarding. Prefer handing off to the upstream `generate-extension`
+  sub-skill (≥12 tool-call Discovery followed by a ~100-line file of
+  concrete overrides). This is the primary customization surface — where
+  consumers encode their own severity rules and "don't comment on" scopes.
+  Without an extension, Security Review detection (§6.1) fails and the
+  advertised local pass never runs.
 - The addon **MUST** honor the upstream's three-path precedence when
   detecting an existing extension file (first match wins):
   1. `.review/extension.md` (recommended, runtime-agnostic).
@@ -161,7 +168,12 @@ only with explicit acceptance, and each reconciled if already present (§8):
   the addon **SHOULD** use `.review/extension.md` (runtime-agnostic).
 - The addon **MUST** respect the `.review/.skip-bootstrap` opt-out marker
   (a tracked 0-byte file created when a developer previously answered
-  "never" to upstream's Step 2.5 bootstrap offer).
+  "never" to upstream's bootstrap offer). When that marker is present, the
+  addon **MUST NOT** bootstrap during onboarding or during later `execute`
+  Security Review — document that the local SR augmentation stays inactive
+  until the marker is removed and an extension is created.
+- Mid-plan `execute` **MUST NOT** surprise-bootstrap an extension file as a
+  side effect of Security Review (aligns with `execute/SKILL.md`).
 
 ### 4.3 CI workflow `pr-review.yml` (Flow B only)
 

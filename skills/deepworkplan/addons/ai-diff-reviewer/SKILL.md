@@ -47,7 +47,7 @@ default to either.
 
 | Flow | Use when | Sub-skills used | Sub-skills skipped |
 |------|----------|-----------------|--------------------|
-| **A — local-only** | Personal repos, experimental repos, or teams not (yet) ready for automated PR review. The vendored skill runs locally; the CI Action is NOT installed. | parent default flow (Security Review augmentation) + optionally `generate-extension` + optionally `open-pr` | `setup` (would install the workflow), `apply-review` (nothing to apply back — no CI review posts) |
+| **A — local-only** | Personal repos, experimental repos, or teams not (yet) ready for automated PR review. The vendored skill runs locally; the CI Action is NOT installed. | parent default flow (Security Review augmentation) + **`generate-extension` (required for SR detection)** + optionally `open-pr` | `setup` (would install the workflow), `apply-review` (nothing to apply back — no CI review posts) |
 | **B — dual-surface** | Team repos, production-facing repos, and anything where automated PR review is wanted. Skill + CI Action, both wired to the same `.review/extension.md` for byte-identical parity. Recommended for team repos. | All five: parent + `generate-extension` + `setup` + `open-pr` + `apply-review` | Nothing — all capabilities are used across the plan lifecycle |
 
 **Parity guarantee (Flow B).** The upstream skill's `prompt.md` is
@@ -145,10 +145,11 @@ happen.
 
    > This addon supports two adoption modes:
    >
-   > **Flow A — local-only.** Vendored skill only; no GitHub Actions changes.
-   > Best for personal or experimental repos, or teams not (yet) ready for
-   > automated PR review. The DWP Security Review still gets augmented with a
-   > local review pass.
+   > **Flow A — local-only.** Vendored skill + a repo-tailored extension
+   > file (via `generate-extension`); no GitHub Actions changes. Best for
+   > personal or experimental repos, or teams not (yet) ready for automated
+   > PR review. Once both are present, the DWP Security Review is augmented
+   > with a local review pass — skill alone is not enough.
    >
    > **Flow B — dual-surface.** Skill + CI Action, both reading the same
    > `.review/extension.md` for byte-identical parity. Every PR to `main`
@@ -197,6 +198,27 @@ installer without their explicit acceptance**.
 > shell.** The `npx skills` command is the supported, checksummed install
 > path — it records the content hash in `skills-lock.json` for reproducible
 > restores.
+
+### Step 1b — Bootstrap the extension file (REQUIRED for both flows)
+
+Security Review detection (SPEC §6.1 / `create` / `execute`) requires
+**skill + an extension file** at one of the three recognized paths. Do
+**not** finish addon onboarding without one — otherwise every later
+Security Review will warn "install incomplete" and skip the local pass.
+
+1. If an extension already exists at a recognized path → record it; do not
+   clobber (and do not migrate fallback/back-compat paths silently — ask).
+2. If `.review/.skip-bootstrap` is present → the developer previously opted
+   out. Respect it: document that the local SR augmentation will not fire
+   until they remove the marker and create an extension; do not surprise-
+   bootstrap later during `execute`.
+3. Otherwise → hand off to upstream `generate-extension` (or let the
+   developer hand-write `.review/extension.md`) **before** proceeding to
+   Step 2 / Step 3. Preferred handoff: *"generate a `.review/extension.md`
+   for this repo"*.
+
+Mid-plan `execute` **MUST NOT** surprise-bootstrap an extension — that is
+an onboarding concern, not a Security Review side effect.
 
 ### Step 2 — CI workflow install — DEFER to the upstream `setup` sub-skill (Flow B only)
 

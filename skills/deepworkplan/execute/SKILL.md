@@ -93,9 +93,10 @@ Rules (strict):
    `.github/ai-diff-reviewer/extension.md` >
    `.github/ai-pr-reviewer/extension.md`; skill-only without an extension is
    NOT enough — do not run the local review pass mid–Security Review and do
-   not surprise-bootstrap; if the skill is present but no extension exists,
-   warn once that Flow A/B install is incomplete and continue the base
-   Security Review). Augmentation details live in `../create/SKILL.md`
+   not surprise-bootstrap — extension creation belongs in addon onboarding
+   / `generate-extension`, not mid–Security Review; if the skill is present
+   but no extension exists, warn once that Flow A/B install is incomplete
+   and continue the base Security Review). Augmentation details live in `../create/SKILL.md`
    "Three mandatory final tasks" and `../guide/GUIDE.md` §5.4 "AI Diff
    Reviewer local pass". The augmentation is best-effort on *invocation*
    only — if the skill/extension is missing or the local review errors,
