@@ -606,10 +606,12 @@ the upstream `setup` sub-skill (never invent credentials — `CURSOR_API_KEY` /
 provider secrets are the consumer's responsibility); wire the mandatory DWP
 **Security Review** to run the upstream parent default flow as an additive
 local-review pass; and (Flow B only) surface `apply-review` as an optional
-developer-invoked companion during `execute`. Every augmentation is strictly
-**best-effort and never blocks** the work if the skill, extension, or provider
-secret is absent. The core DeepWorkPlan methodology has **zero AI Diff Reviewer
-dependency** — this addon is purely optional review quality. After applying,
+developer-invoked companion during `execute`. Every **local** augmentation is
+strictly **best-effort and never blocks** the work if the skill or extension is
+absent or the local review invocation errors — an unset CI provider secret does
+**not** skip the local Security Review pass (Flow B CI/gate only). The core
+DeepWorkPlan methodology has **zero AI Diff Reviewer dependency** — this addon
+is purely optional review quality. After applying,
 run the addon's validation step (SPEC §9). If declined, skip it and continue —
 the repo stays baseline-conformant.
 

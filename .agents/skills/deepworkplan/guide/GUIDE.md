@@ -472,8 +472,11 @@ plan at the end (`spec/DWP_SPECIFICATION.md` §6.1):
 When the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) is
 installed, the Security Review task gains an additional local-review pass. The
 augmentation is best-effort and conditional — the addon's SPEC §7 (never-block
-rule) means an absent upstream skill or missing provider secret produces a
-warning + skip, never a failed task.
+rule) means an absent upstream skill, failed detection (no extension file), or
+a local review invocation error produces a warning + skip, never a failed task.
+Flow A needs no CI provider secret; an unset `CURSOR_API_KEY` (or other
+provider secret) must not suppress the local pass — that secret is Flow B CI /
+gate messaging only.
 
 - **Detection.** `.agents/skills/ai-diff-reviewer/` present + an extension file
   at one of the three recognized paths (in precedence order): `.review/extension.md`

@@ -202,7 +202,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { persist-credentials: false }
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: DailybotHQ/ai-diff-reviewer@v1
         with:
           provider: <provider>
@@ -223,6 +225,10 @@ jobs:
 
 Reasoning notes:
 
+- **`fetch-depth: 0`** on `actions/checkout` is REQUIRED — the Action diffs
+  `origin/<base>...HEAD` and needs the base ref locally. A shallow
+  checkout yields a broken or empty review. This repo's `pr-review.yml`
+  and the upstream `setup` wizard both set it.
 - **`persist-credentials: false`** on `actions/checkout` is REQUIRED — the
   reviewer runs with broad local access; no credential should persist.
 - **`AI review gate`** is stable-named so branch protection can be
@@ -291,10 +297,12 @@ Decision notes:
 - **Verified install only:** never recommend piping a remote installer to
   a shell. Use `npx --yes skills add … -y` — pinned via `skills-lock.json`
   with content-hash verification.
-- **Never block:** the wired review step is best-effort; absence of the
-  skill, missing provider secret, network errors — all mean skip-and-
-  continue — warn once, no retries, no diagnostic loop. `execute` always
-  succeeds regardless.
+- **Never block:** the wired **local** review step is best-effort; absence
+  of the skill, missing extension file, invocation/network errors — all
+  mean skip-and-continue — warn once, no retries, no diagnostic loop.
+  `execute` always succeeds regardless. An unset CI provider secret is a
+  Flow B CI/gate warning only — it MUST NOT suppress the local Security
+  Review pass (Flow A needs no secret).
 - **Vendor-neutral:** never imply DWP requires the AI Diff Reviewer. A
   repo with zero addons is fully conformant.
 - **Both flows are first-class:** Flow A (local-only) is a supported use

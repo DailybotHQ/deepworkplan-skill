@@ -282,9 +282,13 @@ it. Declare the chosen tier (`standard` or `deep`) and why in the refined draft.
   the CI review exactly. A `critical` finding follows the existing SR contract
   (blocks completion until fixed or explicitly accepted); `warning` / `info`
   findings are appended and reported but do not block. The augmentation is
-  best-effort and conditional per the addon SPEC §7 (never-block rule): the
-  upstream skill or its provider secret being absent MUST cause a warning +
-  skip, NEVER a failed task. **Flow B optional companion (not a plan task):**
+  best-effort and conditional per the addon SPEC §7 (never-block rule): skip
+  the **local** review pass (warn once, NEVER fail the task) only when the
+  vendored skill is absent, detection fails (no extension file), or the local
+  review invocation errors. Flow A needs **no** CI provider secret — do NOT
+  treat an unset `CURSOR_API_KEY` (or other provider secret) as a reason to
+  skip the local Security Review pass; that secret is Flow B CI / gate
+  messaging only. **Flow B optional companion (not a plan task):**
   when the plan's PR has been pushed and CI has posted its review, the developer
   MAY invoke the upstream `apply-review` sub-skill from within the same
   `execute` session to walk through CI findings per-finding (apply / defer /

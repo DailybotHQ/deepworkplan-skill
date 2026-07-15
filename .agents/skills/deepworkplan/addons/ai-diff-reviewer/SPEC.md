@@ -288,11 +288,19 @@ an additional post-existing-checks step:
 
 - The Security Review augmentation **MUST NOT** block the developer's
   primary work or DWP `execute`.
-- If the vendored skill is **absent**, the provider secret is **unset**, the
+- **Local augmentation (Flow A and Flow B):** if the vendored skill is
+  **absent**, detection fails (no extension file at a recognized path), the
   network is **down**, or any upstream skill invocation **errors**, the
-  addon's wired step **MUST**: warn briefly once, continue the primary task,
-  **not** retry automatically, and **not** enter a diagnostic loop. This
-  mirrors the upstream skill's own trust-boundary guarantees.
+  addon's wired local-review step **MUST**: warn briefly once, continue the
+  primary task, **not** retry automatically, and **not** enter a diagnostic
+  loop. This mirrors the upstream skill's own trust-boundary guarantees.
+  The local parent default flow runs via the coding agent and does **not**
+  require a CI provider secret — an unset `CURSOR_API_KEY` (or other
+  provider secret) **MUST NOT** suppress the local Security Review pass.
+- **Flow B CI / gate only:** when the dual-surface workflow is installed,
+  document that the provider secret must be set for the CI Action to run;
+  warn maintainers when it is unset. That warning **MUST NOT** skip or
+  weaken the local SR augmentation.
 - Plan execution **MUST** succeed regardless of whether the local review
   was run.
 - The CI merge gate (Flow B) **MUST NOT** block merges when the trigger

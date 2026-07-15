@@ -3,10 +3,24 @@
 This repo IS the DeepWorkPlan (DWP) methodology — the source of truth that
 ships to consumers via `npx skills add DailybotHQ/deepworkplan-skill`. Every
 change here propagates to every AI-first repo that installs the skill, so
-the review bar is calibrated to durability, vendor-neutrality, and the
-runtime-boundary invariant that lets the skill package cleanly.
+the review bar is calibrated to durability, vendor-neutrality, the
+runtime-boundary invariant that lets the skill package cleanly, and —
+critically — the public **skills.sh Security Audits** posture that users
+see before they install.
 
-The load-bearing rules live in [`AGENTS.md`](../AGENTS.md); this file
+Public listing (audited continuously by skills.sh):
+<https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan>
+
+Target posture on that page: **Gen Agent Trust Hub = Pass**, **Socket =
+Pass** (or at worst a residual Warn that is not a delivery-vector hit),
+**Snyk = Pass**. A release that reintroduces a known audit FAIL erodes
+install-time trust even when the methodology itself is sound. skills.sh
+re-scans on a delay after merge — do not treat a stale FAIL on the
+dashboard as permission to add more risk; treat the shipped tree as the
+contract that must stay clean.
+
+The load-bearing rules live in [`AGENTS.md`](../AGENTS.md) and
+[`skills/deepworkplan/TRUST.md`](../skills/deepworkplan/TRUST.md); this file
 overrides the base prompt for the patterns most likely to slip a review in
 this codebase.
 
@@ -81,6 +95,39 @@ this codebase.
   v1.7.0 CHANGELOG codified this as the auto-release-hang fix, and
   `.github/workflows/auto-release.yml` in this repo must preserve both
   flags on every `skills add`.
+- **Always `critical` (skills.sh / Snyk E005 / Socket W012):** any
+  fetch-and-execute installer pipeline as a literal string anywhere under
+  `skills/deepworkplan/**` — including opt-in addons, templates, SPEC
+  examples, and "do not do this" illustrations that still spell the
+  command. Scanners are lexical; surrounding prose does not help. Banned
+  shapes include POSIX `curl … | bash` / `curl … | sh` / `wget … | sh`,
+  PowerShell `irm … | iex` / `iwr … | iex`, and any single-line
+  `download → pipe → shell` or `download → Invoke-Expression`. Prefer
+  package-manager installs (`pip`, `brew`, `npm`, `apt`) or a verified
+  multi-step flow described without the pipe (`download` → verify
+  SHA-256/cosign → execute as separate steps), linked out rather than
+  inlined. Precedent: `fix(security): eliminate remote-installer pipes`
+  (`6a05ed9`) — that FAIL was what moved Snyk to Fail on the public
+  [skills.sh listing](https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan).
+  Reintroducing the string is a release blocker for user trust, not a
+  docs nit.
+- **Always `critical` (skills.sh / Gen Agent Trust Hub):** a `SKILL.md`
+  under `skills/deepworkplan/**` that lists write-capable tools in
+  `allowed-tools:` (`Edit`, `Write`, `Bash`, `MultiEdit`) without a
+  human-readable **Trust boundary / write-scope** section that enumerates
+  (a) what may be written and only after which consent, and (b) what MUST
+  NOT be written (credentials, remote-installer pipes, silent clobbers,
+  telemetry). Trust Hub treats `allowed-tools` as the trust boundary;
+  missing scope fails the audit users see before install. Canonical shape:
+  upstream `ai-diff-reviewer/apply-review` Step 0 and this repo's
+  `addons/ai-diff-reviewer/SKILL.md` "Trust boundary (write scope)".
+- **Always `critical` (skills.sh / core no-network promise):** introducing
+  `curl` / `wget` / HTTP client usage into the CORE tree
+  (`skills/deepworkplan/**` excluding `addons/`) or into
+  `skills/deepworkplan/shared/context.sh`. Core methodology + helpers make
+  **no network calls** — that is the TRUST.md / skills.sh Pass contract.
+  Network references belong only in opt-in addons, and even there never as
+  a pipe-to-shell installer (see E005/W012 rule above).
 
 - **Always `warning`:** a shell script under `scripts/**` or
   `setup.sh` or `skills/deepworkplan/shared/context.sh` that uses a
@@ -119,12 +166,6 @@ this codebase.
   Spanish (or any non-English language). AGENTS.md Rule #1: this repo is
   public, English-only. Comments, docstrings, PR titles, commit messages,
   all in English.
-- **Always `warning`:** a `SKILL.md` `allowed-tools:` field adding
-  write-capable tools (`Edit`, `Write`, `Bash`, `MultiEdit`) without an
-  accompanying section that scopes exactly what the sub-skill writes.
-  Skills.sh Gen Agent Trust Hub reads `allowed-tools` and expects a
-  matching trust boundary; `ai-diff-reviewer/apply-review/SKILL.md`
-  (upstream) is the canonical shape — mirror it.
 - **Always `warning`:** any new step in `.github/workflows/*.yml` that
   interpolates attacker-controlled PR content
   (`github.event.pull_request.title`, `.body`, `.head.ref`, `.head.label`)
@@ -178,6 +219,18 @@ this codebase.
 
 ## Repo-specific conventions
 
+- **skills.sh Security Audits (user-trust invariant).** The public page
+  <https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan>
+  continuously shows Gen Agent Trust Hub / Socket / Snyk. Maintainers
+  MUST keep all three at **Pass** on every release that changes
+  `skills/deepworkplan/**`. Known FAIL vectors already hit in production:
+  Snyk E005 + Socket W012 on literal remote-installer pipes inside opt-in
+  addon docs (`6a05ed9`). After a security fix merges, skills.sh can lag
+  before the dashboard flips — that lag is NOT a green light to add new
+  risky strings. Before merging skill-tree changes, mentally re-run the
+  TRUST.md self-audit greps (no network in core; no `curl|sh` / `irm|iex`
+  anywhere in the pack) and confirm every write-capable `SKILL.md` still
+  has a Trust boundary section.
 - **Runtime boundary.** Anything read at skill runtime lives inside
   `skills/deepworkplan/**`. Anything at the repo root or under `docs/`,
   `tests/`, `scripts/`, `.github/` is dev-time only. When in doubt: would
@@ -192,8 +245,9 @@ this codebase.
   `scripts/validate-frontmatter.py`.
 - **Versioning.** Never touched by hand. `auto-release.yml` reads the
   commit-type prefix on merges to `main` (`feat!:` MAJOR, `feat:` MINOR,
-  everything else PATCH), bumps all 8 in-tree SKILL.md files in sync,
-  updates `CHANGELOG.md`, tags `vX.Y.Z`, and re-vendors the dogfood copy.
+  everything else PATCH), bumps every in-tree `skills/deepworkplan/**/SKILL.md`
+  in sync (router + sub-skills + all addons), updates `CHANGELOG.md`, tags
+  `vX.Y.Z`, and re-vendors the dogfood copy.
 - **Addons.** Live under `skills/deepworkplan/addons/<name>/`. Every
   addon ships four things: `SPEC.md` (RFC-2119), `templates/*`
   (reasoning guides), `SKILL.md` (onboarding hook, `user-invocable`),
@@ -223,9 +277,9 @@ this codebase.
 - PR title in Conventional Commits format (`auto-release.yml` reads it
   for the bump level).
 - If `skills/deepworkplan/SKILL.md` router `version:` changed → verify
-  ALL 7 other in-tree SKILL.md files moved to the same version (router
-  + 6 sub-skills, plus every addon `SKILL.md` at
-  `addons/*/SKILL.md`). Mismatch fails `validate-frontmatter.py` in CI.
+  every other in-tree `skills/deepworkplan/**/SKILL.md` (router +
+  sub-skills + all addons — currently 14) moved to the same version.
+  Mismatch fails `validate-frontmatter.py` in CI.
 - If a new addon under `skills/deepworkplan/addons/` was added → verify
   SPEC.md + templates/ + SKILL.md + validation checklist all exist, and
   `addons/README.md` was updated with the new addon row.
@@ -234,3 +288,13 @@ this codebase.
 - If a `SKILL.md` under `.agents/skills/` (any of the three vendored
   skills) was edited by hand → this is almost certainly a bug; the
   vendored copies are refreshed by `auto-release.yml` or `skills update`.
+- If `skills/deepworkplan/**` changed → skills.sh-audit checklist:
+  1. No `curl … | sh` / `wget … | sh` / `irm … | iex` (or close variants)
+     as literal strings anywhere in the pack (addons included).
+  2. No new network clients in core or `shared/context.sh`.
+  3. Every `SKILL.md` with write-capable `allowed-tools` still has a
+     Trust boundary / write-scope section.
+  4. After merge + release, expect the
+     [skills.sh listing](https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan)
+     Security Audits row to stay (or return to) Pass / Pass / Pass —
+     dashboard lag is normal; a known bad string in the tree is not.

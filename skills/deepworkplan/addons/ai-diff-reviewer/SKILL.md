@@ -248,10 +248,13 @@ This is the integration value. Reasoning guidance is in
      option*, not a new plan task file — the addon **MUST NOT** insert an
      `apply-review` task into any plan.
 
-- Every hook MUST be **best-effort and conditional**: it fires only if the
-  vendored skill is present, and it **MUST NOT block** `create` or `execute`
-  if the skill or its provider secret is absent — warn once and continue
-  (see SPEC §7 Never-block).
+- Every hook MUST be **best-effort and conditional**: the local Security
+  Review pass fires only when the vendored skill is present **and** an
+  extension file is detected, and it **MUST NOT block** `create` or
+  `execute` if the skill is absent, detection fails, or the local review
+  invocation errors — warn once and continue (see SPEC §7 Never-block).
+  Do **not** skip the local pass because a CI provider secret is unset;
+  that secret is Flow B CI / gate messaging only.
 
 - The reviewer's `.review/extension.md` (repo-tailored via the upstream
   `generate-extension` sub-skill, either through the bootstrap offer or
@@ -273,9 +276,10 @@ skip, and do not fail the onboarding.
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** If declined — or if the vendored skill
-  is missing or its provider secret is unset — stop/continue cleanly. The
-  repo stays baseline-conformant and `execute` is never blocked by review
-  augmentation.
+  is missing, detection fails, or the local review invocation errors —
+  stop/continue cleanly. The repo stays baseline-conformant and `execute`
+  is never blocked by review augmentation. An unset CI provider secret does
+  not skip the local Security Review pass (Flow B CI/gate only).
 - **Defer to upstream.** No wizard reimplementation, no review-methodology
   reimplementation, no apply-review reimplementation. Point at the vendored
   sub-skills.
