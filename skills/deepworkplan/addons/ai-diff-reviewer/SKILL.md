@@ -117,7 +117,8 @@ happen.
 **It MUST NOT:**
 
 - Store, echo, or commit provider secrets (`CURSOR_API_KEY`, API tokens).
-- Pipe a remote installer to a shell (`curl … | sh`).
+- Pipe a remote installer into a shell (any single-line fetch-and-execute
+  variant).
 - Auto-install for everyone or default to Flow B when the flow question is
   unanswered.
 - Clobber an existing `.review/extension.md`, `pr-review.yml`, or vendored

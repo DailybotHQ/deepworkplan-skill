@@ -353,8 +353,8 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
    **reconciled**, not clobbered.
 7. The vendor-neutral guardrail holds: nothing in the repo implies DWP
    **requires** the AI Diff Reviewer; the repo is still baseline-conformant.
-8. No `curl … | sh` install path was recommended anywhere in the addon
-   flow.
+8. No one-line remote-installer / fetch-and-execute install path was
+   recommended anywhere in the addon.
 
 ---
 

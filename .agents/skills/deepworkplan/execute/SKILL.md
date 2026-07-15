@@ -97,8 +97,10 @@ Rules (strict):
    warn once that Flow A/B install is incomplete and continue the base
    Security Review). Augmentation details live in `../create/SKILL.md`
    "Three mandatory final tasks" and `../guide/GUIDE.md` §5.4 "AI Diff
-   Reviewer local pass". The augmentation is best-effort and conditional —
-   never fails the task; on any upstream error, warn once and continue.
+   Reviewer local pass". The augmentation is best-effort on *invocation*
+   only — if the skill/extension is missing or the local review errors,
+   warn once and continue; once a review runs, `critical` findings follow
+   the existing SR contract (block until fixed or explicitly accepted).
 3. **Run validations** — execute ALL validation commands. If any fail: STOP, log
    the issue in the task's Completion & Log, do NOT mark `[x]`, report and wait
    for guidance. **Test discipline (`../guide/GUIDE.md` §5.3):** if the task added
