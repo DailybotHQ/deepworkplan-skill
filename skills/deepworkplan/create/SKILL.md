@@ -276,10 +276,13 @@ it. Declare the chosen tier (`standard` or `deep`) and why in the refined draft.
   default flow ("Review my current branch" / `/ai-diff-reviewer`), capture the
   verdict, findings table, per-finding bodies, notes, and recommendation, and
   append them to `analysis_results/SECURITY_REVIEW.md` under a dedicated
-  `## AI Diff Reviewer local review` heading. The upstream skill's `prompt.md`
+  `## AI Diff Reviewer local review` heading.   The upstream skill's `prompt.md`
   is byte-identical to the CI Action's `prompts/default.md` at the same tag, so
-  when the same repo also runs the CI Action (Flow B), the local review predicts
-  the CI review exactly. A `critical` finding follows the existing SR contract
+  when the same repo also runs the CI Action (Flow B), the local review shares
+  the same methodology and severity model via that prompt plus the extension
+  file; CI round 2+ may surface a shorter finding set under Iteration-Aware
+  Review (local stays a full pass — see addon SPEC §4.3). A `critical` finding
+  follows the existing SR contract
   (blocks completion until fixed or explicitly accepted); `warning` / `info`
   findings are appended and reported but do not block. The augmentation is
   best-effort and conditional per the addon SPEC §7 (never-block rule): skip

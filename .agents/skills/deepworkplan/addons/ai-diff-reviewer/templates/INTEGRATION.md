@@ -191,25 +191,19 @@ the label-bootstrap step, and generates the stable-named gate job for
 branch protection. Point at [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)
 as the reference manual for every `action.yml` input.
 
-**Fallback (developer wants to skip the wizard).** The minimum viable
-workflow shape is:
+**Fallback (developer wants to skip the wizard).** Prefer the wizard. If you
+must hand-roll, **mirror the shipped four-job pattern** (`scope` →
+`labels-bootstrap` → `review` → stable-named `AI review gate`) from this
+repo's `.github/workflows/pr-review.yml` (or the upstream `setup` wizard
+output) — do **not** invent a two-job gate that embeds `needs.review.result`
+directly in a `run:` script and treats every `skipped` as success (that
+silently greens merges when the review never ran for reasons other than
+"no ready label", including `no-provider-secret`).
+
+Minimum review-job inputs (the gate/scope jobs still come from the wizard
+or a full copy of the four-job workflow):
 
 ```yaml
-name: PR review
-on:
-  pull_request:
-    branches: [<default>]
-    types: [opened, labeled]
-permissions:
-  contents: read
-  pull-requests: write
-jobs:
-  review:
-    if: contains(github.event.pull_request.labels.*.name, '<label-gate>') \
-        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), \
-                    github.event.pull_request.author_association)
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -224,16 +218,12 @@ jobs:
           # Opt-in emergency bypass (v2). Empty = feature OFF. Protect the
           # label with a repo ruleset if the AI review is a merge gate.
           skip-review-label: skip-ai-review
-  gate:
-    name: AI review gate
-    needs: [review]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          [ "${{ needs.review.result }}" = "success" ] || \
-          [ "${{ needs.review.result }}" = "skipped" ] || exit 1
 ```
+
+The gate job **MUST** map results through `env:` (never embed
+`${{ needs.*.result }}` directly in a shell script), fail loud on
+`no-provider-secret`, and only treat label/author skips as non-blocking —
+see the shipped `gate` job in `pr-review.yml`.
 
 Reasoning notes:
 
@@ -252,8 +242,9 @@ Reasoning notes:
 - **`AI review gate`** is stable-named so branch protection can be
   configured against it once and continue to work when the review-job name
   changes across provider matrices.
-- **Skipped ≠ Failed.** The gate returns success on skipped so a PR
-  without the label is still mergeable per branch-protection rules.
+- **Skipped ≠ Failed for label/author scope only.** A PR without the
+  trigger label stays mergeable; a requested review with a missing provider
+  secret MUST fail the gate.
 - The wizard version is preferred because it handles multi-provider
   matrices, complexity-label integration, external-contributor policy edge
   cases, and label-bootstrap. Only hand-roll when the developer explicitly

@@ -335,7 +335,7 @@ fixed or explicitly accepted.
   Review `[x]` while those criticals remain unfixed and unaccepted. §7 does
   **not** override that gate.
 - **Flow B CI / gate only:** when the dual-surface workflow is installed,
-  document that the provider secret must be set for the CI Action to run;
+  document that the provider secret MUST be set for the CI Action to run;
   warn maintainers when it is unset. That warning **MUST NOT** skip or
   weaken the local SR augmentation.
 - Plan execution **MUST** proceed when the local review was **skipped or
@@ -380,8 +380,10 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 3. Authentication was **deferred** to the upstream skill's own consent flow
    — no API-key prompting and **no credential** written by this addon.
 4. The chosen flow (A or B) is recorded in `AGENTS.md` (or equivalent
-   docs), and the DWP execution docs describe the **optional, conditional,
-   non-blocking** Security Review augmentation.
+   docs), and the DWP execution docs describe the Security Review
+   augmentation as **optional and conditional**: soft-fail only on local-review
+   *invocation* failures (absent skill / extension / invocation error); `critical`
+   findings from a **completed** pass still follow the SR contract (§6.1 / §7).
 5. (Flow B only) `.github/workflows/pr-review.yml` exists with the upstream
    Action pinned to `@v2` (or a specific tag), the stable-named gate job
    is present for branch protection, the provider secret is documented in

@@ -231,9 +231,11 @@ complexity labels), and [`setup/reference.md`](https://github.com/DailybotHQ/ai-
 doubles as the reference manual for every `action.yml` input.
 
 - Point at the vendored skill: `.agents/skills/ai-diff-reviewer/setup/SKILL.md`.
-- Handoff phrase: *"Full ai-diff-reviewer setup — install the Action workflow
-  AND generate the extension file."* (Signals Flow B to any agent picking
-  the skill up on subsequent runs.)
+- Handoff phrase: *"Set up AI Diff Reviewer for this repo"* (or
+  `/ai-diff-reviewer-setup`) — workflow + label bootstrap only. Step 1b already
+  required the extension file for both flows; do **not** re-enter
+  `generate-extension` here unless Step 1b was skipped (e.g. explicit
+  `.review/.skip-bootstrap` opt-out and the developer later reversed it).
 - Provider secret: the wizard tells the maintainer which secret to configure
   (typical: `CURSOR_API_KEY` for the Cursor provider). Maintainer sets it at
   Settings > Secrets and variables > Actions.

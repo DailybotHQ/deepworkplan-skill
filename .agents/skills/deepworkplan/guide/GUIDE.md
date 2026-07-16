@@ -487,10 +487,10 @@ gate messaging only.
   #1 of the upstream skill's five-sub-skill router (parent + `generate-extension`
   + `setup` + `open-pr` + `apply-review`).
 - **Output shape.** Verdict + findings table (columns: `#` / Severity / File /
-  Summary) + per-finding body + notes + recommendation. This is the same shape
-  the CI leg would post on a PR — parity is a design property of the upstream
-  skill (its `prompt.md` is byte-identical to the CI Action's shipped
-  `prompts/default.md` at the same tag, enforced by upstream CI).
+  Summary) + per-finding body + notes + recommendation. Shared `prompt.md` +
+  extension align methodology/severity with the CI Action at the same tag
+  (byte-identical prompts, enforced by upstream CI); under Flow B, CI round 2+
+  may be shorter via Iteration-Aware Review while the local pass stays full.
 - **Integration.** Append the output to `analysis_results/SECURITY_REVIEW.md`
   under a dedicated `## AI Diff Reviewer local review` heading — so a reader
   sees the manual SR findings and the AI-augmented findings side by side.

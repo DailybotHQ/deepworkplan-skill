@@ -19,6 +19,9 @@
       "pattern": "^\\.\\./\\.\\./\\.\\./SECURITY\\.md$"
     },
     {
+      "pattern": "^\\.\\./\\.\\./\\.\\./docs/"
+    },
+    {
       "pattern": "^https://github\\.com/DailybotHQ/ai-diff-reviewer[\"'].*"
     }
   ],
