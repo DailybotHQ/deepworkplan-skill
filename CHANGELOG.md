@@ -9,6 +9,30 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.17.0] — 2026-07-16
+
+### Changes
+
+- Merge pull request #33 from DailybotHQ/feat/ai-diff-reviewer-addon
+- fix(ci): ignore vendored IAR docs links; address AI review warnings
+- feat(review): upgrade AI Diff Reviewer to v2 with skip-ai-review
+- docs(addon): align Flow A consent copy with required extension bootstrap
+- docs(spec): align ADDONS.md never-block wording with SR gate discipline
+- fix(addon): scope never-block to local-review invocation only
+- chore(review): require methodology-integrity checklist in AI review
+- fix(addon): require extension bootstrap before Flow A onboarding completes
+- fix(security): remove lexical install-pipe strings from addon docs
+- fix(review): split local SR never-block from Flow B secrets
+- fix(review): address AI Diff Reviewer warnings on PR #33
+- fix(ci): unbreak frontmatter, bats catalog, and markdown-link-check after vendoring
+- docs: describe pr-review workflow, vendored-skill dogfooding, and CURSOR_API_KEY setup
+- chore(review): add Cursor-based pr-review workflow gated on ready label
+- chore(review): add repo-tailored .review/extension.md for skill repo
+- chore(review): install dailybot v3.10.3 and ai-diff-reviewer v1.7.0 vendored
+- feat(dwp): augment Security Review with ai-diff-reviewer local pass when addon installed
+- feat(dwp): add ai-diff-reviewer addon (opt-in, two-flow, defers to upstream v1.7.0)
+
+
 ## [2.16.3] — 2026-07-15
 
 ### Changes
