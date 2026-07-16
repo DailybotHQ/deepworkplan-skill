@@ -273,12 +273,12 @@ it. Declare the chosen tier (`standard` or `deep`) and why in the refined draft.
   extension file at one of the three recognized paths (in precedence order):
   `.review/extension.md`, `.github/ai-diff-reviewer/extension.md`, or the
   back-compat `.github/ai-pr-reviewer/extension.md` — the Security Review task
-  template gains
-  an ADDITIONAL post-existing-checks step: invoke the upstream skill's parent
-  default flow ("Review my current branch" / `/ai-diff-reviewer`), capture the
-  verdict, findings table, per-finding bodies, notes, and recommendation, and
-  append them to `analysis_results/SECURITY_REVIEW.md` under a dedicated
-  `## AI Diff Reviewer local review` heading.   The upstream skill's `prompt.md`
+  template gains an ADDITIONAL post-existing-checks step: invoke the upstream
+  skill's parent default flow ("Review my current branch" / `/ai-diff-reviewer`),
+  capture the verdict, findings table, per-finding bodies, notes, and
+  recommendation, and append them to `analysis_results/SECURITY_REVIEW.md`
+  under a dedicated `## AI Diff Reviewer local review` heading. The upstream
+  skill's `prompt.md`
   is byte-identical to the CI Action's `prompts/default.md` at the same tag, so
   when the same repo also runs the CI Action (Flow B), the local review shares
   the same methodology and severity model via that prompt plus the extension
