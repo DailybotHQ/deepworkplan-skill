@@ -32,6 +32,17 @@ provides the router and sub-skills `create`, `execute`, `refine`, `resume`,
 `status`, `verify`, `onboard`, `author`, plus addons under `addons/`. The
 `/dwp-*`, `/skill-create`, and `/agent-create` commands route here.
 
+### Vendored third-party skills (dogfood, not repo-dev)
+
+Tracked under `.agents/skills/` and pinned via `skills-lock.json`. Refreshed by
+`auto-release.yml` on every release cut — do **not** hand-edit. Listed here so
+the catalog has no orphans; they are **not** repo-development skills.
+
+| Skill | Upstream | Purpose |
+|-------|----------|---------|
+| [dailybot](../skills/dailybot/SKILL.md) | [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill) | Team standup reporting for plan lifecycle events (Dailybot addon) |
+| [ai-diff-reviewer](../skills/ai-diff-reviewer/SKILL.md) | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | Local + CI PR review (AI Diff Reviewer addon); byte-identical `prompt.md` with the Action |
+
 ## Commands (`.agents/commands/`)
 
 See [COMMANDS_REFERENCE.md](COMMANDS_REFERENCE.md) for the full list and

@@ -1,0 +1,215 @@
+name: PR review
+
+# AI-driven pre-merge review powered by `DailybotHQ/ai-diff-reviewer@v2`
+# (marketplace listing: "AI Diff Reviewer"). Cursor-only, label-gated on
+# `ready`, gated on write-tier authorship (author-association whitelist),
+# stable-named merge gate for branch protection. Runs the same review
+# methodology as the vendored `ai-diff-reviewer` skill when
+# `.review/extension.md` is present — the skill's `prompt.md` is
+# byte-identical to the Action's shipped `prompts/default.md` at the same
+# tag (enforced by upstream CI). CI additionally runs Iteration-Aware
+# Review (IAR); local skill reviews stay a full pass.
+#
+# Post-CI walkthrough: after this workflow posts its review, developers can
+# invoke the skill's `apply-review` sub-skill locally to read the findings
+# and walk through them per-finding (apply / defer / skip). Read-only by
+# default; edits require per-finding consent; never commits or pushes.
+#
+# Trigger: `opened`, `labeled` on PRs targeting `main`. NOT `synchronize` —
+# push does not re-review; toggle the `ready` label to re-run. Applying
+# `skip-ai-review` while `ready` is already present also re-runs (bypass).
+#
+# Secrets required (repo settings > Secrets):
+#   * CURSOR_API_KEY — Cursor subscription key (unlimited on Pro).
+#     Without it the review job is absent from the matrix and the merge gate
+#     reports "no provider secret configured".
+#
+# Labels used (auto-created on first run):
+#   * ready          — apply to unlock the review (case-insensitive).
+#   * pr-reviewed    — applied automatically after a successful, non-skipped review.
+#   * skip-ai-review — opt-in emergency bypass (no LLM; check succeeds). Protect
+#                     with a repository ruleset if this gate is required.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, labeled]
+
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  scope:
+    name: 'Decide review scope'
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.decide.outputs.should_run }}
+      empty_reason: ${{ steps.decide.outputs.empty_reason }}
+    steps:
+      - name: Decide whether to run
+        id: decide
+        shell: bash
+        env:
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_LABEL: ${{ github.event.label.name }}
+          LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          AUTHOR_ASSOC: ${{ github.event.pull_request.author_association }}
+          HAS_CURSOR: ${{ secrets.CURSOR_API_KEY != '' }}
+        run: |
+          set -euo pipefail
+
+          # Cheapest gate first: author-association write-tier. External-contributor
+          # PRs from forks can never burn tokens — the field comes from the webhook
+          # payload and cannot be spoofed.
+          case "$AUTHOR_ASSOC" in
+            OWNER|MEMBER|COLLABORATOR) : ;;
+            *)
+              echo "::notice::PR author association is '$AUTHOR_ASSOC' — write-tier gate rejected (only OWNER/MEMBER/COLLABORATOR run). Skipping review."
+              {
+                echo 'should_run=false'
+                echo 'empty_reason=author-association'
+              } >> "$GITHUB_OUTPUT"
+              exit 0 ;;
+          esac
+
+          # Ready-label gate (case-insensitive). `labeled` event runs when the
+          # label just added is `ready`, OR when `skip-ai-review` is added while
+          # `ready` is already present (emergency-bypass re-run). `opened` runs
+          # if the PR already carries `ready`.
+          lc() { tr '[:upper:]' '[:lower:]'; }
+          ready_present=false
+          if printf '%s' "$LABELS_JSON" | lc | grep -qE '"ready"'; then
+            ready_present=true
+          fi
+          should_run=false
+          case "$EVENT_ACTION" in
+            labeled)
+              label_lc="$(printf '%s' "$EVENT_LABEL" | lc)"
+              if [ "$label_lc" = "ready" ]; then
+                should_run=true
+              elif [ "$label_lc" = "skip-ai-review" ] && [ "$ready_present" = "true" ]; then
+                should_run=true
+              fi
+              ;;
+            opened)
+              [ "$ready_present" = "true" ] && should_run=true ;;
+          esac
+          if [ "$should_run" != "true" ]; then
+            echo "::notice::Apply the 'ready' label to trigger the review (remove + re-add to re-run). Optional: 'skip-ai-review' while ready is present for emergency bypass."
+            {
+              echo 'should_run=false'
+              echo 'empty_reason=no-ready-label'
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Provider secret gate. If CURSOR_API_KEY is absent, the merge gate
+          # will fail loud (see gate job) with a clear message.
+          if [ "$HAS_CURSOR" != "true" ]; then
+            echo "::error::CURSOR_API_KEY is not configured on this repo. Set it in Settings > Secrets to unblock the merge gate."
+            {
+              echo 'should_run=false'
+              echo 'empty_reason=no-provider-secret'
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "::notice::Review scope: run=true (author=$AUTHOR_ASSOC, ready=applied, secret=configured)"
+          {
+            echo 'should_run=true'
+            echo 'empty_reason='
+          } >> "$GITHUB_OUTPUT"
+
+  labels-bootstrap:
+    name: 'Bootstrap review labels'
+    needs: scope
+    # Only bootstrap when we're actually going to review — no work otherwise.
+    if: needs.scope.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Ensure review labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Idempotent — GitHub returns a friendly error if the label exists;
+          # `|| true` absorbs it.
+          # Colors: ready=#0e8a16 (green), pr-reviewed=#0366d6 (blue),
+          # skip-ai-review=#b60205 (red — emergency bypass).
+          gh label create ready --repo "$REPO" --color 0e8a16 --description "Trigger AI code review" || true
+          gh label create pr-reviewed --repo "$REPO" --color 0366d6 --description "Passed AI code review" || true
+          gh label create skip-ai-review --repo "$REPO" --color b60205 --description "Emergency bypass: skip AI Diff Reviewer LLM pass" || true
+
+  review:
+    name: 'AI review — cursor'
+    needs: [scope, labels-bootstrap]
+    if: needs.scope.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # `git diff origin/<base>...HEAD` requires the base ref locally.
+          fetch-depth: 0
+          # Do NOT persist GITHUB_TOKEN into .git/config — the Cursor CLI runs
+          # with broad local access; a persisted token on disk is an exfil
+          # surface. The reviewer talks to the GitHub API in-process.
+          persist-credentials: false
+      - uses: DailybotHQ/ai-diff-reviewer@v2
+        with:
+          provider: cursor
+          api-key: ${{ secrets.CURSOR_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          model: auto
+          label-gate: ready
+          author-association: OWNER,MEMBER,COLLABORATOR
+          applied-label: pr-reviewed
+          skip-review-label: skip-ai-review
+          strictness: block-on-critical
+          prompt-extension-file: .review/extension.md
+          max-inline-comments: 15
+
+  gate:
+    # STABLE NAME — mark ONLY this as the required check in branch protection.
+    # A `skipped` required check counts as passing (GitHub behavior), so PRs
+    # without `ready` are mergeable without a review. To force reviews on every
+    # PR, pair this required check with a separate rule that enforces the
+    # `ready` label. Emergency bypass via `skip-ai-review` makes the review
+    # job succeed (Action short-circuit) — protect that label with a ruleset.
+    name: 'AI review gate'
+    needs: [scope, review]
+    if: always() && needs.scope.outputs.empty_reason != 'no-ready-label' && needs.scope.outputs.empty_reason != 'author-association'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Require the review leg to have passed
+        shell: bash
+        env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          REVIEW_RESULT: ${{ needs.review.result }}
+          EMPTY_REASON: ${{ needs.scope.outputs.empty_reason }}
+        run: |
+          set -euo pipefail
+          if [ "$SCOPE_RESULT" != "success" ]; then
+            echo "::error::scope job did not succeed (result=$SCOPE_RESULT). Blocking merge."
+            exit 1
+          fi
+          if [ "$EMPTY_REASON" = "no-provider-secret" ]; then
+            echo "::error::Review requested (via 'ready' label) but CURSOR_API_KEY is not configured. Set it in Settings > Secrets to unblock the merge gate."
+            exit 1
+          fi
+          if [ "$REVIEW_RESULT" != "success" ]; then
+            echo "::error::AI review did not pass (result=$REVIEW_RESULT). Address findings or toggle 'ready' to re-run."
+            exit 1
+          fi
+          echo "AI review passed — merge gate satisfied."

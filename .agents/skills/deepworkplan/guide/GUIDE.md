@@ -467,6 +467,47 @@ plan at the end (`spec/DWP_SPECIFICATION.md` §6.1):
   Security Review final task — that gate audits the full accumulated diff,
   including what the tests and docs tasks themselves changed.
 
+#### AI Diff Reviewer local pass (optional — addon-augmented)
+
+When the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) is
+installed, the Security Review task gains an additional local-review pass. The
+augmentation is best-effort and conditional — the addon's SPEC §7 (never-block
+rule) means an absent upstream skill, failed detection (no extension file), or
+a local review invocation error produces a warning + skip, never a failed task.
+Flow A needs no CI provider secret; an unset `CURSOR_API_KEY` (or other
+provider secret) must not suppress the local pass — that secret is Flow B CI /
+gate messaging only.
+
+- **Detection.** `.agents/skills/ai-diff-reviewer/` present + an extension file
+  at one of the three recognized paths (in precedence order): `.review/extension.md`
+  > `.github/ai-diff-reviewer/extension.md` > `.github/ai-pr-reviewer/extension.md`
+  (pre-v1.5 back-compat).
+- **Invocation.** Route to the upstream skill's parent default flow ("Review
+  my current branch" / `/ai-diff-reviewer`) — the local review is capability
+  #1 of the upstream skill's five-sub-skill router (parent + `generate-extension`
+  + `setup` + `open-pr` + `apply-review`).
+- **Output shape.** Verdict + findings table (columns: `#` / Severity / File /
+  Summary) + per-finding body + notes + recommendation. Shared `prompt.md` +
+  extension align methodology/severity with the CI Action at the same tag
+  (byte-identical prompts, enforced by upstream CI); under Flow B, CI round 2+
+  may be shorter via Iteration-Aware Review while the local pass stays full.
+- **Integration.** Append the output to `analysis_results/SECURITY_REVIEW.md`
+  under a dedicated `## AI Diff Reviewer local review` heading — so a reader
+  sees the manual SR findings and the AI-augmented findings side by side.
+- **Severity handling.** `critical` blocks completion until fixed or explicitly
+  accepted (existing SR contract); `warning` and `info` are documented but
+  non-blocking. The reviewer's `.review/extension.md` (repo-tailored) shapes
+  what maps to which severity — this is the primary customization surface.
+- **Optional Flow B post-CI companion.** When the repo runs the CI Action
+  (Flow B) AND the plan's PR has been pushed AND CI has posted its review,
+  the developer MAY invoke the upstream `apply-review` sub-skill from within
+  the same `execute` session to walk through CI-posted findings per-finding
+  (apply / defer / skip) with explicit consent. `apply-review` is read-only
+  by default; edits require per-finding yes; never commits or pushes. This
+  is an *available option* during `execute`, never a plan task file — the
+  addon MUST NOT insert an `apply-review` task (would violate the
+  mandatory-final-task-order rule).
+
 ---
 
 ## 6. Agent Execution Rules (Critical Behavior)

@@ -83,17 +83,18 @@ setup() {
 }
 
 @test "every repo-dev skill on disk is listed in the catalog (no orphans)" {
+    # Includes the dogfooded DeepWorkPlan pack and the vendored third-party
+    # skills (dailybot, ai-diff-reviewer) — all must appear in the catalog
+    # so the inventory stays complete. Vendored packs are documented under
+    # the "Vendored third-party skills" section.
     for d in "$AGENTS_DIR"/skills/*/; do
         name="$(basename "$d")"
-        [ "$name" = "deepworkplan" ] && continue
         grep -q "$name" "$DOCS_DIR/skills_agents_catalog.md"
     done
 }
 
 @test "each repo-dev skill carries name + description frontmatter" {
     for d in "$AGENTS_DIR"/skills/*/; do
-        name="$(basename "$d")"
-        [ "$name" = "deepworkplan" ] && continue
         skill="$d/SKILL.md"
         [ -f "$skill" ]
         grep -qE '^name:' "$skill"

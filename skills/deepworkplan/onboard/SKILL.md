@@ -481,7 +481,7 @@ After the core AI-first scaffolding, **enumerate** the available addons under
 required** — a repo is fully conformant with zero addons. In **trust mode**, you
 MAY recommend the obviously-applicable ones, but still surface them.
 
-Four addons ship today; enumerate **all** and offer each independently:
+Five addons ship today; enumerate **all** and offer each independently:
 
 | Addon | Folder | Recommend in trust mode when… |
 |-------|--------|-------------------------------|
@@ -489,6 +489,7 @@ Four addons ship today; enumerate **all** and offer each independently:
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | the repo has a lockfile + a dependency-heavy stack and wants safe, batched, validated upgrades — recommend only when a lockfile is present; **never auto-install for everyone**. |
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **default-on when detected** — in trust mode **apply** it (generate `DESIGN.md`), in guided mode **strongly recommend** and ask; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended when detected, always asked, never auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
+| **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | the developer/team wants structured local code review on DWP Security Review and/or a CI PR merge gate — **do NOT auto-install for everyone**; always ask Flow A (local-only) vs Flow B (dual-surface), never default. |
 
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
@@ -587,6 +588,32 @@ references it, values traceable to the real source, per-profile integrity —
 WCAG AA contrast / degradation rules / plain-text fallbacks — token references
 resolve, new profiles were asked about). If declined, skip it — the repo stays
 baseline-conformant.
+
+The fifth addon is **AI Diff Reviewer**
+([`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md) +
+[`SPEC.md`](../addons/ai-diff-reviewer/SPEC.md)). Offer it **only when relevant** —
+the developer or team wants structured code-review quality on DWP work, a local
+pre-push review, and/or a CI PR merge gate; in trust mode recommend it **only**
+on that signal and **never auto-install it for everyone**. If accepted: read
+that addon's `SKILL.md` and run its flow — **ask Flow A (local-only) vs Flow B
+(dual-surface) explicitly and NEVER default** (matches the upstream skill's
+ambiguity tie-break); detect whether the vendored skill / extension file /
+`pr-review.yml` already exist (reconcile-don't-clobber); offer the **opt-in**
+vendored-skill install via
+`npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y`
+(both `--yes` and `-y` required); in Flow B hand off CI-workflow authoring to
+the upstream `setup` sub-skill (never invent credentials — `CURSOR_API_KEY` /
+provider secrets are the consumer's responsibility); wire the mandatory DWP
+**Security Review** to run the upstream parent default flow as an additive
+local-review pass; and (Flow B only) surface `apply-review` as an optional
+developer-invoked companion during `execute`. Every **local** augmentation is
+strictly **best-effort and never blocks** the work if the skill or extension is
+absent or the local review invocation errors — an unset CI provider secret does
+**not** skip the local Security Review pass (Flow B CI/gate only). The core
+DeepWorkPlan methodology has **zero AI Diff Reviewer dependency** — this addon
+is purely optional review quality. After applying,
+run the addon's validation step (SPEC §9). If declined, skip it and continue —
+the repo stays baseline-conformant.
 
 ## Phase 8 — Self-check / validation (mandatory)
 

@@ -263,6 +263,111 @@ jobs:
           git commit -m "chore(release): dogfood vendored deepworkplan to ${NEW_TAG} [skip release]"
           git push origin HEAD:main
 
+      - name: Dogfood — refresh vendored dailybot to latest upstream
+        # Keep the vendored `.agents/skills/dailybot/` at the latest published
+        # tag of `DailybotHQ/agent-skill`. Runs on every release we cut so any
+        # consumer cloning this repo at HEAD picks up the current dailybot
+        # skill alongside deepworkplan.
+        #
+        # Mirror of the deepworkplan self-dogfood, adapted to a THIRD-PARTY
+        # upstream: no `sleep 5` here — those upstream tags are stable and
+        # already propagated through the API layer, so there's no
+        # just-published race to wait out.
+        #
+        # A failed upstream tag lookup or version-invariant mismatch FAILS
+        # this release: we should never publish a skill-repo tag whose
+        # vendored dailybot misrepresents what upstream actually shipped
+        # (a stale dogfood snapshot is silent breakage for consumers).
+        #
+        # Two separate `-y` / `--yes` flags below — same rationale as the
+        # deepworkplan dogfood step: `npx --yes` covers npm's download
+        # prompt, `skills add ... -y` covers the interactive agent-picker.
+        # Upstream ai-diff-reviewer's v1.7.0 CHANGELOG codified this as
+        # the auto-release-hang fix — keep BOTH flags.
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          DB_TAG=$(gh release view --repo DailybotHQ/agent-skill --json tagName -q .tagName)
+          if [ -z "$DB_TAG" ]; then
+            echo "::error::Could not resolve latest release for DailybotHQ/agent-skill"
+            exit 1
+          fi
+          echo "::notice::dailybot: latest published release is ${DB_TAG}"
+
+          echo "::group::npx skills add DailybotHQ/agent-skill@${DB_TAG} --skill dailybot --force -y"
+          npx --yes skills add "DailybotHQ/agent-skill@${DB_TAG}" --skill dailybot --force -y
+          echo "::endgroup::"
+
+          VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' .agents/skills/dailybot/SKILL.md | head -n1)
+          if [ "${VENDORED}" != "${DB_TAG#v}" ]; then
+            echo "::error::Vendored dailybot version '${VENDORED}' != requested tag '${DB_TAG}'"
+            echo "::error::Refusing to commit a stale dogfood snapshot."
+            exit 1
+          fi
+          echo "OK: vendored dailybot at ${DB_TAG} (verified)"
+
+          if git diff --quiet -- .agents/skills/dailybot skills-lock.json; then
+            echo "Vendored dailybot already at ${DB_TAG}; nothing to commit."
+            exit 0
+          fi
+          git add .agents/skills/dailybot skills-lock.json
+          git commit -m "chore(release): dogfood vendored dailybot to ${DB_TAG} [skip release]"
+          git push origin HEAD:main
+
+      - name: Dogfood — refresh vendored ai-diff-reviewer to latest upstream
+        # Keep the vendored `.agents/skills/ai-diff-reviewer/` at the latest
+        # published tag of `DailybotHQ/ai-diff-reviewer` (marketplace listing:
+        # "AI Diff Reviewer"). This skill powers both the LOCAL review that
+        # augments the mandatory DWP Security Review AND — via the
+        # `pr-review.yml` workflow — the CI-side review that reads the same
+        # `.review/extension.md`. Byte-identical prompt parity between the
+        # skill's `prompt.md` and the CI Action's `prompts/default.md` is a
+        # design property of the upstream project, enforced by their own
+        # `Skills — prompt-sync invariant` CI job.
+        #
+        # Failure modes handled explicitly:
+        #   * upstream tag lookup fails → hard fail (a downstream release
+        #     without a resolvable upstream is a broken release);
+        #   * vendored version ≠ requested tag → hard fail (the fetch may
+        #     have succeeded but the content is wrong; a stale dogfood
+        #     shipped as current is silent breakage for consumers).
+        #
+        # Both `--yes` and `-y` are required — see the header comment on
+        # the dailybot step for the full rationale (upstream v1.7.0 fix).
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          AIDR_TAG=$(gh release view --repo DailybotHQ/ai-diff-reviewer --json tagName -q .tagName)
+          if [ -z "$AIDR_TAG" ]; then
+            echo "::error::Could not resolve latest release for DailybotHQ/ai-diff-reviewer"
+            exit 1
+          fi
+          echo "::notice::ai-diff-reviewer: latest published release is ${AIDR_TAG}"
+
+          echo "::group::npx skills add DailybotHQ/ai-diff-reviewer@${AIDR_TAG} --skill ai-diff-reviewer --force -y"
+          npx --yes skills add "DailybotHQ/ai-diff-reviewer@${AIDR_TAG}" --skill ai-diff-reviewer --force -y
+          echo "::endgroup::"
+
+          VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' .agents/skills/ai-diff-reviewer/SKILL.md | head -n1)
+          if [ "${VENDORED}" != "${AIDR_TAG#v}" ]; then
+            echo "::error::Vendored ai-diff-reviewer version '${VENDORED}' != requested tag '${AIDR_TAG}'"
+            echo "::error::Refusing to commit a stale dogfood snapshot."
+            exit 1
+          fi
+          echo "OK: vendored ai-diff-reviewer at ${AIDR_TAG} (verified)"
+
+          if git diff --quiet -- .agents/skills/ai-diff-reviewer skills-lock.json; then
+            echo "Vendored ai-diff-reviewer already at ${AIDR_TAG}; nothing to commit."
+            exit 0
+          fi
+          git add .agents/skills/ai-diff-reviewer skills-lock.json
+          git commit -m "chore(release): dogfood vendored ai-diff-reviewer to ${AIDR_TAG} [skip release]"
+          git push origin HEAD:main
+
       - name: Generate provenance checksums
         if: steps.version.outputs.skip != 'true'
         # SHA256SUMS over the shipped runtime artifact (skills/deepworkplan).
