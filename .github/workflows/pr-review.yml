@@ -1,13 +1,14 @@
 name: PR review
 
-# AI-driven pre-merge review powered by `DailybotHQ/ai-diff-reviewer` (marketplace
-# listing: "AI Diff Reviewer"). Cursor-only, label-gated on `ready`, gated on
-# write-tier authorship (author-association whitelist), stable-named merge gate
-# for branch protection. Runs the exact same review the `ai-diff-reviewer` skill
-# runs locally when `.review/extension.md` is present — the skill's `prompt.md`
-# is byte-identical to the Action's shipped `prompts/default.md` at the same
-# tag (enforced by upstream CI's `Skills — prompt-sync invariant` job), so
-# local ≡ CI when both surfaces reference the same extension file.
+# AI-driven pre-merge review powered by `DailybotHQ/ai-diff-reviewer@v2`
+# (marketplace listing: "AI Diff Reviewer"). Cursor-only, label-gated on
+# `ready`, gated on write-tier authorship (author-association whitelist),
+# stable-named merge gate for branch protection. Runs the same review
+# methodology as the vendored `ai-diff-reviewer` skill when
+# `.review/extension.md` is present — the skill's `prompt.md` is
+# byte-identical to the Action's shipped `prompts/default.md` at the same
+# tag (enforced by upstream CI). CI additionally runs Iteration-Aware
+# Review (IAR); local skill reviews stay a full pass.
 #
 # Post-CI walkthrough: after this workflow posts its review, developers can
 # invoke the skill's `apply-review` sub-skill locally to read the findings
@@ -15,7 +16,8 @@ name: PR review
 # default; edits require per-finding consent; never commits or pushes.
 #
 # Trigger: `opened`, `labeled` on PRs targeting `main`. NOT `synchronize` —
-# push does not re-review; toggle the `ready` label to re-run.
+# push does not re-review; toggle the `ready` label to re-run. Applying
+# `skip-ai-review` while `ready` is already present also re-runs (bypass).
 #
 # Secrets required (repo settings > Secrets):
 #   * CURSOR_API_KEY — Cursor subscription key (unlimited on Pro).
@@ -23,8 +25,10 @@ name: PR review
 #     reports "no provider secret configured".
 #
 # Labels used (auto-created on first run):
-#   * ready       — apply this label to unlock the review (case-insensitive).
-#   * pr-reviewed — applied automatically after a successful, non-blocked review.
+#   * ready          — apply to unlock the review (case-insensitive).
+#   * pr-reviewed    — applied automatically after a successful, non-skipped review.
+#   * skip-ai-review — opt-in emergency bypass (no LLM; check succeeds). Protect
+#                     with a repository ruleset if this gate is required.
 
 on:
   pull_request:
@@ -73,9 +77,10 @@ jobs:
               exit 0 ;;
           esac
 
-          # Ready-label gate (case-insensitive). `labeled` event runs only when the
-          # label just added is `ready`; `opened` event runs if the PR already
-          # carries `ready`.
+          # Ready-label gate (case-insensitive). `labeled` event runs when the
+          # label just added is `ready`, OR when `skip-ai-review` is added while
+          # `ready` is already present (emergency-bypass re-run). `opened` runs
+          # if the PR already carries `ready`.
           lc() { tr '[:upper:]' '[:lower:]'; }
           ready_present=false
           if printf '%s' "$LABELS_JSON" | lc | grep -qE '"ready"'; then
@@ -84,12 +89,18 @@ jobs:
           should_run=false
           case "$EVENT_ACTION" in
             labeled)
-              [ "$(printf '%s' "$EVENT_LABEL" | lc)" = "ready" ] && should_run=true ;;
+              label_lc="$(printf '%s' "$EVENT_LABEL" | lc)"
+              if [ "$label_lc" = "ready" ]; then
+                should_run=true
+              elif [ "$label_lc" = "skip-ai-review" ] && [ "$ready_present" = "true" ]; then
+                should_run=true
+              fi
+              ;;
             opened)
               [ "$ready_present" = "true" ] && should_run=true ;;
           esac
           if [ "$should_run" != "true" ]; then
-            echo "::notice::Apply the 'ready' label to trigger the review (remove + re-add to re-run)."
+            echo "::notice::Apply the 'ready' label to trigger the review (remove + re-add to re-run). Optional: 'skip-ai-review' while ready is present for emergency bypass."
             {
               echo 'should_run=false'
               echo 'empty_reason=no-ready-label'
@@ -124,16 +135,19 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - name: Ensure `ready` and `pr-reviewed` labels exist
+      - name: Ensure review labels exist
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           # Idempotent — GitHub returns a friendly error if the label exists;
-          # `|| true` absorbs it. Colors: ready=#0e8a16 (green), pr-reviewed=#0366d6 (blue).
+          # `|| true` absorbs it.
+          # Colors: ready=#0e8a16 (green), pr-reviewed=#0366d6 (blue),
+          # skip-ai-review=#b60205 (red — emergency bypass).
           gh label create ready --repo "$REPO" --color 0e8a16 --description "Trigger AI code review" || true
           gh label create pr-reviewed --repo "$REPO" --color 0366d6 --description "Passed AI code review" || true
+          gh label create skip-ai-review --repo "$REPO" --color b60205 --description "Emergency bypass: skip AI Diff Reviewer LLM pass" || true
 
   review:
     name: 'AI review — cursor'
@@ -150,7 +164,7 @@ jobs:
           # with broad local access; a persisted token on disk is an exfil
           # surface. The reviewer talks to the GitHub API in-process.
           persist-credentials: false
-      - uses: DailybotHQ/ai-diff-reviewer@v1
+      - uses: DailybotHQ/ai-diff-reviewer@v2
         with:
           provider: cursor
           api-key: ${{ secrets.CURSOR_API_KEY }}
@@ -159,6 +173,7 @@ jobs:
           label-gate: ready
           author-association: OWNER,MEMBER,COLLABORATOR
           applied-label: pr-reviewed
+          skip-review-label: skip-ai-review
           strictness: block-on-critical
           prompt-extension-file: .review/extension.md
           max-inline-comments: 15
@@ -168,7 +183,8 @@ jobs:
     # A `skipped` required check counts as passing (GitHub behavior), so PRs
     # without `ready` are mergeable without a review. To force reviews on every
     # PR, pair this required check with a separate rule that enforces the
-    # `ready` label.
+    # `ready` label. Emergency bypass via `skip-ai-review` makes the review
+    # job succeed (Action short-circuit) — protect that label with a ruleset.
     name: 'AI review gate'
     needs: [scope, review]
     if: always() && needs.scope.outputs.empty_reason != 'no-ready-label' && needs.scope.outputs.empty_reason != 'author-association'

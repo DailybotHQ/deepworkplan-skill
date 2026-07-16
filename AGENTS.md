@@ -383,17 +383,26 @@ or `.agents/skills/ai-diff-reviewer/`.** The next release cut will overwrite
 your changes. Contribute upstream first, land a release there, then the
 `auto-release` job here will refresh the vendored copy on its next run.
 
-## PR review workflow — Cursor-based, `ready`-label gated
+## PR review workflow — Cursor-based, `ready`-label gated (Action `@v2`)
 
 This repo ships an AI code-review workflow at
 [`.github/workflows/pr-review.yml`](.github/workflows/pr-review.yml) powered
-by [`DailybotHQ/ai-diff-reviewer`](https://github.com/marketplace/actions/ai-diff-reviewer)
-(GitHub Marketplace listing: **"AI Diff Reviewer"**). It runs on every
-`pull_request` to `main` that carries the `ready` label AND is opened by a
-write-tier author (`OWNER` / `MEMBER` / `COLLABORATOR`), single Cursor
-provider (`model: auto`), and applies the `pr-reviewed` label on success.
-`critical` findings block the merge; `warning` and `info` findings are
-reported inline but non-blocking.
+by [`DailybotHQ/ai-diff-reviewer@v2`](https://github.com/marketplace/actions/ai-diff-reviewer)
+(GitHub Marketplace listing: **"AI Diff Reviewer"**, skill + Action **v2**).
+It runs on every `pull_request` to `main` that carries the `ready` label AND
+is opened by a write-tier author (`OWNER` / `MEMBER` / `COLLABORATOR`),
+single Cursor provider (`model: auto`), and applies the `pr-reviewed` label
+on success. `critical` findings block the merge; `warning` and `info`
+findings are reported inline but non-blocking. CI runs Iteration-Aware
+Review (IAR) by default; local skill reviews remain a full pass.
+
+**Labels.**
+
+| Label | Role |
+|-------|------|
+| `ready` | Trigger / unlock the review (toggle off→on to re-run) |
+| `pr-reviewed` | Applied automatically after a successful, non-skipped review |
+| `skip-ai-review` | Opt-in emergency bypass — short-circuits the LLM with a successful check + ⏭️ skipped tracking comment (no findings). Protect with a ruleset if the AI review is a merge gate. Distinct from `full-review-please` (IAR escape: one full review, not skip) |
 
 **How to use it.**
 
@@ -404,6 +413,8 @@ reported inline but non-blocking.
 4. If a `critical` finding is posted, address it (edit, push a fix, or reply
    inline if you disagree), then toggle the `ready` label off and on to
    re-run — pushes to the branch alone do NOT re-review.
+5. Hotfix / mechanical revert only: apply `skip-ai-review` while `ready`
+   is present (or apply both, then toggle `ready`) to bypass the LLM.
 
 **Branch-protection integration.** Mark ONLY the stable-named `AI review gate`
 job as a required status check in Settings > Branches > Protection rules.

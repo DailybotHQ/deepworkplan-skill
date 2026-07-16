@@ -241,7 +241,7 @@ is fully conformant with **zero** addons installed.
   ```
 
 - Scope: an **opt-in** connection to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)**
-  (marketplace listing **"AI Diff Reviewer"**, currently **v1.7.0**). When
+  (marketplace listing **"AI Diff Reviewer"**, currently **v2.0.0**). When
   accepted, it offers (never forces) install of the vendored coding-agent skill
   (`npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y`
   — both `--yes` and `-y` required); **asks Flow A (local-only) vs Flow B

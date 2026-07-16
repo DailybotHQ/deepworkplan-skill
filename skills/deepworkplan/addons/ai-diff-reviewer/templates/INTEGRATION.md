@@ -65,7 +65,7 @@ Decision notes:
 
 ## 2. Ask the flow question — do NOT guess
 
-Matching upstream v1.7.0's own ambiguity tie-break policy: when the signal is
+Matching upstream v2.0.0's own ambiguity tie-break policy: when the signal is
 unclear, **ask**. Never default to Flow B (installing the workflow
 unrequested is a much bigger footprint than declining Flow B).
 
@@ -116,7 +116,7 @@ VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
 echo "Vendored: $VENDORED"
 
 # Pin to a specific tag for reproducibility (optional)
-# npx --yes skills add DailybotHQ/ai-diff-reviewer@v1.7.0 --skill ai-diff-reviewer -y
+# npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y
 
 # Bump later
 # npx --yes skills update ai-diff-reviewer -y
@@ -214,13 +214,16 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: DailybotHQ/ai-diff-reviewer@v1
+      - uses: DailybotHQ/ai-diff-reviewer@v2
         with:
           provider: <provider>
           api-key: ${{ secrets.<PROVIDER>_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           prompt-extension-file: .review/extension.md
           strictness: block-on-critical
+          # Opt-in emergency bypass (v2). Empty = feature OFF. Protect the
+          # label with a repo ruleset if the AI review is a merge gate.
+          skip-review-label: skip-ai-review
   gate:
     name: AI review gate
     needs: [review]
@@ -240,6 +243,12 @@ Reasoning notes:
   and the upstream `setup` wizard both set it.
 - **`persist-credentials: false`** on `actions/checkout` is REQUIRED — the
   reviewer runs with broad local access; no credential should persist.
+- **`skip-review-label: skip-ai-review`** (v2) is the opt-in emergency
+  bypass — when that label is on the PR the Action short-circuits with a
+  successful check and a ⏭️ skipped tracking comment (no LLM). Distinct
+  from `full-review-please` (IAR escape: full review once, not skip).
+- **Pin `@v2`** (moving major) or `@v2.0.0` (frozen). Do not pin `@v1` on
+  new installs — v2 is the current pin surface (IAR + skip-review).
 - **`AI review gate`** is stable-named so branch protection can be
   configured against it once and continue to work when the review-job name
   changes across provider matrices.

@@ -5,7 +5,7 @@
 This document is the **normative specification** of the DeepWorkPlan **AI Diff
 Reviewer addon**: an opt-in capability that connects an AI-first repository to
 the **AI Diff Reviewer** (`DailybotHQ/ai-diff-reviewer`, marketplace listing
-"AI Diff Reviewer", current **v1.7.0**) so DWP work — the mandatory
+"AI Diff Reviewer", current **v2.0.0**) so DWP work — the mandatory
 **Security Review** final task — is augmented with a structured local review
 (verdict + findings table + severity), and (in **Flow B — dual-surface**,
 optionally) every pull request to the target repo is gated by a CI-side
@@ -30,7 +30,7 @@ for baseline AI-first conformance.
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/GUIDE.md` §5.4 |
 | **License** | MIT |
-| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v1.7.0 (marketplace: "AI Diff Reviewer") |
+| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.0.0 (marketplace: "AI Diff Reviewer") |
 
 ## 1. Conventions
 
@@ -47,13 +47,13 @@ a **router with five coordinated sub-skills**:
 3. **`setup`** — install the CI workflow (also the reference manual for every
    `action.yml` input via `setup/reference.md`).
 4. **`open-pr`** — draft the PR title + body from the diff.
-5. **`apply-review`** (new in v1.7.0) — read the CI review on the current
+5. **`apply-review`** (included since v1.7.0) — read the CI review on the current
    branch's PR and walk through findings per-finding (apply / defer / skip)
    with explicit consent. Read-only by default; edits require per-finding
    yes; never commits or pushes.
 
 The **CI Action** is the GitHub Marketplace listing "AI Diff Reviewer"
-([`DailybotHQ/ai-diff-reviewer@v1`](https://github.com/marketplace/actions/ai-diff-reviewer)),
+([`DailybotHQ/ai-diff-reviewer@v2`](https://github.com/marketplace/actions/ai-diff-reviewer)),
 same repository as the skill. The skill's `prompt.md` is **byte-identical**
 to the Action's shipped `prompts/default.md` at the same tag (enforced by
 upstream CI's `Skills — prompt-sync invariant` job).
@@ -78,7 +78,7 @@ upstream CI's `Skills — prompt-sync invariant` job).
 
 ## 3. Two Supported Adoption Flows
 
-The upstream skill v1.7.0 defines two flows explicitly and requires consumers
+The upstream skill v2.0.0 defines two flows explicitly and requires consumers
 to pick between them at consent time (matching its own ambiguity tie-break
 policy — ask, don't guess). This addon **MUST** offer both.
 
@@ -111,7 +111,7 @@ policy — ask, don't guess). This addon **MUST** offer both.
 - The addon **MUST** offer both flows at consent time. It **MUST NOT** default
   to Flow B or install the CI workflow unrequested.
 - When the developer's signal is ambiguous, the addon **MUST** ask. The
-  ambiguity resolution mirrors upstream v1.7.0's own policy: unrelated
+  ambiguity resolution mirrors upstream v2.0.0's own policy: unrelated
   workflows (CI tests, deploy pipelines, dependency bots) are **NOT**
   evidence of Flow B — only an existing ai-diff-reviewer workflow is.
 - The addon **SHOULD** surface the concrete Flow-A-vs-B tradeoff at consent
@@ -136,7 +136,7 @@ only with explicit acceptance, and each reconciled if already present (§8):
     prompt; the subcommand `-y` covers the `skills` CLI's own "Which agents
     do you want to install to?" picker, which hangs in non-TTY without it —
     upstream fixed this bug in v1.7.0).
-  - Or pin to a specific tag: `... DailybotHQ/ai-diff-reviewer@v1.7.0 ...`.
+  - Or pin to a specific tag: `... DailybotHQ/ai-diff-reviewer@v2.0.0 ...`.
   - Bump: `npx --yes skills update ai-diff-reviewer -y`.
 - The vendored skill lands at `.agents/skills/ai-diff-reviewer/`. Its
   source + content hash are recorded in `skills-lock.json` for reproducible
@@ -182,10 +182,22 @@ only with explicit acceptance, and each reconciled if already present (§8):
   the workflow file. The wizard produces `.github/workflows/pr-review.yml`
   adapted to the consumer's answers (provider / strictness / trigger mode /
   external-contributor policy / PR-description mode / complexity labels).
-- The workflow **MUST** pin the upstream Action to a major-line tag (default
-  `DailybotHQ/ai-diff-reviewer@v1`) so patch-level fixes flow automatically.
-  Pinning to a specific tag is also acceptable — parity with the vendored
-  skill's version is what makes local ≡ CI worth it.
+- The workflow **MUST** pin the upstream Action to the **v2** major-line tag
+  (`DailybotHQ/ai-diff-reviewer@v2`) so patch-level fixes flow automatically.
+  Pinning to a frozen tag (`@v2.0.0`) is also acceptable — parity with the
+  vendored skill's version is what makes local ≡ CI worth it. New installs
+  **MUST NOT** pin `@v1`.
+- The workflow **SHOULD** enable the v2 emergency-bypass input
+  `skip-review-label: skip-ai-review` (opt-in; empty means the feature is
+  OFF). Document that anyone who can apply that label can bypass the LLM
+  review — protect it with a repository ruleset when the AI review is a
+  merge gate. This is distinct from `full-review-please` (IAR escape: one
+  full review, not a skip).
+- CI reviews under v2 run **Iteration-Aware Review (IAR)** by default
+  (`convergence-policy: first-pass-exhaustive`). Local skill reviews remain
+  a full pass (no IAR dedup). Soften "local ≡ CI" claims accordingly —
+  shared `prompt.md` + extension still align methodology/severity; round 2+
+  CI may be shorter.
 - The addon **MUST NOT** duplicate the wizard, the input reference manual
   ([`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)),
   or the workflow shape into its own templates. `templates/INTEGRATION.md`
@@ -199,8 +211,9 @@ only with explicit acceptance, and each reconciled if already present (§8):
   - Which flow was chosen (A or B) and why.
   - The Security Review augmentation (both flows).
   - (Flow B) the `pr-review.yml` behavior, the provider-secret requirement,
-    the label workflow, the `AI review gate` branch-protection target, and
-    the `apply-review` post-CI walkthrough companion.
+    the label workflow (`ready` / `pr-reviewed` / optional `skip-ai-review`),
+    the `AI review gate` branch-protection target, and the `apply-review`
+    post-CI walkthrough companion.
 - The section is short-form; the full detail lives in the vendored skill's
   own `SKILL.md` (which any agent already reads).
 
@@ -370,7 +383,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
    docs), and the DWP execution docs describe the **optional, conditional,
    non-blocking** Security Review augmentation.
 5. (Flow B only) `.github/workflows/pr-review.yml` exists with the upstream
-   Action pinned to `@v1` (or a specific tag), the stable-named gate job
+   Action pinned to `@v2` (or a specific tag), the stable-named gate job
    is present for branch protection, the provider secret is documented in
    AGENTS.md, and the label-gate + author-association policies match what
    the maintainer chose during the `setup` wizard.
@@ -409,7 +422,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Upstream skill: [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer)
-  — `skills/ai-diff-reviewer/SKILL.md` (currently **v1.7.0**), sub-skills:
+  — `skills/ai-diff-reviewer/SKILL.md` (currently **v2.0.0**), sub-skills:
   `generate-extension/SKILL.md`, `setup/SKILL.md` +
   [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md),
   `open-pr/SKILL.md`, `apply-review/SKILL.md`.

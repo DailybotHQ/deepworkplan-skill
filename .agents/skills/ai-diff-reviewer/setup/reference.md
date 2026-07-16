@@ -3,7 +3,7 @@
 Every input the [AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)
 GitHub Action accepts, in one place. Adapted from `action.yml` in the
 canonical repository; this file is regenerated alongside skill releases,
-so it always matches the `@v1` behavior.
+so it always matches the `@v2` behavior.
 
 **When to read this file:** the developer asks a specific question about
 an input — *"what does `strictness` do?"*, *"how do I pin the Claude
@@ -174,6 +174,41 @@ Every workflow using AI Diff Reviewer sets these two.
 - **What it is:** If non-empty, this label is applied to the PR after a
   successful, non-blocked review (e.g. `pr-reviewed`).
 - **Empty means:** no label is applied, but the review still runs.
+
+### `skip-review-label`
+
+- **Default:** `''` (empty — feature disabled).
+- **What it is:** Optional emergency-bypass label (e.g. `skip-ai-review`).
+  When BOTH the workflow trigger fires AND this label is on the PR,
+  the reviewer short-circuits: no LLM call, no findings, no state
+  mutation, the GitHub check reports success (exit 0) so the merge can
+  proceed. A `⏭️ skipped` tracking comment records the bypass and names
+  the label so the audit trail is intact.
+- **When to enable:** you want an emergency-bypass hatch for
+  hotfixes, rollbacks, or trivially-safe changes where an LLM review
+  would burn tokens for no incremental value.
+- **What is NOT done on skip:** `applied-label` is NOT stamped
+  (applying it would misrepresent an unreviewed PR as reviewed),
+  IAR state is NOT mutated (the next non-skip run resumes exactly
+  where the pipeline left off), and `collapse-previous` is NOT run
+  (prior reviews stay visible so the human reviewer still has
+  context).
+- **Security:** anyone who can label a PR can bypass code review.
+  Combine this input with a GitHub ruleset or CODEOWNERS-adjacent
+  policy that restricts who can apply the label. The runtime does
+  not police that — it's a repository-policy question the consumer
+  owns.
+- **Misconfig guard:** the reviewer aborts loudly at startup if
+  this value collides with `label-gate`, `applied-label`, or
+  `iteration-escape-label`. Each collision would silently convert
+  every normal review trigger into a skip (or, for the
+  `applied-label` case, freeze IAR state at round 1 forever).
+  Failure surfaces as an exit-1 `CONFIGURATION ERROR:` log entry
+  naming the colliding label; rename `skip-review-label` to a
+  distinct value (recommended: `skip-ai-review`, `hotfix-no-review`)
+  to resolve.
+- **See:** `docs/TRIGGER_MODES.md § Emergency-bypass label` in the
+  action repo for the full contract and worked security example.
 
 ---
 
@@ -354,6 +389,66 @@ These inputs affect only the CLI providers (`claude-code`, `cursor`,
 
 ---
 
+## Iteration-Aware Review (IAR)
+
+Four tunable inputs shape the IAR pipeline. IAR runs on every review
+with `convergence-policy: first-pass-exhaustive` as the default, so
+consumers who don't configure anything get IAR automatically with the
+recommended profile. Critical severity findings ALWAYS surface
+unconditionally — a hardcoded safety rail that no policy can bypass.
+Full spec: [docs/ITERATION_AWARENESS.md](../../../docs/ITERATION_AWARENESS.md).
+
+### `convergence-policy`
+
+- **Default:** `first-pass-exhaustive`.
+- **What it is:** Which IAR policy to apply. One of:
+  - `first-pass-exhaustive` (default) — exhaustive prompt + higher
+    findings cap on round 1 of each generation; dedup on rounds 2+.
+    Solves the "prefer 20 findings at once vs 10 loops" workflow.
+  - `iterative` — dedup only, no cap boost. Cost-neutral vs a no-dedup
+    baseline. Set explicitly when your workflow pushes frequently and
+    the round-1-of-new-gen boost would fire too often.
+  - `round-capped` — dedup pre-cap. Post-cap only critical findings
+    surface. Requires `max-review-rounds > 0`.
+  - `critical-gate` — strict cross-generation dedup: prior-resolved
+    fingerprints stay silenced unless critical.
+
+### `max-review-rounds`
+
+- **Default:** `0` (unlimited).
+- **What it is:** Hard cap for the `round-capped` policy. After N rounds
+  only critical findings surface; warnings and infos are silenced with a
+  "cap reached" annotation. Ignored by other policies.
+
+### `exhaustive-first-pass-cap-multiplier`
+
+- **Default:** `3`.
+- **What it is:** Multiplier applied to `max-inline-comments` on round 1
+  of each generation when policy is `first-pass-exhaustive`. Default `3`
+  means round 1 can post up to 3× the normal cap. Set to `1` to keep the
+  exhaustive prompt splicing without amplification. Ignored by other
+  policies.
+
+### `iteration-escape-label`
+
+- **Default:** `full-review-please`.
+- **What it is:** Label a human applies to force a full review. Dedup is
+  skipped for that run only; persisted state is NOT mutated. When the
+  label is removed, subsequent reviews resume normal IAR behavior. Useful
+  before final merge to see everything again, or when the developer
+  suspects IAR silenced something they need to see.
+- **Companion gesture (no input needed):** on a PR that already has an
+  IAR state block, removing the reviewed label (`applied-label`, e.g.
+  `ai-reviewed`) before the next review triggers a full **state reset**
+  — the next run is classified `USER_FORCED_RESET`, prior state is
+  discarded, generation counter restarts at 1, and round-1 exhaustive
+  fires on a clean slate. Distinct from this escape label: applying
+  `full-review-please` is "see everything this once, state preserved";
+  removing `applied-label` is "start clean, state discarded". Full spec
+  in [docs/ITERATION_AWARENESS.md § 8.5](https://github.com/DailybotHQ/ai-diff-reviewer/blob/v1/docs/ITERATION_AWARENESS.md).
+
+---
+
 ## Outputs
 
 The action writes these to the workflow's `steps.<id>.outputs.*` for
@@ -366,7 +461,12 @@ downstream steps to consume.
 | `inline-attached` | Number of inline comments actually attached to the review. |
 | `inline-dropped` | Number of inline comments dropped because GitHub rejected the review with HTTP 422 (the action retries summary-only on 422). |
 | `blocked` | Whether the strictness gate decided to fail the check (`true`/`false`). When `true`, the action exits with code 2 so the GitHub check turns red. |
-| `skipped` | Whether the run was skipped by the label gate (`true`/`false`). |
+| `skipped` | Whether the run was skipped without invoking the LLM (`true`/`false`) — label/author/`trigger-mode` gate **or** configured `skip-review-label` emergency bypass. |
+| `iteration-round` | IAR round number within the current generation. Populated on every successful IAR pipeline run. Empty string if the pipeline crashed (caught by the try/except safety net). |
+| `iteration-generation` | IAR generation counter; increments on new commits or rebase. Empty if the IAR pipeline crashed. |
+| `iteration-policy-applied` | Which IAR policy actually fired this run. Usually matches `convergence-policy`; the 30% safety net overrides it to `safety-net-forced-first-pass-exhaustive` and the escape label overrides to `escape-label-forced-full-review`. Empty if the IAR pipeline crashed. |
+| `iteration-tokens-used` | Cost-telemetry counter. Always emits `"0"` today — the runtime does not yet capture per-provider usage metadata into `RunTelemetry.tokens_used`; safe placeholder that consumers can surface without gating on. Empty ONLY if the IAR pipeline crashed. See `docs/ITERATION_AWARENESS.md § 13.2`. |
+| `iteration-cost-vs-baseline-estimate` | Coarse cost-delta heuristic (cap expansion + addendum flag). Always `"0%"` or `"+N%"` today — silenced-finding savings are not yet modelled. Empty if the IAR pipeline crashed. |
 
 ---
 
@@ -375,15 +475,19 @@ downstream steps to consume.
 - `README.md` — quick-start, provider overview, feature matrix.
 - `docs/PROMPTS.md` — how prompts and extensions interact; local review
   parity.
-- `docs/STRICTNESS.md` — when to graduate through the strictness levels.
-- `docs/TRIGGER_MODES.md` — full trigger-mode decision matrix and
-  recipes.
+- `docs/STRICTNESS.md` — when to graduate through the strictness levels
+  (includes § Strictness × IAR).
+- `docs/TRIGGER_MODES.md` — full trigger-mode decision matrix, recipes,
+  and § Emergency-bypass label (`skip-review-label`).
+- `docs/ITERATION_AWARENESS.md` — IAR policies, escape label,
+  USER_FORCED_RESET, outputs, failure fallback.
+- `docs/PERFORMANCE.md` — turn budgets plus the IAR cost/latency model.
 - `docs/PR_METADATA_CHECKS.md` — description-mode and complexity-label
   details, including the autocomplete marker.
 - `docs/PROVIDERS.md` — provider-by-provider setup, model choices, and
   cost tradeoffs.
-- `docs/SECURITY.md` — the author-association gate's threat model, and
-  responsible-disclosure flow.
+- `docs/SECURITY.md` — author-association gate, IAR trust boundary,
+  `skip-review-label` threat model, responsible-disclosure flow.
 
 ---
 
@@ -394,4 +498,4 @@ by the auto-release workflow's skill-sync step. If you spot a drift
 (a new input in `action.yml` that's missing here, or a description
 mismatch), file an issue at
 https://github.com/DailybotHQ/ai-diff-reviewer/issues — this file
-should always be a truthful summary of the `@v1` contract.
+should always be a truthful summary of the `@v2` contract.

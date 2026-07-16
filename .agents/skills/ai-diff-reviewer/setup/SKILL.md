@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-setup
 description: Interactive installer for the AI Diff Reviewer GitHub Action — walks the developer through 6 key decisions (provider, strictness, trigger mode, external-contributor policy, PR description mode, complexity labels), detects the repo's stack for sensible defaults, and writes a working `.github/workflows/pr-review.yml` tailored to those choices. Also acts as the reference manual for every `action.yml` input any coding agent might be asked about ("what is `strictness`?", "how do I use label-gate?"). Use when the developer says "set up AI Diff Reviewer for this repo", "configure the reviewer action", "install the AI Diff Reviewer action", "help me create the pr-review workflow", or when the local `ai-diff-reviewer` skill is present on a repo that has no `.github/workflows/pr-review.yml` yet.
-version: "1.7.0"
+version: "2.0.0"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"⚙️","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -293,7 +293,7 @@ jobs:
         with:
           fetch-depth: 0        # required — the action runs `git diff origin/<base>...HEAD`
 
-      - uses: DailybotHQ/ai-diff-reviewer@v1
+      - uses: DailybotHQ/ai-diff-reviewer@v2
         with:
           provider: <PROVIDER>
           api-key: ${{ secrets.<SECRET_NAME> }}
@@ -343,7 +343,7 @@ After the file is written, tell the developer the exact next steps.
 **Include the repo-specific URL** — makes the friction go away.
 
 ```markdown
-Workflow written to `.github/workflows/pr-review.yml`. Two things left:
+Workflow written to `.github/workflows/pr-review.yml`. Next steps:
 
 1. **Add the API secret.**
    Go to: https://github.com/<OWNER>/<REPO>/settings/secrets/actions/new
@@ -366,6 +366,19 @@ Workflow written to `.github/workflows/pr-review.yml`. Two things left:
    ```bash
    gh label create ready --color 0e8a16 --description "Signals PR is ready for AI review"
    ```
+
+4. **Defaults you already have (no extra config needed).**
+   Iteration-Aware Review runs on every CI review with
+   `convergence-policy: first-pass-exhaustive` — exhaustive first
+   pass, then dedup on later rounds so the same warnings don't
+   trickle forever. To force a full un-deduped pass once, label
+   the PR `full-review-please` (the shipped
+   `iteration-escape-label`). Optional emergency bypass for
+   hotfixes: add `skip-review-label: skip-ai-review` to the
+   workflow and protect that label with a ruleset — see
+   `examples/skip-review-label.yml` and
+   `docs/ITERATION_AWARENESS.md` / `docs/TRIGGER_MODES.md` in the
+   action repo.
 ```
 
 Provider-console URLs to substitute in the instructions:
@@ -437,7 +450,7 @@ need to open `action.yml`.
   already exists, the skill offers overwrite / side-by-side / cancel.
   Overwriting requires the explicit phrase `yes overwrite`, not just
   `yes`.
-- **The composed workflow tracks the moving major tag** (`@v1`) by
+- **The composed workflow tracks the moving major tag** (`@v2`) by
   default so consumers pick up patches and minor features
   automatically. To pin, edit the `uses:` line to a specific
   `@vX.Y.Z` — the auto-release workflow keeps the major tag in sync

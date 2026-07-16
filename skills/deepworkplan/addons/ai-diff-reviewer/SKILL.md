@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-ai-diff-reviewer
-description: "Optional DeepWorkPlan addon that connects an AI-first repo to the AI Diff Reviewer (DailybotHQ/ai-diff-reviewer on GitHub, \"AI Diff Reviewer\" on the Marketplace, current v1.7.0) — installing (with consent) the vendored coding-agent skill (DailybotHQ/ai-diff-reviewer, five sub-skills — parent default flow, generate-extension, setup, open-pr, apply-review) and, if the developer picks Flow B (dual-surface), letting the upstream setup sub-skill write .github/workflows/pr-review.yml so every pull request to the target repo is reviewed in CI with byte-identical parity to the local review. Wires the mandatory DWP Security Review task to run the parent default flow (\"Review my current branch\") as an additive step producing verdict + findings table + severity, appended under a dedicated heading in analysis_results/SECURITY_REVIEW.md. In Flow B, also surfaces the upstream apply-review sub-skill as an OPTIONAL developer-invoked companion during execute for walking through CI-posted findings per-finding (apply / defer / skip) with explicit consent. Opt-in, never required, never blocks on missing skill/extension/invocation errors (completed-review critical findings still follow the Security Review contract), reconciles existing setups instead of clobbering them, defers all install/auth/wizard details to the upstream skill's own consent flows, and lets consumers pick Flow A (local-only) or Flow B (dual-surface) — never guesses, always asks. Use when the developer or team wants structured local review + optional CI merge gate on DWP work."
+description: "Optional DeepWorkPlan addon that connects an AI-first repo to the AI Diff Reviewer (DailybotHQ/ai-diff-reviewer on GitHub, \"AI Diff Reviewer\" on the Marketplace, current v2.0.0) — installing (with consent) the vendored coding-agent skill (DailybotHQ/ai-diff-reviewer, five sub-skills — parent default flow, generate-extension, setup, open-pr, apply-review) and, if the developer picks Flow B (dual-surface), letting the upstream setup sub-skill write .github/workflows/pr-review.yml so every pull request to the target repo is reviewed in CI with byte-identical parity to the local review. Wires the mandatory DWP Security Review task to run the parent default flow (\"Review my current branch\") as an additive step producing verdict + findings table + severity, appended under a dedicated heading in analysis_results/SECURITY_REVIEW.md. In Flow B, also surfaces the upstream apply-review sub-skill as an OPTIONAL developer-invoked companion during execute for walking through CI-posted findings per-finding (apply / defer / skip) with explicit consent. Opt-in, never required, never blocks on missing skill/extension/invocation errors (completed-review critical findings still follow the Security Review contract), reconciles existing setups instead of clobbering them, defers all install/auth/wizard details to the upstream skill's own consent flows, and lets consumers pick Flow A (local-only) or Flow B (dual-surface) — never guesses, always asks. Use when the developer or team wants structured local review + optional CI merge gate on DWP work."
 version: "2.16.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -10,11 +10,11 @@ metadata: {"openclaw":{"emoji":"🔍","homepage":"https://deepworkplan.com","req
 
 # DeepWorkPlan — AI Diff Reviewer Addon
 
-Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)** (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff Reviewer"**, current **v1.7.0**) so DWP work — the mandatory **Security Review** final task — is augmented with a structured local review (verdict + findings table + severity), and (in Flow B, optionally) every pull request to the target repo is gated by a CI-side review Action pinned to the same tag for byte-identical parity. This is an **opt-in addon**; it is **never** required for a repo to be AI-first. Missing skill/extension or invocation errors **never block** the work; `critical` findings from a **completed** local review still follow the existing Security Review contract (block until fixed or explicitly accepted).
+Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)** (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff Reviewer"**, current **v2.0.0**) so DWP work — the mandatory **Security Review** final task — is augmented with a structured local review (verdict + findings table + severity), and (in Flow B, optionally) every pull request to the target repo is gated by a CI-side review Action pinned to the same tag for byte-identical parity. This is an **opt-in addon**; it is **never** required for a repo to be AI-first. Missing skill/extension or invocation errors **never block** the work; `critical` findings from a **completed** local review still follow the existing Security Review contract (block until fixed or explicitly accepted).
 
 > ## The rule that overrides everything: this addon DEFERS, it does not reinvent
 >
-> The upstream **`DailybotHQ/ai-diff-reviewer`** skill (currently **v1.7.0**)
+> The upstream **`DailybotHQ/ai-diff-reviewer`** skill (currently **v2.0.0**)
 > already owns install, review methodology, the CI-workflow wizard, the
 > extension-file authoring flow, the PR-body drafting flow, and the post-CI
 > apply-review walkthrough — as five coordinated sub-skills (parent default
@@ -41,7 +41,7 @@ for DWP, and never auto-install it for everyone.
 
 ## Two officially-supported adoption flows
 
-The upstream skill (v1.7.0+) defines **two flows** and requires consumers to
+The upstream skill (v2.0.0+) defines **two flows** and requires consumers to
 pick explicitly. This addon MUST offer both at consent time and MUST NOT
 default to either.
 
@@ -140,7 +140,7 @@ happen.
    for everyone. If the developer declines, stop cleanly; the repo stays
    baseline-conformant.
 
-2. **Ask the flow question — do NOT guess.** This matches upstream v1.7.0's
+2. **Ask the flow question — do NOT guess.** This matches upstream v2.0.0's
    own ambiguity tie-break policy. Present both flows plainly:
 
    > This addon supports two adoption modes:
@@ -184,14 +184,14 @@ Present the install path and let the developer choose; **never run an
 installer without their explicit acceptance**.
 
 - **Vendored coding-agent skill** (recommended — brings the five-sub-skill
-  router and the byte-identical prompt parity guarantee; current **v1.7.0**):
+  router and the byte-identical prompt parity guarantee; current **v2.0.0**):
   - `npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y`
     (vendors into `.agents/skills/ai-diff-reviewer/` and records
     source + content hash in `skills-lock.json`; both `--yes` and `-y` are
     required — `--yes` covers npm's own prompt, subcommand `-y` covers the
     `skills` CLI's own "Which agents do you want to install to?" picker,
     which hangs in non-TTY without it — upstream fixed this in v1.7.0).
-  - Or pin to a specific tag: `... DailybotHQ/ai-diff-reviewer@v1.7.0 ...`.
+  - Or pin to a specific tag: `... DailybotHQ/ai-diff-reviewer@v2.0.0 ...`.
   - Bump to the latest with `npx --yes skills update ai-diff-reviewer -y`.
 
 > **Do not reimplement the install, and never pipe a remote installer to a
@@ -290,7 +290,7 @@ This is the integration value. Reasoning guidance is in
 Run the validation checklist and report: whether the vendored skill is
 present with the correct version, whether an extension file is present at
 one of the three recognized paths, whether (Flow B) the workflow file is
-present with the upstream Action pinned to `@v1`, whether the provider
+present with the upstream Action pinned to `@v2`, whether the provider
 secret is documented in AGENTS.md, whether the stable-named gate job (if
 Flow B) is `AI review gate` for branch protection, and any deferred items.
 If nothing could be installed here (sandbox/CI), say why — do not silently
