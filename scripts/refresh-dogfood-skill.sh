@@ -3,7 +3,18 @@ set -euo pipefail
 
 # Sync the shipped skill pack (skills/deepworkplan/) into the dogfood
 # location (.agents/skills/deepworkplan/) so this repo eats its own
-# cooking. Run after any change to files under skills/deepworkplan/.
+# cooking.
+#
+# This is the ONLY supported way to refresh the in-repo deepworkplan
+# dogfood copy. auto-release.yml deliberately does NOT overwrite
+# `.agents/skills/deepworkplan/` via `npx skills add` — that copy is
+# repo-adapted for contributors (Dailybot + AI Diff Reviewer addon
+# wiring). Addon skills (`dailybot`, `ai-diff-reviewer`) ARE
+# auto-refreshed on release; deepworkplan is not.
+#
+# Run after any intentional change under skills/deepworkplan/ that
+# should also land in the contributor dogfood copy. Review the diff
+# before committing.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SRC="$REPO_ROOT/skills/deepworkplan"

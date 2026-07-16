@@ -7,7 +7,7 @@ piloting this repo) can reason about why a job did or didn't run.
 
 | Workflow | File | Purpose |
 |----------|------|---------|
-| Auto-release | [`auto-release.yml`](../workflows/auto-release.yml) | Conventional-commit-driven release + three-way vendored-skill dogfood |
+| Auto-release | [`auto-release.yml`](../workflows/auto-release.yml) | Conventional-commit-driven release + temp install smoke + addon dogfood |
 | CI | [`ci.yml`](../workflows/ci.yml) | Frontmatter validation, shellcheck, bats tests, `setup.sh`/`context.sh` smoke, markdown link check |
 | PR review | [`pr-review.yml`](../workflows/pr-review.yml) | AI-driven pull request code review via Cursor, `ready`-label gated |
 
@@ -35,18 +35,19 @@ Sequenced steps (a-i below), all in one long-running job on `ubuntu-latest`:
 | d. Prepend CHANGELOG.md section | Merged commits since last tag become bullets |
 | e. Commit `chore(release): X.Y.Z [skip ci]` | The `[skip ci]` marker prevents CI from re-running on the release commit |
 | f. Tag `vX.Y.Z` and push | With `--follow-tags` so commit + tag land atomically |
-| g. **Dogfood — self (`deepworkplan`)** | Fetches the just-published tag via `npx --yes skills add DailybotHQ/deepworkplan-skill@vX.Y.Z --skill deepworkplan --force -y` into `.agents/skills/deepworkplan/`. Verifies `SKILL.md` `version:` equals the requested tag. Commits any diff as `chore(release): dogfood vendored deepworkplan to vX.Y.Z [skip release]`. Doubles as a live smoke test — if the release doesn't install cleanly for consumers, this step fails |
-| h. **Dogfood — dailybot** | Same pattern for `DailybotHQ/agent-skill` → `.agents/skills/dailybot/`. Only runs if the upstream tag moved. Non-interactive contract (`--yes` + `-y`) is mandatory — dropping either flag hangs the workflow indefinitely on the CLI's agent-picker prompt |
-| i. **Dogfood — ai-diff-reviewer** | Same pattern for `DailybotHQ/ai-diff-reviewer` → `.agents/skills/ai-diff-reviewer/`. Same non-interactive contract |
-| j. Create GitHub Release | Uses `gh release create` with auto-generated notes; the release notes include the dogfood commits, so downstream consumers see exactly which skills refreshed with this release |
+| g. **Smoke — published tag installs (temp dir)** | Runs `npx --yes skills add DailybotHQ/deepworkplan-skill@vX.Y.Z --skill deepworkplan --force -y` into an isolated temp directory and asserts `version:` matches. Does **not** overwrite `.agents/skills/deepworkplan/` (that copy is repo-adapted; sync via `scripts/refresh-dogfood-skill.sh`) |
+| h. **Dogfood — dailybot** | `DailybotHQ/agent-skill` → `.agents/skills/dailybot/`. Only commits if the upstream tag moved. Non-interactive contract (`--yes` + `-y`) is mandatory — dropping either flag hangs the workflow indefinitely on the CLI's agent-picker prompt |
+| i. **Dogfood — ai-diff-reviewer** | `DailybotHQ/ai-diff-reviewer` → `.agents/skills/ai-diff-reviewer/`. Same non-interactive contract |
+| j. Create GitHub Release | Uses `gh release create` with auto-generated notes; the release notes include the addon dogfood commits when those skills moved |
 
 ### Failure semantics
 
 | Failure | Behavior |
 |---------|----------|
 | Version bump script cannot read current version | **Fails** — a corrupt router SKILL.md must be fixed before any release |
-| Any `npx skills add` fails during dogfood | **Fails** — a broken upstream tag must never quietly ship inside a release |
-| Version-invariant mismatch after install (installed `SKILL.md` `version:` != requested tag) | **Fails** — refuses to commit a misrepresented dogfood snapshot |
+| Temp-dir smoke `npx skills add` fails, or installed version ≠ tag | **Fails** — the just-published tag must install cleanly for consumers |
+| Any `npx skills add` fails during addon dogfood | **Fails** — a broken upstream tag must never quietly ship inside a release |
+| Version-invariant mismatch after addon install (installed `SKILL.md` `version:` != requested tag) | **Fails** — refuses to commit a misrepresented dogfood snapshot |
 | Upstream `gh release view` fails for one of the two external skills (rate limit, transient outage) | **Fails** — refuses to cut a release whose dogfood snapshot cannot resolve upstream |
 | Head commit already `chore(release):` OR carries `[skip release]` | Whole workflow skips (loop guard) |
 
@@ -56,8 +57,8 @@ Both `npx --yes` (accepts npm's proceed-with-install prompt) AND `-y` (accepts
 the `skills` CLI's own "which agent picker?" prompt) are required in the
 non-TTY GitHub Actions runner. Historically an upstream `ai-diff-reviewer` bug
 (fixed in v1.7.0) caused the second prompt to hang indefinitely without a
-timeout — dropping either flag will hang this workflow. The three dogfood
-steps carry both flags; the pattern is:
+timeout — dropping either flag will hang this workflow. The temp smoke step
+and both addon dogfood steps carry both flags; the pattern is:
 
 ```bash
 npx --yes skills add <owner/repo>@<tag> --skill <name> --force -y
@@ -162,8 +163,8 @@ push to main               pull_request
       ▼                          ▼
  auto-release                  ci.yml               pr-review.yml
    (release +               (validate +           (scope → labels-bootstrap
-    three-way                  smoke)              → review → gate)
-    dogfood)
+    temp smoke +               smoke)              → review → gate)
+    addon dogfood)
       │
       ▼
 GitHub Release (with dogfood commits in the notes)
