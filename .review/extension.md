@@ -101,12 +101,16 @@ silent pass. Addons and CI may change; the core loop must not.
   `skills/deepworkplan/` — that's what `skills.sh` ships. See AGENTS.md
   Rule #2 ("The runtime artifact is `skills/deepworkplan/` — keep it pure").
   `docs/`, `tests/`, `scripts/`, and `.github/` are dev-time only.
-- **Always `critical`:** a hand-edit of `version:` in any `SKILL.md`,
-  `CHANGELOG.md`, a git tag, or the vendored dogfood copy at
-  `.agents/skills/deepworkplan/**`. The `auto-release.yml` workflow OWNS
-  those and re-writes them on every merge to `main`; a manual bump collides
-  with the next release commit and duplicates changelog sections. See
-  AGENTS.md Rule #4 ("Versioning is automatic — write good commits").
+- **Always `critical`:** a hand-edit of `version:` in any `SKILL.md` under
+  `skills/deepworkplan/**`, `CHANGELOG.md`, or a git tag. The
+  `auto-release.yml` workflow OWNS those and re-writes them on every merge
+  to `main`; a manual bump collides with the next release commit and
+  duplicates changelog sections. See AGENTS.md Rule #4 ("Versioning is
+  automatic — write good commits"). (The dogfood copy at
+  `.agents/skills/deepworkplan/**` is synced via
+  `scripts/refresh-dogfood-skill.sh`, not by auto-release — flag
+  unreviewed drift from `skills/deepworkplan/` as `warning`, not a
+  versioning critical.)
 - **Always `critical`:** a sub-skill `SKILL.md` frontmatter `version:` that
   drifts from the router `skills/deepworkplan/SKILL.md` `version:` on any
   commit that touches the router. Every in-tree
@@ -221,9 +225,11 @@ silent pass. Addons and CI may change; the core loop must not.
   (see methodology criticals above).
 - **Always `warning`:** documentation change to `skills/deepworkplan/**`
   (spec, guide, addon SKILL.md, or router SKILL.md) that is not mirrored
-  into either the vendored dogfood copy at `.agents/skills/deepworkplan/**`
-  or explicitly deferred to the next auto-release. Consumers install from
-  the vendored copy — drift means agents in the wild read stale guidance.
+  into the vendored dogfood copy at `.agents/skills/deepworkplan/**` via
+  `scripts/refresh-dogfood-skill.sh` (or explicitly deferred in the PR).
+  Contributors working in this repo read the dogfood copy — drift means
+  agents piloting *this* repo see stale guidance. (End users install from
+  the published `skills/deepworkplan/` pack, not from `.agents/`.)
 - **Always `warning`:** RFC-2119 keyword usage in `spec/*.md` that isn't
   uppercase (must / must not / should — should be MUST / MUST NOT /
   SHOULD). The spec is a normative document; lowercase RFC keywords in
@@ -267,12 +273,13 @@ silent pass. Addons and CI may change; the core loop must not.
   checksum + smoke jobs on `ubuntu-latest` and `macos-latest`. There is
   no per-SKILL.md unit-test convention; prompt behaviour is verified by
   running the skill end-to-end.
-- Any content inside `.agents/skills/dailybot/**`,
-  `.agents/skills/ai-diff-reviewer/**`, or `.agents/skills/deepworkplan/**`.
-  These are vendored copies — updated automatically by `auto-release.yml`
-  (deepworkplan self-dogfood) and by `npx skills update` (the two addon
-  skills). Hand-editing them is a bug; the real source is upstream. See
-  DON'T list in AGENTS.md Rule #10 pillar (B).
+- Any content inside `.agents/skills/dailybot/**` or
+  `.agents/skills/ai-diff-reviewer/**`. These are vendored addon copies —
+  refreshed by `auto-release.yml` from upstream. Hand-editing them is a
+  bug; the real source is upstream. See AGENTS.md → Vendored agent skills.
+  (`.agents/skills/deepworkplan/**` is repo-adapted dogfood synced from
+  `skills/deepworkplan/` via `scripts/refresh-dogfood-skill.sh` — review
+  drift as a warning, don't treat auto-release as its owner.)
 - Content in `.claude/**` or `CLAUDE.md`. Those are symlinks
   (`.claude → .agents`, `CLAUDE.md → AGENTS.md`); any real edit belongs
   at the canonical `.agents/**` and `AGENTS.md` target.
@@ -340,7 +347,8 @@ task files.
   commit-type prefix on merges to `main` (`feat!:` MAJOR, `feat:` MINOR,
   everything else PATCH), bumps every in-tree `skills/deepworkplan/**/SKILL.md`
   in sync (router + sub-skills + all addons), updates `CHANGELOG.md`, tags
-  `vX.Y.Z`, and re-vendors the dogfood copy.
+  `vX.Y.Z`, smoke-tests the published tag in a temp dir, and auto-refreshes
+  only the addon dogfood copies (`dailybot`, `ai-diff-reviewer`).
 - **Addons.** Live under `skills/deepworkplan/addons/<name>/`. Every
   addon ships four things: `SPEC.md` (RFC-2119), `templates/*`
   (reasoning guides), `SKILL.md` (onboarding hook, `user-invocable`),
@@ -350,11 +358,11 @@ task files.
 - **Canonical vs symlinked paths.** `.agents/` is canonical. `.claude/`
   and `.cursor/` are back-compat symlinks. Write new content to
   `.agents/`; the symlinks continue to work for legacy tooling.
-- **Two DWP dogfoods.** This repo installs its own `deepworkplan` skill
-  vendored at `.agents/skills/deepworkplan/` (kept in sync by
-  `auto-release.yml`) AND — after Task 3 of the current AI-Diff-Reviewer
-  plan — also vendors `dailybot` and `ai-diff-reviewer` under the same
-  tree. All three are pinned in `skills-lock.json`.
+- **Three dogfood copies under `.agents/skills/`.** `deepworkplan` is
+  repo-adapted and synced from `skills/deepworkplan/` via
+  `scripts/refresh-dogfood-skill.sh` (not by auto-release). `dailybot`
+  and `ai-diff-reviewer` are auto-refreshed on every release. All three
+  are pinned in `skills-lock.json`.
 - **Branding.** Product name is exactly **DeepWorkPlan** (one word, CamelCase)
   or **DWP** (abbreviation). Slug is `deepworkplan`. The skill package
   name on the marketplace is `DailybotHQ/deepworkplan-skill`. Do NOT

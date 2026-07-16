@@ -220,8 +220,16 @@ Every merge to `main` triggers `auto-release.yml`, which:
 4. Syncs the new version into **all** SKILL.md files (router + six sub-skills +
    addons).
 5. Prepends a section to `CHANGELOG.md` listing the merged commits.
-6. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, creates a GitHub
-   Release.
+6. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`.
+7. Smoke-tests that the published tag installs via `npx skills add` into a
+   **temp directory** (does not overwrite `.agents/skills/deepworkplan/`).
+8. Auto-refreshes only the addon dogfood copies (`.agents/skills/dailybot/`
+   and `.agents/skills/ai-diff-reviewer/`) to their latest upstream tags.
+9. Creates a GitHub Release with auto-generated notes.
+
+To refresh the repo-adapted `deepworkplan` dogfood after changing
+`skills/deepworkplan/`, run `bash scripts/refresh-dogfood-skill.sh`, review,
+and commit on a PR.
 
 So your commit messages directly determine the release version. Use the format
 documented in [`AGENTS.md`](AGENTS.md) → "Commit Message Format":
