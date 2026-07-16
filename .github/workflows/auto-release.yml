@@ -274,10 +274,11 @@ jobs:
         # already propagated through the API layer, so there's no
         # just-published race to wait out.
         #
-        # A failed upstream tag lookup or version-invariant mismatch FAILS
-        # this release: we should never publish a skill-repo tag whose
-        # vendored dailybot misrepresents what upstream actually shipped
-        # (a stale dogfood snapshot is silent breakage for consumers).
+        # Transient `gh release view` failures (rate limit / outage) WARN and
+        # skip this skill's dogfood so DWP's own publish is not stranded after
+        # the version tag is already pushed. A version-invariant mismatch
+        # AFTER a successful fetch still FAILS the release — a stale dogfood
+        # snapshot shipped as current is silent breakage for consumers.
         #
         # Two separate `-y` / `--yes` flags below — same rationale as the
         # deepworkplan dogfood step: `npx --yes` covers npm's download
@@ -289,10 +290,10 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTOMATION_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          DB_TAG=$(gh release view --repo DailybotHQ/agent-skill --json tagName -q .tagName)
+          DB_TAG=$(gh release view --repo DailybotHQ/agent-skill --json tagName -q .tagName || true)
           if [ -z "$DB_TAG" ]; then
-            echo "::error::Could not resolve latest release for DailybotHQ/agent-skill"
-            exit 1
+            echo "::warning::Could not resolve latest release for DailybotHQ/agent-skill — skipping dailybot dogfood for this release"
+            exit 0
           fi
           echo "::notice::dailybot: latest published release is ${DB_TAG}"
 
@@ -328,8 +329,8 @@ jobs:
         # `Skills — prompt-sync invariant` CI job.
         #
         # Failure modes handled explicitly:
-        #   * upstream tag lookup fails → hard fail (a downstream release
-        #     without a resolvable upstream is a broken release);
+        #   * upstream tag lookup fails → warn + skip this skill's dogfood
+        #     (transient API blip must not strand a tagged DWP release);
         #   * vendored version ≠ requested tag → hard fail (the fetch may
         #     have succeeded but the content is wrong; a stale dogfood
         #     shipped as current is silent breakage for consumers).
@@ -341,10 +342,10 @@ jobs:
           GH_TOKEN: ${{ secrets.AUTOMATION_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          AIDR_TAG=$(gh release view --repo DailybotHQ/ai-diff-reviewer --json tagName -q .tagName)
+          AIDR_TAG=$(gh release view --repo DailybotHQ/ai-diff-reviewer --json tagName -q .tagName || true)
           if [ -z "$AIDR_TAG" ]; then
-            echo "::error::Could not resolve latest release for DailybotHQ/ai-diff-reviewer"
-            exit 1
+            echo "::warning::Could not resolve latest release for DailybotHQ/ai-diff-reviewer — skipping ai-diff-reviewer dogfood for this release"
+            exit 0
           fi
           echo "::notice::ai-diff-reviewer: latest published release is ${AIDR_TAG}"
 

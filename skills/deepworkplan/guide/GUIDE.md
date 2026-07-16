@@ -473,10 +473,12 @@ When the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) is
 installed, the Security Review task gains an additional local-review pass. The
 augmentation is best-effort and conditional — the addon's SPEC §7 (never-block
 rule) means an absent upstream skill, failed detection (no extension file), or
-a local review invocation error produces a warning + skip, never a failed task.
-Flow A needs no CI provider secret; an unset `CURSOR_API_KEY` (or other
-provider secret) must not suppress the local pass — that secret is Flow B CI /
-gate messaging only.
+a local review invocation error produces a warning + skip and MUST NOT fail the
+task on that invocation miss. Soft-fail does **not** override severity handling
+below: `critical` findings from a **completed** local pass still block SR
+completion until fixed or explicitly accepted. Flow A needs no CI provider
+secret; an unset `CURSOR_API_KEY` (or other provider secret) must not suppress
+the local pass — that secret is Flow B CI / gate messaging only.
 
 - **Detection.** `.agents/skills/ai-diff-reviewer/` present + an extension file
   at one of the three recognized paths (in precedence order): `.review/extension.md`

@@ -469,8 +469,9 @@ concrete plan.
   bootstrap `.review/extension.md` (required for SR detection), and run
   the local review pre-push. No CI Action, no GitHub secret.
 - **Flow B — dual-surface.** Vendor the skill AND install `pr-review.yml`.
-  Local ↔ CI parity is guaranteed because both read the same `prompt.md`
-  and the same `.review/extension.md`.
+  Both surfaces share the same `prompt.md` and `.review/extension.md`, so
+  methodology and severity stay aligned; CI round 2+ may surface a shorter
+  finding set under Iteration-Aware Review while the local pass stays full.
 
 **Five sub-skills** the addon defers to (all live in the upstream
 `ai-diff-reviewer` repo — the DWP addon does NOT re-implement them):

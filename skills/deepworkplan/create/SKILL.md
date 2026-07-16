@@ -266,12 +266,14 @@ it. Declare the chosen tier (`standard` or `deep`) and why in the refined draft.
   blocks completion until fixed or explicitly accepted by the user
   (`../spec/DWP_SPECIFICATION.md` §6.1).
 
-  **Addon augmentation — `ai-diff-reviewer` (opt-in, only when installed).**
-  When the target repo has installed the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) — detected via
-  `.agents/skills/ai-diff-reviewer/` present + an extension file at one of the
-  three recognized paths (in precedence order): `.review/extension.md`,
-  `.github/ai-diff-reviewer/extension.md`, or the back-compat
-  `.github/ai-pr-reviewer/extension.md` — the Security Review task template gains
+  **Addon augmentation — `ai-diff-reviewer` (opt-in, only when detected).**
+  When the target repo has the vendored skill + extension (the
+  [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) install
+  surface) — detected via `.agents/skills/ai-diff-reviewer/` present + an
+  extension file at one of the three recognized paths (in precedence order):
+  `.review/extension.md`, `.github/ai-diff-reviewer/extension.md`, or the
+  back-compat `.github/ai-pr-reviewer/extension.md` — the Security Review task
+  template gains
   an ADDITIONAL post-existing-checks step: invoke the upstream skill's parent
   default flow ("Review my current branch" / `/ai-diff-reviewer`), capture the
   verdict, findings table, per-finding bodies, notes, and recommendation, and

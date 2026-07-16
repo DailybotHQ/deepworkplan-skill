@@ -47,7 +47,7 @@ Sequenced steps (a-i below), all in one long-running job on `ubuntu-latest`:
 | Version bump script cannot read current version | **Fails** — a corrupt router SKILL.md must be fixed before any release |
 | Any `npx skills add` fails during dogfood | **Fails** — a broken upstream tag must never quietly ship inside a release |
 | Version-invariant mismatch after install (installed `SKILL.md` `version:` != requested tag) | **Fails** — refuses to commit a misrepresented dogfood snapshot |
-| Upstream `gh release view` fails for one of the two external skills (rate limit, transient outage) | **Fails** — refuses to cut a release whose dogfood snapshot cannot resolve upstream |
+| Upstream `gh release view` fails for one of the two external skills (rate limit, transient outage) | **Warns and skips** that skill's dogfood for this release; DWP publish proceeds. Version-invariant mismatch after a successful fetch still **fails** the release |
 | Head commit already `chore(release):` OR carries `[skip release]` | Whole workflow skips (loop guard) |
 
 ### The `--yes` + `-y` non-interactive contract (critical)
@@ -143,8 +143,9 @@ The vendored skill at `.agents/skills/ai-diff-reviewer/` reads the SAME
 `.review/extension.md` this workflow reads via `prompt-extension-file:`. The
 upstream skill's `prompt.md` is byte-identical to the CI Action's
 `prompts/default.md` at the same tag (enforced by upstream CI's "Skills —
-prompt-sync invariant" job). Consequence: running the local skill on a
-branch before pushing yields the same findings CI will produce.
+prompt-sync invariant" job). Consequence: a local pre-push review shares the
+same methodology and severity model; under v2 Iteration-Aware Review, CI
+round 2+ may be shorter while the local pass stays full.
 
 **Post-CI walkthrough.** After this workflow posts its review, developers
 can invoke the vendored skill's `apply-review` sub-skill locally to walk
