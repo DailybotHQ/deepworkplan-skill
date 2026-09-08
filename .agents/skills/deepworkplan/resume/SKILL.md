@@ -37,12 +37,17 @@ Normalize the `PLAN_` prefix; validate `.dwp/plans/PLAN_{name}/` and its
 
 **Writes:** identical scope to `execute` (task outputs, `.dwp/` working state,
 per-task commits after gates pass) — resume continues an interrupted plan, it
-does not widen the boundary. Re-verified recorded state (completed `[x]` tasks)
-is trusted only after the recorded validation is confirmed still green.
+does not widen the boundary. Recorded state follows the **DWP Resume Protocol**
+(`spec/DWP_SPECIFICATION.md` §5.3): completed `[x]` tasks are **trusted as
+recorded** — never re-validated unless the developer explicitly asks, or the
+protocol's smoke test fails in a way that implicates a completed task — while
+the **world** is smoke-tested (cheapest standing validation) before anything
+is built on it.
 
-**It MUST NOT:** re-run or "fix up" already-completed tasks without the
-developer asking, skip re-validation of the world after an interruption, push
-without instruction, or write outside the repo checkout and `.dwp/`.
+**It MUST NOT:** re-run or "fix up" already-completed tasks unless the
+developer asks or the §5.3 smoke test implicates them, skip the
+post-interruption smoke test, push without instruction, or write outside the
+repo checkout and `.dwp/`.
 
 ## Workflow
 

@@ -108,9 +108,10 @@ grep -RInE --exclude=TRUST.md -- '--dangerous[l]y|--full-permissio[n]|c[u]rl[^|]
   || echo 'OK: no installer pipes, no bypass flags'
 
 # 5. No unpinned installs of any kind: no clone-and-run (installing by
-#    cloning whatever a remote default branch currently holds) and no
-#    un-tagged `skills add` (bare repo reference without @tag):
-grep -RInE --exclude=TRUST.md 'git clone |skills add [A-Za-z0-9_./-]+([[:space:]]|$)' skills/deepworkplan \
+#    cloning whatever a remote default branch currently holds), no un-tagged
+#    `skills add`, and no moving refs — a pin is an immutable version tag
+#    (@vX.Y.Z), never @main/@master/@latest/@head:
+grep -RInE --exclude=TRUST.md 'git clone |skills add [A-Za-z0-9_./-]+([[:space:]]|$)|skills add [^`]*@(main|master|latest|head)([[:space:]\`]|$)' skills/deepworkplan \
   || echo 'OK: every install path is tag-pinned or package-managed'
 ```
 
