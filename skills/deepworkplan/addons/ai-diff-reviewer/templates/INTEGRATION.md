@@ -108,17 +108,15 @@ signalling ("Flow A / Flow B" phrases every subsequent request).
 ## 3. Install the vendored skill (OPT-IN — never run without acceptance)
 
 ```bash
-npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y
+# Tag-pinned install (pin whatever tag is current — this is the reproducible form)
+npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y
 
-# Verify the vendored version matches the requested tag / latest
+# Verify the vendored version matches the requested tag
 VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
   .agents/skills/ai-diff-reviewer/SKILL.md | head -1)
 echo "Vendored: $VENDORED"
 
-# Pin to a specific tag for reproducibility (optional)
-# npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y
-
-# Bump later
+# Bump later (updates to the latest published tag)
 # npx --yes skills update ai-diff-reviewer -y
 ```
 
@@ -306,8 +304,9 @@ Decision notes:
   `apply-review` walkthrough, or the review methodology. Point at the
   vendored sub-skills.
 - **Verified install only:** never recommend piping a remote installer to
-  a shell. Use `npx --yes skills add … -y` — pinned via `skills-lock.json`
-  with content-hash verification.
+  a shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
+  `skills-lock.json` content-hash verification is what makes the install
+  reproducible and auditable.
 - **Never block (invocation only):** the wired **local** review step is
   best-effort to *start*; absence of the skill, missing extension file, or
   invocation/network errors — all mean skip-and-continue — warn once, no

@@ -96,9 +96,10 @@ happen.
 
 **Writes (only after explicit developer acceptance of the relevant step):**
 
-- **Vendored skill install** — via `npx --yes skills add … -y` / `npx --yes
-  skills update … -y` into `.agents/skills/ai-diff-reviewer/` +
-  `skills-lock.json`. Never run without Step 1 consent.
+- **Vendored skill install** — via `npx --yes skills add <repo>@<tag> … -y` /
+  `npx --yes skills update … -y` into `.agents/skills/ai-diff-reviewer/` +
+  `skills-lock.json`. Installs are tag-pinned (Step 1); never run without
+  Step 1 consent.
 - **Extension file** — hand off to upstream `generate-extension` (writes
   `.review/extension.md` or a consumer-chosen path). This addon itself does
   NOT invent severity rules; it only triggers the upstream sub-skill after
@@ -327,8 +328,9 @@ skip, and do not fail the onboarding.
   reimplementation, no apply-review reimplementation. Point at the vendored
   sub-skills.
 - **Verified install only.** Never recommend piping a remote installer to a
-  shell. Use `npx --yes skills add … -y` — pinned via `skills-lock.json`
-  with content-hash verification.
+  shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
+  `skills-lock.json` content-hash verification is what makes the install
+  reproducible and auditable.
 - **Reconcile, don't clobber.** An existing extension file, workflow, or
   vendored skill is preserved; only fill gaps. Never migrate a file at
   `.github/ai-diff-reviewer/extension.md` (or the back-compat
