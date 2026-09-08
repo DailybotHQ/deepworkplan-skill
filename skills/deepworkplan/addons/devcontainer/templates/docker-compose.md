@@ -95,5 +95,10 @@ networks:
 - **Reconcile mode**: keep existing service names, ports, and network if they
   already work; just ensure the five AI-CLI volumes, the ro gitconfig mount,
   the `DOCKER_DEV_ENV=vscode`/`sleep infinity` flags, and the network name are
-  present. Preserve an existing ssh mount / `SEED_SSH_KEYS` pair exactly as the
-  developer configured it — including leaving it absent.
+  present. Preserve an existing ssh mount + `SEED_SSH_KEYS` pair exactly as
+  the developer configured it — including leaving it absent. A **pre-gate
+  setup** (ro mount present, `SEED_SSH_KEYS` unset — it predates the opt-in
+  gate) must not be silently disabled by the gated entrypoint: tell the
+  developer their key seeding now requires the explicit flag, and ask whether
+  to add `SEED_SSH_KEYS=1` (restore prior behavior, now visible in VCS) or
+  drop the mount. Apply their answer; never decide for them.

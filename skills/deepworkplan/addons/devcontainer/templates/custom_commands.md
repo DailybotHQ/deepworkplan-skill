@@ -101,5 +101,9 @@ alias test='{REAL test command}'
   uv) — infer from the lockfile, never habit.
 - **Reconcile mode**: if `custom_commands.sh` exists, keep its wrappers/prompt
   and only correct the validation aliases to the real commands if they're wrong
-  or missing.
+  or missing. One exception: if the existing wrappers inject a
+  permission-bypass flag (the pre-gate shape), do not silently rewrite them —
+  surface the difference to the developer and offer the pass-through bodies
+  above as the upgrade. The developer's choice (upgrade, or explicitly keep
+  the legacy shape) is the recorded outcome for the validation checklist.
 ```
