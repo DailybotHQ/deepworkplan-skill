@@ -28,6 +28,42 @@ Sourced from the dev user's `.bashrc` (the Dockerfile appends
   aliases (`gs`, `ga`, `gc`, `gp`, `gl`, `gd`, `gco`, `gcob`, ...).
 - **Welcome message** (`show_welcome`) for interactive shells.
 
+## Reference wrappers (copy near-verbatim, then verify against the installed CLI)
+
+```bash
+# --- AI-CLI wrappers — PASS-THROUGH contract --------------------------------
+# Forwards every flag verbatim to the wrapped CLI and adds only the
+# -c/-r/-l resume shortcuts. It NEVER injects a permission-bypass flag:
+# elevated permission modes are the developer's own explicit choice, made
+# with the host CLI's own documented flag or setting — so the command that
+# actually runs is always the command that was typed.
+claudex() {
+  case "${1:-}" in
+    -c) shift; claude --continue "$@" ;;   # most recent session
+    -r) shift; claude --resume "$@" ;;     # -r <sessionId> or bare picker
+    -l) shift; claude --resume ;;          # session picker
+    *)  claude "$@" ;;
+  esac
+}
+
+codexx() {
+  case "${1:-}" in
+    -l) shift; codex resume --last "$@" ;; # most recent session
+    -r) shift; codex resume "$@" ;;        # -r <sessionId|'all'>
+    *)  codex "$@" ;;
+  esac
+}
+
+cursorx() {
+  agent "$@"
+}
+```
+
+Verify each shortcut against the **installed** CLI version's flags before
+shipping (`claude --help`, `codex --help`, `agent --help`) and adjust the
+mapping — the pass-through contract (`*` case + no injected flags) is the
+invariant, not the exact shortcut set.
+
 ## The reasoned parts (fill from the repo's real commands)
 
 Define `codecheck` / `check`, `fix`, and `test` as the repo's **verbatim** real
@@ -49,11 +85,10 @@ alias codecheck='{REAL validation — for api-services this runs INSIDE the cont
 alias fix='{REAL autofix command}'
 alias test='{REAL test command}'
 
-# --- stable: agent CLI wrappers (claudex / codexx / cursorx), check_devcontainer,
-#     git-aware prompt, git aliases, show_welcome ---
-# (copy the reference implementations near-verbatim; wrappers are PASS-THROUGH:
-#  they forward flags verbatim and add only the -c/-r/-l resume shortcuts —
-#  never a permission-bypass flag)
+# --- stable: agent CLI wrappers (claudex / codexx / cursorx — the reference
+#     implementations above, PASS-THROUGH: verbatim flags, -c/-r/-l shortcuts,
+#     never a permission-bypass flag), check_devcontainer, git-aware prompt,
+#     git aliases, show_welcome ---
 ```
 
 ## Decision notes

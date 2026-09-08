@@ -72,11 +72,14 @@ independent **profiles** that stack into the same single `DESIGN.md`. This is an
 
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
-**Writes:** one file — the repo's `DESIGN.md` (created once, then reconciled on
-refresh; existing sections the developer wrote are preserved unless explicitly
-re-approved) — plus, optionally and only on acceptance, the `/design-system`
-delegator command under `.agents/commands/`. Everything the addon needs to
-"see" (existing components, styles, docs) is read-only analysis.
+**Writes:** `DESIGN.md` (created once at the repo-root or `docs/` location
+Step 3 reasons about, then reconciled on refresh; existing sections the
+developer wrote are preserved unless explicitly re-approved), the short
+`AGENTS.md` index/pointer entry Step 3 adds so humans and agents can find the
+file (merged — never over an existing section), and — optionally and only on
+acceptance — the `/design-system` delegator command under
+`.agents/commands/`. Everything the addon needs to "see" (existing components,
+styles, docs) is read-only analysis.
 
 **It MUST NOT:** modify source components, styles, or any application file
 (DESIGN.md is a specification humans and agents read, not a code generator),
