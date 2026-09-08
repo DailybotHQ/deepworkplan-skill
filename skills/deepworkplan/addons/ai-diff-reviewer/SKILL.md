@@ -138,7 +138,7 @@ explicitly rather than implied:
 | Artifact | Source | How it is verified |
 |----------|--------|--------------------|
 | Vendored skill (five sub-skills) | `DailybotHQ/ai-diff-reviewer` at a **published tag** (current `v2.0.0`) | `skills` CLI records source + content hash in the repo's `skills-lock.json`; a restore re-verifies the hash. Installs are consent-gated (Step 1) and always tag-pinned — never a moving branch. |
-| CI Action (Flow B only) | `DailybotHQ/ai-diff-reviewer` GitHub Action, pinned to the `@v2` major | The Action at the same tag ships a `prompt.md` **byte-identical** to the skill's — an upstream CI invariant. Same tag on both surfaces = same review, locally and in CI. |
+| CI Action (Flow B only) | `DailybotHQ/ai-diff-reviewer` GitHub Action, referenced by its `@v2` major line (exact-tag pinning is not how the Actions marketplace references actions) | Each Action release in the `@v2` line ships a `prompt.md` **byte-identical** to the skill's at the matching skill tag — an upstream CI invariant. The skill side is pinned to an exact tag; the Action follows its major line, so reviews stay compatible while picking up patch fixes. |
 | Extension file | Generated **locally** by `generate-extension` from the repo's own diff | Never downloaded; reviewed by the developer like any other tracked file. |
 | Provider secret (Flow B only) | The maintainer's own `CURSOR_API_KEY`, set in GitHub Settings | This addon never reads, stores, echoes, or commits provider secrets. |
 

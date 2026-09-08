@@ -476,15 +476,16 @@ and **stack-appropriate**, not generic boilerplate.
 
 1. **Make the DeepWorkPlan skill available** to the target repo via one of (offer
    the developer the choice; recommend the first):
-   - `npx --yes skills add DailybotHQ/deepworkplan-skill@v2.17.0 --skill deepworkplan -y`
-     (**pinned to the current published tag** — check the repo's releases for
-     the latest and pin that; both `--yes` and `-y` are required in non-TTY)
+   - `npx --yes skills add DailybotHQ/deepworkplan-skill@<tag> --skill deepworkplan -y`
+     — **pin the latest published tag** from the repo's Releases (at the time
+     of writing, `@v2.17.0`; both `--yes` and `-y` are required in non-TTY)
    - OpenClaw: `openclaw skills install deepworkplan` (registry-managed pin)
    - or symlink the local skill pack into `.agents/skills/deepworkplan/`.
 
-   Do not offer unpinned clone-and-run variants — executing whatever a remote
-   default branch currently holds is an unverifiable dependency (no version,
-   no checksum, no rollback; the shape Snyk W012 flags).
+   Do not offer unpinned clone-and-run variants or moving refs (`@main`,
+   `@latest`) — executing whatever a remote ref currently holds is an
+   unverifiable dependency (no version, no checksum, no rollback; the shape
+   Snyk W012 flags).
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
    create `.dwp/plans/` and `.dwp/drafts/`, each with a `README.md` placeholder,
    and add `.dwp/` to the repo's `.gitignore` (append the rule

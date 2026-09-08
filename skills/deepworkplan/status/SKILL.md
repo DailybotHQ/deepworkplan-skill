@@ -29,9 +29,10 @@ Normalize the `PLAN_` prefix; validate that single plans exist under
 
 ## Trust boundary (write scope)
 
-This skill is **read-only by contract**. `allowed-tools` deliberately lists no
-write-capable tool (`Bash` runs read-only inspection only): status reads plan
-folders, progress checkmarks, and `state.json`, and reports.
+This skill is **read-only by contract**. `allowed-tools` lists `Bash` (which
+Trust Hub treats as write-capable in general) — here it is used exclusively
+for read-only inspection. Status reads plan folders, progress checkmarks, and
+`state.json`, and reports; it performs no writes of any kind.
 
 **It MUST NOT:** modify tasks, progress, or source files; "fix" a plan while
 reporting on it; or write anywhere. If the status reveals an inconsistency,
