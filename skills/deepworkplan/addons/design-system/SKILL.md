@@ -68,6 +68,20 @@ independent **profiles** that stack into the same single `DESIGN.md`. This is an
   to create or refresh `DESIGN.md` (or add a newly relevant profile to it), or
   via the installed `/design-system` delegator if one was added.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
+
+**Writes:** one file — the repo's `DESIGN.md` (created once, then reconciled on
+refresh; existing sections the developer wrote are preserved unless explicitly
+re-approved) — plus, optionally and only on acceptance, the `/design-system`
+delegator command under `.agents/commands/`. Everything the addon needs to
+"see" (existing components, styles, docs) is read-only analysis.
+
+**It MUST NOT:** modify source components, styles, or any application file
+(DESIGN.md is a specification humans and agents read, not a code generator),
+invent tokens no real component uses, or apply a profile the developer declined.
+
 ## The flow
 
 ### Step 0 — Consent + interface-surface gate

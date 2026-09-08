@@ -39,6 +39,19 @@ reorder tasks, update the README).
 | `plan {plan_name}` | Modify an existing final plan | `/dwp-refine plan auth_refactor` |
 | `plan latest` | Modify the most recent plan | `/dwp-refine plan latest` |
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
+
+**Writes:** edits confined to the target plan's files under `.dwp/drafts/` or
+`.dwp/plans/PLAN_{name}/` — task content, ordering, and the README's task list,
+kept mutually consistent. Deleting a completed task or dropping a mandatory
+final task requires explicit developer confirmation.
+
+**It MUST NOT:** touch source files, write outside `.dwp/`, weaken a task's
+acceptance criteria or validation gate without saying so in the diff summary,
+or commit/push anything (refinement output stays uncommitted working state).
+
 ## Workflow
 
 ### Step 0 — Determine Target Type

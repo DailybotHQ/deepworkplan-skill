@@ -106,6 +106,27 @@ the onboarding task-by-task** with per-artifact gates and full resumability (the
 recommended path at scale). The phase descriptions below are written for the
 inline path; on the plan-driven path the **same work** runs as plan tasks.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`. Onboarding
+mutates the target repository — non-destructively and by explicit design:
+
+**Writes (Phase 0 consent covers the onboarding offer; per-file rules below):**
+
+- `AGENTS.md` (+ the `CLAUDE.md` symlink), the reasoned `docs/` tree, per-module
+  docs, and `.agents/` (skills/commands/agents/catalog) — **reconciled** with
+  anything that already exists; replacing or deleting existing content requires
+  asking the developer first.
+- A `.dwp/` directory and a one-time **append** to `.gitignore` (never a
+  rewrite).
+- On the plan-driven path, plan artifacts under `.dwp/` as `create` defines.
+
+**It MUST NOT:** overwrite or delete existing files without explicit approval,
+commit or push (commits happen only when the developer asks or a plan task's
+gate defines them), touch files outside the repo, read or commit secrets, or
+enable any addon without the developer's explicit acceptance of that addon's
+offer.
+
 ## Phase 0 — Preconditions & consent
 
 1. **Resolve context.** Run `bash ../shared/context.sh` to get `repo_root`,
