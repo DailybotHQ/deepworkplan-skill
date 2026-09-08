@@ -87,10 +87,14 @@ maintains these hard invariants (enforced in review by
 
 Dashboard lag after a merge is normal (skills.sh re-scans on a delay); a known
 bad string in the tree is not. History: E005/W012 pipes were eliminated in
-`6a05ed9` (Jul 2026); E006/W012 residuals (devcontainer bypass-flag wrappers,
-silent SSH seeding, unpinned `agent-skill` clone paths) were eliminated in the
-`fix/security-audits-e006-w012-trust` round (Sep 2026), which also rolled trust
-boundaries out to every write-capable `SKILL.md`.
+`6a05ed9` (Jul 2026); the `fix/security-audits-e006-w012-trust` round (Sep 2026)
+eliminated the E006 vectors (devcontainer bypass-flag wrappers, silent SSH
+seeding — now opt-in-gated), swept **every** cross-repo install in the pack to
+tag-pinned form (dailybot addon, ai-diff-reviewer addon + SPEC/INTEGRATION,
+`onboard` Phase 7 + addon summaries, `spec/ADDONS.md`), narrowed `status` to
+read-only tools, and rolled trust boundaries out to every write-capable
+`SKILL.md`. Self-audit grep #5 enforces the pin rule mechanically: no `git
+clone` installs and no un-tagged `skills add` anywhere under the pack.
 
 ## Security review (dogfooding the spec)
 
