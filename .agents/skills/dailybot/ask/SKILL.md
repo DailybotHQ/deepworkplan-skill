@@ -1,7 +1,7 @@
 ---
 name: dailybot-ask
 description: Ask the Dailybot AI a question from the terminal and read the answer, non-interactively. Runs headless — a single `dailybot ask "<question>"` prints the assistant's reply to stdout (or structured JSON with `--json`), so an autonomous agent (Claude Code, CI, a bot) can query the Dailybot AI with only an API key. Use when the developer or agent says "ask Dailybot ...", "query the Dailybot AI", "what does Dailybot say about ...", or wants a one-shot answer from Dailybot's assistant. Distinct from dailybot-chat (bot messages to Slack/Teams) and dailybot-report (progress to the dashboard).
-version: "3.10.3"
+version: "3.13.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🤖","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -10,7 +10,7 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Dailybot Ask
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline) — the `dailybot ask`
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline) — the `dailybot ask`
 > command and full API-key parity on the AI chat. On much older CLIs the AI chat only
 > exists as the interactive TUI (`dailybot interactive`) and requires a login
 > session. If `dailybot ask --help` is not recognized, ask the developer to run
@@ -59,7 +59,7 @@ Read and follow the authentication steps in [`../shared/auth.md`](../shared/auth
 The AI chat accepts **either** a login session **or** an org API key — an agent
 with only `DAILYBOT_API_KEY` set can use `dailybot ask` directly.
 
-Confirm the command exists (`dailybot-cli >= 3.7.0`):
+Confirm the command exists (`dailybot-cli >= 3.9.0`):
 
 ```bash
 dailybot ask --help 2>&1 | head -1

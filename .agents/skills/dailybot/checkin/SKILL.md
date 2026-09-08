@@ -1,7 +1,7 @@
 ---
 name: dailybot-checkin
 description: Drive the full check-in lifecycle via Dailybot — list and complete pending check-ins, see pending/completed status for a day, inspect a check-in's questions and schedule, browse response history, edit or reset a submitted response, and backfill or future-date responses. Also authors check-ins — create and configure a check-in (schedule, participants, reminders, privacy, smart/AI) and manage its questions (types, report titles, variations, conditional logic). Works headless with an API key. Use when the developer asks to fill in their standup, answer daily questions, check what check-ins they have, edit or reset a check-in, review past responses, or create/configure a check-in. Do not use for free-text progress reports — those go through dailybot-report.
-version: "3.10.3"
+version: "3.13.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"✅","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -285,11 +285,11 @@ prompts — handy for humans; agents should use the headless commands above.
 
 ## Step 3.7 — Authoring check-ins (create / configure / questions)
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline). The authoring surface — `checkin create`,
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline). The authoring surface — `checkin create`,
 > `checkin config`, `checkin archive`, the `checkin questions add|edit|delete|reorder`
 > group, resolving people by email, the smart/AI flags, and the **create requires
 > ≥ 1 question** rule (`questions_required`) — is all available. If
-> `dailybot --version` is below 3.7.0, run `dailybot upgrade`.
+> `dailybot --version` is below 3.9.0, run `dailybot upgrade`.
 
 Everything above **answers** a check-in. This section **builds** one. As of the
 authoring release, an agent can create a check-in from scratch, tune every
@@ -727,6 +727,12 @@ dailybot checkin create -n "Daily Standup" \
 
 # 2. Verify the round-trip
 dailybot checkin show <followup_uuid> --json
+
+# 3. Optional — attach organization Labels (CLI >= 3.9.0; create has no --labels).
+#    Prefer `.uuid` from create --json (aliased from API `id`). Full procedure: ../labels/SKILL.md
+# LABEL=$(dailybot label create --name "Standup" --color "#4A90E2" --json | jq -r '.uuid')
+# CID=$(dailybot checkin create ... --json | jq -r '.uuid // .id')
+# dailybot label assign "$CID" --type checkins --label "$LABEL"
 ```
 
 **2. Smart AI check-in with insights and capped follow-ups:**

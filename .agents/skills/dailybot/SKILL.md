@@ -1,7 +1,7 @@
 ---
 name: dailybot
-description: Official Dailybot agent skill pack — report progress, check messages, send emails, announce agent status, complete check-ins, give kudos (to users or teams), resolve teams, run the full forms lifecycle (list, submit, update, transition between workflow states), **author check-ins and forms from scratch** (create/configure questions, workflow states, permissions, reminders, scheduling, AI settings, sharing), send/edit chat messages on the team's Slack/Teams/Discord/Google Chat (including report-style threads and sending as a user's identity), open (or reuse) a Slack group DM with the bot and post a report to it, ask the Dailybot AI a question headlessly, **and browse/read the workspace** — who am I / my org / a user's profile (`me` / `org` / `user get`), browse the kudos feed + the org-wide feed + wall of fame, and list/read workflows — all with shared pagination / search / date-range filters. Also **manages per-repo API keys** through the opt-in `.dailybot/env.json` file (dailybot env add/use/show/list/remove/off/on — CLI 3.7.0+) so a developer can be "logged into different orgs in different repos" simultaneously. Routes to the right sub-skill based on intent. Use when the developer mentions Dailybot or wants to interact with their team.
-version: "3.10.3"
+description: Official Dailybot agent skill pack — report progress, check messages, send emails, announce agent status, complete check-ins, give kudos (to users or teams), resolve teams, run the full forms lifecycle (list, submit, update, transition between workflow states), **author check-ins and forms from scratch** (create/configure questions, workflow states, permissions, reminders, scheduling, AI settings, sharing), send/edit chat messages on the team's Slack/Teams/Discord/Google Chat (including report-style threads, sending as a user's identity, and interactive buttons with approval flows, workflow triggers, modals, and callbacks), open (or reuse) a Slack group DM with the bot and post a report to it, ask the Dailybot AI a question headlessly, **browse/read/trigger the workspace** (`me` / `org` / `user get`, kudos browsing, workflows), **manage organization Labels** (`dailybot label` CRUD + assign/batch on forms, check-ins, workflows) and **private Featured stars**, and **manage per-repo API keys** through `.dailybot/env.json` (pack baseline `dailybot-cli >= 3.9.0`). Routes to the right sub-skill based on intent. Use when the developer mentions Dailybot or wants to interact with their team.
+version: "3.13.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📡","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -30,7 +30,7 @@ no network fetch is required** to know what to do. Run first-run setup in order:
    the `dailybot` CLI is the integration surface. If it is missing, follow
    [`shared/auth.md`](shared/auth.md) — it proposes the checksum-verified
    installer and installs **only after the developer confirms**. Confirm with
-   `dailybot --version` (minimum `>= 3.7.0` — the skill-pack baseline for
+   `dailybot --version` (minimum `>= 3.9.0` — the skill-pack baseline for
    every sub-skill).
 2. **Authenticate.** `dailybot login` (email OTP) **or** set `DAILYBOT_API_KEY` —
    see [`shared/auth.md`](shared/auth.md). Credentials are stored owner-only
@@ -51,7 +51,7 @@ machine — permissions, consent guarantees, and a self-audit you can run — is
 
 ## What it does
 
-Thirteen coordinated capabilities, with smart routing between them:
+Sixteen coordinated capabilities, with smart routing between them:
 
 | Capability | Sub-skill | When it fires |
 |------------|-----------|---------------|
@@ -66,9 +66,11 @@ Thirteen coordinated capabilities, with smart routing between them:
 | **Kudos** | `dailybot-kudos` | Recognize a teammate or a whole team — **plus browsing (read)**: `kudos list` the recognition feed (filter received/given), `kudos org` the whole org's feed (admin-only), and `kudos wall-of-fame` leaderboard |
 | **Teams** | `dailybot-teams` | List teams, inspect members, resolve a team name → UUID (used as a resolver by other skills) — **plus account context**: `dailybot me` (who am I / role), `dailybot org` (which org), and `dailybot user get` (one user's profile) |
 | **Forms** | `dailybot-forms` | List, submit, update, or transition forms — including workflow-state forms with audience permissions (`form list` is now **org-scoped** by default, with `--mine` to narrow to your own; list + responses support pagination / search / date filters) — **plus authoring**: create/configure a form (workflow states, permissions, anonymous/public/approval, ChatOps command) and manage its questions |
-| **Workflows** | `dailybot-workflow` | Developer wants to **read** the org's workflows — `workflow list` (paginated/searchable) and `workflow get`. Read-only; writes are web-app only. Plan-gated |
+| **Workflows** | `dailybot-workflow` | Developer wants to **read or trigger** the org's workflows — `workflow list` (paginated/searchable, with `--filter api_trigger`), `workflow get`, and `workflow trigger` (fire an API-triggerable workflow with an optional JSON payload). Creating/editing workflows is web-app only. Plan-gated |
 | **Report channels** | `dailybot-channels` | Discover report-channel UUIDs to attach to forms/check-ins with `--report-channel` |
-| **Per-repo API keys** | `dailybot-env` | Configure `.dailybot/env.json` — an **opt-in, gitignored** file that carries API keys + URLs for one or more environments (live, local, staging) so the developer can be "logged into different orgs in different repos". `dailybot env add / use / show / list / remove / off / on`. CLI >= 3.7.0 |
+| **Per-repo API keys** | `dailybot-env` | Configure `.dailybot/env.json` — an **opt-in, gitignored** file that carries API keys + URLs for one or more environments (live, local, staging) so the developer can be "logged into different orgs in different repos". `dailybot env add / use / show / list / remove / off / on`. Pack baseline (`>= 3.9.0`) |
+| **Organization Labels** | `dailybot-labels` | Full org Labels lifecycle (`dailybot label entitlement/list/get/create/update/archive/delete/assign/batch`) — shared taxonomy for forms, check-ins, and workflows/automations; web chip-picker parity. Requires CLI `>= 3.9.0` |
+| **Featured stars** | `dailybot-featured` | Private per-user stars on Forms, Automations, Check-ins (`dailybot featured …`) |
 
 ## Install
 
@@ -86,7 +88,7 @@ reporting, ships **inside this skill** — follow **[Start here (first run)](#st
 
 ## Required Dailybot CLI version
 
-> **Baseline: `dailybot-cli >= 3.7.0`** for **every** sub-skill in the pack —
+> **Baseline: `dailybot-cli >= 3.9.0`** for **every** sub-skill in the pack —
 > one single floor, no per-sub-skill exceptions. Recommended install / upgrade
 > target: **latest release** — `dailybot upgrade` (or `pip install
 > --upgrade dailybot-cli`) always satisfies it.
@@ -98,22 +100,23 @@ reporting, ships **inside this skill** — follow **[Start here (first run)](#st
 > upgrade`) installs today; run `dailybot version --check` to see the exact
 > number. Everything this pack documents — reporting, hooks, chat, the AI `ask`
 > command, check-in and form authoring, the browse/read surface (`me` / `org` /
-> `user get`, kudos browsing, workflows), the shared list query flags, and the
-> machine-readable error codes — is available at this floor.
+> `user get`, kudos browsing, workflows), interactive chat buttons (approvals,
+> workflow triggers, modals, callbacks), `workflow trigger`, the shared list
+> query flags, and the machine-readable error codes — is available at this floor.
 
 ### Why this minimum
 
-`3.7.0` is the release that completed the auth story this pack relies on:
-the `env` sub-skill's `dailybot env` command group and `.dailybot/env.json`
-per-repo credentials (with the wire-preference guarantee that a repo-local
-key beats the global Bearer session), the hardened refuse-if-tracked guard,
-and every earlier surface the pack documents (reporting, hooks, chat, forms
-and check-in authoring, kudos, teams, workflows, `ask`, the shared list
-query flags, and the machine-readable error codes). Pinning one single
-floor keeps agent behavior predictable — no per-sub-skill version matrix.
+`3.9.0` is the release that shipped **organization Labels** (`dailybot label`
+CRUD + `assign` / `batch`) and **Featured** stars (`dailybot featured`), and
+it includes everything from `3.8.0`: the interactive-button contract on
+`dailybot chat send` / `update`, `dailybot workflow trigger`,
+`.dailybot/env.json` per-repo credentials, reporting, hooks, forms and
+check-in authoring, kudos, teams, `ask`, shared list query flags, and
+machine-readable error codes. Pinning one single floor keeps agent behavior
+predictable — no per-sub-skill version matrix.
 
-If `dailybot --version` reports below 3.7.0, ask the developer to run
-`dailybot upgrade` (or `pip install --upgrade 'dailybot-cli>=3.7.0'`)
+If `dailybot --version` reports below 3.9.0, ask the developer to run
+`dailybot upgrade` (or `pip install --upgrade 'dailybot-cli>=3.9.0'`)
 before using any sub-skill.
 
 ### Checking the installed version
@@ -121,7 +124,7 @@ before using any sub-skill.
 ```bash
 # Single-line, scriptable
 dailybot --version
-# → dailybot 3.7.0 (Python 3.12.4)
+# → dailybot 3.9.0 (Python 3.12.4)
 
 # Multi-line panel: version, Python runtime, install path, release notes link
 dailybot version
@@ -141,7 +144,7 @@ Homebrew / Linux binary / editable dev) and either runs the right command in a
 subprocess or prints the exact command for installs the CLI shouldn't drive.
 `dailybot upgrade --dry-run` previews without executing.
 
-If the developer is below the pack baseline (`dailybot-cli >= 3.7.0`),
+If the developer is below the pack baseline (`dailybot-cli >= 3.9.0`),
 ask them to run `dailybot upgrade` once, then resume. Do not retry CLI
 commands in a loop while the upgrade is pending.
 
@@ -149,7 +152,7 @@ commands in a loop while the upgrade is pending.
 
 | Channel | Command |
 |---------|---------|
-| pip      | `pip install 'dailybot-cli>=3.7.0'` (the pack baseline) |
+| pip      | `pip install 'dailybot-cli>=3.9.0'` (the pack baseline) |
 | Homebrew | `brew install dailybothq/tap/dailybot` |
 | Universal installer (Linux / macOS / WSL2 / Git Bash) | `curl -fsSL https://cli.dailybot.com/install.sh \| bash` |
 | Windows PowerShell (when WSL2 / Git Bash unavailable) | `irm https://cli.dailybot.com/install.ps1 \| iex` |
@@ -174,7 +177,7 @@ Full safety story (SHA-256 sidecar, cross-origin diff, optional cosign): see
 
 Every install method defaults to the latest release but can pin an exact
 version — useful when a developer needs to reproduce a known-good setup or
-pin the `3.7.0` pack baseline (the installer scripts, `pip`, and Homebrew all
+pin the `3.9.0` pack baseline (the installer scripts, `pip`, and Homebrew all
 accept a version pin):
 
 | Channel | Pin a version |
@@ -240,9 +243,14 @@ the full step-by-step workflow.
 | "list / search / browse my forms (or kudos, or workflows) with pagination", "only the first N", "since last week", "grep for retro" | The matching sub-skill — all share [`shared/list-query-and-errors.md`](shared/list-query-and-errors.md) for the query flags |
 | "who am I?", "what's my role?", "which org am I in?", "show a user's profile" | **Teams** → read [`teams/SKILL.md`](teams/SKILL.md) § Step 4.5 (`me` / `org` / `user get`) |
 | "browse kudos", "kudos I received / gave", "org kudos stats", "who's on the wall of fame?" | **Kudos** → read [`kudos/SKILL.md`](kudos/SKILL.md) § Browsing kudos |
+| "add a label to a form / check-in / workflow", "tag this standup with Sprint", "assign organization labels" | **Labels** → read [`labels/SKILL.md`](labels/SKILL.md) |
 | "list my workflows", "show workflows", "what's in workflow X?" | **Workflows** → read [`workflow/SKILL.md`](workflow/SKILL.md) |
+| "list organization labels", "create a label", "archive label X", "labels entitlement" | **Labels** → read [`labels/SKILL.md`](labels/SKILL.md) |
+| "star this form", "featured check-ins", "unfeature automation", "list my starred forms" | **Featured** → read [`featured/SKILL.md`](featured/SKILL.md) |
+| "trigger the deploy workflow", "fire automation X", "run workflow `<uuid>`", "trigger workflow with payload" | **Workflows** → read [`workflow/SKILL.md`](workflow/SKILL.md) § Step 4 (Trigger) |
 | "which channels can Dailybot post to?", "list report channels", "I need a channel UUID for the form / check-in" | **Channels** → read [`channels/SKILL.md`](channels/SKILL.md) |
 | "send a Slack message", "DM someone in chat", "post the deploy report to a channel (with a thread)", "edit that chat message I just sent", "ping the Engineering team in chat" | **Chat** → read [`chat/SKILL.md`](chat/SKILL.md) |
+| "send an approval request with buttons", "post a message with interactive buttons", "add a workflow button to a message", "send a message with approve/reject" | **Chat** → read [`chat/SKILL.md`](chat/SKILL.md) § Buttons |
 | "send this to a channel as me", "post as `<user>` in Slack", "send the message with someone's identity" | **Chat** → read [`chat/SKILL.md`](chat/SKILL.md) § Send as a user's identity (`--send-as-user` / `--send-as-me`) |
 | "open a group DM with Jane and Bob", "start a Slack group with the release team and the bot", "open a group with `<user>` and send them this report", "get me a channel with these people" | **Conversations** → read [`conversation/SKILL.md`](conversation/SKILL.md) |
 | "list my forms", "which forms does the org have?", "only my own forms" (`--mine`) | **Forms** → read [`forms/SKILL.md`](forms/SKILL.md) |

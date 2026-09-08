@@ -12,7 +12,7 @@ in once, and from then on the harness re-arms the reminders in every future
 session, container, and repo. No human reminders, no reliance on the model's
 memory.
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline). The `dailybot hook` command group
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline). The `dailybot hook` command group
 > is available at this floor.
 > Check with `dailybot --version`; if older, ask the developer to run
 > `dailybot upgrade` once. Hooks installed against an older CLI fail
@@ -163,7 +163,7 @@ the only remaining per-person step is `dailybot login`, and the
   | `soft_turn_threshold` | `8` (`5` in `continuous` mode when omitted) | Agent turns without a report before a soft nudge is eligible |
 
   Invalid `mode` values fall back to `"balanced"`; invalid `soft_turn_threshold`
-  values fall back to the mode default. (Part of the `dailybot-cli >= 3.7.0`
+  values fall back to the mode default. (Part of the `dailybot-cli >= 3.9.0`
   baseline; much older CLIs ignore `mode`/`soft_turn_threshold` and stay on the balanced
   defaults.
 

@@ -1,7 +1,7 @@
 ---
 name: dailybot-kudos
 description: Give kudos to a teammate or to an entire team via Dailybot to recognize their contributions. Use when the developer wants to thank or recognize one person, or recognize a whole team (e.g. "kudos al equipo Engineering"). Do not use for general progress reports — those go through dailybot-report.
-version: "3.10.3"
+version: "3.13.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🏆","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -10,7 +10,7 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Dailybot Kudos
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline). Giving kudos to a user (`--to`) or a team (`--team`), and browsing kudos (`list` / `org` / `wall-of-fame`), are all available. If `dailybot --version` is below 3.7.0, ask the developer to run `dailybot upgrade`. See [`../SKILL.md` § Required Dailybot CLI version](../SKILL.md#required-dailybot-cli-version) for install commands and version-check tooling.
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline). Giving kudos to a user (`--to`) or a team (`--team`), and browsing kudos (`list` / `org` / `wall-of-fame`), are all available. If `dailybot --version` is below 3.9.0, ask the developer to run `dailybot upgrade`. See [`../SKILL.md` § Required Dailybot CLI version](../SKILL.md#required-dailybot-cli-version) for install commands and version-check tooling.
 
 You help developers recognize teammates by sending kudos through Dailybot. Kudos are team-visible appreciation messages — the whole team sees them in Dailybot's recognition feed and in connected chat platforms (Slack, Teams, Discord).
 
@@ -32,7 +32,7 @@ If the developer has only an API key, kudos still work — the CLI falls back to
 ## Browsing kudos (read)
 
 > **Baseline:** the three read commands below (`kudos list`, `kudos org`,
-> `kudos wall-of-fame`) are part of the `dailybot-cli >= 3.7.0` baseline.
+> `kudos wall-of-fame`) are part of the `dailybot-cli >= 3.9.0` baseline.
 
 Beyond *giving* kudos, an agent can **browse** the recognition feed and read
 org-wide stats. All three return the standard pagination envelope where

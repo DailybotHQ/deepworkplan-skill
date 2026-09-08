@@ -1,7 +1,7 @@
 ---
 name: dailybot-messages
 description: Check for pending messages and instructions from your team via Dailybot. Use when starting a work session, when idle, or when asked what to work on next. Messages are instructions that should influence your work.
-version: "3.10.3"
+version: "3.13.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: false
 metadata: {"openclaw":{"emoji":"📬","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -14,7 +14,7 @@ You check for pending messages and instructions from the developer's team. Messa
 
 This is the "what should I work on next?" skill.
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline). See [`../SKILL.md` § Required Dailybot CLI version](../SKILL.md#required-dailybot-cli-version).
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline). See [`../SKILL.md` § Required Dailybot CLI version](../SKILL.md#required-dailybot-cli-version).
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: dailybot-channels
 description: Discover the report channels (Slack/Teams/Discord/Google Chat) available to you via Dailybot, so their UUIDs can be attached to forms and check-ins with --report-channel. Use when the developer needs a channel UUID for form/check-in authoring.
-version: "3.10.3"
+version: "3.13.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📣","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -10,9 +10,9 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Dailybot Report Channels
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline). The `dailybot channels list`
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline). The `dailybot channels list`
 > command is available at this floor. If `dailybot --version` reports below
-> 3.7.0, ask the developer to run `dailybot upgrade`. See
+> 3.9.0, ask the developer to run `dailybot upgrade`. See
 > [`../SKILL.md` § Required Dailybot CLI version](../SKILL.md#required-dailybot-cli-version).
 
 Report channels are the Slack / Microsoft Teams / Discord / Google Chat

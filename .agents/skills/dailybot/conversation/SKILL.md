@@ -1,7 +1,7 @@
 ---
 name: dailybot-conversation
 description: Open (or idempotently reuse) a private Slack group DM (MPIM) that includes the Dailybot bot, then optionally post a message or report to it. Use when the developer wants to start a Slack group with specific teammates plus the bot — e.g. "open a group DM with Jane and Bob and send them the analysis report". Slack only, org-admin only. Distinct from dailybot-chat (which posts to existing channels/DMs) and dailybot-channels (which discovers report-channel UUIDs).
-version: "3.10.3"
+version: "3.13.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"👥","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -10,7 +10,7 @@ allowed-tools: Bash, Read, Grep, Glob
 
 # Dailybot Conversations
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline; the
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline; the
 > `dailybot conversation open` command itself shipped in 3.2.0). If
 > `dailybot --version` reports lower, ask the developer to run
 > `dailybot upgrade` and continue with your primary task meanwhile. See

@@ -45,7 +45,7 @@ treat that as session-wide consent.
 
 > [!NOTE]
 > **Installing a specific version.** Both installers default to the latest
-> release but accept a version pin (the skill-pack baseline is **`dailybot-cli >= 3.7.0`**):
+> release but accept a version pin (the skill-pack baseline is **`dailybot-cli >= 3.9.0`**):
 > - `install.sh` — set `DAILYBOT_VERSION=<version>` in the environment, or
 >   pass `bash -s -- --version <version>`. Example (drop it into the verified
 >   snippet below, right before `bash /tmp/install.sh`):

@@ -294,9 +294,9 @@ Rules:
 Developer: *"I need to test against my local Dailybot instance for this project without breaking my prod login."*
 
 ```bash
-# 1. Confirm CLI >= 3.7.0 (env command exists).
+# 1. Confirm CLI >= 3.9.0 (pack baseline; env command exists).
 dailybot env --help >/dev/null 2>&1 || {
-  echo "This feature requires dailybot-cli >= 3.7.0. Run: dailybot upgrade" >&2
+  echo "This feature requires dailybot-cli >= 3.9.0. Run: dailybot upgrade" >&2
 }
 
 # 2. Ensure the gitignore covers .dailybot/* (create if needed).
@@ -438,7 +438,7 @@ That's what `~/.config/dailybot/agents.json` (global profiles) is for — see `d
 
 ## Version compatibility
 
-- Requires **`dailybot-cli >= 3.7.0`**. Older CLIs never look at `.dailybot/env.json` and treat it as harmless clutter.
+- Requires **`dailybot-cli >= 3.9.0`**. Older CLIs never look at `.dailybot/env.json` and treat it as harmless clutter.
 - The Dailybot agent skill pack targeting this doc requires the same floor.
 - If a developer is on an older CLI, offer to upgrade first: `dailybot upgrade` (auto-detects install method).
 

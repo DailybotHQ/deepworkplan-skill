@@ -1,10 +1,10 @@
 # Shared reference — list query flags, pagination, and machine-readable errors
 
-> **Requires `dailybot-cli >= 3.7.0`** (the skill-pack baseline). Everything on this page — the shared
+> **Requires `dailybot-cli >= 3.9.0`** (the skill-pack baseline). Everything on this page — the shared
 > list query flags, the `{count, next, previous, results}` pagination envelope,
 > the `Showing X of N` footer, the machine-readable error `code` dispatch, and
 > the API-key / Bearer parity + free-plan gating rules — is available at this
-> floor. If `dailybot --version` is below 3.7.0, ask the developer to run
+> floor. If `dailybot --version` is below 3.9.0, ask the developer to run
 > `dailybot upgrade`.
 
 This is the **single source of truth** for behavior shared across every
@@ -145,6 +145,10 @@ In `--json` mode the error surfaces as `{ error, status, code, detail }`.
 | `insufficient_role` | The caller's role is below what the action requires. Carries the required and current role. | Name the required role; suggest an admin/manager runs it. |
 | `member_in_scope_required` | The caller must be a member of the targeted scope (team/check-in/form). | Pick a scope the caller belongs to. |
 | `org_admin_required` | The endpoint is org-admin only (e.g. `kudos org`, `chat send --send-as-user`, webhook/team-member management). | Only an org admin can run it — a member must ask an admin or use an admin API key. Not a session problem. |
+| `workflow_execute_not_allowed` | The caller doesn't have permission to execute (trigger) workflows. | An admin or a user with the execute permission must run it. |
+| `workflow_frozen` | The workflow is disabled (frozen) and cannot be triggered. | Tell the developer; the workflow must be re-enabled in the Dailybot web app. |
+| `feature_not_available` | Organization Labels (or another gated feature) are not enabled for this org. | For Labels: stop tagging work; surface the entitlement gap (`dailybot label entitlement`). Do not retry. |
+| `paid_plan_required` | The org's plan lacks Feature.LABELS (or similar). | Surface any upgrade path; do not retry Labels commands. |
 
 ### 400 — bad input
 
@@ -160,8 +164,28 @@ In `--json` mode the error surfaces as `{ error, status, code, detail }`.
 | `send_as_user_not_found` | The `--send-as-user` UUID doesn't resolve to a user. | Confirm the user exists (`dailybot user list`). |
 | `invalid_kudos_filter` | `kudos list --filter` got an unrecognized value. | Use `received` or `given` (the CLI also accepts `KUDOS_RECEIVED` / `KUDOS_GIVEN`). |
 | `send_message_validation_error` | `chat send` payload is missing content or otherwise invalid. | Read the `detail` — it names the problem (e.g. no message/buttons/image). |
+| `button_link_and_callback_conflict` | A button has both a link `url` and a `callback_*` field. | Use one or the other — a button is either a link or an interactive callback. |
+| `button_callback_conflict` | A button has more than one `callback_*` field. | Only one of `callback_url`/`callback_form`/`callback_command`/`callback_prompt`/`callback_workflow` per button. |
+| `button_callback_url_invalid` | `callback_url` is not a valid URL. | Fix the URL. |
+| `button_modal_body_invalid` | `modal_body` JSON is malformed or has invalid field types. | Use `{title, submit_label?, blocks: [{type, name, label, …}]}` — not a bare array of fields. |
+| `button_callback_form_not_found` | `callback_form` UUID doesn't match a form. | Verify the form UUID (`dailybot form list`). |
+| `button_callback_command_invalid` | `callback_command` is not a recognized ChatOps command. | Check the command string. |
+| `button_callback_prompt_invalid` | `callback_prompt` is empty or too long. | Fix the prompt text. |
+| `button_callback_workflow_not_found` | `callback_workflow` UUID doesn't match a workflow, or the workflow isn't API-triggerable. | Verify the UUID (`dailybot workflow list --filter api_trigger`). |
+| `button_response_invalid` | `response` text is empty or too long. | Fix the response text. |
+| `button_callback_auth_invalid` | `callback_auth` value is malformed. | Use an object: `{type: "bearer"\|"basic"\|"custom_header", …}` — only with `callback_url`. |
+| `buttons_count_out_of_range` | More than 25 buttons on a single message. | Reduce to ≤25 buttons. |
+| `workflow_not_triggerable` | `workflow trigger` targeted a workflow whose event type is not `api_trigger`. | Only `api_trigger` workflows can be triggered. Use `workflow list --filter api_trigger`. |
+| `workflow_trigger_payload_invalid` | `workflow trigger --payload` is not a valid JSON object or exceeds 8 KiB. | Fix the payload — must be a JSON object ≤8 KiB (measured as sent on the wire). |
 | `invalid_owner_user_id` | `--owner` value isn't a valid UUID (after resolution). | Fix the UUID or name. |
 | `too_many_owner_user_ids` | More than 50 `--owner` values. | Narrow the filter — max 50 owners per request. |
+| `archived_label` | `label assign` / `label batch` used an archived Label. | Create a new Label or stop assigning that UUID. |
+| `guest_not_allowed` | Guest caller hit a Labels endpoint. | Stop; Labels require a non-guest member. |
+| `label_in_use` | `label delete` while the Label still has attachments (409). | Clear/reassign entities, then delete — or archive instead. |
+| `label_limit_exceeded` | Assign/batch would exceed the per-entity Label limit. | Remove a Label first, then retry. |
+| `duplicate_name` | Label name collides with an existing org Label (409). | Pick another `--name` or update the existing UUID. |
+| `invalid_color` | Label create/update color is not a valid hex color. | Fix `--color` (e.g. `#4A90E2`). |
+| `permission_denied` | Caller lacks permission for this Labels action. | Ask an admin/manager; do not retry blindly. |
 
 ### 429 — rate limit
 
