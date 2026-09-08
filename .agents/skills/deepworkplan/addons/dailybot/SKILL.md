@@ -115,6 +115,13 @@ flow applies, defer to it rather than prompting yourself.
   > skill repo — executing whatever a remote default branch currently holds is
   > an unverifiable fetch-and-execute dependency (the shape Snyk W012 / Socket
   > flag), with no version, no checksum, and no rollback path.
+  >
+  > **Known upstream residual (transparency).** The Dailybot skill's own docs
+  > still carry legacy installer-pipe strings in a few places (its quick-install
+  > table). This addon never reproduces them: every path above is the pinned
+  > skills CLI or registry install, and any CLI install is delegated to the
+  > skill's SHA-256-verified `shared/auth.md` flow — never a one-line
+  > fetch-and-execute.
 - **Dailybot CLI** (the underlying bridge, from
   [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli); minimum **`>= 3.7.0`**
   for the whole skill pack; the skill installs it on first use via its own

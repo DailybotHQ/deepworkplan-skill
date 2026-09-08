@@ -247,7 +247,11 @@ The addon is correctly applied when **all** hold:
    `exec "$@"`.
 5. `custom_commands.sh` defines real `codecheck`/`check`/`fix`/`test` +
    `claudex`/`codexx`/`cursorx` as **pass-through** wrappers (flags forwarded
-   verbatim, no injected permission-bypass flags).
+   verbatim, no injected permission-bypass flags). In **reconcile mode** an
+   existing wrapper set is preserved; if it still injects a bypass flag, that
+   is surfaced to the developer with the pass-through upgrade offered — the
+   item passes once the developer's explicit choice (upgrade or keep) is
+   recorded.
 6. Only services the app actually depends on are present (no phantom DBs).
 7. Project identity resolves per §4.
 8. **Public repos:** `.dockerignore` excludes secrets and `.env.example` is
