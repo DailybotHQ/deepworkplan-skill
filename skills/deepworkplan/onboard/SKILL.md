@@ -106,6 +106,27 @@ the onboarding task-by-task** with per-artifact gates and full resumability (the
 recommended path at scale). The phase descriptions below are written for the
 inline path; on the plan-driven path the **same work** runs as plan tasks.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`. Onboarding
+mutates the target repository — non-destructively and by explicit design:
+
+**Writes (Phase 0 consent covers the onboarding offer; per-file rules below):**
+
+- `AGENTS.md` (+ the `CLAUDE.md` symlink), the reasoned `docs/` tree, per-module
+  docs, and `.agents/` (skills/commands/agents/catalog) — **reconciled** with
+  anything that already exists; replacing or deleting existing content requires
+  asking the developer first.
+- A `.dwp/` directory and a one-time **append** to `.gitignore` (never a
+  rewrite).
+- On the plan-driven path, plan artifacts under `.dwp/` as `create` defines.
+
+**It MUST NOT:** overwrite or delete existing files without explicit approval,
+commit or push (commits happen only when the developer asks or a plan task's
+gate defines them), touch files outside the repo, read or commit secrets, or
+enable any addon without the developer's explicit acceptance of that addon's
+offer.
+
 ## Phase 0 — Preconditions & consent
 
 1. **Resolve context.** Run `bash ../shared/context.sh` to get `repo_root`,
@@ -455,10 +476,16 @@ and **stack-appropriate**, not generic boilerplate.
 
 1. **Make the DeepWorkPlan skill available** to the target repo via one of (offer
    the developer the choice; recommend the first):
-   - `npx skills add DailybotHQ/deepworkplan-skill`
-   - OpenClaw: `openclaw skills install deepworkplan`
-   - `git clone` the skill repo + run its `setup.sh`
+   - `npx --yes skills add DailybotHQ/deepworkplan-skill@<tag> --skill deepworkplan -y`
+     — **pin the latest published tag** from the repo's Releases (at the time
+     of writing, `@v2.17.0`; both `--yes` and `-y` are required in non-TTY)
+   - OpenClaw: `openclaw skills install deepworkplan` (registry-managed pin)
    - or symlink the local skill pack into `.agents/skills/deepworkplan/`.
+
+   Do not offer unpinned clone-and-run variants or moving refs (`@main`,
+   `@latest`) — executing whatever a remote ref currently holds is an
+   unverifiable dependency (no version, no checksum, no rollback; the shape
+   Snyk W012 flags).
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
    create `.dwp/plans/` and `.dwp/drafts/`, each with a `README.md` placeholder,
    and add `.dwp/` to the repo's `.gitignore` (append the rule
@@ -518,8 +545,10 @@ reporting; in trust mode, recommend it **only** on that signal and **never
 auto-install it for everyone**. If accepted: read that addon's `SKILL.md` and run
 its flow — detect whether the Dailybot skill/CLI is already present
 (reconcile-don't-clobber), offer the **opt-in** install paths (Dailybot agent
-skill via `npx skills add DailybotHQ/agent-skill` / `npx skills update dailybot`
-/ OpenClaw / git clone + `setup.sh`, or the Dailybot CLI **>= 3.7.0**), **defer
+skill via `npx --yes skills add DailybotHQ/agent-skill@v3.10.3 --skill dailybot -y`
+/ `npx --yes skills update dailybot -y` / OpenClaw `openclaw skills install dailybot`,
+or the Dailybot CLI **>= 3.7.0** via pip / Homebrew / the skill's verified
+installer flow), **defer
 all authentication** to the Dailybot skill's own consent flow (`shared/auth.md`
 — `dailybot login` or `DAILYBOT_API_KEY`; never reinvent or store credentials),
 wire the **four lifecycle events** (kickoff, significant task, blocked,
@@ -600,8 +629,8 @@ that addon's `SKILL.md` and run its flow — **ask Flow A (local-only) vs Flow B
 ambiguity tie-break); detect whether the vendored skill / extension file /
 `pr-review.yml` already exist (reconcile-don't-clobber); offer the **opt-in**
 vendored-skill install via
-`npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y`
-(both `--yes` and `-y` required); in Flow B hand off CI-workflow authoring to
+`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+(**tag-pinned**; both `--yes` and `-y` required); in Flow B hand off CI-workflow authoring to
 the upstream `setup` sub-skill (never invent credentials — `CURSOR_API_KEY` /
 provider secrets are the consumer's responsibility); wire the mandatory DWP
 **Security Review** to run the upstream parent default flow as an additive

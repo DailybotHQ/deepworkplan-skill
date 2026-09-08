@@ -9,10 +9,14 @@ are the fixed skeleton; **services** and **ports** are reasoned per repo.
 A devcontainer service (`{service}vscode`) that:
 - builds from `docker/local/{service}/Dockerfile`,
 - mounts the repo at `workspaceFolder`,
-- mounts the **five AI-CLI named volumes** + read-only ssh/gitconfig,
+- mounts the **five AI-CLI named volumes** + read-only gitconfig,
 - sets `DOCKER_DEV_ENV=vscode` and `command: sleep infinity`,
 - publishes **no** host ports,
 - joins `dailybot-project-network`.
+
+An optional, **developer-opt-in** read-only `~/.ssh` mount (paired with the
+`SEED_SSH_KEYS=1` environment flag) enables SSH key seeding — see the decision
+notes below before including it.
 
 ```yaml
 # name: optional compose project name (e.g. dailybotplatformlocal)
@@ -28,6 +32,9 @@ services:
     command: sleep infinity                    # FIXED — devcontainer stays up; app does NOT run here
     environment:
       - DOCKER_DEV_ENV=vscode                  # FIXED — flips entrypoint behavior
+      # - SEED_SSH_KEYS=1                      # OPT-IN (commented by default): together with the
+      #                                         # ro ~/.ssh mount below, enables SSH key seeding.
+      #                                         # The developer uncomments BOTH deliberately.
     env_file:
       - {service}/.env                         # private repos; public repos use a secret-free example
     volumes:
@@ -38,7 +45,7 @@ services:
       - cursor_data:{user-home}/.cursor_data
       - dailybot_data:{user-home}/.dailybot_data
       - gh_data:{user-home}/.gh_data
-      - ${HOME}/.ssh:{user-home}/.ssh_host:ro
+      # - ${HOME}/.ssh:{user-home}/.ssh_host:ro   # OPT-IN (commented by default) — pair with SEED_SSH_KEYS=1
       - ${HOME}/.gitconfig:{user-home}/.gitconfig:ro
     # ports: []                                # devcontainer publishes NO host ports
     networks:
@@ -78,7 +85,15 @@ networks:
   if other services `depends_on` it. Publish their admin/UI ports on the non-vscode
   variant only (e.g. mailpit `8025`, dynamodb-admin `8010`).
 - **Public-OSS**: `build.context: ../..` + a root `.dockerignore` (see SPEC §5).
+- **SSH key seeding is opt-in.** The `${HOME}/.ssh:…:ro` mount ships commented
+  out; it becomes active only when the developer uncomments it **and** sets
+  `SEED_SSH_KEYS=1`. The entrypoint is a no-op without both. Offer it when the
+  developer needs git-over-SSH inside the container; never enable it silently —
+  copying host private keys into a container without an explicit, visible opt-in
+  is exactly the credential-persistence shape security scanners flag (Snyk
+  E006). For public-OSS repos, prefer leaving it off entirely.
 - **Reconcile mode**: keep existing service names, ports, and network if they
-  already work; just ensure the five AI-CLI volumes, the ro ssh/gitconfig mounts,
+  already work; just ensure the five AI-CLI volumes, the ro gitconfig mount,
   the `DOCKER_DEV_ENV=vscode`/`sleep infinity` flags, and the network name are
-  present.
+  present. Preserve an existing ssh mount / `SEED_SSH_KEYS` pair exactly as the
+  developer configured it — including leaving it absent.

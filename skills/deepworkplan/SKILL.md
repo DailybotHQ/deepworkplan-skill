@@ -60,6 +60,29 @@ This is the **router**. It does not run any flow itself — it maps the
 developer's intent to the right sub-skill and tells the agent to read that
 sub-skill's `SKILL.md` and execute it there.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash` because the
+sub-skills this router delegates to need them; the router itself only **reads**
+(the repo tree, the local `spec/`, `shared/`, and sub-skill files). Writes happen
+inside the delegated sub-skill, each of which declares its own trust boundary:
+
+- **Onboard** writes `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and
+  appends to `.gitignore` — reconciling with, never clobbering, what exists,
+  and asking before replacing anything.
+- **Create / refine** write plan artifacts under the gitignored `.dwp/`
+  directory only.
+- **Execute / resume** write task outputs, progress, and per-task commits —
+  gated by each task's validation, never committing secrets, never pushing
+  without the developer's instruction.
+- **Addons** install or configure anything only after the developer explicitly
+  accepts the offer, always via pinned, verified install paths.
+
+It MUST NOT: make network calls in the core flow, read or commit credentials,
+run installers unprompted, or write anywhere outside the surfaces above. The
+full guarantees and a runnable self-audit live in
+[`TRUST.md`](TRUST.md).
+
 ---
 
 ## For the agent — routing rules

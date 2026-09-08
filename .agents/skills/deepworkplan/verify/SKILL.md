@@ -44,6 +44,16 @@ top — the script verifies *structure*; you verify *substance*.
 - `/dwp-verify plan {name}` — also verify a specific plan's well-formedness.
 - `/dwp-verify all` — verify the repository and every plan under `.dwp/plans/`.
 
+## Trust boundary (write scope)
+
+This skill is **read-only by contract**. `allowed-tools` lists `Bash` (to run
+the repo's own read-only inspection and validation commands), not `Edit` or
+`Write`: verification produces a **report**, never a repair.
+
+**It MUST NOT:** create, modify, or delete any file; "fix" a failing criterion;
+or let a failed check silently pass. Findings are reported with evidence and
+fixed through the proper sub-skill (`onboard`, `refine`, or a plan).
+
 ## The overriding rule
 
 Report what is **true on disk**, not what should be true. A criterion passes only

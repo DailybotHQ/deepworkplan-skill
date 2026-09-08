@@ -17,13 +17,18 @@ methodology makes no CLI calls, no HTTP API calls, no authentication flow, and n
 network calls**, and emits **no telemetry** of any kind.
 
 > **One honest caveat — opt-in addons.** The shipped tree includes opt-in addons
-> (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`) that, if
-> you explicitly choose to install them, may run third-party installers (e.g. the
-> Dailybot, Claude, or Cursor CLIs) via their official URLs — always behind your
-> consent and with verification guidance. **A repository is fully conformant with
-> zero addons**, and the baseline methodology never touches the network. The
-> self-audit below scopes the no-network check to the core and lists the addons
-> separately so you can see exactly where any network reference lives.
+> (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,
+> `addons/ai-diff-reviewer`, `addons/design-system`) that, if you explicitly
+> choose to install them, may install third-party artifacts — **always behind
+> your consent, always pinned** (a published tag or a package-manager version),
+> and always through a verifiable path: a package manager, the checksummed
+> `skills` CLI, or a documented download → verify SHA-256 → execute flow. No
+> addon ever pipes a remote installer into a shell, copies host credentials
+> anywhere without an explicit visible opt-in, or documents permission-bypass
+> shortcuts. **A repository is fully conformant with zero addons**, and the
+> baseline methodology never touches the network. The self-audit below scopes
+> the no-network check to the core and lists the addons separately so you can
+> see exactly where any network reference lives.
 
 ## Permissions it requests (`allowed-tools`)
 
@@ -94,6 +99,20 @@ grep -RIlE 'curl|wget' skills/deepworkplan/addons || echo 'none'
 find skills/deepworkplan -name '*.sh'
 grep -nE 'curl|wget|http' skills/deepworkplan/shared/context.sh \
   || echo 'OK: context.sh reads local git + env only'
+
+# 4. No remote-installer pipes or bypass-flag literals anywhere in the pack
+#    (the lexical shapes Snyk E005/E006 and Socket W012 audit for). The
+#    bracketed letters keep this grep from matching its own pattern:
+grep -RInE --exclude=TRUST.md -- '--dangerous[l]y|--full-permissio[n]|c[u]rl[^|]*\|[[:space:]]*(ba)?sh|w[g]et[^|]*\|[[:space:]]*(ba)?sh|\|[[:space:]]*(ie[x]|pws[h])[[:space:]]*$|ir[m][[:space:]]+https?://[^ ]*[[:space:]]+\|[[:space:]]*ie[x]' \
+  skills/deepworkplan \
+  || echo 'OK: no installer pipes, no bypass flags'
+
+# 5. No unpinned installs of any kind: no clone-and-run (installing by
+#    cloning whatever a remote default branch currently holds), no un-tagged
+#    `skills add`, and no moving refs — a pin is an immutable version tag
+#    (@vX.Y.Z), never @main/@master/@latest/@head:
+grep -RInE --exclude=TRUST.md 'git clone |skills add [A-Za-z0-9_./-]+([[:space:]]|$)|skills add [^`]*@(main|master|latest|head)([[:space:]\`]|$)' skills/deepworkplan \
+  || echo 'OK: every install path is tag-pinned or package-managed'
 ```
 
 ## Reporting a vulnerability

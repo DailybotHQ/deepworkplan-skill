@@ -45,6 +45,25 @@ revertible** workflow. This is the methodology's **third opt-in addon** — it i
 - **Directly** — `/deepworkplan-addon-dependency-upgrade` on an already-onboarded
   repo to upgrade dependencies, or via the installed `/lib-upgrade` delegator.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
+
+**Writes:** manifests and lockfiles (`package.json` + `package-lock.json` /
+`pnpm-lock.yaml`, `pyproject.toml` + lock, `Cargo.toml` + `Cargo.lock`, and
+equivalents), a batch/upgrade report under the repo's working-state directory,
+and a git commit per completed upgrade batch. Remote registry access is limited
+to the package manager's own resolution commands (`npm view`, `pip index`,
+`cargo update`…) — metadata queries and lockfile regeneration, never script
+execution. (Ecosystem post-install scripts run only if the developer opts in,
+stated per batch.)
+
+**It MUST NOT:** run a major-version jump that fails the repo's validation gate
+and still record the batch as upgraded, commit regenerated lockfiles without
+the matching manifest change, force-push or rewrite history, or leave the tree
+dirty when a batch is recorded as done. Everything is revertible: every batch
+is a self-contained commit.
+
 ## The flow
 
 ### Step 0 — Consent + clean tree

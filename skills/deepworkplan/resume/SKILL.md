@@ -31,6 +31,24 @@ strict order, continuing from the first `[ ]` task.
 Normalize the `PLAN_` prefix; validate `.dwp/plans/PLAN_{name}/` and its
 `README.md`. If not found, show available plans and ask the user to choose.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
+
+**Writes:** identical scope to `execute` (task outputs, `.dwp/` working state,
+per-task commits after gates pass) — resume continues an interrupted plan, it
+does not widen the boundary. Recorded state follows the **DWP Resume Protocol**
+(`spec/DWP_SPECIFICATION.md` §5.3): completed `[x]` tasks are **trusted as
+recorded** — never re-validated unless the developer explicitly asks, or the
+protocol's smoke test fails in a way that implicates a completed task — while
+the **world** is smoke-tested (cheapest standing validation) before anything
+is built on it.
+
+**It MUST NOT:** re-run or "fix up" already-completed tasks unless the
+developer asks or the §5.3 smoke test implicates them, skip the
+post-interruption smoke test, push without instruction, or write outside the
+repo checkout and `.dwp/`.
+
 ## Workflow
 
 ### Step 0 — Check for Parameters

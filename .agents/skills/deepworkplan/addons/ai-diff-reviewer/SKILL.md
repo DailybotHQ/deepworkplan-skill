@@ -96,9 +96,10 @@ happen.
 
 **Writes (only after explicit developer acceptance of the relevant step):**
 
-- **Vendored skill install** — via `npx --yes skills add … -y` / `npx --yes
-  skills update … -y` into `.agents/skills/ai-diff-reviewer/` +
-  `skills-lock.json`. Never run without Step 1 consent.
+- **Vendored skill install** — via `npx --yes skills add <repo>@<tag> … -y` /
+  `npx --yes skills update … -y` into `.agents/skills/ai-diff-reviewer/` +
+  `skills-lock.json`. Installs are tag-pinned (Step 1); never run without
+  Step 1 consent.
 - **Extension file** — hand off to upstream `generate-extension` (writes
   `.review/extension.md` or a consumer-chosen path). This addon itself does
   NOT invent severity rules; it only triggers the upstream sub-skill after
@@ -128,6 +129,22 @@ happen.
 - Edit source files under the consumer's application tree — review findings
   are applied (if at all) by the upstream `apply-review` sub-skill under its
   own per-finding consent contract, not by this addon.
+
+### Supply-chain trust (what a "yes" actually installs)
+
+This addon delegates to third-party artifacts, so the trust chain is stated
+explicitly rather than implied:
+
+| Artifact | Source | How it is verified |
+|----------|--------|--------------------|
+| Vendored skill (five sub-skills) | `DailybotHQ/ai-diff-reviewer` at a **published tag** (current `v2.0.0`) | `skills` CLI records source + content hash in the repo's `skills-lock.json`; a restore re-verifies the hash. Installs are consent-gated (Step 1) and always tag-pinned — never a moving branch. |
+| CI Action (Flow B only) | `DailybotHQ/ai-diff-reviewer` GitHub Action, referenced by its `@v2` major line (exact-tag pinning is not how the Actions marketplace references actions) | Each Action release in the `@v2` line ships a `prompt.md` **byte-identical** to the skill's at the matching skill tag — an upstream CI invariant. The skill side is pinned to an exact tag; the Action follows its major line, so reviews stay compatible while picking up patch fixes. |
+| Extension file | Generated **locally** by `generate-extension` from the repo's own diff | Never downloaded; reviewed by the developer like any other tracked file. |
+| Provider secret (Flow B only) | The maintainer's own `CURSOR_API_KEY`, set in GitHub Settings | This addon never reads, stores, echoes, or commits provider secrets. |
+
+Nothing else is fetched. There is no telemetry, no post-install script, and no
+runtime download by this addon itself; the only network action it can prompt
+for is the consent-gated, tag-pinned `skills add`/`skills update` above.
 
 ## The flow
 
@@ -185,14 +202,14 @@ installer without their explicit acceptance**.
 
 - **Vendored coding-agent skill** (recommended — brings the five-sub-skill
   router and the byte-identical prompt parity guarantee; current **v2.0.0**):
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y`
-    (vendors into `.agents/skills/ai-diff-reviewer/` and records
-    source + content hash in `skills-lock.json`; both `--yes` and `-y` are
-    required — `--yes` covers npm's own prompt, subcommand `-y` covers the
-    `skills` CLI's own "Which agents do you want to install to?" picker,
-    which hangs in non-TTY without it — upstream fixed this in v1.7.0).
-  - Or pin to a specific tag: `... DailybotHQ/ai-diff-reviewer@v2.0.0 ...`.
-  - Bump to the latest with `npx --yes skills update ai-diff-reviewer -y`.
+  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+    (**pinned to a published tag**; vendors into
+    `.agents/skills/ai-diff-reviewer/` and records source + content hash in
+    `skills-lock.json`; both `--yes` and `-y` are required — `--yes` covers
+    npm's own prompt, subcommand `-y` covers the `skills` CLI's own
+    "Which agents do you want to install to?" picker, which hangs in non-TTY
+    without it — upstream fixed this in v1.7.0).
+  - Bump to the latest published tag with `npx --yes skills update ai-diff-reviewer -y`.
 
 > **Do not reimplement the install, and never pipe a remote installer to a
 > shell.** The `npx skills` command is the supported, checksummed install
@@ -311,8 +328,9 @@ skip, and do not fail the onboarding.
   reimplementation, no apply-review reimplementation. Point at the vendored
   sub-skills.
 - **Verified install only.** Never recommend piping a remote installer to a
-  shell. Use `npx --yes skills add … -y` — pinned via `skills-lock.json`
-  with content-hash verification.
+  shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
+  `skills-lock.json` content-hash verification is what makes the install
+  reproducible and auditable.
 - **Reconcile, don't clobber.** An existing extension file, workflow, or
   vendored skill is preserved; only fill gaps. Never migrate a file at
   `.github/ai-diff-reviewer/extension.md` (or the back-compat
