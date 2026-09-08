@@ -84,16 +84,26 @@ full reference script.
   `claude_data`, `codex_data`, `cursor_data`, `gh_data`, `dailybot_data` →
   `{user-home}/.claude_data`, `.codex_data`, `.cursor_data`, `.gh_data`,
   `.dailybot_data`.
-- It **MUST** mount the host's `${HOME}/.ssh` and `${HOME}/.gitconfig`
-  **read-only** at `{user-home}/.ssh_host` and `{user-home}/.gitconfig`.
+- It **MUST** mount the host's `${HOME}/.gitconfig` **read-only** at
+  `{user-home}/.gitconfig`. Mounting the host's `${HOME}/.ssh` read-only at
+  `{user-home}/.ssh_host` is **an opt-in the addon MUST offer and the developer
+  MUST explicitly accept** (see below) — it is never added silently.
 - The `entrypoint.sh` **MUST** implement **seed-on-first-run, preserve-on-rebuild**:
   for each tool's real config dir (`~/.claude` + `~/.claude.json` +
   `~/.config/claude-code`, `~/.codex`, `~/.cursor` + `~/.config/cursor`,
   `~/.config/gh`, `~/.config/dailybot`), if it is not already a symlink, seed the
   named-volume copy only when empty, remove the original, and symlink it into the
-  persistent volume. SSH keys are **copied** from the read-only `*.ssh_host`
-  mount into a writable `~/.ssh` with `chmod 600`/`700`, only if not already
-  present.
+  persistent volume.
+- **SSH key seeding is opt-in by construction**: the entrypoint copies private
+  keys from the read-only `*.ssh_host` mount into a writable `~/.ssh` (with
+  `chmod 600`/`700`, only if not already present) **only when both** (a) the
+  developer enabled the read-only mount **and** (b) `SEED_SSH_KEYS=1` is set in
+  the devcontainer/compose environment — a visible, version-controlled line the
+  developer chose to write. Default is **off** (empty `~/.ssh`; git-over-SSH
+  falls back to the developer's normal credential flow). Silently copying host
+  credentials into a container is a pattern security scanners flag as
+  high-risk (Snyk E006); the explicit gate is the mitigation and MUST NOT be
+  removed or pre-enabled in generated files.
 - The result **MUST** survive `docker compose build`/rebuilds: auth and session
   state persist in the named volumes. This is why agents stay logged in across
   container rebuilds.
@@ -125,8 +135,12 @@ full reference script.
   typecheck / test commands (e.g. `ruff check && mypy && pytest`,
   `pnpm run eslint:check`, `astro check`). They **MUST** be the verbatim real
   commands, never placeholders.
-- **AI-CLI wrappers** `claudex` / `codexx` / `cursorx` (full-permission /
-  resume-aware wrappers around `claude` / `codex` / `agent`).
+- **AI-CLI wrappers** `claudex` / `codexx` / `cursorx` (**pass-through** /
+  resume-aware wrappers around `claude` / `codex` / `agent`): they forward
+  flags verbatim and add only the `-c`/`-r`/`-l` resume shortcuts — they never
+  inject a permission-bypass flag. Elevated permission modes are the
+  developer's explicit choice, made with the host CLI's own documented
+  settings.
 - A **git-aware prompt** + git aliases + a `check_devcontainer` helper + a
   welcome message.
 
@@ -222,14 +236,18 @@ The addon is correctly applied when **all** hold:
    `docker/local/docker-compose.{yaml,yml}`.
 2. The compose file declares the AI-CLI named volumes
    (`claude_data`/`codex_data`/`cursor_data`/`gh_data`/`dailybot_data`), the
-   read-only `${HOME}/.ssh` + `${HOME}/.gitconfig` mounts, and the
-   `dailybot-project-network` external network.
+   read-only `${HOME}/.gitconfig` mount, and the
+   `dailybot-project-network` external network. If present at all, the
+   read-only `${HOME}/.ssh` mount is accompanied by the documented
+   `SEED_SSH_KEYS` opt-in (and absent by default).
 3. The devcontainer service sets `DOCKER_DEV_ENV=vscode` + `command: sleep
    infinity` and publishes **no** host ports.
-4. `entrypoint.sh` implements seed-on-first-run persistence for all five CLIs
-   and ends with `exec "$@"`.
+4. `entrypoint.sh` implements seed-on-first-run persistence for all five CLIs,
+   gates SSH seeding behind the `SEED_SSH_KEYS=1` opt-in, and ends with
+   `exec "$@"`.
 5. `custom_commands.sh` defines real `codecheck`/`check`/`fix`/`test` +
-   `claudex`/`codexx`/`cursorx`.
+   `claudex`/`codexx`/`cursorx` as **pass-through** wrappers (flags forwarded
+   verbatim, no injected permission-bypass flags).
 6. Only services the app actually depends on are present (no phantom DBs).
 7. Project identity resolves per §4.
 8. **Public repos:** `.dockerignore` excludes secrets and `.env.example` is

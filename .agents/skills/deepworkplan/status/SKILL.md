@@ -27,6 +27,18 @@ tasks, current task, blockers — **without executing or modifying anything**.
 Normalize the `PLAN_` prefix; validate that single plans exist under
 `.dwp/plans/`. If not found, show available plans and ask the user to choose.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`, but this
+skill is effectively **read-only**: it reads plan folders, progress checkmarks,
+and `state.json`, and reports. Any write is limited to refreshing derived
+status metadata inside `.dwp/` when the plan's conventions call for it.
+
+**It MUST NOT:** modify tasks, progress, or source files; "fix" a plan while
+reporting on it; or write outside `.dwp/`. If the status reveals an
+inconsistency, report it and point at `refine`/`resume` — do not repair it
+silently.
+
 ## Workflow
 
 ### Step 0 — Check for Parameters

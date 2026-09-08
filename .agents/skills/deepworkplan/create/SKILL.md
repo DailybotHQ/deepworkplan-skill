@@ -70,6 +70,19 @@ plan generation) automatically.
 - Creates the **refined draft** → final plan automatically (no intermediate
   confirmations).
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
+
+**Writes:** plan artifacts under the gitignored `.dwp/` directory only —
+`.dwp/drafts/` during drafting, `.dwp/plans/PLAN_{name}/` for the materialized
+plan (README, task files, analysis outputs). "Trust mode" skips intermediate
+confirmations of **plan content**, not of the write boundary.
+
+**It MUST NOT:** modify source files (that is `execute`'s job), write outside
+`.dwp/`, read or include secrets in plan content, or materialize a plan whose
+tasks lack acceptance criteria and validation gates.
+
 ## Unified Workflow
 
 ### Step 0 — Parse Parameters & Determine Mode
