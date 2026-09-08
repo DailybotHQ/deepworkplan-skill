@@ -10,10 +10,17 @@ Sourced from the dev user's `.bashrc` (the Dockerfile appends
 
 ## The stable parts (keep)
 
-- **AI-CLI wrappers** — `claudex` / `codexx` / `cursorx`: full-permission,
-  resume-aware wrappers around `claude` / `codex` / `agent` (Cursor). These give
-  agents one-word entry points with `--dangerously-skip-permissions` /
-  `--dangerously-bypass-approvals-and-sandbox` and `-c/-r/-l` resume flags.
+- **AI-CLI wrappers** — `claudex` / `codexx` / `cursorx`: **pass-through**,
+  resume-aware wrappers around `claude` / `codex` / `agent` (Cursor). They give
+  agents one-word entry points with `-c/-r/-l` resume shortcuts, and forward
+  every other flag **verbatim** to the wrapped CLI.
+  **The wrapper never injects a permission-bypass flag.** If the developer wants
+  an elevated-permission session, they pass the host CLI's own documented
+  permission-mode flag (or set its permission-mode setting) themselves — the
+  wrapper stays transparent so the command that actually runs is always the
+  command that was typed. Wrappers that silently escalate privileges are a
+  backdoor shape security scanners flag (Snyk E006), and for good reason:
+  approval prompts are a safety boundary, not friction.
 - **`check_devcontainer`** — detects `/.dockerenv` / `REMOTE_CONTAINERS` /
   `CODESPACES` and prints whether you're inside the container (and how to get in
   if not).
@@ -44,7 +51,9 @@ alias test='{REAL test command}'
 
 # --- stable: agent CLI wrappers (claudex / codexx / cursorx), check_devcontainer,
 #     git-aware prompt, git aliases, show_welcome ---
-# (copy the reference implementations near-verbatim)
+# (copy the reference implementations near-verbatim; wrappers are PASS-THROUGH:
+#  they forward flags verbatim and add only the -c/-r/-l resume shortcuts —
+#  never a permission-bypass flag)
 ```
 
 ## Decision notes

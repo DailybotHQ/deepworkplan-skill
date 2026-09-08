@@ -44,6 +44,41 @@ repo to be AI-first.
 - **Directly** — `/deepworkplan-addon-devcontainer` on an already-onboarded repo
   to add or reconcile a devcontainer.
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`. Exactly what
+this addon may write — and what it MUST NOT — is enumerated below. Skills.sh /
+Gen Agent Trust Hub treat `allowed-tools` as a trust boundary; this section is
+the human-readable contract for that field. Anything not listed here does not
+happen.
+
+**Reads (always allowed, no consent needed):** the target repo's tree (stack
+detection, existing `.devcontainer/` / `docker/` files, lockfiles, RECON notes),
+Docker metadata where available.
+
+**Writes (only after the developer accepts the addon offer, per file):**
+
+- `.devcontainer/devcontainer.json`, `docker/local/**` (compose, Dockerfile,
+  entrypoint, custom commands), and — for public repos — `.dockerignore` +
+  secret-free `.env.example`. Reconcile mode: existing values are preserved;
+  replacing or deleting anything the developer already has requires explicit
+  approval.
+- Optional docs notes describing the devcontainer (only on an accepted
+  docs-update prompt).
+
+**It MUST NOT:**
+
+- Put secrets in images, compose files, or `.env.example` — ever.
+- Enable SSH key seeding (the `~/.ssh` read-only mount + `SEED_SSH_KEYS=1`
+  pair) without the developer's explicit opt-in, or pre-set that flag in
+  generated files.
+- Generate AI-CLI wrappers that inject permission-bypass flags — wrappers are
+  pass-through; the developer opts into elevated modes themselves.
+- Add services the app does not actually depend on, publish host ports on the
+  devcontainer service, or run network installers (installs go through package
+  managers or the verified two-step flow in `templates/Dockerfile.md`).
+- Push, commit, or mutate anything on the host outside the repo checkout.
+
 ## The flow
 
 ### Step 0 — Consent + reconcile check
@@ -78,6 +113,12 @@ Using the templates, produce or reconcile:
 **for public repos** — `.dockerignore` + a secret-free `.env.example`. Always:
 keep the **common skeleton** (AI-CLI persistence volumes, `dailybot-project-network`,
 `DOCKER_DEV_ENV=vscode`→`sleep infinity`, `codecheck`/`check`/`fix`/`test`).
+Two security-shaped decisions to surface explicitly: (a) **SSH key seeding is
+opt-in** — offer the read-only `~/.ssh` mount + `SEED_SSH_KEYS=1` pair only when
+the developer needs git-over-SSH, never enable it silently (see
+`templates/entrypoint.md` § Blast radius); (b) **AI-CLI wrappers are
+pass-through** — they forward flags verbatim and never inject a
+permission-bypass flag (see `templates/custom_commands.md`).
 
 ### Step 4 — Project identity
 Set identity by the precedence in SPEC §4
