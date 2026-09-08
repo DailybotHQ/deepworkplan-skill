@@ -128,14 +128,23 @@ Every workflow using AI Diff Reviewer sets these two.
 - **Default:** `OWNER,MEMBER,COLLABORATOR` (write-tier only).
 - **What it is:** Comma-separated whitelist of GitHub
   `pull_request.author_association` values allowed to trigger the review.
+  When the webhook value is not in the list, the runtime also checks
+  collaborator permission via the GitHub API (`admin` / `maintain` / `write`
+  still pass on **private / internal** repos — fixes webhook under-reporting).
+  Public repos stay association-only.
 - **Presets:**
   - Public open-source repo (default) — protects your API budget from
     external PR spam.
   - Add `CONTRIBUTOR` to include returning contributors whose PRs have
     already been merged.
-  - Remove `COLLABORATOR` to gate on org membership only.
+  - Remove `COLLABORATOR` to gate on org membership only (association-based
+    on public repos; permission fallback does not widen this preset).
   - Empty string `''` — disable the gate, review every PR from anyone.
-    Recommended for private repos; risky on public ones.
+    Optional on private repos; risky on public ones.
+- **Private / internal repos:** the default allow-list is usually enough —
+  org members and admins are not skipped when GitHub reports a weaker
+  webhook association (e.g. `CONTRIBUTOR`). Set `''` only if you want the
+  gate fully disabled.
 - **Case- and whitespace-insensitive.**
 - **See:** `docs/SECURITY.md § "Author-association gate"` in the action
   repo for the threat model.
@@ -299,7 +308,9 @@ Every workflow using AI Diff Reviewer sets these two.
 - **What it is:** When `true`, the reviewer assesses PR complexity
   (`low` / `medium` / `high`) based on the full change (cognitive
   load, files touched, security surface, coverage delta) and applies
-  a `<prefix><level>` label.
+  a `<prefix><level>` label. Works on **all** providers: chat-completions
+  via the `set_pr_complexity` tool; agent-runners via a `complexity`
+  field in `.aiprr/findings.json`.
 - **When to enable:** you use complexity labels for triage boards,
   code-owner routing, or PR-size KPIs.
 

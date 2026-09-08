@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-setup
 description: Interactive installer for the AI Diff Reviewer GitHub Action — walks the developer through 6 key decisions (provider, strictness, trigger mode, external-contributor policy, PR description mode, complexity labels), detects the repo's stack for sensible defaults, and writes a working `.github/workflows/pr-review.yml` tailored to those choices. Also acts as the reference manual for every `action.yml` input any coding agent might be asked about ("what is `strictness`?", "how do I use label-gate?"). Use when the developer says "set up AI Diff Reviewer for this repo", "configure the reviewer action", "install the AI Diff Reviewer action", "help me create the pr-review workflow", or when the local `ai-diff-reviewer` skill is present on a repo that has no `.github/workflows/pr-review.yml` yet.
-version: "2.0.0"
+version: "2.0.1"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"⚙️","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -201,8 +201,7 @@ workflow event types.
 ### Q4 — External contributors
 
 > **Who should be allowed to trigger the review?**
-> (Applies mostly to public open-source repos — private repos can
-> skip the gate.)
+> (Applies mostly to public open-source repos.)
 >
 > - **`OWNER,MEMBER,COLLABORATOR`** (recommended for public repos) —
 >   Only writes-tier authors trigger the review. Blocks external
@@ -211,9 +210,13 @@ workflow event types.
 >   returning contributors (people whose PRs you've merged before).
 >   Good middle ground once you have a stable contributor pool.
 > - **empty string `''`** — Review every PR from anyone.
->   Recommended for private repos; risky on public ones.
+>   Optional on private repos; risky on public ones.
 
-Skip this question if `visibility == "PRIVATE"` (default to empty).
+On **private / internal** repos, keep the default
+`OWNER,MEMBER,COLLABORATOR` — the action also checks collaborator
+permission when GitHub's webhook under-reports membership (common with
+team-granted org access). Only choose `''` if you want the gate fully
+disabled.
 
 Record: `AUTHOR_ASSOC`.
 

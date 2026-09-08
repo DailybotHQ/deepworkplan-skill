@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-generate-extension
 description: Generates a repo-tailored review-configuration file (`.review/extension.md` by default, or a full replacement `prompt-file` in advanced mode) by inspecting THIS codebase — stack, architecture, security surface, existing conventions, historical pain points — and producing concrete, code-anchored severity overrides. Uses the harness's Read/Grep/Glob tools to gather evidence before writing (12+ tool calls minimum). Default output extends the bundled AI Diff Reviewer prompt with project-specific rules; advanced mode replaces it entirely. Use when the developer says "customize the review for this repo", "generate review rules", "help me write my .review/extension.md", or when the local `ai-diff-reviewer` skill activates on a repo that has no extension file yet.
-version: "2.0.0"
+version: "2.0.1"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/generate-extension/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🎯","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}

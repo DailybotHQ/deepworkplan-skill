@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-apply-review
 description: Read the most recent AI Diff Reviewer review from the current branch's open PR, present the findings in the same format as the parent skill's local review flow (verdict → findings table → per-finding body → recommendation), and — with explicit consent — walk the developer through each finding to apply, defer, or skip. Multi-provider aware — when the repo runs a matrix of legs (anthropic, cursor, codex, claude-code), attributes each finding to its self-reviewed provider label and surfaces cross-leg consensus. Anchors on the latest ai-pr-reviewer-marker tracking comment and filters minimized (collapsed / outdated) comments per the repo's documented PR-review workflow. Read-only by default; edits to source files require an explicit yes per finding, never commits, never pushes. Use when the developer says "what did the CI review say?", "read the review on this PR", "apply the AI review's fixes", "walk me through the findings", "which findings blocked the merge?", "show me only the critical findings", or "the bot posted a review — help me address it".
-version: "2.0.0"
+version: "2.0.1"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/apply-review/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔎","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git","gh"]}}}
