@@ -9,6 +9,27 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [2.17.1] — 2026-09-08
+
+### Changes
+
+- Merge pull request #35 from DailybotHQ/fix/security-audits-e006-w012-trust
+- chore(skill): refresh dogfood copy with the round-2 review fixes
+- fix(skill): align resume trust wording with the DWP Resume Protocol (spec 5.3)
+- chore(skill): refresh dogfood copy with the review-fix round
+- docs(security): self-audit grep #5 catches un-tagged skills installs; precise history
+- fix(skill): concrete pass-through wrappers, full design-system scope, read-only status tools
+- fix(skill): pin every remaining cross-repo install in onboard, spec, and reviewer docs
+- chore(skill): refresh dogfood copy with the audit-invariant changes
+- docs(security): codify skills.sh audit invariants in review rules and repo docs
+- fix(skill): add trust boundaries to every write-capable SKILL.md
+- fix(addon): pin ai-diff-reviewer install example and document supply-chain trust
+- fix(addon): pin Dailybot skill installs to tags, drop unpinned clone path
+- fix(addon): gate SSH seeding behind explicit opt-in, make AI-CLI wrappers pass-through
+- Merge pull request #34 from DailybotHQ/chore/stop-self-dogfood-deepworkplan
+- ci(release): stop auto-overwriting repo-adapted deepworkplan dogfood [skip release]
+
+
 ## [2.17.0] — 2026-07-16
 
 ### Changes
