@@ -136,8 +136,9 @@ is fully conformant with **zero** addons installed.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx skills add DailybotHQ/agent-skill`, currently **3.10.3**; OpenClaw, or
-  git clone + `setup.sh`) and/or the **Dailybot CLI** (`dailybot-cli >= 3.7.0`,
+  (`npx --yes skills add DailybotHQ/agent-skill@v3.10.3 --skill dailybot -y`,
+  currently **3.10.3**; or OpenClaw `openclaw skills install dailybot`) and/or
+  the **Dailybot CLI** (`dailybot-cli >= 3.7.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
   never a one-line remote-installer pipe); **defers all authentication** to the
   Dailybot skill's own
@@ -243,8 +244,8 @@ is fully conformant with **zero** addons installed.
 - Scope: an **opt-in** connection to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)**
   (marketplace listing **"AI Diff Reviewer"**, currently **v2.0.0**). When
   accepted, it offers (never forces) install of the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y`
-  — both `--yes` and `-y` required); **asks Flow A (local-only) vs Flow B
+  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+  — **tag-pinned**, both `--yes` and `-y` required); **asks Flow A (local-only) vs Flow B
   (dual-surface) explicitly and MUST NOT default**; in Flow B **defers**
   CI-workflow authoring to the upstream `setup` sub-skill (never invents
   provider secrets); wires the mandatory DWP **Security Review** to run the

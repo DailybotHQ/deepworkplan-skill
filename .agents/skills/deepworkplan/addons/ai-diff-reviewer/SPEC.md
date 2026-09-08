@@ -131,13 +131,14 @@ only with explicit acceptance, and each reconciled if already present (§8):
 
 - The addon **SHOULD** offer the vendored skill as the primary install path.
   Supported install method:
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer -y`
-    (both flags are required — `--yes` covers npm's own "Ok to proceed?"
-    prompt; the subcommand `-y` covers the `skills` CLI's own "Which agents
-    do you want to install to?" picker, which hangs in non-TTY without it —
-    upstream fixed this bug in v1.7.0).
-  - Or pin to a specific tag: `... DailybotHQ/ai-diff-reviewer@v2.0.0 ...`.
-  - Bump: `npx --yes skills update ai-diff-reviewer -y`.
+  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+    (**tag-pinned**; both flags are required — `--yes` covers npm's own "Ok to
+    proceed?" prompt; the subcommand `-y` covers the `skills` CLI's own "Which
+    agents do you want to install to?" picker, which hangs in non-TTY without
+    it — upstream fixed this bug in v1.7.0. Pin whatever tag is current at
+    install time; the pin is what makes the install verifiable and the
+    local↔CI parity guarantee exact.)
+  - Bump to the latest published tag: `npx --yes skills update ai-diff-reviewer -y`.
 - The vendored skill lands at `.agents/skills/ai-diff-reviewer/`. Its
   source + content hash are recorded in `skills-lock.json` for reproducible
   restores.

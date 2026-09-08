@@ -4,7 +4,7 @@ description: Report the status of a Deep Work Plan — completed tasks, what's l
 version: "2.17.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
-allowed-tools: Bash, Read, Grep, Glob, Edit, Write
+allowed-tools: Bash, Read, Grep, Glob
 ---
 
 # DeepWorkPlan — Status
@@ -29,15 +29,13 @@ Normalize the `PLAN_` prefix; validate that single plans exist under
 
 ## Trust boundary (write scope)
 
-`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`, but this
-skill is effectively **read-only**: it reads plan folders, progress checkmarks,
-and `state.json`, and reports. Any write is limited to refreshing derived
-status metadata inside `.dwp/` when the plan's conventions call for it.
+This skill is **read-only by contract**. `allowed-tools` deliberately lists no
+write-capable tool (`Bash` runs read-only inspection only): status reads plan
+folders, progress checkmarks, and `state.json`, and reports.
 
 **It MUST NOT:** modify tasks, progress, or source files; "fix" a plan while
-reporting on it; or write outside `.dwp/`. If the status reveals an
-inconsistency, report it and point at `refine`/`resume` — do not repair it
-silently.
+reporting on it; or write anywhere. If the status reveals an inconsistency,
+report it and point at `refine`/`resume` — do not repair it silently.
 
 ## Workflow
 
