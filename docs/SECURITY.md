@@ -56,6 +56,42 @@ this repo.
 - Placeholder-but-plausible secrets (e.g. `sk-...`, `AKIA...`) that scanners flag.
 - The contents of a user's environment captured during a run.
 
+## skills.sh audit posture (user-trust invariant)
+
+The public [skills.sh listing](https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan)
+continuously shows Gen Agent Trust Hub / Socket / Snyk audits for the shipped
+pack. The audits are largely **lexical** — they pattern-match strings in
+`skills/deepworkplan/**` regardless of surrounding guardrail prose — so the pack
+maintains these hard invariants (enforced in review by
+[`.review/extension.md`](../.review/extension.md) and self-auditable via
+[`skills/deepworkplan/TRUST.md`](../skills/deepworkplan/TRUST.md)):
+
+1. **No remote-installer pipes** (Snyk E005 / Socket W012): no literal
+   `curl … | bash`, `wget … | sh`, `irm … | iex`, or any single-line
+   fetch-and-execute — anywhere in the pack, opt-in addons and "don't do this"
+   illustrations included. Installs are described as package-manager commands
+   or a verified multi-step flow (download → verify SHA-256 → execute).
+   Precedent: `6a05ed9` flipped Snyk to FAIL before this rule existed.
+2. **No permission-bypass literals, no silent credential relocation**
+   (Snyk E006): AI-CLI wrappers documented in the pack are **pass-through**
+   (no injected bypass flags — elevated modes are the developer's own choice),
+   and any host-credential seeding (e.g. SSH keys into a devcontainer) ships
+   behind an explicit, visible opt-in gate (read-only mount +
+   `SEED_SSH_KEYS=1`), default off.
+3. **No unpinned clone-and-run installs** (Snyk/Socket W012): every documented
+   cross-repo install is tag-pinned (`@vX.Y.Z`) or package-manager installed;
+   `skills-lock.json` content hashes are the verification story.
+4. **Trust boundaries everywhere**: every `SKILL.md` with write-capable
+   `allowed-tools` carries a human-readable "Trust boundary (write scope)"
+   section — the contract Trust Hub audits against the frontmatter.
+
+Dashboard lag after a merge is normal (skills.sh re-scans on a delay); a known
+bad string in the tree is not. History: E005/W012 pipes were eliminated in
+`6a05ed9` (Jul 2026); E006/W012 residuals (devcontainer bypass-flag wrappers,
+silent SSH seeding, unpinned `agent-skill` clone paths) were eliminated in the
+`fix/security-audits-e006-w012-trust` round (Sep 2026), which also rolled trust
+boundaries out to every write-capable `SKILL.md`.
+
 ## Security review (dogfooding the spec)
 
 Every Deep Work Plan in this repo ends with the mandatory **Security Review**

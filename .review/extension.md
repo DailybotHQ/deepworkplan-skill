@@ -184,6 +184,29 @@ silent pass. Addons and CI may change; the core loop must not.
   [skills.sh listing](https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan).
   Reintroducing the string is a release blocker for user trust, not a
   docs nit.
+- **Always `critical` (skills.sh / Snyk E006):** permission-bypass literals
+  and silent credential-relocation patterns anywhere under
+  `skills/deepworkplan/**`. Concretely: (a) spelling an AI-CLI
+  permission-bypass flag (the `--dangerously-*` family or equivalent
+  full-permission wording) as a literal — wrappers documented in the pack
+  are **pass-through** (flags forwarded verbatim, resume shortcuts only);
+  elevated modes are the developer's own choice via the host CLI's docs;
+  (b) documenting the copying of host private keys / auth material into a
+  container without an explicit visible opt-in gate (read-only mount +
+  `SEED_SSH_KEYS=1`-style flag the developer writes). Snyk E006 scores
+  both shapes as backdoor-grade; the gates and the pass-through contract
+  are the mitigation and must not be weakened. Precedent: this round's
+  `fix(addon)` on `addons/devcontainer/templates/{custom_commands,entrypoint}.md`.
+- **Always `critical` (skills.sh / Snyk & Socket W012):** an unpinned
+  clone-and-run install path — `git clone <repo>.git` followed by running
+  its `setup.sh`/`install.sh`, or an un-pinned `npx skills add <repo>`
+  with no `@tag` — offered anywhere under `skills/deepworkplan/**`.
+  Executing whatever a remote default branch currently holds is an
+  unverifiable external dependency (no version, no checksum, no rollback);
+  Snyk W012 cited exactly this shape. Every documented install of another
+  skill/CLI must be tag-pinned (`@vX.Y.Z`) or package-manager installed,
+  and the `skills` CLI's `skills-lock.json` content-hash recording is the
+  verification story to point at.
 - **Always `critical` (skills.sh / Gen Agent Trust Hub):** a `SKILL.md`
   under `skills/deepworkplan/**` that lists write-capable tools in
   `allowed-tools:` (`Edit`, `Write`, `Bash`, `MultiEdit`) without a
@@ -329,8 +352,9 @@ task files.
   before the dashboard flips — that lag is NOT a green light to add new
   risky strings. Before merging skill-tree changes, mentally re-run the
   TRUST.md self-audit greps (no network in core; no `curl|sh` / `irm|iex`
-  anywhere in the pack) and confirm every write-capable `SKILL.md` still
-  has a Trust boundary section.
+  anywhere in the pack; no `--dangerously-*` / bypass-flag literals; no
+  unpinned `git clone`-and-run installs) and confirm every write-capable
+  `SKILL.md` still has a Trust boundary section.
 - **Runtime boundary.** Anything read at skill runtime lives inside
   `skills/deepworkplan/**`. Anything at the repo root or under `docs/`,
   `tests/`, `scripts/`, `.github/` is dev-time only. When in doubt: would
@@ -400,7 +424,13 @@ task files.
   2. No new network clients in core or `shared/context.sh`.
   3. Every `SKILL.md` with write-capable `allowed-tools` still has a
      Trust boundary / write-scope section.
-  4. After merge + release, expect the
+  4. No permission-bypass flag literals (`--dangerously-*` family) and no
+     credential-copy / SSH-seeding prose without the explicit opt-in gate
+     (Snyk E006).
+  5. Every cross-repo install mentioned in the pack is tag-pinned
+     (`@vX.Y.Z`) or package-manager installed — no unpinned
+     clone-and-run paths (Snyk/Socket W012).
+  6. After merge + release, expect the
      [skills.sh listing](https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan)
      Security Audits row to stay (or return to) Pass / Pass / Pass —
      dashboard lag is normal; a known bad string in the tree is not.
