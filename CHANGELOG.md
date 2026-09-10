@@ -9,6 +9,49 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [3.0.0] — 2026-09-10
+
+### Changes
+
+- Merge pull request #36 from DailybotHQ/feat/token-efficiency-upgrade
+- chore(ci): remove AI reviewer workflow
+- fix(review): harden resume and legacy conformance gates
+- fix(review): preserve local review across legacy plans
+- fix(review): remove remaining execute-time install guidance
+- fix(review): unify onboarding-only reviewer installation
+- fix(review): reconcile final review protocol and references
+- fix(review): Dailybot opt-in wording, completed-plan SECURITY_REVIEW gate, portable checksums
+- fix(review): align progressive-load triggers and refresh dogfood for required local review
+- fix(fixtures): avoid dead link in partial materialization README
+- feat(create): resumable plan materialization — manifest first, README skeleton, recorded analysis, status flipped last
+- feat(skill)!: release Deep Work Plan v3 on standard 2.3.0
+- feat(addons): make the AI Diff Reviewer local review a required baseline component; CI surface stays opt-in
+- fix(review): PR #36 review corrections — skills decision before validation, conformance DWP_DIR resolution, identity checks, re-measured ledger
+- feat: v2.17.1 — progressive disclosure, targeted upgrade path, Final Review consolidation
+- feat(adoption): targeted upgrade path, troubleshooting decision path, pilot evidence
+- docs(skill): compatibility matrix and bidirectional cross-agent handoff evidence - Task 20 of PLAN_dwp_token_efficiency_upgrade
+- docs(skill): publish the efficiency evaluation with an honest evidence ledger - Task 19 of PLAN_dwp_token_efficiency_upgrade
+- fix(create): repair ten defects found by the behavioral evaluation - Task 18 of PLAN_dwp_token_efficiency_upgrade
+- test(skill): state-layer schema/contract regressions and CI wiring - Task 17 of PLAN_dwp_token_efficiency_upgrade
+- feat(skill): conformance accepts both lifecycle shapes, checks identity and reports harness-version findings - Task 16 of PLAN_dwp_token_efficiency_upgrade
+- feat(onboard): testing sections for mobile, infrastructure and generic presets plus the contributor testing matrix - Task 15 of PLAN_dwp_token_efficiency_upgrade
+- feat(onboard): add the verified testing section to the eight backend presets - Task 14 of PLAN_dwp_token_efficiency_upgrade
+- feat(onboard): add the verified testing section to the nine web presets - Task 13 of PLAN_dwp_token_efficiency_upgrade
+- feat(onboard): verified testing discovery, testing-map generation and targeted harness upgrade - Task 12 of PLAN_dwp_token_efficiency_upgrade
+- feat(resume): bounded-context resume with boundary-aware recovery, takeover and state-first status - Task 11 of PLAN_dwp_token_efficiency_upgrade
+- feat(execute): affected-scope gates, bounded repair, task-local closure and Final Review completion - Task 10 of PLAN_dwp_token_efficiency_upgrade
+- feat(refine): lifecycle-aware plan edits with evidence invalidation and explicit migration - Task 9 of PLAN_dwp_token_efficiency_upgrade
+- feat(create): materialize directly in trust mode and generate efficient-by-construction plans - Task 8 of PLAN_dwp_token_efficiency_upgrade
+- docs(guide): align the split guide with spec 2.3.0 - Task 7 of PLAN_dwp_token_efficiency_upgrade
+- refactor(guide): split the methodology guide into flow-scoped files behind a routing index - Task 7 of PLAN_dwp_token_efficiency_upgrade
+- feat(spec): make testing-guide content normative and define install/onboard/upgrade adoption - Task 6 of PLAN_dwp_token_efficiency_upgrade
+- feat(spec): recoverable state, closed-schema versioning and standard discovery - Task 5 of PLAN_dwp_token_efficiency_upgrade
+- feat(spec): one Final Review, task-local skills decisions, optional report, mode-aware create - Task 4 of PLAN_dwp_token_efficiency_upgrade
+- feat(spec): select validation gates from the touched surface and state the unit-first posture - Task 3 of PLAN_dwp_token_efficiency_upgrade
+- test(efficiency): add pre-registered fixtures, oracles and instruction-load measurement - Task 2 of PLAN_dwp_token_efficiency_upgrade
+- docs(adr): ratify the token-efficiency architecture and quality contract - Task 1 of PLAN_dwp_token_efficiency_upgrade
+
+
 ## [2.17.1] — 2026-09-08
 
 ### Changes

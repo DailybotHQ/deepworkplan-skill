@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
 description: Create a Deep Work Plan. Gather context, analyze requirements, and materialize a single final plan under .dwp/plans/ — guided mode stages a refined draft in .dwp/drafts/ for review; trust mode materializes directly. Use when the developer wants a new structured multi-task plan.
-version: "2.17.1"
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write

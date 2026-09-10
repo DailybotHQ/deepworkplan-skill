@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-execute
 description: Execute an existing Deep Work Plan task-by-task — select each task's validation from its actual touched surface, repair or stop on failure without weakening a gate, close each task locally (skills decision, compact log, gate record, state), and finish with the Final Review and an optional report offer. Use when the developer wants to run or continue executing a plan in .dwp/plans/.
-version: "2.17.1"
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write

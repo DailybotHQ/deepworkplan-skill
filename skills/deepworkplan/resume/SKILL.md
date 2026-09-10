@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-resume
 description: Resume an interrupted Deep Work Plan from its recorded progress state — reconcile Markdown, state.json and the actual workspace, recover safely at any interruption boundary without duplicating a gate, commit or report, take over from another agent, and continue with a bounded working context. Use when the developer wants to continue a plan in .dwp/plans/ that was paused or interrupted mid-execution.
-version: "2.17.1"
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write

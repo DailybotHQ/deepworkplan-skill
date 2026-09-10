@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-refine
 description: Refine a Deep Work Plan draft or modify an existing final plan — add, edit, split or reorder tasks, update the README, convert a draft, or explicitly migrate a legacy plan — keeping README links, task IDs, dependencies and the state layer synchronized and never silently rewriting completed work. Use when the developer wants to adjust scope, tasks, or details of a draft in .dwp/drafts/ or a plan in .dwp/plans/.
-version: "2.17.1"
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
