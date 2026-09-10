@@ -146,9 +146,9 @@ the agent **MUST** trust `[x]` marks without re-verifying.
 
 ---
 
-## 5. Task File Anatomy — The 9 Sections
+## 5. Task File Anatomy — The 10 Sections
 
-Each `{N}.task_{title}.md` **MUST** contain the following nine sections. Heading
+Each `{N}.task_{title}.md` **MUST** contain the following ten sections. Heading
 text **MAY** vary; the semantic content **MUST** be present and in this order.
 
 | # | Section | Requirement |
@@ -157,16 +157,23 @@ text **MAY** vary; the semantic content **MUST** be present and in this order.
 | 2 | **Context** — task-specific background; the agent **MUST** be able to start from this section alone. | **MUST** |
 | 3 | **Read Before Starting** — files the agent **MUST** read first, each with why it matters (including re-anchoring to the plan README §Goal). | **MUST** |
 | 4 | **Goal** — 1–2 sentences, unambiguous and testable. | **MUST** |
-| 5 | **Instructions** — numbered, concrete steps, including an explicit **re-anchor** step (re-read the plan README §Goal at task start). Vague steps **MUST NOT** appear. | **MUST** |
-| 6 | **Acceptance Criteria** — a verifiable checkbox list; the task **MUST NOT** be marked complete until every box can honestly be checked. | **MUST** |
-| 7 | **Outputs** — table of files the task produces with paths (under `analysis_results/` or source). | **MUST** when the task produces artifacts |
-| 8 | **Validation** — the stack-specific commands that **MUST** pass before completion; a task with no automated command **MUST** carry a specific manual checklist. | **MUST** |
-| 9 | **Execution Checklist** + **Completion & Log** — the procedural walk-through plus the post-task log the agent fills (status, timestamp, summary, outputs, validation results, notes). The log **MUST NOT** retain placeholder values after completion. | **MUST** |
+| 5 | **Touched Surface** — the change's footprint and the validation it implies (§5.0.2): planned paths/modules; after editing, the reconciled actual paths; affected consumers; risk class; the test mapping used; the selected gate and its reason. | **MUST** for any task that changes behavior (code, configuration, schemas, templates, fixtures, migrations, generated inputs, or agent instructions that alter behavior); **MAY** state `not applicable` with a reason for pure prose or research tasks |
+| 6 | **Instructions** — numbered, concrete steps, including an explicit **re-anchor** step (re-read the plan README §Goal at task start). Vague steps **MUST NOT** appear. | **MUST** |
+| 7 | **Acceptance Criteria** — a verifiable checkbox list; the task **MUST NOT** be marked complete until every box can honestly be checked. | **MUST** |
+| 8 | **Outputs** — table of files the task produces with paths (under `analysis_results/` or source). | **MUST** when the task produces artifacts |
+| 9 | **Validation** — the stack-specific commands that **MUST** pass before completion, selected per §5.1 from the Touched Surface; a task with no automated command **MUST** carry a specific manual checklist. | **MUST** |
+| 10 | **Execution Checklist** + **Completion & Log** — the procedural walk-through plus the post-task log the agent fills (status, timestamp, summary, outputs, validation results, notes). The log **MUST NOT** retain placeholder values after completion. | **MUST** |
 
 A task **MAY** additionally include a **Rollback** section (RECOMMENDED for
 migrations, breaking changes, infra, or deployment), a **Team Agents Metadata**
 section when it participates in a parallel group (§9), and a **Delta** section
 (§5.0.1, RECOMMENDED for brownfield behavior changes).
+
+> **Legacy shape.** A task file authored under an earlier version of this
+> specification carries nine sections and no Touched Surface. It remains
+> conformant (§6.5) and is validated under the fallback rule of §5.1: the full
+> applicable suite. An executor **MUST NOT** add a Touched Surface to a legacy
+> task mid-flight; a `refine` session **MAY** add one deliberately.
 
 ### 5.0.1. The Delta Section (brownfield changes)
 
@@ -189,25 +196,122 @@ validation gate (existing tests staying green, §5.1.1) is what enforces it.
 > **Divergence from v1.** v1 specified the same content across ~11 numbered
 > subsections (Title, Context, Read Before Starting, Goal, Instructions,
 > Acceptance Criteria, Outputs, Validation, Rollback, Execution Checklist,
-> Completion & Log). v2 consolidates to a **9-section canonical anatomy** —
+> Completion & Log). v2 consolidated to a **9-section canonical anatomy** —
 > folding Rollback into optional and merging Execution Checklist with Completion &
-> Log — and makes the **re-anchoring** step explicit inside Instructions
-> (`RECONCILIATION.md` §"Specs"). Content parity is preserved.
+> Log — and made the **re-anchoring** step explicit inside Instructions
+> (`RECONCILIATION.md` §"Specs"). v2.3 adds the **Touched Surface** section
+> (§5.0.2), making it ten. Content parity is preserved.
+
+### 5.0.2. The Touched Surface Section
+
+The Touched Surface is the contract between what a task changes and what must be
+validated. It exists so that validation is **selected by effect**, not by habit,
+and so that a later reader can see why a gate was chosen. A behavior-changing task
+**MUST** record, in this section:
+
+- **Planned surface** — the paths, modules, packages, or configuration the task
+  intends to change, written before editing.
+- **Actual surface** — the reconciled list after editing, taken from the real
+  diff (staged, unstaged, and relevant untracked or generated files). The agent
+  **MUST** reconcile the planned and actual surfaces before selecting the gate;
+  a gate chosen from the planned surface alone is not valid evidence.
+- **Affected consumers** — modules, packages, templates, or services that import,
+  load, render, or otherwise depend on the actual surface, as far as the
+  repository's documented mapping (`DOCUMENTATION_STANDARD.md` §3.1) or its
+  affected-test tooling can establish. Where the mapping cannot establish them,
+  the entry **MUST** say so and the risk class below **MUST** reflect it.
+- **Risk class** — one of: *isolated* (the change is confined to one module and
+  its own tests); *seam* (the change alters a contract, persistence, routing,
+  serialization, authentication, or framework wiring between real collaborators);
+  *shared/core* (the surface is imported or loaded widely, or is a dependency,
+  migration, build/test configuration, schema, or toolchain change); *unknown*
+  (the mapping is missing, stale, dynamic, or unverified).
+- **Test mapping used** — which documented mapping or tool produced the selection
+  (a file-to-test convention, a marker, an affected-tests command), and whether it
+  was verified for this repository.
+- **Selected gate and reason** — the exact commands in Validation and, in one
+  line each, why they cover the actual surface and its consumers, or why the
+  fallback (§5.1) was taken.
+
+Configuration files, schemas, dependency manifests, templates, fixtures,
+migrations, generated inputs, and agent instruction files **can change behavior**
+and **MUST** be classified by their effect, never by file extension. A task that
+changes only prose, comments, or research artifacts **MAY** declare
+`Touched Surface: not applicable — <reason>` and still runs whatever
+non-runtime checks the repository defines (links, schema, rendering).
 
 ### 5.1. Validation Gates
 
 A task **MUST NOT** be marked complete unless every command in its Validation
 section has been run and passed. On any failure the agent **MUST** stop, report the
 command + output + suspected cause, **MUST NOT** mark the task complete, and **MUST**
-await guidance. Validation commands **MUST** be runnable shell commands, deterministic,
-and scoped; they **MUST NOT** require human judgment to interpret. The concrete
-commands are repo-specific (see `DOCUMENTATION_STANDARD.md` §7) and **MUST** be
-reasoned about per repo.
+await guidance — or, under the unattended profile (`AGENT_PROTOCOL.md` §7.2),
+attempt a fix within the task's authorized scope and otherwise populate
+`state.json.blocked` and halt (`AGENT_PROTOCOL.md` §7.3). Validation commands
+**MUST** be runnable shell commands, deterministic, and scoped; they **MUST NOT**
+require human judgment to interpret. The concrete commands are repo-specific (see
+`DOCUMENTATION_STANDARD.md` §7) and **MUST** be reasoned about per repo.
 
 When the repository has a test, lint, or type-check toolchain (per
 `DOCUMENTATION_STANDARD.md` §7), a task that changes product behavior **MUST** run
 the relevant suite as part of its validation gate. "It builds" or "the file
 exists" is **NOT** a sufficient gate for a behavior change.
+
+#### 5.1.a. Selecting the gate from the Touched Surface
+
+The gate of a behavior-changing task **MUST** be selected from its reconciled
+Touched Surface (§5.0.2), by risk class:
+
+| Risk class | Required validation |
+|---|---|
+| *isolated* | The tests of the changed behavior **and** the tests of its affected consumers, plus the static checks (lint, type-check, format) that cover the actual surface. |
+| *seam* | The above, **plus** the integration or contract tests for that seam — added in this task if none exist — and, where the repository defines one, a high-value user-flow check. Integration checks at a seam **MUST NOT** be deferred to the end of the plan. |
+| *shared/core* | Widen to the affected packages and their transitive consumers; where the impact cannot be bounded reliably, run the repository's documented full validation. |
+| *unknown* | Investigate and correct the selection (refresh the mapping, §5.1.b); if it still cannot be established, run the documented broader or full command. |
+| *not applicable* (prose/research) | The repository's non-runtime checks (links, schema, content, rendering), with the reason runtime tests do not apply recorded in the Touched Surface. |
+
+Selection **MUST** use the repository's verified mapping or affected-test tooling
+where one exists, and **MUST** account for the blind spots such tooling has:
+dynamic loading, templates, fixtures, generated inputs, and configuration are
+not visible to static import analysis and require explicit handling or a broader
+run. The agent **MUST NOT** approximate consumer coverage with an arbitrary
+import-count threshold or with first-order dependents alone when the repository
+offers a verified affected-test mechanism.
+
+#### 5.1.b. Stale or missing test mapping
+
+Where the repository's documented testing map (`DOCUMENTATION_STANDARD.md` §3.1)
+is stale or lacks the command a task needs, and the correct invocation is
+reasonably derivable from the actual tool configuration within the task's scope,
+the agent **MUST** derive it, use it, and record the mapping update in the task
+log (and in the testing guide when the task owns documentation). A small missing
+command **MUST NOT** require a full onboarding run. Where no supported scoped
+invocation exists or can be derived, the task **MUST** fall back to the
+repository's full applicable suite. A repository or plan with **no** scope
+contract at all — for example a plan authored before this version — is
+validated with the full applicable suite; this is the legacy behavior and it is
+never an error.
+
+#### 5.1.c. Zero-test defense
+
+A behavior change **MUST** produce a non-empty, relevant test selection. An
+invalid selector, a missing tool, a filter that matches nothing, or a runner that
+exits 0 having selected zero tests is **not** successful coverage; the agent
+**MUST** investigate whether tests are genuinely absent (then §5.1.1 applies and
+tests are added) or the filter is wrong (then it is corrected), and **MUST NOT**
+use `--passWithNoTests`, skips, filtered failures, or weakened assertions to make
+a gate pass. Pre-existing failures and missing tools **MUST** be recorded as such,
+never as passing checks; the repository's existing waiver policy, where one is
+documented, applies unchanged.
+
+#### 5.1.d. Static checks
+
+Lint, format, and type checks **SHOULD** run scoped to the actual surface where
+the toolchain supports it, and **MAY** run whole-project where that is necessary
+for correctness or is the cheaper option (for example a single project-wide
+type-check). An agent **MUST NOT** fabricate a single-file variant of a check the
+toolchain does not support, and **MUST NOT** introduce new tooling merely to
+scope a check.
 
 ### 5.1.1. Test Discipline — New and Changed Behavior
 
@@ -221,13 +325,36 @@ agent **MUST**:
   following the repository's test convention and coverage expectation
   (`DOCUMENTATION_STANDARD.md` §2.3, §3.1).
 - Include, in the task's **Validation**, the repository's relevant **tests** *and*
-  its **lint / type-check / format** checks — the full code-quality check the repo
-  defines (e.g. `codecheck`, `npm run test && npm run lint`, `pytest && ruff check`),
-  not the build alone.
+  its **lint / type-check / format** checks, selected per §5.1 from the Touched
+  Surface — the code-quality check the repository defines for that surface (e.g.
+  `codecheck`, `npm run test -- <path> && npm run lint`, `pytest tests/<module> &&
+  ruff check`), not the build alone.
 - Keep existing tests **green**: if a behavior change breaks a test that covers the
   affected code, the agent **MUST** update that test to reflect the intended new
   behavior — it **MUST NOT** delete, skip, or weaken a test merely to force the gate
   to pass.
+
+**Unit-first, integration where it matters.** Coverage **SHOULD** be built from
+the base of the testing pyramid upward:
+
+- Prefer fast, deterministic **unit tests** around observable behavior and
+  meaningful boundaries — the smallest unit that has a contract, exercised
+  without I/O, network, or a live environment, covering errors, edge cases, and
+  regressions. Do not assert internal call sequences, and do not write a test per
+  private function merely to inflate counts. Mock external boundaries when it
+  clarifies the test, without mocking away the behavior under test.
+- Use **integration tests** deliberately where real collaborators, protocols,
+  storage, or framework wiring matter — at the seams the Touched Surface
+  classifies as *seam* — and add them **in the task that changes the seam**
+  (§5.1.a), never as a catch-all deferred to the end of the plan. Do not rename
+  integration tests as units to satisfy a ratio.
+- Keep **end-to-end** tests few and high-value.
+
+The pyramid is a default cost-and-risk strategy, not a fixed percentage, a
+test-count quota, or a universal speed target. Its practical consequence is that
+a fast, isolated unit base is what makes selected gates (§5.1.a) fast — a suite
+dominated by slow integration tests defeats that. Existing valuable tests are
+preserved; blanket rewrites are not part of this discipline.
 
 Pure-documentation, configuration, or research tasks are **exempt** from creating
 tests but still **MUST** run whatever validation gate the repo defines. The *depth*
@@ -263,6 +390,57 @@ Pure-documentation or research tasks are exempt unless they handle sensitive
 material. This discipline does **not** replace the Security Review final task
 (§6.1): per-task checks catch issues in the commit where they are born; the
 final gate audits the whole plan, including the tests and docs tasks themselves.
+
+### 5.1.3. Final-State Validation and Gate Evidence
+
+Per-task gates (§5.1.a) validate what each task touched. They do not replace
+validation of the plan as a whole:
+
+- **Final-state requirement.** Before a plan can complete, the repository's
+  **complete applicable** validation — the full test suite and the full static
+  checks the repository defines — **MUST** run and pass on the **final relevant
+  state**, after the last substantive change. This runs in the mandatory Final
+  Review (§6). It is a requirement on the final state, not an "exactly once"
+  quota: a later fix invalidates the affected results and they **MUST** be rerun.
+- **Risk-based earlier checkpoints.** The agent **SHOULD** run the broader or full
+  validation earlier at integration boundaries, after a *shared/core* change, or
+  whenever risk or uncertainty warrants it. It **MUST NOT** insert periodic full
+  runs merely because a number of tasks elapsed. Where the full suite is short, it
+  **MAY** simply be the selected gate — measure and use the simpler sound option.
+- **Reuse of evidence.** A passing result **MAY** be reused instead of rerun only
+  with evidence that the relevant inputs are equivalent: repository, command and
+  options, test selection, source snapshot (including staged, unstaged, and
+  relevant untracked or generated files), dependency, configuration and tool
+  versions, and relevant environment. `HEAD` alone is **not** a sufficient
+  fingerprint when the working tree is dirty. If equivalence cannot be
+  established, the check is rerun. Existing CI results count as evidence only for
+  the matching revision and equivalent gates; the agent **MUST NOT** disable
+  required CI or override branch protection to satisfy a gate.
+- **Gate record.** Each gate run **MUST** leave one concise record (in the task's
+  Completion & Log and, where the state layer is present, in `state.json` per
+  `PLAN_STATE.md` §4.2): command, working directory, scope and reason, revision or
+  fingerprint, result and exit code, selected and executed test counts when the
+  runner reports them, and an evidence path. Large logs stay in local artifacts
+  and **MUST** remain recoverable; the record carries a compact result and the
+  actionable failures. Exit status **MUST** be preserved when output is piped. A
+  missing or truncated log is **not** a successful result; when a summary is
+  ambiguous the original output is read.
+- **One run, several mentions.** A command referenced in Instructions, Validation,
+  and the Execution Checklist describes the **same** run; mentioning it more than
+  once does not require executing it more than once.
+
+Nothing in this section weakens §5.1: stop on failure, no silent skipping, no
+weakened tests, and no missing tool reported as a pass remain in force.
+
+> **Divergence from v2.2.** v2.2 required the relevant suite and the full
+> code-quality check on every behavior-changing task and said nothing about how
+> a gate is scoped. v2.3 adds the **Touched Surface** (§5.0.2), selects gates by
+> risk class with explicit fallbacks and a zero-test defense (§5.1.a–d), makes
+> full validation a **final-state** requirement with evidence-reuse rules
+> (§5.1.3), and states the **unit-first** posture (§5.1.1). Plans and repositories
+> authored under earlier versions remain conformant and are validated with the
+> full applicable suite (§5.1.b, §6.5). No previous testing or security
+> requirement is removed; rewordings preserve their substance.
 
 ### 5.2. Task Completion Protocol
 
