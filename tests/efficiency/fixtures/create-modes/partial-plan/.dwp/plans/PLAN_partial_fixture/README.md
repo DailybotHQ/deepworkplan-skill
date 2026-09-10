@@ -25,7 +25,7 @@ Fixture for create scenario C5: `manifest.json`, this README skeleton and `analy
 - [ ] Task 1: Add greeter
       See: [1.task_add_greeter.md](./1.task_add_greeter.md)
 - [ ] Task 2: Final Review
-      See: [2.task_final_review.md](./2.task_final_review.md)
+      See: `2.task_final_review.md` (skeleton only — file not written; materialization interrupted)
 
 ## 7. Plan Status / Notes
 
