@@ -97,7 +97,6 @@ deepworkplan-skill/
 ├── .github/
 │   ├── workflows/auto-release.yml              ← conventional-commit auto-release + addon dogfood (NOT installed)
 │   ├── workflows/ci.yml                        ← frontmatter + shellcheck + bats + smoke (NOT installed)
-│   ├── workflows/pr-review.yml                 ← Cursor-based AI Diff Reviewer, ready-label gated (NOT installed)
 │   ├── docs/WORKFLOWS.md                       ← per-workflow reference (Trigger / Jobs / Gate / Failures) (NOT installed)
 │   ├── PULL_REQUEST_TEMPLATE.md                ← PR checklist (NOT installed)
 │   ├── ISSUE_TEMPLATE/                         ← bug_report + feature_request + config.yml (NOT installed)
@@ -366,7 +365,7 @@ but they are managed differently on purpose:
 |----------------|----------|----------------------|----------------------|
 | `.agents/skills/deepworkplan/` | this repo (`skills/deepworkplan/`) | **No** | Contributor dogfood, kept **byte-identical** to `skills/deepworkplan/` (verified by checksum on every sync). It is excluded from release auto-refresh because that would pull the last published tag instead of this working revision. Sync with `bash scripts/refresh-dogfood-skill.sh`. |
 | `.agents/skills/dailybot/` | [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill) | **Yes** | Powers Dailybot standup reporting for plan lifecycle events (see the Dailybot addon) |
-| `.agents/skills/ai-diff-reviewer/` | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | **Yes** | Powers the local pre-push code review AND the `pr-review.yml` CI Action (same `prompt.md`) |
+| `.agents/skills/ai-diff-reviewer/` | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | **Yes** | Powers the local code review (same `prompt.md` used by optional downstream CI integrations) |
 
 **Why deepworkplan is excluded.** Blind `npx skills add --force` of this
 repo's own skill into `.agents/skills/deepworkplan/` would overwrite the
@@ -402,75 +401,13 @@ pushes. The `[skip release]` marker prevents an infinite auto-release loop.
   via `scripts/refresh-dogfood-skill.sh` (or an explicit reviewed edit), never
   via release dogfood.
 
-## PR review workflow — Cursor-based, `ready`-label gated (Action `@v2`)
+## Local AI Diff Reviewer
 
-This repo ships an AI code-review workflow at
-[`.github/workflows/pr-review.yml`](.github/workflows/pr-review.yml) powered
-by [`DailybotHQ/ai-diff-reviewer@v2`](https://github.com/marketplace/actions/ai-diff-reviewer)
-(GitHub Marketplace listing: **"AI Diff Reviewer"**, skill + Action **v2**).
-It runs on every `pull_request` to `main` that carries the `ready` label AND
-is opened by a write-tier author (`OWNER` / `MEMBER` / `COLLABORATOR`),
-single Cursor provider (`model: auto`), and applies the `pr-reviewed` label
-on success. `critical` findings block the merge; `warning` and `info`
-findings are reported inline but non-blocking. CI runs Iteration-Aware
-Review (IAR) by default; local skill reviews remain a full pass.
-
-**Labels.**
-
-| Label | Role |
-|-------|------|
-| `ready` | Trigger / unlock the review (toggle off→on to re-run) |
-| `pr-reviewed` | Applied automatically after a successful, non-skipped review |
-| `skip-ai-review` | Opt-in emergency bypass — short-circuits the LLM with a successful check + ⏭️ skipped tracking comment (no findings). Protect with a ruleset if the AI review is a merge gate. Distinct from `full-review-please` (IAR escape: one full review, not skip) |
-
-**How to use it.**
-
-1. Open a PR against `main` as normal.
-2. Apply the `ready` label. The workflow triggers on the label event.
-3. If the review passes, `pr-reviewed` is applied automatically and the
-   `AI review gate` check turns green.
-4. If a `critical` finding is posted, address it (edit, push a fix, or reply
-   inline if you disagree), then toggle the `ready` label off and on to
-   re-run — pushes to the branch alone do NOT re-review.
-5. Hotfix / mechanical revert only: apply `skip-ai-review` while `ready`
-   is present (or apply both, then toggle `ready`) to bypass the LLM.
-
-**Branch-protection integration.** Mark ONLY the stable-named `AI review gate`
-job as a required status check in Settings > Branches > Protection rules.
-GitHub treats `skipped` required checks as passing, so a PR without `ready`
-becomes mergeable without a review — pair this with a separate rule that
-enforces `ready` on every PR if that's the workflow you want.
-
-**Setup: `CURSOR_API_KEY` secret.**
-
-1. Get a Cursor subscription key from Cursor's dashboard (unlimited reviews on Pro).
-2. Repo Settings > Secrets and variables > Actions > **New repository secret**.
-3. Name: exactly `CURSOR_API_KEY`. Value: the key. Save.
-4. Without the secret, the `AI review gate` job fails loud with an actionable
-   message ("`CURSOR_API_KEY` is not configured on this repo").
-
-**Local ↔ CI ↔ apply-review three-moment loop.** The same
-[`ai-diff-reviewer`](https://skills.sh/DailybotHQ/ai-diff-reviewer) skill
-vendored at `.agents/skills/ai-diff-reviewer/` powers both the local
-pre-push review and the CI pass — the skill's `prompt.md` is byte-identical
-to the CI Action's shipped `prompts/default.md` at the same tag (enforced
-by upstream CI). Three moments in a maintainer's day:
-
-1. **Local pre-push review** (optional) — run the `ai-diff-reviewer` skill's
-   parent default flow (`/ai-diff-reviewer` or "Review my current branch")
-   before pushing. Same findings CI will produce, minus the round-trip.
-2. **CI review** — push, apply `ready`, this workflow runs.
-3. **Post-CI walkthrough** (optional) — invoke the skill's `apply-review`
-   sub-skill to walk through the CI-posted findings per-finding (apply /
-   defer / skip) with explicit consent. Read-only by default; edits require
-   per-finding yes; never commits or pushes.
-
-**Shared override file: [`.review/extension.md`](.review/extension.md).**
-Repo-tailored severity overrides + "don't comment on" scopes + repo-specific
-context (the runtime boundary, the auto-release ownership, the addon
-contract, the vendor-neutrality invariant). The local skill and the CI
-Action read the SAME file via `prompt-extension-file:` — one source of
-truth for what maps to `critical` vs `warning` vs `info` in this codebase.
+The vendored `ai-diff-reviewer` skill remains available for local reviews
+during Deep Work Plan Final Reviews. This repository does not ship or run an
+AI Reviewer GitHub Actions workflow, so no CI reviewer secret or review labels
+are required. The repository-specific `.review/extension.md` continues to
+configure the local review.
 
 ## The `ai-diff-reviewer` addon (required local review, optional CI surface)
 
