@@ -36,11 +36,12 @@ nobody asked for.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
   and the two repository archetypes (individual repo vs orchestrator hub).
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.4) and [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10).
-- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) if Step 2.10 detects parallelizable tasks or team agents are available; [`addon-augmentations.md`](addon-augmentations.md) (this directory) if the target repo has an installed addon that augments the Final Review; [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
+- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) if the target repo has an installed addon that augments the Final Review; [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns.
 - [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
   `PROMPTS.md` template for each plan.
 - The target repository's `docs/TESTING_GUIDE.md` (`../spec/DOCUMENTATION_STANDARD.md` §3.4) — the documented full and scoped validation commands and the source-to-test mapping that every generated gate is selected from.
+- **Spec (conditional — read the named sections only when the trigger fires):** [`../spec/DWP_SPECIFICATION.md`](../spec/DWP_SPECIFICATION.md) §11 when the rigor tier is borderline and §5.0.2 when a Touched Surface is genuinely ambiguous; [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §3–§4 **and** [`../spec/schema/`](../spec/schema/) when writing the state layer in Step 4.4 item 7. The step text below is self-sufficient for the ordinary case — read these only when it is not.
 
 ## Parameter Reference
 
@@ -138,7 +139,10 @@ that the plan will be pre-approved for unattended execution.
 
 ### Step 2 — Gather Information (Conversational)
 
-> Skip this entire step for `full-context` input — go straight to Step 3.
+> **Skip the *questions* (2.1–2.5) for `full-context` input.** Steps **2.6** and
+> **2.10** are detections, not questions: they run in **every** mode. For
+> full-context input (and for `from-refined-draft`), skip 2.1–2.5 and run 2.6 and
+> 2.10 at the start of Step 3 against the provided context, then continue.
 
 Collect, conversationally:
 - **2.1 Plan name** (skip if already extracted) — auto-convert to snake_case, add
@@ -150,32 +154,49 @@ Collect, conversationally:
   an Executive Report is wanted at completion (records an explicit prior request
   per `../spec/DWP_SPECIFICATION.md` §6.3), etc.
 
-**2.6 Orchestrator detection (automatic — trigger only).** After 2.3–2.4, an
+**2.6 Orchestrator detection (automatic — trigger only).** After 2.3–2.4 (or, for
+full-context input, at the start of Step 3), an
 **orchestrator plan** is indicated when the work spans 2+ sub-repositories with
 independent feature work, or the user explicitly mentions child DWPs /
 orchestrator / "create plans in each repo". **If, and only if, this fires:**
 read [`orchestrator.md`](orchestrator.md) (this directory) and follow its
 gathering steps (2.6 choice, 2.7–2.9). Otherwise skip it entirely.
 
-**2.10 Team-agents detection (automatic — always runs, non-orchestrator plans;
-trigger only).** Always analyze whether 2+ tasks touch different files/modules
+**2.10 Team-agents detection (automatic — runs in every mode, including when
+Step 2 was skipped; non-orchestrator plans; trigger only).** Analyze whether 2+
+tasks touch different files/modules
 with no data dependencies and would benefit from parallel execution. This is NOT
-opt-in. **If parallelizable, or if Claude Code team agents are available for
-research/generation:** read [`team-agents.md`](team-agents.md) (this directory)
-and follow its steps (2.10 configuration, 2.11 parallel research). If not
-parallelizable: add nothing, mention nothing, read nothing.
+opt-in — but the **only** trigger is the analysis's answer, never the host's
+capabilities. **If, and only if, 2+ tasks are parallelizable:** read
+[`team-agents.md`](team-agents.md) (this directory) and follow its steps (2.10
+configuration, and 2.11 parallel research if that step's own trigger — 2+ repos
+or several independent modules with context missing — also fires). If not
+parallelizable: add nothing, mention nothing, read nothing, even when the host
+supports team agents.
 
 ### Step 3 — Requirements Analysis (both modes, before any file is written)
+
+> **First, if Step 2's questions were skipped** (full-context input or
+> `from-refined-draft`): run the two detections now, against the provided
+> context — **2.6 orchestrator** and **2.10 team-agents** — and read their
+> on-demand files only if a trigger fires. A detection is never skipped merely
+> because no questions were asked.
 
 This step is what the draft used to carry implicitly. It runs in **every** mode
 and is the substance of the plan; the mode only decides whether it is first
 staged as a draft (guided) or materialized directly (trust).
 
 - **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
-  work warrants a plan. A trivial single-concern change is **micro** tier — say
-  that a plan is disproportionate, offer to state goal + acceptance criteria +
-  validation gate inline and just do it. Otherwise choose `standard` or `deep`
-  and record why (in the draft in guided mode; in the plan README in trust mode).
+  work warrants a plan. A trivial single-concern change is **micro** tier — in
+  **guided** mode say that a plan is disproportionate, offer to state goal +
+  acceptance criteria + validation gate inline, and do that instead. In **trust**
+  mode the developer has already asked for a plan and there is nobody to answer:
+  **do not stop to ask.** Record the micro judgment and the inline alternative in
+  the plan README's Plan Variables (`Rigor: micro — a plan is arguably
+  disproportionate; inline alternative: …`) and materialize the plan anyway; the
+  developer sees the note and can discard it. Otherwise choose `standard` or
+  `deep` and record why (in the draft in guided mode; in the plan README in trust
+  mode). A borderline call is recorded, never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
   task** and an **observable acceptance criterion**.
@@ -347,7 +368,12 @@ Create:
    task. Absent addon or extension → add nothing (the addon's never-block rule).
 
 4. **PROMPTS.md** — from `../examples/PROMPTS_TEMPLATE.md`, replacing
-   `{PLAN_NAME}`.
+   `{PLAN_NAME}` with the plan name. The template is written for **you**, so
+   strip its authoring scaffolding before writing the file: drop the
+   "Instructions for Agents Creating This File" block and the closing
+   "For agents:" note, and drop or repoint its relative links (they resolve from
+   `examples/`, not from inside a plan folder). What ships is the copy-paste
+   prompts only.
 5. **PROGRESS.md** — a **bounded working index** (`../spec/PLAN_STATE.md` §5.1;
    `../guide/execution.md`): goal and constraints; active task and next action;
    unresolved blockers; current contracts and decisions still in force; direct
@@ -438,7 +464,11 @@ first `[ ]` task, execute sequentially, validate, commit per task, report.
 - **Name auto-converted:** show an informational notice (not an error).
 - **Refined draft not found (from-refined-draft):** list available refined drafts
   in `.dwp/drafts/` and ask the user to choose.
-- **Insufficient tasks (<2):** ask the user to break the work down.
+- **Insufficient tasks (<2):** in **guided** mode, ask the user to break the work
+  down. In **trust** mode there is nobody to ask: if the work is genuinely one
+  atomic change, that is the **micro** tier — record it per Step 3.1 (the Plan
+  Variables note plus the inline alternative) and materialize the one user task
+  plus the Final Review. Never invent filler tasks to reach a count.
 - **No documented validation commands in the target repo:** proceed with the
   full-suite fallback on every behavior-changing task and say so in the README;
   suggest onboarding or the harness upgrade (`../spec/DOCUMENTATION_STANDARD.md`

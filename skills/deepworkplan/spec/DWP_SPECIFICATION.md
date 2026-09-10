@@ -92,7 +92,7 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
   ```
   .dwp/
   ├── plans/      ← PLAN_{name}/ directories (executed plans)
-  └── drafts/     ← {name}_draft_refined.md (the create-flow artifact)
+  └── drafts/     ← PLAN_{name}_draft_refined.md (the create-flow artifact)
   ```
 
 - `.dwp/` **MUST** be git-ignored (added to the repo's `.gitignore`). Plan
@@ -118,7 +118,7 @@ materializes according to the mode the developer chose:
 
 - **Guided mode (default).** The flow **MUST** produce exactly **one** artifact
   for user review: a **refined draft** written to
-  `.dwp/drafts/{name}_draft_refined.md`, containing enough structure (goal,
+  `.dwp/drafts/PLAN_{name}_draft_refined.md`, containing enough structure (goal,
   context, variables, task outline, archetype, tier) for the user to approve or
   request changes in one pass. The plan folder `.dwp/plans/PLAN_{name}/` is
   materialized only after approval.
@@ -761,8 +761,18 @@ tier, declared in the manifest's `rigor` field when the state layer is present:
 | **deep** | Long-horizon work spanning parallel groups, child repositories, or multiple unattended sessions. | A standard plan plus the orchestrator (§8) and/or team-agents (§9) capabilities, and the state layer (§10). |
 
 - An agent asked to "create a plan" for micro-tier work **MUST** say that a plan
-  is disproportionate and offer the inline form instead. A plan folder **MUST
-  NOT** be created for a trivial single-file change.
+  is disproportionate and offer the inline form instead. In the **interactive**
+  profile a plan folder **MUST NOT** be created for a trivial single-file change
+  unless the developer, having been told, still asks for one. In the
+  **unattended** profile (`AGENT_PROTOCOL.md` §7.2 — including a plan requested
+  with `trust`) there is nobody to answer the offer: the agent **MUST NOT** stop
+  to ask and **MUST NOT** silently produce nothing. It **MUST** record the micro
+  judgment and the inline alternative in the plan README (the tier, why it is
+  disproportionate, and the goal + acceptance criteria + validation gate the
+  developer could run inline instead) and materialize the plan, which the
+  developer can discard on sight. The disproportion is **stated**, never
+  concealed — that is the requirement; the folder is the lesser evil when the
+  alternative is an unanswered question.
 - Micro-tier work still keeps the non-negotiables: an explicit goal, a
   validation gate that runs and passes (§5.1), and test discipline for behavior
   changes (§5.1.1). The tier changes the *packaging*, never the *gates*.

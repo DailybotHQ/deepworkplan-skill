@@ -142,7 +142,7 @@ The agent must be able to read **only this file**, understand exactly what to do
 
 ### 5.1. Required and optional sections
 
-Each `N.task_{task_title}.md` must have the following sections (ten in the spec's canonical anatomy — Rollback and Team Agents Metadata are optional) (optional sections are marked):
+Each `N.task_{task_title}.md` must have the following sections. The spec's canonical anatomy is **ten** required sections (`spec/DWP_SPECIFICATION.md` §5); the list below expands them to twelve entries by naming the two optional sections (Rollback, and Execution Checklist shown separately from Completion & Log) (optional sections are marked):
 
 1. **Title**
 2. **Context**
@@ -275,7 +275,7 @@ The agent must follow these steps sequentially:
 - [ ] 6. Update the plan README to mark this task as `[x]` in the Task List.
 - [ ] 7. Update PROGRESS.md with task summary.
 - [ ] 8. Commit the changes referencing the plan: `git commit -m "type(scope): description - Task {N} of PLAN_{plan_name}"`
-- [ ] 9. Send Dailybot progress report IF this task is independently significant (feature, fix, major refactor). Trigger the `dailybot` skill with a standup-style message — *"Implemented [what] — [why it matters]."* Skip for intermediate/setup tasks. (non-blocking — continue if fails)
+- [ ] 9. **If the Dailybot addon is installed in this repo** (`.agents/skills/dailybot/`): send a progress report IF this task is independently significant (feature, fix, major refactor) — a standup-style *"Implemented [what] — [why it matters]."* Skip the step entirely when the addon is absent; never inject an addon step into a repo that has no addon. (non-blocking — continue if it fails)
 - [ ] 10. Update the Log section below.
 
 ## 11. Completion & Log (filled by the agent)

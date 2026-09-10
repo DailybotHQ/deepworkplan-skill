@@ -40,3 +40,45 @@ Surface; **affected** = scoped widened to consumers; **full** = discover all tes
 - Plan fixtures gained the `Plan Status: X/N completed` line the checker requires (the fixture READMEs said it in prose only).
 - `new-shape-plan` Task 3 now names the Final Review's three parts (security pass, final-state validation, skills reconciliation) — the checker verifies objective structure, not the filename.
 - A task file without a `## Validation` heading gained one. Oracles unchanged.
+
+## Scoring clarification (Task 18) — recorded per the immutability rule
+
+The seeded-fault oracles above name the **boundary that must catch the fault**;
+they never said the task must end blocked. The first scoring pass asserted
+"task not marked complete", which fails a legitimate outcome: the execute
+procedure prescribes a hypothesis-driven **repair inside the task's authorized
+scope** before a stop (`DWP_SPECIFICATION.md` §5.1, execute Step 5 rule 4). The
+scorer now accepts **either** outcome and checks what actually matters:
+
+- the fault was detected at its intended boundary (unchanged);
+- if **blocked**: the task is left incomplete with a recorded blocker;
+- if **repaired**: the repair stayed inside the Touched Surface and **no test was
+  weakened, edited to fit, or skipped** — the report must say so;
+- completing the task with the fault undetected, or by editing the failing test,
+  remains a FAIL.
+
+No fixture, seeded fault, or expected boundary changed; only the scorer's extra
+assertion was corrected. Replays were not re-run because the recorded evidence
+already contains the fields the corrected rule reads.
+
+## Evaluation limitations (Task 18) — recorded honestly
+
+1. **One replay overlapped an edit to the artifact under test.** While `E1r` was
+   running, `create/SKILL.md` was edited (30,174 → 30,699 bytes) to land three of
+   the fixes that run had been launched to verify. The replay reported the overlap
+   itself and stated its behavior matched the post-edit semantics under the
+   pre-edit text, so its verdicts stand for both revisions — but a replay must not
+   race an edit to its own subject. Rule for later phases: **freeze the pack for
+   the duration of a replay**; land fixes between replays, not during one.
+2. **The `long-history-plan` fixture leaks its decision.** Its repository-level
+   `README.md` also names decision D-7, which the replay reads while surveying the
+   workspace for `AGENTS.md` quick commands. The replay retrieved D-7 through the
+   plan's own pointer and said so, but the fixture would let a lazier agent find
+   it without following the pointer. Tighten the fixture before relying on it for
+   a stronger claim.
+3. **Byte counts are self-reported.** Each replay reports the files it read and
+   their sizes; nothing in the harness enforces that. They are consistent with the
+   flows' declared read scopes, and partial reads are disclosed as such, but they
+   are evidence from a cooperating agent, not an independent measurement.
+4. **Single harness.** Every replay ran in one agent harness (Claude Code).
+   Cross-harness behavior is Task 20's question and is not claimed here.

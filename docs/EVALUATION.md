@@ -29,3 +29,35 @@ or required by downstream users.
 See `tests/efficiency/fixtures/*/README.md`. Code fixtures use Python `unittest` with no
 dependencies so scoped invocation (`python3 -m unittest tests.test_x`) is real. Plan
 fixtures are copied to a temp directory and `git init`-ed by their README's reset command.
+
+## Behavioral replays (Task 18 protocol)
+
+Structural checks cannot establish behavioral claims. The behavioral evidence in
+this repository comes from **agent replays**: a fresh agent context, given only
+the installed skill pack and one isolated workspace copied from
+`tests/efficiency/fixtures/`, running a real flow end to end and writing an
+`EVAL_REPORT*.json` with the evidence its oracle needs.
+
+Rules that make a replay count:
+
+- **Isolation.** One workspace per scenario under a scratch root (never the
+  repository under test); the agent may read only the pack under evaluation and
+  its own workspace; no network.
+- **Arms.** The *candidate* arm reads `skills/deepworkplan/` at the revision
+  under test; the *baseline* arm reads a pinned export of the previous release
+  (`git archive <tag> skills/deepworkplan`), same prompt, same workspace shape,
+  back-to-back in the same session.
+- **Unattended.** The replay may not ask a question. A procedure step that would
+  require one is recorded verbatim in the report and the replay stops there —
+  that is a finding, not a pass.
+- **Evidence, not narration.** Each report carries the commands run with exit
+  codes, the files read with byte counts, the git commits, and the specific
+  fields its oracle scores. `tests/efficiency/score-replays.py` reads the reports
+  and prints PASS / FAIL / **UNVERIFIED** — a missing field scores UNVERIFIED,
+  never PASS.
+- **Seeded faults.** Fault fixtures ship a `seeded-fault.patch`; the oracle names
+  the boundary that must catch it (scoped test, widened consumer test, runtime
+  test on a config-only diff, integration test at a seam). Catching it later than
+  the intended boundary is a FAIL.
+
+Run: `python3 tests/efficiency/score-replays.py <scratch-root> [--json out.json]`.
