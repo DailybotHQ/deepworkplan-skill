@@ -27,9 +27,11 @@ never silent (addon SPEC §6.1, §7): when the vendored skill or the extension
 file is absent, record a `local reviewer not installed` finding in
 `SECURITY_REVIEW.md`, install the missing piece when the run is authorized to
 write to the harness (`../onboard/addons.md` Phase 7a — pinned skill,
-`generate-extension`) and then review, otherwise carry the finding into the
-completion report; when a review that could start errors at invocation, warn
-once, record it and continue — NEVER fail the task for either. Flow A needs
+`generate-extension`) during onboarding; the Final Review MUST NOT surprise-
+bootstrap a missing extension or reviewer. Carry the finding into the completion
+report. When a review that could start errors at invocation, warn once, record it
+and continue; critical findings from a completed review still follow the normal
+blocking contract. Flow A needs
 **no** CI provider secret — do NOT
 treat an unset `CURSOR_API_KEY` (or other provider secret) as a reason to
 skip the local security pass; that secret is Flow B CI / gate

@@ -284,12 +284,10 @@ an additional post-existing-checks step:
 
 - The step is **MUST**, with honest degradation: when the vendored skill or
   the extension file is absent, the security pass **MUST** record a `local
-  reviewer not installed` finding in `SECURITY_REVIEW.md`, **SHOULD** install
-  the missing piece (§4.1–§4.2, same pinned command) when the run is
-  authorized to write to the harness and then run the review, and **MUST
-  NOT** fail-close the plan when it cannot — the finding is carried into the
-  completion report. A coding-agent / upstream-skill invocation error of a
-  review that could start follows §7.
+  reviewer not installed` finding in `SECURITY_REVIEW.md` and carry it into
+  the completion report. Installation is an onboarding action; the Final
+  Review **MUST NOT** surprise-bootstrap a missing piece. A coding-agent /
+  upstream-skill invocation error of a review that could start follows §7.
   Do **not** treat an unset CI provider secret as an invocation skip — that
   secret is Flow B CI/gate only. Once a local review **did** run, severity
   handling above (§6.1 item 4) still applies.

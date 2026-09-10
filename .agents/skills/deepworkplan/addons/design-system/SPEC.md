@@ -19,7 +19,7 @@ The addon is **stack-aware**: it reasons about the repo's **actual** design
 source (CSS custom properties, a Tailwind config, design-token files, component
 styles — or a CLI rendering layer, or message-composition conventions) rather
 than copying a third-party brand file. It is governed by `../README.md` and
-`methodology-spec/ADDONS.md`: it is **never** required for baseline AI-first
+`../spec/ADDONS.md`: it is **never** required for baseline AI-first
 conformance — a repo with zero optional addons is fully conformant.
 
 ## Status of This Document
@@ -28,7 +28,7 @@ conformance — a repo with zero optional addons is fully conformant.
 |-------|-------|
 | **Version** | 2.2.0 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/DESIGN.md.md`, `templates/presets.md`, `templates/agent_prompt_guide.md`, `../README.md`, `methodology-spec/ADDONS.md` |
+| **Companions** | `SKILL.md`, `templates/DESIGN.md.md`, `templates/presets.md`, `templates/agent_prompt_guide.md`, `../README.md`, `../spec/ADDONS.md` |
 | **License** | MIT |
 
 > **Divergence from 2.1.0.** Version 2.1.0 was **frontend/UI-scoped** and had a

@@ -433,7 +433,7 @@ surface, or dependencies, the agent **MUST**:
   regression test case rather than rework.
 
 Pure-documentation or research tasks are exempt unless they handle sensitive
-material. This discipline does **not** replace the Security Review final task
+material. This discipline does **not** replace the Final Review task
 (§6.1): per-task checks catch issues in the commit where they are born; the
 final gate audits the whole plan, including the tests and docs tasks themselves.
 
@@ -491,9 +491,9 @@ weakened tests, and no missing tool reported as a pass remain in force.
 ### 5.2. Task Completion Protocol
 
 After passing validation and before advancing, the agent **MUST**, in order:
-(1) mark the task `[x]` in the plan README; (2) increment the `Plan Status` count;
-(3) fill the task's Completion & Log with no placeholders; (4) add a 3–5 bullet
-entry to `PROGRESS.md`; (5) commit (where the plan commits) with
+(1) fill the task's Completion & Log with no placeholders; (2) mark the task
+`[x]` in the plan README and increment the `Plan Status` count; (3) add a 3–5
+bullet entry to `PROGRESS.md`; (4) commit (where the plan commits) with
 `{type}({scope}): {description} - Task {N} of PLAN_{name}`; (6) where the plan
 carries the state layer (§10), rewrite `state.json` atomically — task `completed`,
 gate records, outcome record, commit hash. The agent **MUST** then verify the
@@ -573,9 +573,10 @@ The Final Review **MUST**, in this order:
   (`ADDONS.md` §6.5), part of the baseline since 2.3.0: the vendored skill's
   parent default flow runs over the accumulated change set and its output is
   appended to `SECURITY_REVIEW.md`. A missing reviewer is recorded as a
-  `local reviewer not installed` finding and installed when the run is
-  authorized to write to the harness — never silently skipped; an invocation
-  error of a review that could start follows the addon's never-block rule; a
+  `local reviewer not installed` finding and carries it into the completion
+  report; installation belongs to onboarding and the Final Review never
+  surprise-bootstraps a missing piece. An invocation error of a review that
+  could start follows the addon's never-block rule; a
   completed review's critical findings keep the blocking semantics above.
   Other installed addons that augment the pass run here under their own
   never-block rules.

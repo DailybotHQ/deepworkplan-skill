@@ -316,12 +316,11 @@ This is the integration value. Reasoning guidance is in
 - The local review is **required, with honest degradation**: it runs whenever
   the vendored skill is present **and** an extension file is detected. When
   either is missing, the security pass records a `local reviewer not
-  installed` finding in `SECURITY_REVIEW.md`, installs the missing piece when
-  the run is authorized to write to the harness (trust mode or explicit
-  approval) and then reviews, or otherwise carries the finding into the
-  completion report. It **MUST NOT hard-stop** `create` or `execute`; an
-  invocation error of a review that could start is warn-once-record-and-
-  continue (see SPEC §6.1 and §7). Do **not** skip the local pass because a
+  installed` finding in `SECURITY_REVIEW.md` and carries it into the completion
+  report. Installation is an onboarding action, not a Final Review side effect;
+  mid-plan `execute` MUST NOT bootstrap the missing piece. It **MUST NOT
+  hard-stop** `create` or `execute`; an invocation error of a review that could
+  start is warn-once-record-and-continue (see SPEC §6.1 and §7). Do **not** skip the local pass because a
   CI provider secret is unset; that secret is Flow B CI / gate messaging only.
 
 - The reviewer's `.review/extension.md` (repo-tailored via the upstream

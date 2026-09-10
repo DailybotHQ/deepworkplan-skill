@@ -230,24 +230,27 @@ When executing multi-project plans, the agent **MUST**:
 cd repositories/api-services && codecheck
 cd ../web-app && npm run test && npm run lint
 
-# 3. Commit in api-services
+# 3. Fill each task's Completion & Log and update the plan projections
+#    (task log → README checkbox/status → PROGRESS.md)
+#
+# 4. Commit in api-services
 cd ../api-services
 git add -A
 git commit -m "feat(api): add user preferences model and endpoints - Task 3 of PLAN_user_preferences"
 git push
 
-# 4. Commit in web-app
+# 5. Commit in web-app
 cd ../web-app
 git add -A
 git commit -m "feat(ui): add user preferences settings page - Task 3 of PLAN_user_preferences"
 git push
 
-# 5. Update plan tracking
+# 6. Update the state layer, if present
 cd ..
-# Edit plan README.md: [ ] → [x] for Task 3
-# Update Plan Status section
+# Rewrite state.json atomically with the completed task, gate records, outcome,
+# and commit hash.
 
-# 6. Report to user
+# 7. Report to user
 # "Task 3 complete. Committed and pushed:
 #  - api-services: feat(api): add user preferences model and endpoints
 #  - web-app: feat(ui): add user preferences settings page"
@@ -271,9 +274,9 @@ The plan README's task list (`[ ]` / `[x]`) is the **SINGLE SOURCE OF TRUTH** fo
 
 **IMMEDIATELY after completing EACH task, the agent MUST:**
 
-1. **Update the plan README.md** - Change `[ ]` to `[x]` for the completed task
-2. **Update the Plan Status table** - Update the phase status and completed count
-3. **Update the task file's Completion & Log section** - Record status, timestamp, and summary
+1. **Update the task file's Completion & Log section** - Record status, timestamp, and summary
+2. **Update the plan README.md** - Change `[ ]` to `[x]` for the completed task
+3. **Update the Plan Status table** - Update the phase status and completed count
 4. **Update PROGRESS.md** - Add a short task summary (a few lines), key decisions, important values — the full narrative stays in the task file's Completion & Log; keep PROGRESS.md a bounded working index
 
 ### Example: Before and After

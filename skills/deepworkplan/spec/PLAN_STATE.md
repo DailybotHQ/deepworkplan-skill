@@ -294,8 +294,9 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
   found in the tree but not committed is **not** redone; a commit that already
   exists is **not** repeated; a gate whose recorded inputs are unchanged is
   **not** rerun; a report or external write already sent is **not** resent. The
-  resumed action is **idempotent**: it completes whichever of validate → commit →
-  README → `PROGRESS.md` → `state.json` is missing, in that order.
+  resumed action is **idempotent**: it completes whichever of validate → task log
+  → README/status → `PROGRESS.md` → commit → `state.json` is missing, in that
+  order.
 - **Stale results.** A change to a task's requirements (a `refine` edit), a fix
   landed after a gate ran, or a resumed edit to the same surface **invalidates**
   the affected gate records even when the checkbox is already set; the agent

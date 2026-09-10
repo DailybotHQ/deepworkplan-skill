@@ -272,8 +272,8 @@ Rules (strict):
    it matters. Do NOT report intermediate setup tasks; the plan-completion report
    (Step 7) covers those. Never use internal "Completed Task N" phrasing. If
    reporting fails, or the session has no Dailybot authorization, continue
-   without blocking. The `dailybot` skill is installed alongside this skill in
-   the agent's skills directory — invoke it there.
+   without blocking. Invoke the `dailybot` skill only when the optional addon is
+   installed and authorized; it is not bundled with DWP.
 
 8. **Show the compact result (Step 6) and move to the next `[ ]` task.** Do not
    ask whether to continue after a successful task — inside the plan's
