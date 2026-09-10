@@ -85,6 +85,8 @@ npx --yes skills add <owner/repo>@<tag> --skill <name> --force -y
 | `setup-smoke` | ubuntu-latest AND macos-latest | Matrix run of `setup.sh --host claude` and `setup.sh --host cursor` in a throwaway `HOME` — asserts the pack symlink and every sub-skill symlink land in the expected place. macOS row guards bash 3.2 compatibility |
 | `markdown-links` | ubuntu-latest | `gaurav-nelson/github-action-markdown-link-check@v1` with `.github/markdown-link-check.json` config |
 
+- **`contract-checks`** — installs `jsonschema`, validates every plan fixture's `manifest.json`/`state.json` against the shipped v1 schemas in both directions (a 2.2.0 legacy fixture and a 2.3.0 fixture), runs negative probes (extra top-level or gate field rejected — the schemas are closed; v2 URL rejected; unknown future `spec_version` flagged, never legacy; zero-selection gate evidence rejected; stale/ahead projection rejected; partial materialization reported), then runs `scripts/check-guide-migration.py` (split-guide links, section map, pointer headers) and smoke-runs the instruction-load measurement. Dev-only scripts; the installed pack never depends on them.
+
 ### Failure semantics
 
 Any job failure fails the run and blocks merge (`main` branch protection
