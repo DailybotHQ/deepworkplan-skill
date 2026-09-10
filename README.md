@@ -52,8 +52,10 @@ report on long-running work, with all plan output living in a gitignored
 A root **deepworkplan** meta-skill acts as a router — it describes all
 capabilities and routes to the right sub-skill based on the developer's intent.
 Each skill can be used independently or together; they share context detection
-through a common `shared/` directory. An opt-in **devcontainer addon** can layer
-a reproducible dev container onto an onboarded repo.
+through a common `shared/` directory. The **AI Diff Reviewer local review** ships
+in the baseline (installed by `onboard`, run by every Final Review; its CI
+Action stays optional), and opt-in addons such as **devcontainer** support can
+layer more onto an onboarded repo.
 
 ## Install
 

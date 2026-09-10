@@ -30,7 +30,7 @@ be AI-first, and it **never blocks** the actual work.
 ## Positioning guardrail (read before anything)
 
 The **core DeepWorkPlan methodology has ZERO Dailybot dependency.** It is
-vendor-neutral, MIT, and agent-agnostic. A repo with **zero addons** — including
+vendor-neutral, MIT, and agent-agnostic. A repo with **zero optional addons** — including
 this one — is fully conformant. This addon adds *team visibility* for developers
 who already use Dailybot; declining it leaves a fully AI-first repo. Never
 present Dailybot as a precondition for DWP, and never auto-install it for

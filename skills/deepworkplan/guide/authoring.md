@@ -361,13 +361,16 @@ plan at the end (`spec/DWP_SPECIFICATION.md` §6.1):
   Final Review's security pass — that gate audits the full accumulated diff,
   including what the tests and docs tasks themselves changed.
 
-#### AI Diff Reviewer local pass (optional — addon-augmented)
+#### AI Diff Reviewer local pass (required — baseline since 2.3.0)
 
-When the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) is
-installed, the Final Review's security pass gains an additional local-review pass. The
-augmentation is best-effort and conditional — the addon's SPEC §7 (never-block
-rule) means an absent upstream skill, failed detection (no extension file), or
-a local review invocation error produces a warning + skip, never a failed task.
+The Final Review's security pass runs the
+[`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md)'s local review
+as a required step; `onboard` installs the reviewer (Phase 7a) so it is present
+in every 2.3.0 repository. Degradation is honest, never silent: an absent
+upstream skill or extension file is recorded as a `local reviewer not
+installed` finding (with an install attempt when the run may write to the
+harness), and a local review invocation error produces a warning + record,
+never a failed task (addon SPEC §6.1, §7).
 Flow A needs no CI provider secret; an unset `CURSOR_API_KEY` (or other
 provider secret) must not suppress the local pass — that secret is Flow B CI /
 gate messaging only.

@@ -1,9 +1,12 @@
 # addons/ — Opt-In Addon Mechanism
 
 This directory ships **inside** the DeepWorkPlan skill
-(`skills/deepworkplan/addons/`) but every addon here is **opt-in** and **never**
-part of the AI-first baseline. A repository is fully conformant with **zero**
-addons installed. (Normative source: Task 2's `methodology-spec/ADDONS.md`.)
+(`skills/deepworkplan/addons/`). Four of the five addons here are **opt-in** and
+**never** part of the AI-first baseline; the fifth, the **AI Diff Reviewer local
+review**, is a **required baseline component** since standard 2.3.0 (its CI
+surface stays optional — see `ai-diff-reviewer/SPEC.md` §2). A repository is
+fully conformant with **zero optional addons** installed. (Normative source:
+`spec/ADDONS.md`.)
 
 An **addon** is a self-contained, optional capability that the `onboard` flow
 can layer onto a repo *after* the mandatory AI-first scaffolding
@@ -14,8 +17,11 @@ in order to be AI-first.
 
 ## The four rules every addon obeys
 
-1. **Never required.** An addon MUST NOT be a precondition of baseline
-   conformance. Declining every addon still yields a fully AI-first repo.
+1. **Never required (one declared exception).** An optional addon MUST NOT be
+   a precondition of baseline conformance; declining every optional addon
+   still yields a fully AI-first repo. The AI Diff Reviewer's **local review**
+   is the single declared exception: `spec/ADDONS.md` §6.5 places it in the
+   baseline, and only its CI surface is opt-in.
 2. **Reconcile, don't clobber.** When an accepted addon finds existing setup it
    would touch (an existing `.devcontainer/`, `docker/`, `.gitignore`,
    `.env.example`), it reconciles **additively** — preserving working values
@@ -47,8 +53,9 @@ An addon MAY additionally ship per-stack presets, examples, or migration notes.
 
 ## How `onboard` discovers and applies addons
 
-- **Discovery** — `onboard` enumerates this directory (`../addons/`) and offers
-  each subfolder as an **explicit opt-in** step in **Phase 7b**, after the core
+- **Discovery** — `onboard` installs the required AI Diff Reviewer local review
+  in **Phase 7a**, then enumerates this directory (`../addons/`) and offers each
+  optional addon as an **explicit opt-in** step in **Phase 7b**, after the core
   scaffolding (Phases 3–7).
 - **Consent** — it never applies an addon without user acceptance. In trust
   mode it MAY *recommend* the obviously-applicable ones, but still surfaces them.
@@ -64,7 +71,7 @@ An addon MAY additionally ship per-stack presets, examples, or migration notes.
 | Dailybot integration | [`addons/dailybot/`](dailybot/SKILL.md) | **Authored** — opt-in install of the Dailybot agent skill (**3.10.3**) / CLI (**>= 3.7.0**), auth **deferred** to the Dailybot skill's own consent flow, **four lifecycle events** (kickoff, significant task, blocked, completion) wired as optional best-effort reports via the `report` sub-skill, optional deterministic hook enforcement, and access to the full 14-capability Dailybot skill when invoked directly. The core methodology has **zero** Dailybot dependency. |
 | Dependency upgrade | [`addons/dependency-upgrade/`](dependency-upgrade/SKILL.md) | **Authored** — opt-in, **package-manager-agnostic** dependency upgrades: detect the repo's real manager (npm/pnpm/yarn + ncu, pip/poetry/uv, cargo, go mod, bundler, composer…), classify by semver, upgrade in safe batches, run the repo's **real** validation gate after each batch, revert a failing batch, summarize. Installs a `/lib-upgrade` delegator into the repo's `.agents/commands/` only when accepted. |
 | Design system | [`addons/design-system/`](design-system/SKILL.md) | **Authored** — opt-in, **interface-surface-scoped** `DESIGN.md` at `docs/DESIGN.md` (indexed from `AGENTS.md`; root only if no `docs/` tree), covering three profiles in one file: **visual-ui** (design tokens from CSS vars / Tailwind config / token files / component styles; WCAG AA contrast), **cli-output** (semantic terminal styles, output components, TTY/`NO_COLOR` degradation), and **conversational** (voice & register, message anatomy, per-platform rendering with plain-text fallbacks). Reason about the repo's **real** design source — never a brand file — and reconcile an existing `DESIGN.md` instead of clobbering it. Offered by `onboard` **only when an interface surface is detected**: visual-ui is default-on when detected; cli-output and conversational are recommended when detected, always asked, never auto-applied. |
-| AI Diff Reviewer | [`addons/ai-diff-reviewer/`](ai-diff-reviewer/SKILL.md) | **Authored** — opt-in install of the vendored `DailybotHQ/ai-diff-reviewer` skill (currently **v2.0.0**, marketplace listing "AI Diff Reviewer") which is a **router with five coordinated sub-skills** — parent default flow (local review), `generate-extension`, `setup`, `open-pr`, and `apply-review` (included since v1.7.0). Two officially-supported adoption flows: **Flow A — local-only** (vendored skill + required `.review/extension.md`; augments the security pass of the mandatory DWP Final Review with a structured local review) and **Flow B — dual-surface** (Flow A + `setup` writes `.github/workflows/pr-review.yml` for byte-identical CI-side parity via the workflow's `prompt-extension-file: .review/extension.md`; adds `apply-review` as an OPTIONAL developer-invoked companion during `execute` for walking through CI-posted findings per-finding with explicit consent). The addon MUST ask which flow at consent time — MUST NOT default to Flow B. Install/auth/wizard details all deferred to the upstream skill. The core methodology has **zero** AI Diff Reviewer dependency. |
+| AI Diff Reviewer | [`addons/ai-diff-reviewer/`](ai-diff-reviewer/SKILL.md) | **Authored** — **required local review** (baseline since 2.3.0): tag-pinned install of the vendored `DailybotHQ/ai-diff-reviewer` skill (currently **v2.0.0**, marketplace listing "AI Diff Reviewer") plus a repo-tailored `.review/extension.md`, wired into the Final Review's security pass; the CI Action (Flow B, byte-identical local↔CI parity) and the `apply-review` companion stay an explicit opt-in. |
 
 > This README is the mechanism doc. The first addon, `addons/devcontainer/`, is
 > the methodology's proof that the mechanism works; the second,
@@ -74,8 +81,9 @@ An addon MAY additionally ship per-stack presets, examples, or migration notes.
 > workflow that reasons about each repo's actual stack; the fourth,
 > `addons/design-system/`, shows an addon can capture durable, repo-native
 > interface design context — visual UI, CLI output, or conversational — for any
-> repo with a user-facing surface; the fifth, `addons/ai-diff-reviewer/`, shows
-> an addon can potentiate the mandatory Final Review's security pass with a
-> structured local review flow AND, in dual-surface mode, add a CI-side merge
-> gate with byte-identical parity — while still leaving every repo baseline-
-> conformant with zero addons installed.
+> repo with a user-facing surface; the fifth, `addons/ai-diff-reviewer/`, is
+> the declared exception: its structured local review is part of the baseline
+> every 2.3.0 repository ships (installed by `onboard`, run by the Final
+> Review's security pass), while its CI-side merge gate with byte-identical
+> parity stays opt-in — every repo remains conformant with zero optional
+> addons installed.

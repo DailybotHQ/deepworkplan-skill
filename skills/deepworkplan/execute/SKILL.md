@@ -366,17 +366,21 @@ this order and do not reorder:
   secrets, injection and unsafe input handling, new attack surface, weakened
   auth, sensitive data in logs/docs/outputs; dependency audit best-effort;
   `docs/SECURITY.md` currency; write `analysis_results/SECURITY_REVIEW.md` even
-  when clean. **Addon augmentation:** if `.agents/skills/ai-diff-reviewer/` is
-  present **AND** an extension file exists at one of the three recognized paths
-  (`.review/extension.md` > `.github/ai-diff-reviewer/extension.md` >
+  when clean. **Required local review:** when `.agents/skills/ai-diff-reviewer/`
+  is present **AND** an extension file exists at one of the three recognized
+  paths (`.review/extension.md` > `.github/ai-diff-reviewer/extension.md` >
   `.github/ai-pr-reviewer/extension.md`), read
   [`../create/addon-augmentations.md`](../create/addon-augmentations.md) and run
-  the local review pass, appending its output to `SECURITY_REVIEW.md`. Skill
-  present without an extension → warn once that the addon install is
-  incomplete and continue (do not bootstrap an extension mid-review). The
-  augmentation is best-effort on *invocation* only; once a review runs,
-  `critical` findings follow the security-pass contract: **fix or obtain
-  explicit acceptance before completion**.
+  the local review pass, appending its output to `SECURITY_REVIEW.md`. When
+  the skill or the extension is missing, record a `local reviewer not
+  installed` finding in `SECURITY_REVIEW.md`; if the run is authorized to
+  write to the harness (trust mode or explicit approval), install the missing
+  piece per `../onboard/addons.md` Phase 7a (pinned skill, `generate-extension`)
+  and then run the review; otherwise leave the finding and name it in the
+  completion report — never a silent skip, never a hard stop. An invocation
+  error of a review that could start: warn once, record, continue. Once a
+  review runs, `critical` findings follow the security-pass contract: **fix or
+  obtain explicit acceptance before completion**.
 - **(b) Final-state validation:** the repository's complete applicable test,
   lint, type-check and format suites run and pass on the final state
   (`../spec/DWP_SPECIFICATION.md` §5.1.3). Any fix made during (a) or (b)

@@ -29,6 +29,13 @@ make_conformant_repo() {
     echo '.dwp/' > .gitignore
 }
 
+# Add the AI Diff Reviewer local review (required since DWP standard 2.3.0).
+add_local_reviewer() {
+    mkdir -p .agents/skills/ai-diff-reviewer .review
+    printf -- '---\nname: ai-diff-reviewer\nversion: "2.0.0"\n---\n' > .agents/skills/ai-diff-reviewer/SKILL.md
+    printf '# Review extension\n' > .review/extension.md
+}
+
 # Build a minimal well-formed plan fixture under .dwp/plans/.
 make_conformant_plan() {
     local plan=".dwp/plans/PLAN_test_fixture"
@@ -390,11 +397,53 @@ EOF
 
 @test "repo declaring 2.3.0 with scoped content passes" {
     make_conformant_repo
+    add_local_reviewer
     printf 'DWP standard: 2.3.0 (onboarded 2026-09-01; skill 2.18.0)\n' >> AGENTS.md
     printf '# Testing\n\nFull: `make test`. Scoped: `pytest tests/test_x.py`. Fallback: `make test`.\n' > docs/TESTING_GUIDE.md
     run bash "$CONFORMANCE_SH" --repo-only
     [ "$status" -eq 0 ]
     [[ "$output" =~ "carries scoped-invocation content" ]]
+}
+
+@test "repo declaring 2.3.0 without the AI Diff Reviewer local review fails" {
+    make_conformant_repo
+    printf 'DWP standard: 2.3.0 (onboarded 2026-09-01; skill 2.18.0)\n' >> AGENTS.md
+    printf '# Testing\n\nFull: `make test`. Scoped: `pytest tests/test_x.py`. Fallback: `make test`.\n' > docs/TESTING_GUIDE.md
+    run bash "$CONFORMANCE_SH" --repo-only
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "AI Diff Reviewer local review" ]]
+    [[ "$output" =~ "required since DWP standard 2.3.0" ]]
+}
+
+@test "repo declaring 2.3.0 with the skill but no extension file fails naming the extension" {
+    make_conformant_repo
+    add_local_reviewer
+    rm .review/extension.md
+    printf 'DWP standard: 2.3.0 (onboarded 2026-09-01; skill 2.18.0)\n' >> AGENTS.md
+    printf '# Testing\n\nFull: `make test`. Scoped: `pytest tests/test_x.py`. Fallback: `make test`.\n' > docs/TESTING_GUIDE.md
+    run bash "$CONFORMANCE_SH" --repo-only
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "extension file missing" ]]
+}
+
+@test "legacy repo without the AI Diff Reviewer local review is a harness-version finding, not a failure" {
+    make_conformant_repo
+    run bash "$CONFORMANCE_SH" --repo-only
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "harness-version finding: AI Diff Reviewer local review" ]]
+}
+
+@test "fallback extension path (.github/ai-diff-reviewer/extension.md) satisfies the local reviewer check" {
+    make_conformant_repo
+    add_local_reviewer
+    rm .review/extension.md
+    mkdir -p .github/ai-diff-reviewer
+    printf '# Review extension\n' > .github/ai-diff-reviewer/extension.md
+    printf 'DWP standard: 2.3.0 (onboarded 2026-09-01; skill 2.18.0)\n' >> AGENTS.md
+    printf '# Testing\n\nFull: `make test`. Scoped: `pytest tests/test_x.py`. Fallback: `make test`.\n' > docs/TESTING_GUIDE.md
+    run bash "$CONFORMANCE_SH" --repo-only
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "AI Diff Reviewer local review installed" ]]
 }
 
 @test "repo declaring a newer standard than the checker fails" {

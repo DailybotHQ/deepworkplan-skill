@@ -195,6 +195,8 @@ check_repo() {
     warn "docs/ missing (agent workspaces adapt this; repos MUST have it)"
   fi
 
+  check_local_reviewer
+
   if [ -d "$PLAN_ROOT/plans" ] && [ -d "$PLAN_ROOT/drafts" ]; then
     pass ".dwp/plans + .dwp/drafts"
   else
@@ -251,6 +253,37 @@ check_repo_standard() {
   fi
   if [ -z "$declared" ] && [ -f AGENTS.md ]; then
     warn "harness-version finding: AGENTS.md has no 'DWP standard:' provenance line — run the onboard sub-skill in upgrade mode"
+  fi
+}
+
+# AI Diff Reviewer local review: part of the baseline since DWP standard 2.3.0
+# (ADDONS.md §6.5). Vendored skill + an extension file at a recognized path.
+# A repository declaring 2.3.0+ without both FAILS; a legacy repository gets a
+# harness-version finding. The CI surface (pr-review.yml) is optional — never checked.
+check_local_reviewer() {
+  local declared="" has_skill=0 has_ext=0 what f
+  if [ -f AGENTS.md ]; then
+    declared="$(grep -oE 'DWP standard: *[0-9]+\.[0-9]+\.[0-9]+' AGENTS.md 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+  fi
+  [ -f .agents/skills/ai-diff-reviewer/SKILL.md ] && has_skill=1
+  for f in .review/extension.md .github/ai-diff-reviewer/extension.md .github/ai-pr-reviewer/extension.md; do
+    if [ -f "$f" ]; then has_ext=1; break; fi
+  done
+  if [ "$has_skill" -eq 1 ] && [ "$has_ext" -eq 1 ]; then
+    pass "AI Diff Reviewer local review installed (vendored skill + extension file)"
+    return 0
+  fi
+  if [ "$has_skill" -eq 0 ] && [ "$has_ext" -eq 0 ]; then
+    what="vendored skill (.agents/skills/ai-diff-reviewer/) and extension file (.review/extension.md) missing"
+  elif [ "$has_skill" -eq 0 ]; then
+    what="vendored skill missing (.agents/skills/ai-diff-reviewer/)"
+  else
+    what="extension file missing (.review/extension.md)"
+  fi
+  if [ -n "$declared" ] && version_le "2.3.0" "$declared" && version_le "$declared" "$SUPPORTED_SPEC"; then
+    fail "AI Diff Reviewer local review: $what — required since DWP standard 2.3.0 (ADDONS.md §6.5); run the onboard sub-skill in upgrade mode (a declared exception in AGENTS.md is reported, not excused)"
+  else
+    warn "harness-version finding: AI Diff Reviewer local review: $what — required since DWP standard 2.3.0 (ADDONS.md §6.5); run the onboard sub-skill in upgrade mode"
   fi
 }
 

@@ -18,19 +18,25 @@ at the repository root, not inside the pack), and two inside the pack —
 methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
 network calls**, and emits **no telemetry** of any kind.
 
-> **One honest caveat — opt-in addons.** The shipped tree includes opt-in addons
+> **One honest caveat — addons.** The shipped tree includes five addons
 > (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,
-> `addons/ai-diff-reviewer`, `addons/design-system`) that, if you explicitly
-> choose to install them, may install third-party artifacts — **always behind
-> your consent, always pinned** (a published tag or a package-manager version),
-> and always through a verifiable path: a package manager, the checksummed
-> `skills` CLI, or a documented download → verify SHA-256 → execute flow. No
-> addon ever pipes a remote installer into a shell, copies host credentials
-> anywhere without an explicit visible opt-in, or documents permission-bypass
-> shortcuts. **A repository is fully conformant with zero addons**, and the
-> baseline methodology never touches the network. The self-audit below scopes
-> the no-network check to the core and lists the addons separately so you can
-> see exactly where any network reference lives.
+> `addons/ai-diff-reviewer`, `addons/design-system`). Four are opt-in: if you
+> explicitly choose to install them, they may install third-party artifacts —
+> **always behind your consent, always pinned** (a published tag or a
+> package-manager version), and always through a verifiable path: a package
+> manager, the checksummed `skills` CLI, or a documented download → verify
+> SHA-256 → execute flow. The fifth, the **AI Diff Reviewer local review**, is
+> part of the 2.3.0 baseline: `onboard` installs one MIT-licensed, tag-pinned
+> skill (`DailybotHQ/ai-diff-reviewer`) through the checksummed `skills` CLI,
+> and the Final Review's security pass runs it through your own coding agent —
+> no service, no provider secret, no telemetry; its CI Action stays opt-in and
+> a decline is recorded, never hidden. No addon ever pipes a remote installer
+> into a shell, copies host credentials anywhere without an explicit visible
+> opt-in, or documents permission-bypass shortcuts. **A repository is fully
+> conformant with zero optional addons**, and the core runtime flows never
+> touch the network. The self-audit below scopes the no-network check to the
+> core and lists the addons separately so you can see exactly where any
+> network reference lives.
 
 ## Permissions it requests (`allowed-tools`)
 
@@ -90,12 +96,12 @@ source, so you can also diff any shipped file against the repository at its tag.
 Run these from the repo root to confirm the claims above:
 
 ```bash
-# 1. No network calls in the CORE methodology (excludes opt-in addons; expect none):
+# 1. No network calls in the CORE methodology (excludes addons; expect none):
 grep -RInE 'curl|wget|fetch\(|urllib|requests\.|XMLHttpRequest' \
   skills/deepworkplan --exclude-dir=addons --exclude=TRUST.md \
   || echo 'OK: no network calls in the core skill'
 
-# 2. See every network reference that DOES exist — all inside opt-in addons:
+# 2. See every network reference that DOES exist — all inside addons:
 grep -RIlE 'curl|wget' skills/deepworkplan/addons || echo 'none'
 
 # 3. Two scripts ship inside the pack; confirm neither makes a network call:

@@ -200,5 +200,5 @@ other harnesses per its table. Decision notes:
 - **Never block:** the wired report step is best-effort; absence, auth failure,
   network errors, or `.dailybot/disabled` mean skip-and-continue — warn once, no
   retries, no diagnostic loop. `execute` always succeeds regardless.
-- **Vendor-neutral:** never imply DWP requires Dailybot. A repo with zero addons
+- **Vendor-neutral:** never imply DWP requires Dailybot. A repo with zero optional addons
   is fully conformant.

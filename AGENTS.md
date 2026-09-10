@@ -56,7 +56,7 @@ the same instructions other agents do.
 | Onboarding presets (per-stack) | [skills/deepworkplan/onboard/presets/](skills/deepworkplan/onboard/presets/README.md) |
 | Devcontainer addon (opt-in) | [skills/deepworkplan/addons/devcontainer/SKILL.md](skills/deepworkplan/addons/devcontainer/SKILL.md) |
 | Dailybot addon (opt-in) | [skills/deepworkplan/addons/dailybot/SKILL.md](skills/deepworkplan/addons/dailybot/SKILL.md) |
-| AI Diff Reviewer addon (opt-in) | [skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md) |
+| AI Diff Reviewer addon (required local review, optional CI surface) | [skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md) |
 | Dependency Upgrade addon (opt-in) | [skills/deepworkplan/addons/dependency-upgrade/SKILL.md](skills/deepworkplan/addons/dependency-upgrade/SKILL.md) |
 | Design System addon (opt-in) | [skills/deepworkplan/addons/design-system/SKILL.md](skills/deepworkplan/addons/design-system/SKILL.md) |
 | Workflows reference (`auto-release`, `ci`, `pr-review`) | [.github/docs/WORKFLOWS.md](.github/docs/WORKFLOWS.md) |
@@ -472,10 +472,10 @@ contract, the vendor-neutrality invariant). The local skill and the CI
 Action read the SAME file via `prompt-extension-file:` — one source of
 truth for what maps to `critical` vs `warning` vs `info` in this codebase.
 
-## The `ai-diff-reviewer` addon (opt-in, DWP-adjacent)
+## The `ai-diff-reviewer` addon (required local review, optional CI surface)
 
-Living alongside the vendored skill above, this repo also ships an
-**opt-in DWP addon** at
+Living alongside the vendored skill above, this repo also ships the
+**DWP addon** at
 [`skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md`](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md).
 It is the DWP-side counterpart to the raw skill: while the vendored skill at
 `.agents/skills/ai-diff-reviewer/` is a general-purpose reviewer that any
@@ -503,19 +503,21 @@ concrete plan.
   per-finding (apply / defer / skip). Read-only by default. Optional
   Flow B companion.
 
-**How the addon augments a DWP plan.** When present, DWP's
-[`deepworkplan-create`](skills/deepworkplan/create/SKILL.md) and
-[`deepworkplan-execute`](skills/deepworkplan/execute/SKILL.md) sub-skills
-notice the addon and **augment the mandatory Security Review task** with an
-`ai-diff-reviewer` local pass whose findings feed into
-`.dwp/plans/<plan>/analysis_results/SECURITY_REVIEW.md`. This is additive:
-the mandatory-final-task order is unchanged (Security Review → Skills &
-Agents Discovery → Executive Report), the Security Review task itself is
-not replaced, and the addon is never required. Soft-fail applies only when
-the local pass cannot be *invoked* (missing skill/extension or invocation
-error); `critical` findings from a completed pass still follow the existing
-Security Review contract. When the addon is absent, the plan runs exactly
-as before.
+**How the addon fits a DWP plan.** Since DWP standard 2.3.0 the local review
+is part of the baseline (`skills/deepworkplan/spec/ADDONS.md` §6.5):
+`onboard` installs the vendored skill and bootstraps `.review/extension.md`
+in Phase 7a, and the
+[`deepworkplan-create`](skills/deepworkplan/create/SKILL.md) /
+[`deepworkplan-execute`](skills/deepworkplan/execute/SKILL.md) sub-skills run
+the `ai-diff-reviewer` local pass inside the **Final Review's security pass**,
+appending its findings to
+`.dwp/plans/<plan>/analysis_results/SECURITY_REVIEW.md`. A missing skill or
+extension is a recorded `local reviewer not installed` finding (installed on
+the spot when the run may write to the harness), never a silent skip;
+invocation errors soft-fail; `critical` findings from a completed pass still
+block completion until fixed or explicitly accepted. The CI Action (Flow B)
+remains an explicit opt-in. Legacy plans keep their recorded three-final-task
+shape and get the same pass on their Security Review task.
 
 ---
 

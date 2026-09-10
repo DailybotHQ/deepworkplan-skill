@@ -54,7 +54,7 @@ work reliably without per-session human hand-holding.
 - **Guide (essential — read for this flow):** [`../guide/structure.md`](../guide/structure.md) (the `.dwp/` layout and naming you scaffold).
 - **Guide (conditional — read only when the trigger fires):** [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
-- [`addons.md`](addons.md) (this directory) — **read only in Phase 7b**, to offer opt-in addons. No addon is required for a repository to use DWP.
+- [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four opt-in addons. No optional addon is required for a repository to use DWP.
 - [`templates/onboarding-plan.md`](templates/onboarding-plan.md) — the
   **reasoning aid** for the plan-driven path (Phase 2b): the shape of a "finish
   onboarding myself" Deep Work Plan a **large** repo emits instead of generating
@@ -101,7 +101,9 @@ When this flow finishes, the target repo contains:
    installed skill identity and version, the active capability limits (what
    could not be verified and why), and the next useful action.
 
-Plus, opt-in (Phase 7b): any accepted **addons** (the first is devcontainer).
+Plus the required **AI Diff Reviewer local review** (Phase 7a: vendored skill +
+`.review/extension.md`) and, opt-in (Phase 7b), any accepted **optional addons**
+(the first is devcontainer).
 
 ---
 
@@ -136,8 +138,9 @@ mutates the target repository — non-destructively and by explicit design:
 **It MUST NOT:** overwrite or delete existing files without explicit approval,
 commit or push (commits happen only when the developer asks or a plan task's
 gate defines them), touch files outside the repo, read or commit secrets, or
-enable any addon without the developer's explicit acceptance of that addon's
-offer.
+enable any optional addon without the developer's explicit acceptance of that
+addon's offer (the required local reviewer of Phase 7a is covered by the
+Phase 0 consent; a decline is recorded as a declared exception).
 
 ## Phase 0 — Preconditions & consent
 
@@ -162,7 +165,9 @@ offer.
      testing rule and labeled scoped variants in `AGENTS.md` (Phase 3), the
      scoped variants in `DEVELOPMENT_COMMANDS.md`, the `.agents/commands/dwp-*`
      delegators and `skill-create`/`agent-create` (Phase 6, refreshed from
-     `command-templates/`), the catalog pointers, and the provenance line —
+     `command-templates/`), the required AI Diff Reviewer local review (Phase 7a —
+     vendored skill + extension file, when missing), the catalog pointers, and
+     the provenance line —
      leaving every handwritten section, custom skill, existing command and
      in-flight plan intact (in-flight plans keep their recorded shape; they are
      never migrated here — that is `refine migrate`, on explicit request). Report
@@ -619,13 +624,27 @@ and **stack-appropriate**, not generic boilerplate.
    distinct from the **structured** `.dwp/` plan output. If `tmp/` already
    exists, leave it as-is.
 
+## Phase 7a — Install the AI Diff Reviewer local review (required)
+
+The local review is part of the baseline since standard 2.3.0
+(`../spec/ADDONS.md` §6.5). When the core flow is done (Phases 3–7), read
+[`addons.md`](addons.md) (this directory) Phase 7a and run the
+[`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md)
+flow: pinned install of the vendored skill into `.agents/skills/ai-diff-reviewer/`,
+extension bootstrap at `.review/extension.md` (upstream `generate-extension`),
+Flow A as the baseline and Flow B offered as an explicit opt-in. Reconcile what
+already exists. When the install cannot run here (sandbox, offline) or the
+developer declines, record the gap in the report and, for a decline, as a
+declared exception in `AGENTS.md` — never silently. A **harness upgrade**
+(Phase 0) reconciles the same two pieces when missing.
+
 ## Phase 7b — Offer optional addons (opt-in, trigger only)
 
-Addons are optional; **no addon is required for a repository to use DWP**. When
-the core flow is done (Phases 3–7), read [`addons.md`](addons.md) (this
-directory) and make the opt-in offer it describes. On a **harness upgrade**
-(Phase 0) do not re-offer addons the repository already declined or already
-has; mention only new ones, briefly.
+The remaining addons are optional; **no optional addon is required for a
+repository to use DWP**. After Phase 7a, read [`addons.md`](addons.md) (this
+directory) Phase 7b and make the opt-in offer it describes. On a **harness
+upgrade** (Phase 0) do not re-offer addons the repository already declined or
+already has; mention only new ones, briefly.
 
 ## Phase 8 — Self-check / validation (mandatory)
 
@@ -669,7 +688,11 @@ done.
    placeholder, no copied flow body).
 6. **DeepWorkPlan skill is discoverable** and `.dwp/` exists, is gitignored
    (`git check-ignore .dwp` confirms), and has `plans/` + `drafts/`. **`tmp/`
-   exists and is gitignored** (`git check-ignore tmp` confirms).
+   exists and is gitignored** (`git check-ignore tmp` confirms). **The AI Diff
+   Reviewer local review is installed**: `.agents/skills/ai-diff-reviewer/SKILL.md`
+   exists and an extension file is present at a recognized path
+   (`.review/extension.md` preferred) — or the report and `AGENTS.md` record
+   the declared exception / the reason the install could not run here.
 7. **Smoke test — run the repo's OWN detected validation command once** to
    confirm recon was accurate (e.g. the lint or test command). If it cannot run
    (e.g. Docker required and unavailable, network-gated CI command), **note why**
@@ -744,5 +767,7 @@ the smoke-test result, and any deferred items — pointing them at
   a real path of this repository (non-empty selection recorded) or marked
   proposed/unverified with a real fallback. Never label a supported feature
   unavailable to avoid checking, and never label an unchecked pattern verified.
-- **No required addons.** The core outcome (Phases 3–8) never depends on an
-  addon; addons are offered, not assumed.
+- **No required optional addons.** The core outcome (Phases 3–8) never depends
+  on an optional addon; those are offered, not assumed. The one required
+  component beyond the core scaffolding is the AI Diff Reviewer local review
+  (Phase 7a), installed pinned and recorded honestly when it cannot be.

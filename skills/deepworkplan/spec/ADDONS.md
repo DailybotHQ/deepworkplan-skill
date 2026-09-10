@@ -7,10 +7,15 @@ methodology: a way to layer optional, self-contained capabilities onto a reposit
 during onboarding **without** making them part of the AI-first baseline. An addon is
 **never required** for conformance; it is offered, accepted or declined, and — when
 accepted — **reconciles** with the repo's existing setup rather than clobbering it.
+One component is the declared exception: the **AI Diff Reviewer local review**
+(§6.5) is part of the **required baseline** since standard 2.3.0 — the `onboard`
+flow installs it by default and the Final Review's security pass runs it. Only
+its CI surface (Flow B) remains optional.
 
 This is a **concept + pointer** document. It defines the addon contract, discovery,
 and the reconcile-don't-clobber rule, and names the **shipping addons**
-(devcontainer support and Dailybot integration), pointing to their full
+(devcontainer support, Dailybot integration, dependency upgrade, design system
+and the AI Diff Reviewer), pointing to their full
 implementations. It does **not** contain any addon's implementation.
 
 ---
@@ -97,8 +102,10 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Five addons ship today. All are **opt-in** and **never required** — a repository
-is fully conformant with **zero** addons installed.
+Five addons ship today. Four are **opt-in** and **never required** — a repository
+is fully conformant with **zero optional addons** installed. The fifth, the
+**AI Diff Reviewer** (§6.5), is a **required baseline component in its local
+form**; only its CI surface is optional.
 
 ### 6.1 Devcontainer Support (first addon)
 
@@ -152,7 +159,7 @@ is fully conformant with **zero** addons installed.
 - **Vendor-neutral guardrail:** the core DeepWorkPlan methodology has **zero**
   Dailybot dependency. This addon **MUST NOT** be auto-installed for everyone —
   the `onboard` flow recommends it only when the developer/team already uses
-  Dailybot, and a repo with zero addons is fully conformant.
+  Dailybot, and a repo with zero optional addons is fully conformant.
 - The full implementation lives at
   `skills/deepworkplan/addons/dailybot/` — see its
   [`SKILL.md`](../addons/dailybot/SKILL.md)
@@ -215,7 +222,7 @@ is fully conformant with **zero** addons installed.
   while **cli-output** and **conversational** are **recommended when detected and
   always asked about, never auto-applied**. When no interface surface of any kind
   is present (pure library, headless service, infra-only) the addon is **not**
-  offered. It remains **never required** — a zero-addon repo is fully conformant.
+  offered. It remains **never required** — a repo with zero optional addons is fully conformant.
 - **Distinct from per-feature design docs:** this addon provides a **repo-level,
   persistent** design-system file; it is **not** a per-feature technical design
   document (the "requirements → design → tasks" `design.md` of tool-bound
@@ -232,45 +239,63 @@ is fully conformant with **zero** addons installed.
   accessibility & token integrity, pragmatic-reference posture, validation), and
   `templates/` (the `DESIGN.md` skeleton, per-stack presets, agent prompt guide).
 
-### 6.5 AI Diff Reviewer (fifth addon)
+### 6.5 AI Diff Reviewer (fifth addon — required local review, optional CI surface)
 
-- **AI Diff Reviewer** is the **fifth** addon. Its full normative content (spec,
-  reasoning template, onboarding hook, validation step) **MUST** live at:
+- **AI Diff Reviewer** is the **fifth** addon and the one declared exception to
+  the opt-in rule. Its full normative content (spec, reasoning template,
+  onboarding hook, validation step) **MUST** live at:
 
   ```
   skills/deepworkplan/addons/ai-diff-reviewer/
   ```
 
-- Scope: an **opt-in** connection to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)**
-  (marketplace listing **"AI Diff Reviewer"**, currently **v2.0.0**). When
-  accepted, it offers (never forces) install of the vendored coding-agent skill
+- **Required local review (baseline since standard 2.3.0).** The `onboard` flow
+  **MUST** install the vendored coding-agent skill
   (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
-  — **tag-pinned**, both `--yes` and `-y` required); **asks Flow A (local-only) vs Flow B
-  (dual-surface) explicitly and MUST NOT default**; in Flow B **defers**
-  CI-workflow authoring to the upstream `setup` sub-skill (never invents
-  provider secrets); wires the mandatory DWP **Security Review** to run the
-  upstream parent default flow as an **additive, best-effort** local-review
-  pass (soft-fail on *invocation* only — missing skill/extension or review
-  errors; `critical` findings from a completed pass still follow the SR
-  contract); and (Flow B only) surfaces `apply-review` as an optional
-  developer-invoked companion during `execute`. Detection for the Security
-  Review augmentation requires **skill + an extension file** at one of the
-  three recognized paths (`.review/extension.md` >
-  `.github/ai-diff-reviewer/extension.md` >
-  `.github/ai-pr-reviewer/extension.md`).
-- **Vendor-neutral guardrail:** the core DeepWorkPlan methodology has **zero**
-  AI Diff Reviewer dependency. This addon **MUST NOT** be auto-installed for
-  everyone — the `onboard` flow recommends it only when the developer/team
-  wants structured review quality, and a repo with zero addons is fully
-  conformant.
+  — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
+  repo-tailored extension file (`.review/extension.md`, via the upstream
+  `generate-extension` sub-skill) as part of the baseline scaffolding
+  (Phase 7a), under the same consent that covers the rest of the onboarding.
+  A targeted harness upgrade reconciles the same two pieces when they are
+  missing. The security pass of the mandatory DWP **Final Review** **MUST** run
+  the upstream parent default flow ("Review my current branch") as a
+  local-review pass and append its output to
+  `analysis_results/SECURITY_REVIEW.md`; `critical` findings from a completed
+  pass block completion until fixed or explicitly accepted. The local review
+  runs through the developer's own coding agent — no CI provider, no secret,
+  no external service.
+- **Optional CI surface (Flow B).** Installing the CI Action
+  (`.github/workflows/pr-review.yml`) stays an **explicit opt-in**: the addon
+  offers it, never installs it unrequested, never defaults to it, and defers
+  the workflow authoring to the upstream `setup` sub-skill (never inventing
+  provider secrets). In Flow B it also surfaces `apply-review` as an optional
+  developer-invoked companion during `execute`.
+- **Honest degradation, never a silent skip.** When the vendored skill or the
+  extension file is missing at execution time, the security pass records a
+  `local reviewer not installed` finding; if the run is authorized to write to
+  the harness (trust mode or explicit approval) it installs the missing piece
+  with the same pinned command and then runs the review; otherwise the finding
+  stays in `SECURITY_REVIEW.md` and the completion report names it. An
+  invocation error of a review that could start follows the never-block rule
+  (warn once, record, continue). The conformance checker reports a missing
+  local reviewer as a **failure** for a repository declaring standard 2.3.0 or
+  newer and as a harness-version **finding** for a legacy repository. A
+  developer **MAY** decline the reviewer; the decline is recorded as a declared
+  exception in `AGENTS.md` and the repository is reported as non-conformant on
+  that point until the reviewer is installed.
+- **Vendor-neutral guardrail (narrowed, still binding).** No DWP flow — create,
+  execute, refine, resume, status, verify or onboard — **MAY** require a
+  commercial service, a CI provider or a provider secret. The required
+  component is an MIT-licensed, tag-pinned skill installed through the
+  checksummed `skills` CLI and executed by the agent itself.
 - The full implementation lives at
   `skills/deepworkplan/addons/ai-diff-reviewer/` — see its
   [`SKILL.md`](../addons/ai-diff-reviewer/SKILL.md)
   (onboarding hook), [`SPEC.md`](../addons/ai-diff-reviewer/SPEC.md)
-  (RFC-2119 contract: two flows, deferred install/auth/wizard, Security Review
-  augmentation, optional `apply-review` companion, never-block rule,
-  vendor-neutral guardrail, validation), and `templates/INTEGRATION.md`
-  (reasoning aid).
+  (RFC-2119 contract: required local review, optional CI surface, deferred
+  install/auth/wizard, security-pass wiring, optional `apply-review`
+  companion, never-block rule for invocation, validation), and
+  `templates/INTEGRATION.md` (reasoning aid).
 
 > This `ADDONS.md` is the concept + pointer; it **MUST NOT** be treated as any
 > addon's implementation.

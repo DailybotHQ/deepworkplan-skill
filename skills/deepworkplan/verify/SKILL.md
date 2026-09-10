@@ -105,6 +105,10 @@ done
 git check-ignore .dwp >/dev/null 2>&1 && echo ".dwp gitignored: ok" || echo ".dwp gitignored: FAIL"
 test -d .dwp/plans && test -d .dwp/drafts && echo ".dwp structure: ok" || echo ".dwp structure: FAIL"
 git check-ignore tmp >/dev/null 2>&1 && echo "tmp gitignored: ok" || echo "tmp gitignored: SHOULD"
+
+# 7. AI Diff Reviewer local review installed (required since DWP standard 2.3.0; a finding on legacy repos)
+test -f .agents/skills/ai-diff-reviewer/SKILL.md && echo "ai-diff-reviewer skill: ok" || echo "ai-diff-reviewer skill: MISSING"
+{ test -f .review/extension.md || test -f .github/ai-diff-reviewer/extension.md || test -f .github/ai-pr-reviewer/extension.md; } && echo "review extension: ok" || echo "review extension: MISSING"
 ```
 
 Then, by reading rather than grepping:
@@ -115,6 +119,7 @@ Then, by reading rather than grepping:
 - **Semantic limits (disclosed).** The mechanical layer checks structure: names, order, counts, links, headings, keywords. Whether a Touched Surface is *correct*, a scoped command *actually selects* the right tests, or a Final Review *actually reviewed* the diff is judged by reading — report those as manual review items with evidence, never as automatic passes.
 - **Catalog matches disk.** Confirm `.agents/docs/` (the skills/agents catalog) lists exactly the skills, agents, and commands that exist under `.agents/` — no dead links, no missing entries.
 - **Skill resolvable.** Confirm the DeepWorkPlan skill is installed or referenced so its sub-skills can be invoked.
+- **Local reviewer present.** The AI Diff Reviewer local review (`../spec/ADDONS.md` §6.5) is part of the baseline since 2.3.0: the vendored skill at `.agents/skills/ai-diff-reviewer/` plus an extension file at a recognized path. Missing pieces are a **failure** for a repository declaring 2.3.0 or newer and a harness-version **finding** for a legacy one; a declared exception recorded in `AGENTS.md` is reported, not excused. The CI surface (`pr-review.yml`) is optional and never checked as required.
 
 ## Plan checks (when verifying a plan)
 

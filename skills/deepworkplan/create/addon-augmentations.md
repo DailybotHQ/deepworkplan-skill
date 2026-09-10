@@ -1,16 +1,16 @@
-# DeepWorkPlan — Create: addon augmentations of the Final Review (read only when an addon is installed)
+# DeepWorkPlan — Create: the Final Review's local review step and addon augmentations (read when composing the Final Review)
 
-This file is read **only** when the target repository has an installed addon that augments the Final Review's security pass (`SKILL.md` Step 4.4 item 3). Detection rules and the exact augmentation text are verbatim from the main procedure; the never-block rule of `../addons/README.md` applies.
+This file is read when composing the Final Review task (`SKILL.md` Step 4.4 item 3): the AI Diff Reviewer local review is a required part of the security pass since standard 2.3.0, and other installed addons may augment it. Detection rules and the exact augmentation text are verbatim from the main procedure; the never-block rule of `../addons/README.md` applies.
 
 ## `ai-diff-reviewer`
 
-**Addon augmentation — `ai-diff-reviewer` (opt-in, only when installed).**
-When the target repo has installed the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) — detected via
-`.agents/skills/ai-diff-reviewer/` present + an extension file at one of the
-three recognized paths (in precedence order): `.review/extension.md`,
+**Required local review — `ai-diff-reviewer` (baseline since 2.3.0).**
+The Final Review's security pass includes a post-existing-checks local-review
+step defined by the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md).
+Detection: `.agents/skills/ai-diff-reviewer/` present + an extension file at
+one of the three recognized paths (in precedence order): `.review/extension.md`,
 `.github/ai-diff-reviewer/extension.md`, or the back-compat
-`.github/ai-pr-reviewer/extension.md` — the Final Review's security pass gains
-an ADDITIONAL post-existing-checks step: invoke the upstream skill's parent
+`.github/ai-pr-reviewer/extension.md`. When both are present: invoke the upstream skill's parent
 default flow ("Review my current branch" / `/ai-diff-reviewer`), capture the
 verdict, findings table, per-finding bodies, notes, and recommendation, and
 append them to `analysis_results/SECURITY_REVIEW.md` under a dedicated
@@ -22,11 +22,15 @@ file; CI round 2+ may surface a shorter finding set under Iteration-Aware
 Review (local stays a full pass — see addon SPEC §4.3). A `critical` finding
 follows the existing security-pass contract
 (blocks completion until fixed or explicitly accepted); `warning` / `info`
-findings are appended and reported but do not block. The augmentation is
-best-effort and conditional per the addon SPEC §7 (never-block rule): skip
-the **local** review pass (warn once, NEVER fail the task) only when the
-vendored skill is absent, detection fails (no extension file), or the local
-review invocation errors. Flow A needs **no** CI provider secret — do NOT
+findings are appended and reported but do not block. Degradation is honest,
+never silent (addon SPEC §6.1, §7): when the vendored skill or the extension
+file is absent, record a `local reviewer not installed` finding in
+`SECURITY_REVIEW.md`, install the missing piece when the run is authorized to
+write to the harness (`../onboard/addons.md` Phase 7a — pinned skill,
+`generate-extension`) and then review, otherwise carry the finding into the
+completion report; when a review that could start errors at invocation, warn
+once, record it and continue — NEVER fail the task for either. Flow A needs
+**no** CI provider secret — do NOT
 treat an unset `CURSOR_API_KEY` (or other provider secret) as a reason to
 skip the local security pass; that secret is Flow B CI / gate
 messaging only. **Flow B optional companion (not a plan task):**

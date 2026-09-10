@@ -5,7 +5,8 @@ This is **not** a file to drop in verbatim — the commands, workflow shape,
 and doc wording are **reasoned against the target repo** (its stack, its
 actual DWP execution docs, whether it is public/private, whether it wants
 Flow A or Flow B, whether it already has any review workflow). Keep the
-SPEC contract intact: **opt-in, defer to upstream, never block,
+SPEC contract intact: **local review required / CI surface opt-in, defer to
+upstream, never block,
 reconcile-don't-clobber, vendor-neutral, both flows are first-class.**
 
 Read [`../SKILL.md`](../SKILL.md) and [`../SPEC.md`](../SPEC.md) first.
@@ -105,7 +106,7 @@ signalling ("Flow A / Flow B" phrases every subsequent request).
 
 ---
 
-## 3. Install the vendored skill (OPT-IN — never run without acceptance)
+## 3. Install the vendored skill (REQUIRED — covered by the onboarding consent; never unpinned)
 
 ```bash
 # Tag-pinned install (pin whatever tag is current — this is the reproducible form)
@@ -296,9 +297,10 @@ Decision notes:
 
 ## 7. Consent + never-block rules (do not violate)
 
-- **Opt-in:** install nothing, write no extension file, commit no workflow,
-  and add no docs without explicit acceptance. Ask about the flow — never
-  default to Flow B.
+- **Consent:** the onboarding consent covers the pinned skill install and
+  the extension bootstrap (a decline is a recorded declared exception);
+  commit no workflow and add no Flow B piece without explicit acceptance —
+  never default to Flow B.
 - **Defer to upstream:** never reimplement the `setup` wizard, the
   `generate-extension` Discovery, the `open-pr` inference, the
   `apply-review` walkthrough, or the review methodology. Point at the
@@ -308,15 +310,18 @@ Decision notes:
   `skills-lock.json` content-hash verification is what makes the install
   reproducible and auditable.
 - **Never block (invocation only):** the wired **local** review step is
-  best-effort to *start*; absence of the skill, missing extension file, or
-  invocation/network errors — all mean skip-and-continue — warn once, no
-  retries, no diagnostic loop. Once a review **ran**, `critical` findings
+  best-effort to *start*; invocation/network errors mean
+  warn-once-record-and-continue — no retries, no diagnostic loop. An absent
+  skill or extension file is a recorded `local reviewer not installed`
+  finding (plus an install attempt when the run is authorized), never a
+  silent skip. Once a review **ran**, `critical` findings
   follow the existing Final Review contract (block until fixed or
   explicitly accepted) — do not mark SR `[x]` anyway. An unset CI provider
   secret is a Flow B CI/gate warning only — it MUST NOT suppress the local
   security pass (Flow A needs no secret).
-- **Vendor-neutral:** never imply DWP requires the AI Diff Reviewer. A
-  repo with zero addons is fully conformant.
+- **Vendor-neutral:** DWP never requires a commercial service, CI provider
+  or secret; the local reviewer is a pinned MIT skill run by the developer's
+  own agent, and a repo with zero optional addons is fully conformant.
 - **Both flows are first-class:** Flow A (local-only) is a supported use
   case, not a degraded mode. Whichever the consumer picks, run the flow's
   sub-skill set and stop.

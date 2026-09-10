@@ -558,10 +558,16 @@ The Final Review **MUST**, in this order:
   escalated to and accepted by the user — before the plan can complete.
   Non-critical findings are recorded in `SECURITY_REVIEW.md` and, when an
   Executive Report is requested, carried into it.
-- Where an installed addon augments the security pass (for example a local AI
-  diff review), it runs here under the addon's own never-block rule
-  (`ADDONS.md`); a completed review's critical findings keep the blocking
-  semantics above.
+- The security pass **MUST** include the **AI Diff Reviewer local review**
+  (`ADDONS.md` §6.5), part of the baseline since 2.3.0: the vendored skill's
+  parent default flow runs over the accumulated change set and its output is
+  appended to `SECURITY_REVIEW.md`. A missing reviewer is recorded as a
+  `local reviewer not installed` finding and installed when the run is
+  authorized to write to the harness — never silently skipped; an invocation
+  error of a review that could start follows the addon's never-block rule; a
+  completed review's critical findings keep the blocking semantics above.
+  Other installed addons that augment the pass run here under their own
+  never-block rules.
 
 **(b) Final-state validation.** The repository's complete applicable validation
 **MUST** run and pass on the final relevant state per §5.1.3. Fixes made during

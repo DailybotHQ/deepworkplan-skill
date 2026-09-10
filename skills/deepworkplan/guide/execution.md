@@ -84,7 +84,7 @@ This task closes the plan, in this order:
 - Verifies `docs/SECURITY.md` still reflects reality and updates it when the plan changed secrets handling, the auth model, or data boundaries
 - Writes `analysis_results/SECURITY_REVIEW.md`, even when the conclusion is "no findings"
 - A critical finding (e.g. a committed secret) blocks plan completion until fixed or explicitly accepted by the user
-- Where an installed addon augments the pass (for example the AI Diff Reviewer local review, `authoring.md` §5.4), it runs here under the addon's never-block rule
+- Runs the required AI Diff Reviewer local review (`authoring.md` §5.4) and records a `local reviewer not installed` finding when the reviewer is missing (installing it when the run is authorized to write to the harness); other installed addons that augment the pass run here under their never-block rules
 
 Security is not a separate workstream bolted on at the end of a project — every plan leaves the repository's security documentation current and its own changes audited.
 

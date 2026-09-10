@@ -1,7 +1,7 @@
 {
-  "base_revision": "0da548e2b3beba5f5bb7e1d60edc67d353236457",
-  "snapshot": "PR #36 review corrections for the v3 release; containing commit owns this snapshot",
-  "pack_sha256": "05c68a47e621e20e89760bca3a42fae7ed5e2cb87c30b8b72717b3ae76dbfa0b",
+  "base_revision": "c7a7edc0d2fcb3cf7d85142ab4e338cdef7cfd06",
+  "snapshot": "PR #36 \u2014 required AI Diff Reviewer local review amendment (2026-09-10); containing commit owns this snapshot",
+  "pack_sha256": "187a3df4244ba0cf17dac4fab94ad7ce634b47cbf37045f495922711d0a4e273",
   "digest_algorithm": "SHA256 of UTF-8 lines sorted by relative path: <file SHA256>  ./<relative path>\\n, for every file under skills/deepworkplan",
   "measurement_command": "bash tests/efficiency/measure-instruction-load.sh",
   "historical_instrumented_candidate": "d4ffe58d7516b53027df61d679f87cc05a3e33e2",

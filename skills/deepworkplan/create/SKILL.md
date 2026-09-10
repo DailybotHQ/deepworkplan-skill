@@ -361,11 +361,14 @@ Create:
    explicit request recorded in the plan guidelines counts); send the completion
    report through the configured channel regardless of the answer.
 
-   **Addon augmentation (trigger only):** if the target repo has
-   `.agents/skills/ai-diff-reviewer/` **and** an extension file at one of its
-   three recognized paths, read [`addon-augmentations.md`](addon-augmentations.md)
-   (this directory) and add its post-existing-checks step to the Final Review
-   task. Absent addon or extension → add nothing (the addon's never-block rule).
+   **Local review step (required):** read
+   [`addon-augmentations.md`](addon-augmentations.md) (this directory) and add
+   its AI Diff Reviewer post-existing-checks step to the Final Review task's
+   security pass — it applies to every 2.3.0 plan. When the target repo lacks
+   `.agents/skills/ai-diff-reviewer/` or an extension file at one of the three
+   recognized paths, the step's degradation clause (record a `local reviewer
+   not installed` finding, install when authorized, otherwise carry the
+   finding) applies at execution time; do not omit the step.
 
 4. **PROMPTS.md** — from `../examples/PROMPTS_TEMPLATE.md`, replacing
    `{PLAN_NAME}` with the plan name. The template is written for **you**, so
