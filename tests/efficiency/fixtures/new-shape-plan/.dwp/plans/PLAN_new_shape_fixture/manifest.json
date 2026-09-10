@@ -1,0 +1,11 @@
+{
+  "schema": "https://deepworkplan.com/schema/plan-manifest/v1.json",
+  "spec_version": "2.3.0",
+  "name": "PLAN_new_shape_fixture",
+  "title": "New shape fixture",
+  "archetype": "individual",
+  "rigor": "standard",
+  "created_at": "2026-09-01T09:00:00Z",
+  "task_count": 3,
+  "parent_plan": null
+}

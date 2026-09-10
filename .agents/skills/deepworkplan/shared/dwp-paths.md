@@ -10,12 +10,12 @@ All plans and drafts live under a single gitignored repo-root directory, `.dwp/`
 ```
 .dwp/
 ├── plans/      ← PLAN_{name}/ directories (the executed plans)
-└── drafts/     ← {name}_draft_refined.md (the create-flow refined draft)
+└── drafts/     ← PLAN_{name}_draft_refined.md (the create-flow refined draft)
 ```
 
 - A plan lives at `.dwp/plans/PLAN_{name}/`.
 - The `create` flow stages its single reviewable artifact — the **refined
-  draft** — at `.dwp/drafts/{name}_draft_refined.md`.
+  draft** — at `.dwp/drafts/PLAN_{name}_draft_refined.md`.
 
 ## Default location & override
 
@@ -40,7 +40,7 @@ gitignored.)
 | Concept | Legacy path | New path |
 |---------|-------------|----------|
 | Plans | `.agent_commands/agent_deep_work_plans/results/plans/PLAN_{name}/` | `.dwp/plans/PLAN_{name}/` |
-| Refined draft | `.agent_commands/agent_deep_work_plans/results/drafts/{name}_draft_refined.md` | `.dwp/drafts/{name}_draft_refined.md` |
+| Refined draft | `.agent_commands/agent_deep_work_plans/results/drafts/PLAN_{name}_draft_refined.md` | `.dwp/drafts/PLAN_{name}_draft_refined.md` |
 
 The legacy `.agent_commands/agent_deep_work_plans/results/` tree **MUST NOT** be
 used by repos onboarded to DeepWorkPlan v2; migration moves any existing plans

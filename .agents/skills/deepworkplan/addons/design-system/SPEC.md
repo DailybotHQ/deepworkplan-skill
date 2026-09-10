@@ -19,8 +19,8 @@ The addon is **stack-aware**: it reasons about the repo's **actual** design
 source (CSS custom properties, a Tailwind config, design-token files, component
 styles — or a CLI rendering layer, or message-composition conventions) rather
 than copying a third-party brand file. It is governed by `../README.md` and
-`methodology-spec/ADDONS.md`: it is **never** required for baseline AI-first
-conformance — a repo with zero addons is fully conformant.
+`../../spec/ADDONS.md`: it is **never** required for baseline AI-first
+conformance — a repo with zero optional addons is fully conformant.
 
 ## Status of This Document
 
@@ -28,7 +28,7 @@ conformance — a repo with zero addons is fully conformant.
 |-------|-------|
 | **Version** | 2.2.0 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/DESIGN.md.md`, `templates/presets.md`, `templates/agent_prompt_guide.md`, `../README.md`, `methodology-spec/ADDONS.md` |
+| **Companions** | `SKILL.md`, `templates/DESIGN.md.md`, `templates/presets.md`, `templates/agent_prompt_guide.md`, `../README.md`, `../../spec/ADDONS.md` |
 | **License** | MIT |
 
 > **Divergence from 2.1.0.** Version 2.1.0 was **frontend/UI-scoped** and had a
@@ -149,7 +149,7 @@ message-composition helpers and their docs).
 
 ### 3.5 Recommendation Strength — per profile
 
-This addon is **never** part of the zero-addon baseline (a repo with no addons
+This addon is **never** part of the baseline (a repo with no optional addons
 is fully conformant — `ADDONS.md` §2). When a profile's signal **is** detected,
 its recommendation strength differs:
 
@@ -388,7 +388,7 @@ The addon is correctly applied when **all** hold:
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `SKILL.md` (the onboarding hook + flow), `templates/*` (reasoning aids)
-- `../README.md` (addon mechanism), `methodology-spec/ADDONS.md` (concept + pointer)
+- `../README.md` (addon mechanism), `../../spec/ADDONS.md` (concept + pointer)
 - `AGENT_PROTOCOL.md` (approval gates), `ARCHETYPES.md` (archetypes)
 - [W3C Design Tokens](https://www.w3.org/community/design-tokens/) (optional token schema)
 - [NO_COLOR](https://no-color.org/) (CLI color-suppression convention)

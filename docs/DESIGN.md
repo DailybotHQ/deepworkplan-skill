@@ -149,10 +149,12 @@ reading the MUST/SHOULD/MAY contract directly when it needs to resolve an
 ambiguity. Keeping the spec versioned alongside the sub-skills also means the
 standard and its implementation can never silently drift apart.
 
-## 11. Addons are opt-in and non-blocking
+## 11. Addons are opt-in and non-blocking (one declared exception)
 
 The `devcontainer` and `dailybot` addons under
-[`addons/`](../skills/deepworkplan/addons/README.md) are strictly opt-in. Core
+[`addons/`](../skills/deepworkplan/addons/README.md) are opt-in, with one declared exception — the AI Diff Reviewer **local**
+review is part of the 2.3.0 baseline (`spec/ADDONS.md` §6.5); its CI surface
+stays opt-in. Core
 DeepWorkPlan has **zero** dependency on either — the `dailybot` addon, for
 instance, only wires optional progress reporting *if* the developer already has
 Dailybot and consents, and it must never block plan execution. We keep addons

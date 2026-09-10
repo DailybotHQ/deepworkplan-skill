@@ -130,7 +130,7 @@ When creating or customizing these prompts, reference:
 - **Execute** sub-skill (`../execute/SKILL.md`) - Execution behavior
 - **Resume** sub-skill (`../resume/SKILL.md`) - Resume behavior
 - **Status** sub-skill (`../status/SKILL.md`) - Status reporting
-- **[../guide/GUIDE.md](../guide/GUIDE.md)** - Complete methodology specification
+- **[../guide/GUIDE.md](../guide/GUIDE.md)** - Methodology guide routing index (read the file your flow needs)
 
 ---
 

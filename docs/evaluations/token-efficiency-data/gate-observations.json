@@ -1,0 +1,241 @@
+{
+  "purpose": "Command-only sanity comparison; full baseline versus affected candidate on seeded inputs. Both use full for shared-core. Includes every attempted process.",
+  "provider_tokens": null,
+  "limits": "Three tiny local Python fixtures per arm; shared-core is a multi-module seam, not a costly production test suite. Timing is not end-to-end agent time and is not a release savings claim. No cache controls; fresh process on each run.",
+  "observations": [
+    {
+      "fixture": "isolated-change",
+      "pair": 1,
+      "arm": "baseline",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.05456145800417289,
+      "stdout": "",
+      "stderr": "test_greet (test_greeter.GreeterTest.test_greet) ... FAIL\ntest_add (test_math.MathTest.test_add) ... ok\n\n======================================================================\nFAIL: test_greet (test_greeter.GreeterTest.test_greet)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/isolated-change-1-baseline/tests/test_greeter.py\", line 6, in test_greet\n    self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'Hello Ada' != 'Hello, Ada!'\n- Hello Ada\n+ Hello, Ada!\n?      +    +\n\n\n----------------------------------------------------------------------\nRan 2 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "isolated-change",
+      "pair": 1,
+      "arm": "candidate",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tests.test_greeter",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.036313708005764056,
+      "stdout": "",
+      "stderr": "test_greet (tests.test_greeter.GreeterTest.test_greet) ... FAIL\n\n======================================================================\nFAIL: test_greet (tests.test_greeter.GreeterTest.test_greet)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/isolated-change-1-candidate/tests/test_greeter.py\", line 6, in test_greet\n    self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'Hello Ada' != 'Hello, Ada!'\n- Hello Ada\n+ Hello, Ada!\n?      +    +\n\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "isolated-change",
+      "pair": 2,
+      "arm": "baseline",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.055069125002773944,
+      "stdout": "",
+      "stderr": "test_greet (test_greeter.GreeterTest.test_greet) ... FAIL\ntest_add (test_math.MathTest.test_add) ... ok\n\n======================================================================\nFAIL: test_greet (test_greeter.GreeterTest.test_greet)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/isolated-change-2-baseline/tests/test_greeter.py\", line 6, in test_greet\n    self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'Hello Ada' != 'Hello, Ada!'\n- Hello Ada\n+ Hello, Ada!\n?      +    +\n\n\n----------------------------------------------------------------------\nRan 2 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "isolated-change",
+      "pair": 2,
+      "arm": "candidate",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tests.test_greeter",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.2900815839966526,
+      "stdout": "",
+      "stderr": "test_greet (tests.test_greeter.GreeterTest.test_greet) ... FAIL\n\n======================================================================\nFAIL: test_greet (tests.test_greeter.GreeterTest.test_greet)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/isolated-change-2-candidate/tests/test_greeter.py\", line 6, in test_greet\n    self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'Hello Ada' != 'Hello, Ada!'\n- Hello Ada\n+ Hello, Ada!\n?      +    +\n\n\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "isolated-change",
+      "pair": 3,
+      "arm": "baseline",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.040708708998863585,
+      "stdout": "",
+      "stderr": "test_greet (test_greeter.GreeterTest.test_greet) ... FAIL\ntest_add (test_math.MathTest.test_add) ... ok\n\n======================================================================\nFAIL: test_greet (test_greeter.GreeterTest.test_greet)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/isolated-change-3-baseline/tests/test_greeter.py\", line 6, in test_greet\n    self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'Hello Ada' != 'Hello, Ada!'\n- Hello Ada\n+ Hello, Ada!\n?      +    +\n\n\n----------------------------------------------------------------------\nRan 2 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "isolated-change",
+      "pair": 3,
+      "arm": "candidate",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "tests.test_greeter",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.04789120899658883,
+      "stdout": "",
+      "stderr": "test_greet (tests.test_greeter.GreeterTest.test_greet) ... FAIL\n\n======================================================================\nFAIL: test_greet (tests.test_greeter.GreeterTest.test_greet)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/isolated-change-3-candidate/tests/test_greeter.py\", line 6, in test_greet\n    self.assertEqual(greet(\"Ada\"), \"Hello, Ada!\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'Hello Ada' != 'Hello, Ada!'\n- Hello Ada\n+ Hello, Ada!\n?      +    +\n\n\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "shared-core-change",
+      "pair": 1,
+      "arm": "baseline",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.044224541998119093,
+      "stdout": "",
+      "stderr": "test_strip_lower (test_core.CoreTest.test_strip_lower) ... ok\ntest_label (test_formatter.FormatterTest.test_label) ... ok\ntest_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes) ... FAIL\n\n======================================================================\nFAIL: test_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/shared-core-change-1-baseline/tests/test_report.py\", line 6, in test_key_keeps_inner_spaces_as_dashes\n    self.assertEqual(key(\" Deep Work \"), \"deep-work\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'deepwork' != 'deep-work'\n- deepwork\n+ deep-work\n?     +\n\n\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "shared-core-change",
+      "pair": 1,
+      "arm": "candidate",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.05134995799744502,
+      "stdout": "",
+      "stderr": "test_strip_lower (test_core.CoreTest.test_strip_lower) ... ok\ntest_label (test_formatter.FormatterTest.test_label) ... ok\ntest_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes) ... FAIL\n\n======================================================================\nFAIL: test_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/shared-core-change-1-candidate/tests/test_report.py\", line 6, in test_key_keeps_inner_spaces_as_dashes\n    self.assertEqual(key(\" Deep Work \"), \"deep-work\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'deepwork' != 'deep-work'\n- deepwork\n+ deep-work\n?     +\n\n\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "shared-core-change",
+      "pair": 2,
+      "arm": "baseline",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.04308162500092294,
+      "stdout": "",
+      "stderr": "test_strip_lower (test_core.CoreTest.test_strip_lower) ... ok\ntest_label (test_formatter.FormatterTest.test_label) ... ok\ntest_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes) ... FAIL\n\n======================================================================\nFAIL: test_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/shared-core-change-2-baseline/tests/test_report.py\", line 6, in test_key_keeps_inner_spaces_as_dashes\n    self.assertEqual(key(\" Deep Work \"), \"deep-work\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'deepwork' != 'deep-work'\n- deepwork\n+ deep-work\n?     +\n\n\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "shared-core-change",
+      "pair": 2,
+      "arm": "candidate",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.050939291999384295,
+      "stdout": "",
+      "stderr": "test_strip_lower (test_core.CoreTest.test_strip_lower) ... ok\ntest_label (test_formatter.FormatterTest.test_label) ... ok\ntest_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes) ... FAIL\n\n======================================================================\nFAIL: test_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/shared-core-change-2-candidate/tests/test_report.py\", line 6, in test_key_keeps_inner_spaces_as_dashes\n    self.assertEqual(key(\" Deep Work \"), \"deep-work\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'deepwork' != 'deep-work'\n- deepwork\n+ deep-work\n?     +\n\n\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "shared-core-change",
+      "pair": 3,
+      "arm": "baseline",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.05906525000318652,
+      "stdout": "",
+      "stderr": "test_strip_lower (test_core.CoreTest.test_strip_lower) ... ok\ntest_label (test_formatter.FormatterTest.test_label) ... ok\ntest_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes) ... FAIL\n\n======================================================================\nFAIL: test_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/shared-core-change-3-baseline/tests/test_report.py\", line 6, in test_key_keeps_inner_spaces_as_dashes\n    self.assertEqual(key(\" Deep Work \"), \"deep-work\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'deepwork' != 'deep-work'\n- deepwork\n+ deep-work\n?     +\n\n\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    },
+    {
+      "fixture": "shared-core-change",
+      "pair": 3,
+      "arm": "candidate",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 1,
+      "wall_seconds": 0.15241120800055796,
+      "stdout": "",
+      "stderr": "test_strip_lower (test_core.CoreTest.test_strip_lower) ... ok\ntest_label (test_formatter.FormatterTest.test_label) ... ok\ntest_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes) ... FAIL\n\n======================================================================\nFAIL: test_key_keeps_inner_spaces_as_dashes (test_report.ReportTest.test_key_keeps_inner_spaces_as_dashes)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/app/tmp/repositories/deepworkplan-skill/tmp/task19-gates/shared-core-change-3-candidate/tests/test_report.py\", line 6, in test_key_keeps_inner_spaces_as_dashes\n    self.assertEqual(key(\" Deep Work \"), \"deep-work\")\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'deepwork' != 'deep-work'\n- deepwork\n+ deep-work\n?     +\n\n\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nFAILED (failures=1)\n",
+      "selected_by": "fixed experiment policy, not an agent decision",
+      "expected": "nonzero because seeded fault must be detected"
+    }
+  ]
+}

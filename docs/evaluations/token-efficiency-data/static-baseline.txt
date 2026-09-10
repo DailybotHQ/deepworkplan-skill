@@ -1,0 +1,25 @@
+# Instruction load — export (record source revision separately)
+
+## Installed Markdown (bytes)
+guide/GUIDE.md                                          99480
+onboard/SKILL.md                                        46078
+spec/DWP_SPECIFICATION.md                               26117
+spec/DOCUMENTATION_STANDARD.md                          25449
+addons/ai-diff-reviewer/SPEC.md                         23159
+create/SKILL.md                                         22637
+addons/ai-diff-reviewer/SKILL.md                        22245
+addons/design-system/SPEC.md                            22046
+execute/SKILL.md                                        19618
+addons/dailybot/SPEC.md                                 16660
+addons/ai-diff-reviewer/templates/INTEGRATION.md        15731
+addons/dailybot/SKILL.md                                15495
+total: 738989
+
+## Compulsory read set per flow (router + SKILL.md + linked shared resources)
+create     145087 bytes  (~36271 est. tokens)  <- SKILL.md create/SKILL.md examples/CREATE_PLAN.md examples/PROMPTS_TEMPLATE.md guide/GUIDE.md shared/adaptation.md shared/dwp-paths.md
+execute    142506 bytes  (~35626 est. tokens)  <- SKILL.md execute/SKILL.md guide/GUIDE.md shared/adaptation.md shared/dwp-paths.md spec/PLAN_STATE.md
+resume      38186 bytes  (~9546 est. tokens)  <- SKILL.md resume/SKILL.md execute/SKILL.md shared/adaptation.md shared/dwp-paths.md
+refine     122761 bytes  (~30690 est. tokens)  <- SKILL.md refine/SKILL.md examples/CREATE_PLAN.md guide/GUIDE.md shared/dwp-paths.md
+onboard    157503 bytes  (~39375 est. tokens)  <- SKILL.md onboard/SKILL.md guide/GUIDE.md shared/adaptation.md shared/dwp-paths.md
+status      13363 bytes  (~3340 est. tokens)  <- SKILL.md status/SKILL.md shared/dwp-paths.md
+verify      29581 bytes  (~7395 est. tokens)  <- SKILL.md verify/SKILL.md shared/dwp-paths.md spec/PLAN_STATE.md

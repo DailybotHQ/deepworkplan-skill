@@ -3,24 +3,26 @@
 ## Abstract
 
 This document is the **normative specification** of the DeepWorkPlan **AI Diff
-Reviewer addon**: an opt-in capability that connects an AI-first repository to
+Reviewer addon**: a capability — **required in its local form since standard
+2.3.0, optional in its CI form** — that connects an AI-first repository to
 the **AI Diff Reviewer** (`DailybotHQ/ai-diff-reviewer`, marketplace listing
 "AI Diff Reviewer", current **v2.0.0**) so DWP work — the mandatory
-**Security Review** final task — is augmented with a structured local review
+security pass of the mandatory **Final Review** — is augmented with a structured local review
 (verdict + findings table + severity), and (in **Flow B — dual-surface**,
 optionally) every pull request to the target repo is gated by a CI-side
 review Action with byte-identical parity to the local review. It defines the
 **two officially-supported adoption flows** (§3), **what the addon
-installs/configures** (all opt-in, §4), how it **defers authentication and
+installs/configures** (local review required, CI surface opt-in, §4), how it **defers authentication and
 wizard orchestration** to the upstream skill's own consent flows (§5), how
-the **Security Review augmentation** and the optional **`apply-review`
+the **security-pass augmentation** and the optional **`apply-review`
 post-CI companion** are wired into DWP execution (§6), the **never-block**
 rule (§7), the **reconcile-don't-clobber** behavior (§8), the **validation
 checklist** (§9), and the **archetype compatibility** notes (§10).
 
 The addon is governed by [`../README.md`](../README.md) and
-[`spec/ADDONS.md`](../../spec/ADDONS.md): it is **never** required
-for baseline AI-first conformance.
+[`spec/ADDONS.md`](../../spec/ADDONS.md) §6.5: its **local review is part of
+baseline conformance** for repositories declaring standard 2.3.0 or newer; its
+CI surface is never required.
 
 ## Status of This Document
 
@@ -28,7 +30,7 @@ for baseline AI-first conformance.
 |-------|-------|
 | **Version** | 2.16.3 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/GUIDE.md` §5.4 |
+| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/authoring.md` §5.4 |
 | **License** | MIT |
 | **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.0.0 (marketplace: "AI Diff Reviewer") |
 
@@ -62,30 +64,36 @@ upstream CI's `Skills — prompt-sync invariant` job).
 
 ## 2. Vendor-Neutral Guardrail (the rule that frames everything)
 
-- The **core DeepWorkPlan methodology MUST have zero dependency on the AI
-  Diff Reviewer.** It is vendor-neutral, MIT, and agent-agnostic. A
-  repository **MUST** be fully conformant to the AI-first baseline
-  (`DOCUMENTATION_STANDARD.md` §§2–7) and to the DWP specification with
-  **zero** addons — including this one.
-- This addon **MUST NOT** be presented as a precondition for using DWP, and
-  the `onboard` flow **MUST NOT** auto-install it for everyone. It is
-  offered, and applied only on explicit acceptance.
-- Declining this addon **MUST** still produce a baseline-conformant repo.
-- The addon's value is **purely additive review quality** for
-  developers/teams who want structured code-review output on DWP work.
+- The **local review is part of the DeepWorkPlan baseline** since standard
+  2.3.0: `onboard` **MUST** install the vendored skill and bootstrap an
+  extension file (Phase 7a), a targeted harness upgrade **MUST** reconcile
+  both when missing, and the Final Review's security pass **MUST** run the
+  local review (§6.1). A repository declaring standard 2.3.0 or newer without
+  the vendored skill and an extension file is **not** conformant; `verify`
+  reports the gap as a failure (as a harness-version finding for a legacy
+  repository).
+- The **CI surface (Flow B) MUST remain opt-in**: never installed unrequested,
+  never the default, never a precondition of any DWP flow.
+- What stays vendor-neutral: the reviewer is an MIT-licensed, tag-pinned skill
+  executed by the developer's own coding agent. DWP **MUST NOT** require a
+  commercial service, a CI provider or a provider secret for any of
+  create / execute / refine / resume / status / verify / onboard to succeed.
+- A developer **MAY** decline the local reviewer; the decline **MUST** be
+  recorded as a declared exception in `AGENTS.md` and in the onboarding
+  report, and the repository is reported as non-conformant on that point until
+  the reviewer is installed. Nothing else in the baseline changes.
 
 ---
 
 ## 3. Two Supported Adoption Flows
 
-The upstream skill v2.0.0 defines two flows explicitly and requires consumers
-to pick between them at consent time (matching its own ambiguity tie-break
-policy — ask, don't guess). This addon **MUST** offer both.
+The upstream skill v2.0.0 defines two flows explicitly. This addon applies
+Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
 
 ### 3.1 Flow A — local-only
 
 - Vendored skill installed; the CI Action is **NOT** installed.
-- Sub-skills used: **parent default flow** (Security Review augmentation) +
+- Sub-skills used: **parent default flow** (security-pass augmentation) +
   **`generate-extension` (required)** + optionally `open-pr`.
 - Extension requirement: addon onboarding **MUST NOT** complete Flow A
   without an extension file at a recognized path (or an explicit
@@ -108,10 +116,12 @@ policy — ask, don't guess). This addon **MUST** offer both.
 
 ### 3.3 Consent-time rules
 
-- The addon **MUST** offer both flows at consent time. It **MUST NOT** default
-  to Flow B or install the CI workflow unrequested.
-- When the developer's signal is ambiguous, the addon **MUST** ask. The
-  ambiguity resolution mirrors upstream v2.0.0's own policy: unrelated
+- The addon **MUST** apply Flow A (the baseline) and offer Flow B at consent
+  time. It **MUST NOT** default to Flow B or install the CI workflow
+  unrequested.
+- When the developer's signal about Flow B is ambiguous, the addon **MUST**
+  ask or stay on Flow A; it **MUST NOT** infer Flow B. The ambiguity
+  resolution mirrors upstream v2.0.0's own policy: unrelated
   workflows (CI tests, deploy pipelines, dependency bots) are **NOT**
   evidence of Flow B — only an existing ai-diff-reviewer workflow is.
 - The addon **SHOULD** surface the concrete Flow-A-vs-B tradeoff at consent
@@ -122,14 +132,16 @@ policy — ask, don't guess). This addon **MUST** offer both.
 
 ---
 
-## 4. What the Addon Installs / Configures (all OPT-IN)
+## 4. What the Addon Installs / Configures (local review REQUIRED, CI surface OPT-IN)
 
-When accepted, the addon **MAY** install or configure the following — each
-only with explicit acceptance, and each reconciled if already present (§8):
+The addon installs or configures the following — §4.1 and §4.2 under the
+onboarding consent (required, §2), §4.3 and §4.5 only on explicit Flow B
+acceptance — each reconciled if already present (§8):
 
 ### 4.1 The upstream skill (both flows)
 
-- The addon **SHOULD** offer the vendored skill as the primary install path.
+- The addon **MUST** install the vendored skill (the only supported install
+  path) unless the developer recorded a declared exception (§2).
   Supported install method:
   - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
     (**tag-pinned**; both flags are required — `--yes` covers npm's own "Ok to
@@ -156,7 +168,7 @@ only with explicit acceptance, and each reconciled if already present (§8):
   sub-skill (≥12 tool-call Discovery followed by a ~100-line file of
   concrete overrides). This is the primary customization surface — where
   consumers encode their own severity rules and "don't comment on" scopes.
-  Without an extension, Security Review detection (§6.1) fails and the
+  Without an extension, security-pass detection (§6.1) fails and the
   advertised local pass never runs.
 - The addon **MUST** honor the upstream's three-path precedence when
   detecting an existing extension file (first match wins):
@@ -171,10 +183,10 @@ only with explicit acceptance, and each reconciled if already present (§8):
   (a tracked 0-byte file created when a developer previously answered
   "never" to upstream's bootstrap offer). When that marker is present, the
   addon **MUST NOT** bootstrap during onboarding or during later `execute`
-  Security Review — document that the local SR augmentation stays inactive
+  the Final Review's security pass — document that the local augmentation stays inactive
   until the marker is removed and an extension is created.
 - Mid-plan `execute` **MUST NOT** surprise-bootstrap an extension file as a
-  side effect of Security Review (aligns with `execute/SKILL.md`).
+  side effect of the Final Review (aligns with `execute/SKILL.md`).
 
 ### 4.3 CI workflow `pr-review.yml` (Flow B only)
 
@@ -210,7 +222,7 @@ only with explicit acceptance, and each reconciled if already present (§8):
 - The addon **SHOULD** append a short section to the target repo's
   `AGENTS.md` documenting:
   - Which flow was chosen (A or B) and why.
-  - The Security Review augmentation (both flows).
+  - The Final Review security-pass augmentation (both flows).
   - (Flow B) the `pr-review.yml` behavior, the provider-secret requirement,
     the label workflow (`ready` / `pr-reviewed` / optional `skip-ai-review`),
     the `AI review gate` branch-protection target, and the `apply-review`
@@ -246,17 +258,17 @@ only with explicit acceptance, and each reconciled if already present (§8):
 
 ## 6. Integration Points into DWP Execution
 
-This is the "why": when present, the mandatory **Security Review** task
-in every DWP plan gets a structured local review pass, and in Flow B a
+This is the "why": when present, the **security pass** of the mandatory
+**Final Review** in every DWP plan gets a structured local review pass, and in Flow B a
 developer-invoked companion sub-skill closes the loop on any post-push CI
 review.
 
-### 6.1 Augment Security Review (both flows — SHOULD)
+### 6.1 Augment the Final Review's security pass (both flows — MUST, with honest degradation)
 
 The addon **MUST** wire an additive step into the DWP `create` sub-skill's
-`{N-2}.task_security_review.md` template. When the addon is installed
+`{N}.task_final_review.md` template's security pass. When the addon is installed
 (detected by `.agents/skills/ai-diff-reviewer/` present + an extension file
-at one of the three recognized paths from §4.2), the SR task template gains
+at one of the three recognized paths from §4.2), the Final Review's security pass gains
 an additional post-existing-checks step:
 
 1. Invoke the upstream **parent default flow** ("Review my current branch").
@@ -270,15 +282,24 @@ an additional post-existing-checks step:
    and block completion until fixed or explicitly accepted. `warning` and
    `info` findings are appended and reported but do not block.
 
-- The step is **SHOULD**, not MUST — the addon MUST NOT fail-close the plan
-  when the local pass cannot be *invoked* (vendored skill absent, no
-  extension file, or the coding-agent / upstream-skill invocation errors).
+- The step is **MUST**, with honest degradation: when the vendored skill or
+  the extension file is absent, the security pass **MUST** record a `local
+  reviewer not installed` finding in `SECURITY_REVIEW.md` and carry it into
+  the completion report. Installation is an onboarding action; the Final
+  Review **MUST NOT** surprise-bootstrap a missing piece. A coding-agent /
+  upstream-skill invocation error of a review that could start follows §7.
   Do **not** treat an unset CI provider secret as an invocation skip — that
   secret is Flow B CI/gate only. Once a local review **did** run, severity
   handling above (§6.1 item 4) still applies.
-- The augmentation is **additive**. The existing manual Security Review
-  reasoning is preserved. On repos without the addon, the SR template body
-  is unchanged.
+- The augmentation is **additive**. The Final Review's own manual security
+  reasoning is preserved. Every new 2.3.0 Final Review template includes this
+  local-review step; when the reviewer is absent, the step records its missing-
+  reviewer finding instead of being omitted. Legacy plans retain their own
+  recorded shape.
+- **Legacy plans.** A plan created under the pre-2.3.0 lifecycle carries a
+  separate `{N-2}.task_security_review.md`. The addon augments *that* task in
+  such a plan — same additive step, same severity contract — because a plan is
+  always executed under its own recorded shape and is never silently migrated.
 
 ### 6.2 CI merge gate (Flow B only)
 
@@ -308,8 +329,8 @@ an additional post-existing-checks step:
 - The addon **MUST** describe `apply-review` in the target repo's docs as
   an *available option* during `execute` — never as a mandatory extra task.
   The addon **MUST NOT** materialize `apply-review` as a plan task file —
-  doing so would violate the mandatory-final-task-order rule (Security
-  Review → Skills & Agents Discovery → Executive Report) and turn a
+  doing so would violate the mandatory-final-task rule (a plan ends with the
+  single Final Review, and nothing may follow it) and turn a
   developer-invoked convenience into a scheduled plan step.
 
 ---
@@ -317,22 +338,24 @@ an additional post-existing-checks step:
 ## 7. Never-Block Rule (mandatory)
 
 Soft-fail applies to **invocation** of the local review pass only — not to
-Security Review gate results after a review completed. Post-run severity
-is governed by §6.1 (item 4): `critical` findings block SR completion until
-fixed or explicitly accepted.
+the Final Review's gate results after a review completed. Post-run severity
+is governed by §6.1 (item 4): `critical` findings block the Final Review's
+completion until fixed or explicitly accepted.
 
 - **Local augmentation — invocation soft-fail (Flow A and Flow B):** if the
-  vendored skill is **absent**, detection fails (no extension file at a
-  recognized path), the network is **down**, or any upstream skill
-  invocation **errors**, the addon's wired local-review step **MUST**: warn
-  briefly once, continue the primary task, **not** retry automatically, and
-  **not** enter a diagnostic loop. This mirrors the upstream skill's own
+  network is **down** or any upstream skill invocation **errors**, the
+  addon's wired local-review step **MUST**: warn briefly once, record the
+  failed invocation in `SECURITY_REVIEW.md`, continue the primary task,
+  **not** retry automatically, and **not** enter a diagnostic loop. An
+  **absent** skill or extension file is not an invocation failure: it is
+  handled by §6.1 (recorded finding; installation is onboarding-only), never by
+  a silent skip. This mirrors the upstream skill's own
   trust-boundary guarantees. The local parent default flow runs via the
   coding agent and does **not** require a CI provider secret — an unset
   `CURSOR_API_KEY` (or other provider secret) **MUST NOT** suppress the
-  local Security Review pass.
+  local security pass.
 - **Local augmentation — after a review ran:** open/`critical` findings
-  from that pass **MUST** follow §6.1. Agents **MUST NOT** mark Security
+  from that pass **MUST** follow §6.1. Agents **MUST NOT** mark the Final
   Review `[x]` while those criticals remain unfixed and unaccepted. §7 does
   **not** override that gate.
 - **Flow B CI / gate only:** when the dual-surface workflow is installed,
@@ -374,17 +397,19 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 
 1. The vendored skill is installed at `.agents/skills/ai-diff-reviewer/`
    with the version invariant asserted against `skills-lock.json`, **or**
-   the addon recorded why it could not install here (sandbox/CI) without
-   failing onboarding.
+   the addon recorded why it could not install here (sandbox/CI, or a
+   declared exception per §2) without failing onboarding — a recorded gap,
+   never a silent one.
 2. An extension file is present at one of the three recognized paths (or
    the developer explicitly opted out via `.review/.skip-bootstrap`).
 3. Authentication was **deferred** to the upstream skill's own consent flow
    — no API-key prompting and **no credential** written by this addon.
 4. The chosen flow (A or B) is recorded in `AGENTS.md` (or equivalent
-   docs), and the DWP execution docs describe the Security Review
-   augmentation as **optional and conditional**: soft-fail only on local-review
-   *invocation* failures (absent skill / extension / invocation error); `critical`
-   findings from a **completed** pass still follow the SR contract (§6.1 / §7).
+   docs), and the DWP execution docs describe the security-pass
+   local review as **required with honest degradation**: a missing skill or
+  extension is a recorded finding and installation remains onboarding-only
+  (§6.1), invocation errors soft-fail (§7); `critical` findings from a
+   **completed** pass still follow the SR contract (§6.1 / §7).
 5. (Flow B only) `.github/workflows/pr-review.yml` exists with the upstream
    Action pinned to `@v2` (or a specific tag), the stable-named gate job
    is present for branch protection, the provider secret is documented in
@@ -392,8 +417,9 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
    the maintainer chose during the `setup` wizard.
 6. Existing vendored-skill / extension-file / workflow files were
    **reconciled**, not clobbered.
-7. The vendor-neutral guardrail holds: nothing in the repo implies DWP
-   **requires** the AI Diff Reviewer; the repo is still baseline-conformant.
+7. The vendor-neutral guardrail holds (§2): nothing in the repo implies DWP
+   requires a commercial service, CI provider or secret; the CI surface is
+   documented as optional.
 8. No one-line remote-installer / fetch-and-execute install path was
    recommended anywhere in the addon.
 
@@ -403,7 +429,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 
 ### 10.1 Individual repo archetype
 
-- Standard use case. Both flows apply directly. The Security Review
+- Standard use case. Both flows apply directly. The security-pass
   augmentation wires into the repo's own DWP plans.
 
 ### 10.2 Orchestrator hub archetype
@@ -430,8 +456,8 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
   [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md),
   `open-pr/SKILL.md`, `apply-review/SKILL.md`.
 - Marketplace listing: ["AI Diff Reviewer"](https://github.com/marketplace/actions/ai-diff-reviewer).
-- [`../../create/SKILL.md`](../../create/SKILL.md) §"Three mandatory final tasks" — where the SR augmentation callout is wired.
-- [`../../guide/GUIDE.md`](../../guide/GUIDE.md) §5.4 — the canonical Security Review template body.
+- [`../../create/SKILL.md`](../../create/SKILL.md) Step 4.4 (“Local review step (required)”) — where the Final Review local-review wiring is authored into every 2.3.0 plan.
+- [`../../guide/authoring.md`](../../guide/authoring.md) §5.4 — the canonical security-discipline rules the Final Review's security pass applies.
 
 ---
 

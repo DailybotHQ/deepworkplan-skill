@@ -63,3 +63,40 @@
 Commonly `<pm> run lint && <pm> test && <pm> run build` (e.g. `pnpm`/`npm`),
 sometimes with `test:e2e`. **Do not assume the package manager or script
 names** — read `package.json`/CI and capture the exact commands.
+
+## Testing and validation (verified vs example)
+
+The uniform section every preset carries (`README.md` → "The testing section
+every preset carries"). Everything below is an **illustrative example until it
+is verified against the target repository** in Phase 1 — run the scoped example
+on a real path and record the selected/executed count. Items marked *reference
+run* were verified once in this skill's contributor environment with the tool
+version stated; the target repo's version may differ, so re-verify.
+
+### 1. Full commands
+- Tests: `pnpm test` (Jest unit, `*.spec.ts`), `pnpm test:e2e` (Jest via `test/jest-e2e.json`, `*.e2e-spec.ts` with supertest), `pnpm test:cov`, from the repo root.
+- Static: `pnpm lint` (ESLint), `pnpm build` (`nest build` / `tsc`), optionally `pnpm tsc --noEmit`.
+
+### 2. Scoped invocation
+**Jest** (flags verified against `jest@29 --help`): `jest <pathPattern>` or `--testPathPattern <regex>` (path filter), `-t "<name>"` (name filter), `--findRelatedTests <src files…>` (impact selection: tests that import the changed sources), `--changedSince <ref>` (impact via git). **Evidence:** the `Tests: N passed` summary. **Zero-selection behavior:** `No tests found` exits **1** by default — `--passWithNoTests` turns that into a silent pass and is forbidden in a gate.
+
+Nest specifics: `pnpm test -- src/users/users.service.spec.ts` (unit, path filter), `pnpm test:e2e -- test/users.e2e-spec.ts` (one e2e file — it boots the Nest app once per file), `pnpm test -- -t "UsersService"` (name filter). Remember the `--` separator when the script wraps `jest`.
+
+### 3. Scoped static checks
+- **ESLint** (example): `eslint src/users` scopes natively.
+- **`tsc --noEmit`** / `nest build`: project-wide. Type-check is **project-wide by design**: `tsc --noEmit` reads `tsconfig.json`; `tsc <file>` ignores the project config and is *not* a sound scoped check. Do not fabricate a per-file variant — a single project-wide run is the real (and usually cheap) option.
+
+### 4. Source-to-test mapping
+Co-located `foo.service.spec.ts` / `foo.controller.spec.ts` next to the unit; e2e under `test/*.e2e-spec.ts` per feature module. A module's DI graph (`@Module` providers/imports) is the real dependency structure — tests of a provider's consumers are the affected set.
+
+### 5. Affected consumers
+`jest --findRelatedTests <changed files>` follows imports, which in Nest largely mirror the DI graph. **Blind spots:** providers injected by token (`@Inject(TOKEN)`), dynamic modules (`forRoot`/`forRootAsync`), global modules and guards/interceptors/pipes registered in `main.ts` or via `APP_GUARD`, config from `.env*`/`ConfigModule`, ORM entities/migrations. A change to a global guard/interceptor or an entity affects every request path ⇒ the e2e suite or the full run.
+
+### 6. Escalation and fallback
+Shared/core: `src/common/` (guards, interceptors, pipes, filters), `src/config/`, shared modules imported by many features, entities/schemas, `main.ts`. Always full run: `nest-cli.json`, `tsconfig*.json`, `jest` config, `package.json`/lockfile, ORM config/migrations, `.env*`. **Fallback:** `pnpm lint && pnpm test && pnpm test:e2e`.
+
+### 7. Layers and posture
+Unit (Jest with `Test.createTestingModule` and mocked providers) for services/controllers — fast base; integration = e2e-spec files with supertest against a real Nest app and a test database where the module truly wires persistence/HTTP; keep e2e to the real seams. Unit-first; no ratio quota.
+
+### 8. Zero-selection behavior
+Jest: `No tests found` exits 1 unless `--passWithNoTests`. A `--testPathPattern` regex that matches nothing is the common mistake — check the `Tests:` summary count.

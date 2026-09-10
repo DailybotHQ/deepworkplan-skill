@@ -71,3 +71,39 @@ fastlane lane or a `Makefile`); for an SPM library, `swift build && swift
 test`. **Do not assume** the dependency manager, the UI layer, the scheme, or
 whether fastlane wraps it — read `Package.swift`/`Podfile`, the `*.xcodeproj`
 schemes, any `Fastfile`, and CI, and capture the exact commands.
+
+## Testing and validation (verified vs example)
+
+The uniform section every preset carries (`README.md` → "The testing section
+every preset carries"). Everything below is an **illustrative example until it
+is verified against the target repository** in Phase 1 — run the scoped example
+on a real path and record the selected/executed count. Items marked *reference
+run* were verified once in this skill's contributor environment with the tool
+version stated; items marked *documented example* were **not** run here —
+confirm the exit code and the selection count in the target repo before trusting
+them in a gate.
+
+### 1. Full commands
+- Tests (app project): `xcodebuild test -scheme <Scheme> -destination 'platform=iOS Simulator,name=<device>'` from the project root (`-workspace`/`-project` as needed; `-resultBundlePath` for reports). Tests (SwiftPM library): `swift test`.
+- Static: `swiftlint lint` (or `swiftlint --strict`), `swift-format lint -r Sources Tests` where adopted; `xcodebuild build` / `swift build` as the compile gate.
+
+### 2. Scoped invocation
+**`xcodebuild test`** (documented example — Xcode is not available in the contributor environment): `-only-testing:AppTests/OrderTests` (one class), `-only-testing:AppTests/OrderTests/testTotal` (one method), `-only-testing:AppTests` (one target), `-skip-testing:AppUITests` (exclude UI tests), `-testPlan <plan>` for configured subsets. **`swift test`** (documented example): `swift test --filter OrderTests` (regex on `Target.Class/method`, works for XCTest and Swift Testing), `--skip <regex>`, `swift test --parallel`. **Evidence:** `Executed N tests, with 0 failures` — `N` non-zero for the intended target.
+
+### 3. Scoped static checks
+- `swiftlint lint --path Sources/Orders` (or `swiftlint lint Sources/Orders` on newer versions) and `swift-format lint -r Sources/Orders` (documented examples) scope by path. Compilation is per target/scheme, not per file.
+
+### 4. Source-to-test mapping
+SwiftPM: `Tests/<Target>Tests/` mirrors `Sources/<Target>/` (`OrderService.swift` ↔ `OrderServiceTests.swift`); app projects: `<App>Tests/` grouped by feature, `<App>UITests/` for XCUITest. Test targets declare their dependencies explicitly in `Package.swift` / the project.
+
+### 5. Affected consumers
+SwiftPM: `swift package show-dependencies` and the `targets` graph in `Package.swift` — run the changed target's tests and the tests of targets that depend on it. **Blind spots:** storyboards/XIBs and asset catalogs, `Info.plist`, build settings and `.xcconfig`, schemes/test plans, SwiftUI previews, DI containers/environment values, localization (`.strings`/`.xcstrings`), `@testable import` visibility. A shared framework/package, xcconfig or scheme change ⇒ the full scheme's tests.
+
+### 6. Escalation and fallback
+Shared/core: shared packages/frameworks (`Core`, `Networking`, `DesignSystem`), app entry (`App.swift`/`AppDelegate`), DI setup. Always full run: `Package.swift`/`Package.resolved`, `project.pbxproj`, `.xcconfig`, schemes and test plans, `.swiftlint.yml`, `Podfile`/`Podfile.lock` where CocoaPods is used. **Fallback:** the full `xcodebuild test -scheme <Scheme> …` (or `swift test`) plus `swiftlint lint`.
+
+### 7. Layers and posture
+Unit (XCTest / Swift Testing on plain types, no simulator UI) for models, services, view models — fast base; integration for networking/persistence seams with protocol-based fakes; XCUITest for a few flows (slow; needs a simulator). Unit-first; keep UI tests few.
+
+### 8. Zero-selection behavior
+`swift test --filter <no-match>` reports `Executed 0 tests` and exits **0** (documented) — a silent empty run; check the count. `xcodebuild test -only-testing:` with an identifier that does not exist reports an error for that identifier — confirm the exit code on the target's Xcode version before relying on it.

@@ -122,6 +122,22 @@ jobs:
           done
           echo "OK: cursor pack + six sub-skill symlinks created"
 
+  contract-checks:
+    name: State-layer schema/contract + guide migration checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install jsonschema
+      - name: JSON Schema + contract regressions (fixtures, both directions, negative probes)
+        run: python3 scripts/check-schema-contract.py
+      - name: Split-guide links, section map and pointer headers
+        run: python3 scripts/check-guide-migration.py
+      - name: Instruction-load measurement runs (smoke)
+        run: bash tests/efficiency/measure-instruction-load.sh >/dev/null
+
   markdown-links:
     name: Markdown link check
     runs-on: ubuntu-latest

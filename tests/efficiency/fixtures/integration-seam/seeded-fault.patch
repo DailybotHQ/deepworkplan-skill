@@ -1,0 +1,6 @@
+--- a/src/server.py
++++ b/src/server.py
+@@ -1,2 +1,2 @@
+ def handle(payload: dict) -> dict:
+-    return {"total": sum(payload.get("items", []))}
++    return {"sum": sum(payload.get("items", []))}

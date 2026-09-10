@@ -16,11 +16,11 @@ orchestrator hub, and agent workspace — are addressed throughout.
 | Document | Defines |
 |----------|---------|
 | [`DOCUMENTATION_STANDARD.md`](DOCUMENTATION_STANDARD.md) | Repo structure: `AGENTS.md` (index + mandatory rules + quick commands), `CLAUDE.md → AGENTS.md`, the 10 `docs/` categories, per-module nested docs, `.agents/` layout, `.claude → .agents` and `.cursor → .agents` symlinks, and the reason-per-repo 10%. |
-| [`DWP_SPECIFICATION.md`](DWP_SPECIFICATION.md) | The DWP workflow: single-step refined-draft create flow, `.dwp/` output, the 9-section task anatomy (+ optional Delta section), validation/completion, the DWP Resume Protocol, proportional rigor tiers, the three mandatory final tasks, orchestrator + team-agents support. |
+| [`DWP_SPECIFICATION.md`](DWP_SPECIFICATION.md) | The DWP workflow: the mode-aware single-step create flow (guided draft / direct trust), `.dwp/` output, the 10-section task anatomy (Touched Surface + optional Delta section), gate selection by affected surface and final-state validation, the DWP Resume Protocol, proportional rigor tiers, the single mandatory Final Review with task-local skills decisions and an optional Executive Report, compatibility rules, orchestrator + team-agents support. |
 | [`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md) | Cross-agent behavior: the supported agents (interactive + autonomous platforms), the `/` vs `#` command mapping, shared `.agents/` reading, progress reporting, and the interactive vs **unattended** execution profiles. |
 | [`ARCHETYPES.md`](ARCHETYPES.md) | The three archetypes (individual repo, orchestrator hub, agent workspace), the classification heuristic, and how onboarding differs. |
 | [`PLAN_STATE.md`](PLAN_STATE.md) | The machine-readable plan state layer: `manifest.json` + `state.json`, gate records, outcome records, checkpoint/blocked state, reconciliation rules, and the published [JSON Schemas](schema/). |
-| [`ADDONS.md`](ADDONS.md) | The opt-in addon mechanism + contract (reconcile-don't-clobber); devcontainer as the first addon (pointer to Task 6). |
+| [`ADDONS.md`](ADDONS.md) | The addon mechanism + contract (reconcile-don't-clobber); four opt-in addons plus the AI Diff Reviewer local review, required in the baseline since 2.3.0 (§6.5). |
 
 ## Key v2 Divergences from v1 (see `../RECONCILIATION.md`)
 

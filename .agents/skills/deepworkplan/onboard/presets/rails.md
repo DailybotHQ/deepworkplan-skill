@@ -60,3 +60,39 @@
 Often `bundle exec rubocop && bundle exec rspec`, or `bin/rails test` for a
 Minitest app. **Do not assume** the test framework or lint setup — read the
 `Gemfile`, `.rubocop.yml`, `bin/`, and CI, and capture the exact command.
+
+## Testing and validation (verified vs example)
+
+The uniform section every preset carries (`README.md` → "The testing section
+every preset carries"). Everything below is an **illustrative example until it
+is verified against the target repository** in Phase 1 — run the scoped example
+on a real path and record the selected/executed count. Items marked *reference
+run* were verified once in this skill's contributor environment with the tool
+version stated; the target repo's version may differ, so re-verify. Items marked
+*documented example* were **not** run here — confirm the exit code and the
+selection count in the target repo before trusting them in a gate.
+
+### 1. Full commands
+- Tests: `bundle exec rspec` (RSpec) **or** `bin/rails test` (+ `bin/rails test:system`) (Minitest) from the app root; `bin/rails db:test:prepare` first when the schema changed.
+- Static: `bundle exec rubocop`, `bundle exec brakeman -q` (security scan), `bundle exec erb_lint --lint-all` where present; `bin/rails zeitwerk:check` as the autoload sanity check.
+
+### 2. Scoped invocation
+**RSpec** (documented example — Ruby is not available in the contributor environment): `bundle exec rspec spec/models/order_spec.rb` (file), `spec/models/order_spec.rb:42` (one example by line), `-e 'computes the total'` (by description), `--tag focus` / `--tag ~slow` (by metadata), `spec/models/` (directory). **Minitest**: `bin/rails test test/models/order_test.rb`, `test/models/order_test.rb:42`, `-n /total/` (name regex), `bin/rails test test/models` (directory). **Evidence:** RSpec's `N examples, 0 failures` / Minitest's `N runs, M assertions` — `N` non-zero.
+
+### 3. Scoped static checks
+- `bundle exec rubocop app/models/order.rb` (documented example) scopes natively to files/directories. `brakeman` and `zeitwerk:check` are app-wide by nature.
+
+### 4. Source-to-test mapping
+`spec/models/order_spec.rb` ↔ `app/models/order.rb`; `spec/requests/orders_spec.rb` ↔ `app/controllers/orders_controller.rb` + routes; `spec/services/…` ↔ `app/services/…`; system specs under `spec/system/`; Minitest mirrors under `test/`. Factories in `spec/factories/` (FactoryBot) or `test/fixtures/`.
+
+### 5. Affected consumers
+No native impact selector; reason from the model graph (associations, concerns, callbacks) and controllers/jobs that touch the model. **Blind spots:** callbacks and concerns (`include`) with no explicit call site, `config/routes.rb`, initializers, `config/*.yml`, migrations/`db/schema.rb`, views/partials/helpers, ActiveJob/Sidekiq jobs, `.env*`. A concern, initializer, routing or schema change affects many specs ⇒ the full run.
+
+### 6. Escalation and fallback
+Shared/core: `app/models/concerns/`, `app/controllers/concerns/`, `ApplicationRecord`/`ApplicationController`, `lib/`, shared services, `spec/support/`. Always full run: `Gemfile`/`Gemfile.lock`, `config/**`, `db/schema.rb`/migrations, `.rspec`/`spec_helper.rb`/`rails_helper.rb`, `.rubocop.yml`. **Fallback:** `bundle exec rubocop && bundle exec rspec` (or `bin/rails test`).
+
+### 7. Layers and posture
+Unit (model/service specs with minimal DB touch, PORO specs) — fast base; request specs as the integration layer for routing + controller + view; a few system specs (browser) for critical flows. Unit-first; keep system specs few.
+
+### 8. Zero-selection behavior
+RSpec prints `0 examples, 0 failures` and exits **0** when a filter matches nothing (documented) — a silent empty run; set `config.fail_if_no_examples = true` (RSpec ≥ 3.7) in `spec_helper.rb` or check the count. Minitest prints `0 runs` and exits **0** likewise — check the count. A wrong file path fails loudly (`cannot load such file`).

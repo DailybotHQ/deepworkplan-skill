@@ -11,24 +11,33 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 ## What this skill is
 
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
-agent reads at runtime, plus two small Bash helpers (`setup.sh` for symlinking
-and `shared/context.sh` for repo/branch/`.dwp/` detection). The **core
+agent reads at runtime, plus three small Bash helpers: `setup.sh` (symlinking,
+at the repository root, not inside the pack), and two inside the pack —
+`shared/context.sh` for repo/branch/`.dwp/` detection and
+`verify/conformance.sh` for the read-only conformance check. The **core
 methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
 network calls**, and emits **no telemetry** of any kind.
 
-> **One honest caveat — opt-in addons.** The shipped tree includes opt-in addons
+> **One honest caveat — addons.** The shipped tree includes five addons
 > (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,
-> `addons/ai-diff-reviewer`, `addons/design-system`) that, if you explicitly
-> choose to install them, may install third-party artifacts — **always behind
-> your consent, always pinned** (a published tag or a package-manager version),
-> and always through a verifiable path: a package manager, the checksummed
-> `skills` CLI, or a documented download → verify SHA-256 → execute flow. No
-> addon ever pipes a remote installer into a shell, copies host credentials
-> anywhere without an explicit visible opt-in, or documents permission-bypass
-> shortcuts. **A repository is fully conformant with zero addons**, and the
-> baseline methodology never touches the network. The self-audit below scopes
-> the no-network check to the core and lists the addons separately so you can
-> see exactly where any network reference lives.
+> `addons/ai-diff-reviewer`, `addons/design-system`). Four are opt-in: if you
+> explicitly choose to install them, they may install third-party artifacts —
+> **always behind your consent, always pinned** (a published tag or a
+> package-manager version), and always through a verifiable path: a package
+> manager, the checksummed `skills` CLI, or a documented download → verify
+> SHA-256 → execute flow. The fifth, the **AI Diff Reviewer local review**, is
+> part of the 2.3.0 baseline: `onboard` installs one MIT-licensed, tag-pinned
+> skill (`DailybotHQ/ai-diff-reviewer`) through the checksummed `skills` CLI,
+> and the Final Review's security pass runs it through your own coding agent —
+> no service, no provider secret, no telemetry; its CI Action stays opt-in and
+> a decline is recorded, never hidden. No addon ever pipes a remote installer
+> into a shell, copies host credentials anywhere without an explicit visible
+> opt-in, or documents permission-bypass shortcuts. **A repository is fully
+> conformant with zero optional addons**. Core runtime helpers never touch the
+> network; consent-gated onboarding Phase 7a is the sole baseline exception and
+> may run the pinned AI Diff Reviewer install plus extension bootstrap. The
+> self-audit below checks that exception explicitly and lists other addons
+> separately.
 
 ## Permissions it requests (`allowed-tools`)
 
@@ -38,8 +47,9 @@ network calls**, and emits **no telemetry** of any kind.
   reason about it rather than copy a template.
 - **Edit, Write** — generate and reconcile `AGENTS.md`, `docs/`, per-module docs,
   the `.agents/` kit, and write plan artifacts under `.dwp/`.
-- **Bash** — run `shared/context.sh` (reads local git + environment metadata only)
-  and the repo's own validation commands during plan execution.
+- **Bash** — run `shared/context.sh` (reads local git + environment metadata
+  only), `verify/conformance.sh` (reads plan and repository files; writes
+  nothing), and the repo's own validation commands during plan execution.
 
 ## What it does to your machine
 
@@ -60,7 +70,7 @@ non-destructive by design:
 ## What it does NOT do
 
 - No telemetry, no analytics, no "phone home" — ever, including the addons.
-- No network requests in the **core** methodology or its two Bash helpers. (Opt-in
+- No network requests in the **core** methodology or any of its Bash helpers. (Opt-in
   addons may install third-party tools via their official installers, only with
   your consent — see the caveat above.)
 - No background daemon, no persistent external state.
@@ -87,18 +97,19 @@ source, so you can also diff any shipped file against the repository at its tag.
 Run these from the repo root to confirm the claims above:
 
 ```bash
-# 1. No network calls in the CORE methodology (excludes opt-in addons; expect none):
+# 1. No network calls in the CORE methodology (excludes addons; expect none):
 grep -RInE 'curl|wget|fetch\(|urllib|requests\.|XMLHttpRequest' \
   skills/deepworkplan --exclude-dir=addons --exclude=TRUST.md \
   || echo 'OK: no network calls in the core skill'
 
-# 2. See every network reference that DOES exist — all inside opt-in addons:
+# 2. See every network reference that DOES exist — all inside addons:
 grep -RIlE 'curl|wget' skills/deepworkplan/addons || echo 'none'
 
-# 3. The only shipped runtime script is context.sh; confirm it makes no network call:
+# 3. Two scripts ship inside the pack; confirm neither makes a network call:
 find skills/deepworkplan -name '*.sh'
-grep -nE 'curl|wget|http' skills/deepworkplan/shared/context.sh \
-  || echo 'OK: context.sh reads local git + env only'
+grep -nE 'curl|wget|https?://' \
+  skills/deepworkplan/shared/context.sh skills/deepworkplan/verify/conformance.sh \
+  || echo 'OK: both read local files, git and env only'
 
 # 4. No remote-installer pipes or bypass-flag literals anywhere in the pack
 #    (the lexical shapes Snyk E005/E006 and Socket W012 audit for). The

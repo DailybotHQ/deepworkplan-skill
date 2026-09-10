@@ -10,7 +10,7 @@ devcontainer shares (RFC-2119), the **per-repo reasoning checklist** for the
 parts that vary, **project-identity precedence**, the **validation-in-container**
 rule, the **public-OSS variant**, and the **reconcile-don't-clobber** behavior.
 
-The addon is governed by `../README.md` and `methodology-spec/ADDONS.md`: it is
+The addon is governed by `../README.md` and `../../spec/ADDONS.md`: it is
 **never** required for baseline AI-first conformance.
 
 ## Status of This Document
@@ -19,7 +19,7 @@ The addon is governed by `../README.md` and `methodology-spec/ADDONS.md`: it is
 |-------|-------|
 | **Version** | 2.1.0 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/*` (reasoning templates + 7 presets), `../README.md`, `methodology-spec/ADDONS.md` |
+| **Companions** | `SKILL.md`, `templates/*` (reasoning templates + 7 presets), `../README.md`, `../../spec/ADDONS.md` |
 | **License** | MIT |
 
 ## 1. Conventions
@@ -274,8 +274,8 @@ The addon is correctly applied when **all** hold:
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `SKILL.md` (the onboarding hook + flow), `templates/*` (reasoning aids)
-- `../README.md` (addon mechanism), `methodology-spec/ADDONS.md` (concept + pointer)
-- `methodology-spec/DOCUMENTATION_STANDARD.md` §7 (reason-per-repo),
+- `../README.md` (addon mechanism), `../../spec/ADDONS.md` (concept + pointer)
+- `../../spec/DOCUMENTATION_STANDARD.md` §7 (reason-per-repo),
   `AGENT_PROTOCOL.md` (approval gates), `ARCHETYPES.md`
 
 ---

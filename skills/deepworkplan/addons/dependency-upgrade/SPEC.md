@@ -13,7 +13,7 @@ the **batched-upgrade** rule, the **validate-after-each-batch** gate, the
 The addon is **package-manager agnostic**: it reasons about the repo's **actual**
 manager (npm/pnpm/yarn, pip/poetry/uv/pipenv, cargo, go mod, bundler, composer,
 and more) rather than assuming npm. It is governed by `../README.md` and
-`methodology-spec/ADDONS.md`: it is **never** required for baseline AI-first
+`../../spec/ADDONS.md`: it is **never** required for baseline AI-first
 conformance.
 
 ## Status of This Document
@@ -22,7 +22,7 @@ conformance.
 |-------|-------|
 | **Version** | 2.1.0 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/ecosystems.md`, `templates/upgrade-report.md`, `templates/lib-upgrade-command.md`, `../README.md`, `methodology-spec/ADDONS.md` |
+| **Companions** | `SKILL.md`, `templates/ecosystems.md`, `templates/upgrade-report.md`, `templates/lib-upgrade-command.md`, `../README.md`, `../../spec/ADDONS.md` |
 | **License** | MIT |
 
 ## 1. Conventions
@@ -166,7 +166,7 @@ The addon is correctly applied when **all** hold:
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `SKILL.md` (the onboarding hook + flow), `templates/*` (reasoning aids)
-- `../README.md` (addon mechanism), `methodology-spec/ADDONS.md` (concept + pointer)
+- `../README.md` (addon mechanism), `../../spec/ADDONS.md` (concept + pointer)
 - [Semantic Versioning](https://semver.org/)
 - [npm-check-updates](https://github.com/raineorshine/npm-check-updates)
 

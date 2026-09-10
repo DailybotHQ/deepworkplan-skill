@@ -30,7 +30,7 @@ be AI-first, and it **never blocks** the actual work.
 ## Positioning guardrail (read before anything)
 
 The **core DeepWorkPlan methodology has ZERO Dailybot dependency.** It is
-vendor-neutral, MIT, and agent-agnostic. A repo with **zero addons** — including
+vendor-neutral, MIT, and agent-agnostic. A repo with **zero optional addons** — including
 this one — is fully conformant. This addon adds *team visibility* for developers
 who already use Dailybot; declining it leaves a fully AI-first repo. Never
 present Dailybot as a precondition for DWP, and never auto-install it for
@@ -164,6 +164,11 @@ This is the integration value. Reasoning guidance is in
   4. **Completion** (SHOULD, the only **milestone**) — via the dailybot
      `report` sub-skill (`dailybot agent update ... --milestone --json-data
      ...`), describing **what was built**, never "completed a plan."
+     Completion is determined from the plan's own state — every task `[x]` and
+     the Final Review closed — and **MUST NOT** depend on an Executive Report
+     existing. The report is optional under DWP 2.3.0 (offered once, generated
+     only on request), so gating a completion update on it would silently
+     suppress the milestone on most plans.
 - Where the plan carries the machine-readable state layer
   (`../../spec/PLAN_STATE.md`), derive the `--json-data` payload from
   `state.json`: `completed` from completed tasks (phrased as outcomes),

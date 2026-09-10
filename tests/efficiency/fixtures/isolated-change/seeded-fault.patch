@@ -1,0 +1,6 @@
+--- a/src/greeter.py
++++ b/src/greeter.py
+@@ -1,2 +1,2 @@
+ def greet(name: str) -> str:
+-    return f"Hello, {name}!"
++    return f"Hello {name}"

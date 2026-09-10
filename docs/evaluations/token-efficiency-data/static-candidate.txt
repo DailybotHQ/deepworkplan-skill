@@ -1,0 +1,25 @@
+# Instruction load — resumable materialization amendment (PR #36); pack SHA256 5f440fe1c49d316c988ab7cf407f4231cd687748fccc770fe3974bd3492309d2
+
+## Installed Markdown (bytes)
+spec/DWP_SPECIFICATION.md                               50837
+onboard/SKILL.md                                        49059
+guide/orchestrator.md                                   35891
+spec/DOCUMENTATION_STANDARD.md                          35246
+create/SKILL.md                                         34168
+execute/SKILL.md                                        29737
+addons/ai-diff-reviewer/SPEC.md                         25200
+addons/ai-diff-reviewer/SKILL.md                        24042
+addons/design-system/SPEC.md                            22053
+guide/authoring.md                                      20335
+spec/PLAN_STATE.md                                      18265
+refine/SKILL.md                                         17049
+total: 981895
+
+## Compulsory read set per flow (router + SKILL.md + linked shared resources)
+create      85020 bytes  (~21255 est. tokens)  <- SKILL.md create/SKILL.md examples/CREATE_PLAN.md examples/PROMPTS_TEMPLATE.md guide/authoring.md guide/structure.md shared/adaptation.md shared/dwp-paths.md
+execute     77996 bytes  (~19499 est. tokens)  <- SKILL.md execute/SKILL.md guide/execution.md shared/adaptation.md shared/dwp-paths.md spec/PLAN_STATE.md
+resume      73659 bytes  (~18414 est. tokens)  <- SKILL.md resume/SKILL.md execute/SKILL.md guide/execution.md shared/adaptation.md shared/dwp-paths.md
+refine      61352 bytes  (~15338 est. tokens)  <- SKILL.md refine/SKILL.md examples/CREATE_PLAN.md guide/authoring.md guide/structure.md shared/dwp-paths.md
+onboard     68522 bytes  (~17130 est. tokens)  <- SKILL.md onboard/SKILL.md guide/structure.md shared/adaptation.md shared/dwp-paths.md
+status      17222 bytes  (~4305 est. tokens)  <- SKILL.md status/SKILL.md shared/dwp-paths.md
+verify      42563 bytes  (~10640 est. tokens)  <- SKILL.md verify/SKILL.md shared/dwp-paths.md spec/PLAN_STATE.md

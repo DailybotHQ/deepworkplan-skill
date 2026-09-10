@@ -1,6 +1,6 @@
 # GitHub Workflows Reference — `deepworkplan-skill`
 
-Per-workflow reference for the three GitHub Actions workflows that live in
+Per-workflow reference for the two GitHub Actions workflows that live in
 [`.github/workflows/`](../workflows/). Each section documents the trigger,
 jobs, gate semantics, and failure modes so a maintainer (or an AI agent
 piloting this repo) can reason about why a job did or didn't run.
@@ -9,7 +9,6 @@ piloting this repo) can reason about why a job did or didn't run.
 |----------|------|---------|
 | Auto-release | [`auto-release.yml`](../workflows/auto-release.yml) | Conventional-commit-driven release + temp install smoke + addon dogfood |
 | CI | [`ci.yml`](../workflows/ci.yml) | Frontmatter validation, shellcheck, bats tests, `setup.sh`/`context.sh` smoke, markdown link check |
-| PR review | [`pr-review.yml`](../workflows/pr-review.yml) | AI-driven pull request code review via Cursor, `ready`-label gated |
 
 ---
 
@@ -85,6 +84,8 @@ npx --yes skills add <owner/repo>@<tag> --skill <name> --force -y
 | `setup-smoke` | ubuntu-latest AND macos-latest | Matrix run of `setup.sh --host claude` and `setup.sh --host cursor` in a throwaway `HOME` — asserts the pack symlink and every sub-skill symlink land in the expected place. macOS row guards bash 3.2 compatibility |
 | `markdown-links` | ubuntu-latest | `gaurav-nelson/github-action-markdown-link-check@v1` with `.github/markdown-link-check.json` config |
 
+- **`contract-checks`** — installs `jsonschema`, validates every plan fixture's `manifest.json`/`state.json` against the shipped v1 schemas in both directions (a 2.2.0 legacy fixture and a 2.3.0 fixture), runs negative probes (extra top-level or gate field rejected — the schemas are closed; v2 URL rejected; unknown future `spec_version` flagged, never legacy; zero-selection gate evidence rejected; stale/ahead projection rejected; partial materialization reported), then runs `scripts/check-guide-migration.py` (split-guide links, section map, pointer headers) and smoke-runs the instruction-load measurement. Dev-only scripts; the installed pack never depends on them.
+
 ### Failure semantics
 
 Any job failure fails the run and blocks merge (`main` branch protection
@@ -93,65 +94,6 @@ place bash 3.2 compat is enforced — losing it means `mapfile` / `${var^^}`
 regressions could slip through.
 
 ---
-
-## 3. pr-review.yml — AI Code Review on Pull Requests
-
-| Property | Value |
-|----------|-------|
-| **Trigger** | `pull_request` to `main`, types: `opened, labeled` (NOT `synchronize`) |
-| **Concurrency** | `pr-review-${{ pull_request.number }}`, cancel in-progress |
-| **Permissions** | `contents: read`, `pull-requests: write` at workflow level |
-| **Powered by** | [`DailybotHQ/ai-diff-reviewer@v2`](https://github.com/marketplace/actions/ai-diff-reviewer) (Marketplace listing: "AI Diff Reviewer", skill + Action v2) |
-
-### Jobs
-
-| Job | Depends on | Purpose |
-|-----|------------|---------|
-| `scope` | — | Three-tier gate: (1) `author-association ∈ {OWNER, MEMBER, COLLABORATOR}` (cheapest, payload-based, not spoofable); (2) `ready` label present on the PR (case-insensitive); (3) `CURSOR_API_KEY` secret configured. Also re-runs when `skip-ai-review` is labeled while `ready` is already present. Emits `should_run` + `empty_reason` outputs consumed by downstream jobs |
-| `labels-bootstrap` | `scope` | Idempotent `gh label create` for `ready` (green), `pr-reviewed` (blue), and `skip-ai-review` (red — emergency bypass). Only runs when `should_run == 'true'`. |
-| `review` | `scope, labels-bootstrap` | Checks out with `fetch-depth: 0` and `persist-credentials: false` (Cursor CLI has broad local access — a persisted token on disk is an exfil surface). Invokes `DailybotHQ/ai-diff-reviewer@v2` with `provider: cursor`, `model: auto`, `label-gate: ready`, `author-association: OWNER,MEMBER,COLLABORATOR`, `applied-label: pr-reviewed`, `skip-review-label: skip-ai-review`, `strictness: block-on-critical`, `prompt-extension-file: .review/extension.md`, `max-inline-comments: 15`. Applying `skip-ai-review` while `ready` is present re-runs the job and short-circuits the LLM. |
-| `gate` | `scope, review` | Stable-named `'AI review gate'`. This is the ONLY job to mark as required in branch protection |
-
-### Gate semantics
-
-The `gate` job runs `if: always() && needs.scope.outputs.empty_reason != 'no-ready-label' && needs.scope.outputs.empty_reason != 'author-association'`, which produces the following outcomes:
-
-| `empty_reason` | `review.result` | `gate` outcome | Branch-protection effect |
-|----------------|-----------------|----------------|--------------------------|
-| `no-ready-label` | (skipped) | Skipped | Required check counts as passing — PRs without `ready` are mergeable |
-| `author-association` | (skipped) | Skipped | Same — external-contributor forks never trigger a review |
-| `no-provider-secret` | (skipped) | **Failed** | Fails with an actionable message; unblock by setting `CURSOR_API_KEY` |
-| `` (empty) | `success` | **Passed** | Gate green |
-| `` (empty) | `failure` / `cancelled` | **Failed** | Reviewer signaled a blocking finding OR the review job errored |
-
-### Failure modes
-
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| Gate fails with "CURSOR_API_KEY is not configured" | Missing secret | Add it in Settings > Secrets and variables > Actions |
-| Gate fails with "AI review did not pass" | `critical` finding in the review | Address findings, toggle `ready` label off + on to re-run |
-| No review appears; gate is skipped | PR missing `ready` label OR author is external contributor | Apply `ready` (if maintainer); external forks are intentionally not reviewed |
-| Review posts findings but gate passes | Findings are `warning` / `info` only | Working as designed — non-blocking findings are reported for context, not gated |
-
-### Trigger discipline
-
-- `pull_request` only, `types: [opened, labeled]` — NOT `synchronize`. Pushes to the PR do **not** re-review; toggle the `ready` label off and on to force a re-run.
-- Concurrency keyed on PR number with `cancel-in-progress: true`, so a rapid label-toggle sequence resolves to the latest state.
-
-### Shared with the local `ai-diff-reviewer` skill
-
-The vendored skill at `.agents/skills/ai-diff-reviewer/` reads the SAME
-`.review/extension.md` this workflow reads via `prompt-extension-file:`. The
-upstream skill's `prompt.md` is byte-identical to the CI Action's
-`prompts/default.md` at the same tag (enforced by upstream CI's "Skills —
-prompt-sync invariant" job). Consequence: running the local skill on a
-branch before pushing yields the same findings CI will produce.
-
-**Post-CI walkthrough.** After this workflow posts its review, developers
-can invoke the vendored skill's `apply-review` sub-skill locally to walk
-through CI findings per-finding (apply / defer / skip) with explicit
-consent. Read-only by default; edits require per-finding yes; never commits
-or pushes.
 
 ---
 

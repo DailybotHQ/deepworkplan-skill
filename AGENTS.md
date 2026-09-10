@@ -26,6 +26,12 @@ the same instructions other agents do.
 | Human contributor guide (narrative companion to this file) | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Design decisions (the *why* behind the layout) | [docs/DESIGN.md](docs/DESIGN.md) |
 | Install guide (compare / update / uninstall) | [docs/INSTALLATION.md](docs/INSTALLATION.md) |
+| Installation + agent support matrix (what is actually tested) | [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
+| Reproducing the evaluation pack (what is measured, and what is not) | [docs/EVALUATION.md](docs/EVALUATION.md) |
+| Efficiency evidence, claims and their limits | [docs/evaluations/token-efficiency.md](docs/evaluations/token-efficiency.md) |
+| Cross-agent handoff trial (Claude Code ↔ Codex, both directions) | [docs/evaluations/cross-agent-handoff.md](docs/evaluations/cross-agent-handoff.md) |
+| Upgrading an existing repository (adoption pilot) | [docs/evaluations/adoption-pilot.md](docs/evaluations/adoption-pilot.md) |
+| Per-preset onboarding coverage | [docs/PRESET_TESTING_MATRIX.md](docs/PRESET_TESTING_MATRIX.md) |
 | OpenClaw-specific notes | [docs/OPENCLAW.md](docs/OPENCLAW.md) |
 | Adding a new sub-skill (step-by-step) | [docs/SUB_SKILL_GUIDE.md](docs/SUB_SKILL_GUIDE.md) |
 | Security posture (secrets handling, boundaries, dogfooded review) | [docs/SECURITY.md](docs/SECURITY.md) |
@@ -46,10 +52,11 @@ the same instructions other agents do.
 | Context detection + `.dwp/` resolution | [skills/deepworkplan/shared/context.sh](skills/deepworkplan/shared/context.sh) |
 | `.dwp/` output path convention | [skills/deepworkplan/shared/dwp-paths.md](skills/deepworkplan/shared/dwp-paths.md) |
 | Reasoning-over-copy-paste principle | [skills/deepworkplan/shared/adaptation.md](skills/deepworkplan/shared/adaptation.md) |
+| Runtime troubleshooting decision path (read only when something is wrong) | [skills/deepworkplan/shared/troubleshooting.md](skills/deepworkplan/shared/troubleshooting.md) |
 | Onboarding presets (per-stack) | [skills/deepworkplan/onboard/presets/](skills/deepworkplan/onboard/presets/README.md) |
 | Devcontainer addon (opt-in) | [skills/deepworkplan/addons/devcontainer/SKILL.md](skills/deepworkplan/addons/devcontainer/SKILL.md) |
 | Dailybot addon (opt-in) | [skills/deepworkplan/addons/dailybot/SKILL.md](skills/deepworkplan/addons/dailybot/SKILL.md) |
-| AI Diff Reviewer addon (opt-in) | [skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md) |
+| AI Diff Reviewer addon (required local review, optional CI surface) | [skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md) |
 | Dependency Upgrade addon (opt-in) | [skills/deepworkplan/addons/dependency-upgrade/SKILL.md](skills/deepworkplan/addons/dependency-upgrade/SKILL.md) |
 | Design System addon (opt-in) | [skills/deepworkplan/addons/design-system/SKILL.md](skills/deepworkplan/addons/design-system/SKILL.md) |
 | Workflows reference (`auto-release`, `ci`, `pr-review`) | [.github/docs/WORKFLOWS.md](.github/docs/WORKFLOWS.md) |
@@ -90,13 +97,12 @@ deepworkplan-skill/
 ├── .github/
 │   ├── workflows/auto-release.yml              ← conventional-commit auto-release + addon dogfood (NOT installed)
 │   ├── workflows/ci.yml                        ← frontmatter + shellcheck + bats + smoke (NOT installed)
-│   ├── workflows/pr-review.yml                 ← Cursor-based AI Diff Reviewer, ready-label gated (NOT installed)
 │   ├── docs/WORKFLOWS.md                       ← per-workflow reference (Trigger / Jobs / Gate / Failures) (NOT installed)
 │   ├── PULL_REQUEST_TEMPLATE.md                ← PR checklist (NOT installed)
 │   ├── ISSUE_TEMPLATE/                         ← bug_report + feature_request + config.yml (NOT installed)
 │   └── markdown-link-check.json                ← link-check config (NOT installed)
 ├── .agents/skills/                             ← THREE vendored dogfood copies (NOT installed on end-user machines)
-│   ├── deepworkplan/                           ← repo-adapted copy of this skill (sync via scripts/refresh-dogfood-skill.sh; NOT auto-overwritten on release)
+│   ├── deepworkplan/                           ← byte-identical dogfood copy of this skill (sync via scripts/refresh-dogfood-skill.sh; NOT auto-overwritten on release)
 │   ├── dailybot/                               ← DailybotHQ/agent-skill — auto-refreshed on release
 │   └── ai-diff-reviewer/                       ← DailybotHQ/ai-diff-reviewer — auto-refreshed on release
 ├── skills-lock.json                            ← pinned versions/hashes for the vendored skills (NOT installed)
@@ -214,7 +220,7 @@ The `auto-release.yml` workflow runs on every merge to `main` and:
 5. **Smoke-tests the just-published tag** — runs `npx skills add
  DailybotHQ/deepworkplan-skill@vX.Y.Z` into a **temp directory** and asserts
  the installed `version:` matches. This proves the release installs for
- consumers **without** overwriting the repo-adapted dogfood copy at
+ consumers **without** overwriting the dogfood copy at
  `.agents/skills/deepworkplan/`.
 6. **Dogfoods addon skills only** — refreshes `.agents/skills/dailybot/` and
  `.agents/skills/ai-diff-reviewer/` to their latest upstream tags (see
@@ -357,13 +363,13 @@ but they are managed differently on purpose:
 
 | Vendored skill | Upstream | Release auto-refresh | Purpose in this repo |
 |----------------|----------|----------------------|----------------------|
-| `.agents/skills/deepworkplan/` | this repo (`skills/deepworkplan/`) | **No** | Repo-adapted contributor dogfood (DWP + Dailybot + AI Diff Reviewer wiring). Sync with `bash scripts/refresh-dogfood-skill.sh` when intentionally refreshing. |
+| `.agents/skills/deepworkplan/` | this repo (`skills/deepworkplan/`) | **No** | Contributor dogfood, kept **byte-identical** to `skills/deepworkplan/` (verified by checksum on every sync). It is excluded from release auto-refresh because that would pull the last published tag instead of this working revision. Sync with `bash scripts/refresh-dogfood-skill.sh`. |
 | `.agents/skills/dailybot/` | [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill) | **Yes** | Powers Dailybot standup reporting for plan lifecycle events (see the Dailybot addon) |
-| `.agents/skills/ai-diff-reviewer/` | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | **Yes** | Powers the local pre-push code review AND the `pr-review.yml` CI Action (same `prompt.md`) |
+| `.agents/skills/ai-diff-reviewer/` | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | **Yes** | Powers the local code review (same `prompt.md` used by optional downstream CI integrations) |
 
 **Why deepworkplan is excluded.** Blind `npx skills add --force` of this
 repo's own skill into `.agents/skills/deepworkplan/` would overwrite the
-repo-adapted dogfood copy. The release workflow still **smoke-tests** that
+dogfood copy. The release workflow still **smoke-tests** that
 the published tag installs (into a temp directory); it does not commit that
 install back into the tree. When the shipped pack under `skills/deepworkplan/`
 changes and the dogfood copy should follow, run
@@ -391,84 +397,22 @@ pushes. The `[skip release]` marker prevents an infinite auto-release loop.
 - **Do not** hand-edit `.agents/skills/dailybot/` or `.agents/skills/ai-diff-reviewer/`
   — the next release will overwrite those. Contribute upstream, land a release
   there, then this repo's auto-release picks them up.
-- **Do** treat `.agents/skills/deepworkplan/` as repo-adapted: refresh it only
+- **Do** treat `.agents/skills/deepworkplan/` as a generated mirror: refresh it only
   via `scripts/refresh-dogfood-skill.sh` (or an explicit reviewed edit), never
   via release dogfood.
 
-## PR review workflow — Cursor-based, `ready`-label gated (Action `@v2`)
+## Local AI Diff Reviewer
 
-This repo ships an AI code-review workflow at
-[`.github/workflows/pr-review.yml`](.github/workflows/pr-review.yml) powered
-by [`DailybotHQ/ai-diff-reviewer@v2`](https://github.com/marketplace/actions/ai-diff-reviewer)
-(GitHub Marketplace listing: **"AI Diff Reviewer"**, skill + Action **v2**).
-It runs on every `pull_request` to `main` that carries the `ready` label AND
-is opened by a write-tier author (`OWNER` / `MEMBER` / `COLLABORATOR`),
-single Cursor provider (`model: auto`), and applies the `pr-reviewed` label
-on success. `critical` findings block the merge; `warning` and `info`
-findings are reported inline but non-blocking. CI runs Iteration-Aware
-Review (IAR) by default; local skill reviews remain a full pass.
+The vendored `ai-diff-reviewer` skill remains available for local reviews
+during Deep Work Plan Final Reviews. This repository does not ship or run an
+AI Reviewer GitHub Actions workflow, so no CI reviewer secret or review labels
+are required. The repository-specific `.review/extension.md` continues to
+configure the local review.
 
-**Labels.**
+## The `ai-diff-reviewer` addon (required local review, optional CI surface)
 
-| Label | Role |
-|-------|------|
-| `ready` | Trigger / unlock the review (toggle off→on to re-run) |
-| `pr-reviewed` | Applied automatically after a successful, non-skipped review |
-| `skip-ai-review` | Opt-in emergency bypass — short-circuits the LLM with a successful check + ⏭️ skipped tracking comment (no findings). Protect with a ruleset if the AI review is a merge gate. Distinct from `full-review-please` (IAR escape: one full review, not skip) |
-
-**How to use it.**
-
-1. Open a PR against `main` as normal.
-2. Apply the `ready` label. The workflow triggers on the label event.
-3. If the review passes, `pr-reviewed` is applied automatically and the
-   `AI review gate` check turns green.
-4. If a `critical` finding is posted, address it (edit, push a fix, or reply
-   inline if you disagree), then toggle the `ready` label off and on to
-   re-run — pushes to the branch alone do NOT re-review.
-5. Hotfix / mechanical revert only: apply `skip-ai-review` while `ready`
-   is present (or apply both, then toggle `ready`) to bypass the LLM.
-
-**Branch-protection integration.** Mark ONLY the stable-named `AI review gate`
-job as a required status check in Settings > Branches > Protection rules.
-GitHub treats `skipped` required checks as passing, so a PR without `ready`
-becomes mergeable without a review — pair this with a separate rule that
-enforces `ready` on every PR if that's the workflow you want.
-
-**Setup: `CURSOR_API_KEY` secret.**
-
-1. Get a Cursor subscription key from Cursor's dashboard (unlimited reviews on Pro).
-2. Repo Settings > Secrets and variables > Actions > **New repository secret**.
-3. Name: exactly `CURSOR_API_KEY`. Value: the key. Save.
-4. Without the secret, the `AI review gate` job fails loud with an actionable
-   message ("`CURSOR_API_KEY` is not configured on this repo").
-
-**Local ↔ CI ↔ apply-review three-moment loop.** The same
-[`ai-diff-reviewer`](https://skills.sh/DailybotHQ/ai-diff-reviewer) skill
-vendored at `.agents/skills/ai-diff-reviewer/` powers both the local
-pre-push review and the CI pass — the skill's `prompt.md` is byte-identical
-to the CI Action's shipped `prompts/default.md` at the same tag (enforced
-by upstream CI). Three moments in a maintainer's day:
-
-1. **Local pre-push review** (optional) — run the `ai-diff-reviewer` skill's
-   parent default flow (`/ai-diff-reviewer` or "Review my current branch")
-   before pushing. Same findings CI will produce, minus the round-trip.
-2. **CI review** — push, apply `ready`, this workflow runs.
-3. **Post-CI walkthrough** (optional) — invoke the skill's `apply-review`
-   sub-skill to walk through the CI-posted findings per-finding (apply /
-   defer / skip) with explicit consent. Read-only by default; edits require
-   per-finding yes; never commits or pushes.
-
-**Shared override file: [`.review/extension.md`](.review/extension.md).**
-Repo-tailored severity overrides + "don't comment on" scopes + repo-specific
-context (the runtime boundary, the auto-release ownership, the addon
-contract, the vendor-neutrality invariant). The local skill and the CI
-Action read the SAME file via `prompt-extension-file:` — one source of
-truth for what maps to `critical` vs `warning` vs `info` in this codebase.
-
-## The `ai-diff-reviewer` addon (opt-in, DWP-adjacent)
-
-Living alongside the vendored skill above, this repo also ships an
-**opt-in DWP addon** at
+Living alongside the vendored skill above, this repo also ships the
+**DWP addon** at
 [`skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md`](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md).
 It is the DWP-side counterpart to the raw skill: while the vendored skill at
 `.agents/skills/ai-diff-reviewer/` is a general-purpose reviewer that any
@@ -496,19 +440,22 @@ concrete plan.
   per-finding (apply / defer / skip). Read-only by default. Optional
   Flow B companion.
 
-**How the addon augments a DWP plan.** When present, DWP's
-[`deepworkplan-create`](skills/deepworkplan/create/SKILL.md) and
-[`deepworkplan-execute`](skills/deepworkplan/execute/SKILL.md) sub-skills
-notice the addon and **augment the mandatory Security Review task** with an
-`ai-diff-reviewer` local pass whose findings feed into
-`.dwp/plans/<plan>/analysis_results/SECURITY_REVIEW.md`. This is additive:
-the mandatory-final-task order is unchanged (Security Review → Skills &
-Agents Discovery → Executive Report), the Security Review task itself is
-not replaced, and the addon is never required. Soft-fail applies only when
-the local pass cannot be *invoked* (missing skill/extension or invocation
-error); `critical` findings from a completed pass still follow the existing
-Security Review contract. When the addon is absent, the plan runs exactly
-as before.
+**How the addon fits a DWP plan.** Since DWP standard 2.3.0 the local review
+is part of the baseline (`skills/deepworkplan/spec/ADDONS.md` §6.5):
+`onboard` installs the vendored skill and bootstraps `.review/extension.md`
+in Phase 7a, and the
+[`deepworkplan-create`](skills/deepworkplan/create/SKILL.md) /
+[`deepworkplan-execute`](skills/deepworkplan/execute/SKILL.md) sub-skills run
+the `ai-diff-reviewer` local pass inside the **Final Review's security pass**,
+appending its findings to
+`.dwp/plans/<plan>/analysis_results/SECURITY_REVIEW.md`. A missing skill or
+extension is a recorded `local reviewer not installed` finding, carried into
+the completion report, never a silent skip; installation belongs to onboarding
+Phase 7a or an explicit addon invocation;
+invocation errors soft-fail; `critical` findings from a completed pass still
+block completion until fixed or explicitly accepted. The CI Action (Flow B)
+remains an explicit opt-in. Legacy plans keep their recorded three-final-task
+shape and get the same pass on their Security Review task.
 
 ---
 

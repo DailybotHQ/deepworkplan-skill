@@ -51,6 +51,43 @@ guide per common stack, plus a `generic` fallback for anything unrecognized.
 | [`terraform.md`](terraform.md) | Terraform / IaC | `*.tf`, `main.tf`/`variables.tf`/`outputs.tf` |
 | [`generic.md`](generic.md) | **Fallback** — any unrecognized stack | none of the above match |
 
+## The testing section every preset carries
+
+Each preset ends with a **Testing and validation (verified vs example)** section
+that Phase 1 and Phase 4 read to produce the testing map of
+`DOCUMENTATION_STANDARD.md` §3.4. Every preset uses the same sub-headings so the
+onboarding flow can rely on them:
+
+1. **Full commands** — the stack's idiomatic full test, lint, format and
+   type-check commands, with the working directory they run from.
+2. **Scoped invocation** — by file, directory/module, package (workspaces) and
+   marker/name filter, each with a runnable example, the tool version where
+   flag behavior depends on it, and the expected evidence of a correct run
+   (how the runner reports the selected count). Path filtering, name filtering
+   and impact selection are **different guarantees** — say which one each is.
+3. **Scoped static checks** — lint/format/type-check by path where the tool
+   supports it; an explicit "not supported / project-wide is the real option"
+   where it does not. Never fabricate a single-file variant.
+4. **Source-to-test mapping** — the stack's conventional mapping rule
+   (co-located, mirrored tree, naming, markers, package boundary).
+5. **Affected consumers** — the stack's affected-tests tooling (`--changed`,
+   `--findRelatedTests`, `testmon`, task graphs …), how to use it, and its
+   blind spots (dynamic loading, templates, fixtures, generated inputs, config).
+6. **Escalation and fallback** — what counts as shared/core in this stack, which
+   configuration/schema/dependency/toolchain changes always trigger the full
+   run, and the explicit fallback command.
+7. **Layers and posture** — where unit / integration / e2e tests conventionally
+   live, how each layer runs, and the stack's idiomatic unit-vs-integration
+   split (unit-first behavioral coverage; integration at real seams; few e2e).
+8. **Zero-selection behavior** — what the runner does when a filter matches
+   nothing (exit code, message) so an agent can recognize an empty run.
+
+**Marking rule.** A command in a preset is an **illustrative example** until it
+is verified against the target repository in Phase 1; the flow labels it
+verified only after a real run with a non-empty selection. A preset must not
+label a known supported feature unavailable to avoid research, nor present a
+documentation example as a live repository command.
+
 ## Archetype note (orchestrator hub)
 
 Presets describe **individual-repo** stacks (the 99% case). If Phase 2 classifies
@@ -65,7 +102,7 @@ a stack preset to the hub itself. Instead:
   navigation index (e.g. `repositories/README.md`), `ECOSYSTEM_CONTEXT.md` + a
   cross-project standards guide, repository-boundary rules in `AGENTS.md` (commit
   inside each sub-repo, never from the hub root), and the orchestrator/child-DWP
-  capability (see `../../guide/GUIDE.md`).
+  capability (see `../../guide/orchestrator.md`).
 - Each **sub-repo** is onboarded independently with its own matching preset; the
   hub does not document sub-repo internals.
 
