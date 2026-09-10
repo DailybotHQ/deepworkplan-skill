@@ -31,3 +31,5 @@ Surface; **affected** = scoped widened to consumers; **full** = discover all tes
 - **Baseline arm:** skill at `eaf54994ac5894b74849f1b8d2b6137df8d83e30` (v2.17.1), checked out in a git worktree.
 - **Candidate arm:** the final head of `feat/token-efficiency-upgrade`.
 - Both arms run in the **same session/harness/model settings, back-to-back**, on fresh copies of the same fixture (cold) and once more warm; at least three paired runs for any quantitative live claim; failures and retries included.
+
+| `create-modes` (C1–C5) | — | — | see `create-modes/README.md`: trust = no draft + README last + spec_version 2.3.0 + zero questions; explicit draft wins; partial folder → complete/discard, nothing unrelated overwritten | L4, §3 |
