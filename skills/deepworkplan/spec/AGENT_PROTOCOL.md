@@ -20,9 +20,9 @@ through its own native convention. The protocol applies to **both archetypes**
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.2.0 |
+| **Version** | 2.3.0 |
 | **Status** | Stable |
-| **Supersedes** | `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/AGENT_PROTOCOL.md` (v1.0.0) |
+| **Supersedes** | `AGENT_PROTOCOL.md` 2.2.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/AGENT_PROTOCOL.md` (v1.0.0) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `DWP_SPECIFICATION.md`, `ARCHETYPES.md`, `ADDONS.md`, `PLAN_STATE.md` |
 | **License** | MIT |
 
@@ -189,6 +189,11 @@ and **MUST** satisfy all of the following:
 - **State layer REQUIRED.** The plan **MUST** carry `manifest.json` and
   `state.json` (`PLAN_STATE.md` §2.1) so any later session — agent or human —
   can read exact progress without replaying a transcript.
+- **Known standard.** Before the first unattended turn the agent **MUST**
+  establish which standard the plan executes (`PLAN_STATE.md` §6.1) and **MUST**
+  execute a legacy plan under its recorded shape (`DWP_SPECIFICATION.md` §6.5);
+  a plan newer than the installed spec is a stop condition (§7.3), reported
+  honestly, never guessed at.
 - **Bounded authority.** The agent's authority is the plan: it **MUST NOT**
   expand scope, **MUST NOT** perform destructive or outward-facing actions the
   plan does not explicitly authorize (force-pushes, deletions outside listed
@@ -219,7 +224,8 @@ when any of these occur:
 2. The task requires an approval, credential, or decision the plan did not
    pre-authorize.
 3. Reality diverges from the plan's assumptions (missing file, changed API,
-   conflicting concurrent work, §5.2 desync that reconciliation cannot resolve).
+   conflicting concurrent work, §5.2 desync that reconciliation cannot resolve,
+   or a plan that declares a standard newer than the installed skill).
 4. Two consecutive turns make no verifiable progress on the same task.
 
 An unanswered optional-artifact offer, a missing optional tool or addon, or an
@@ -238,7 +244,10 @@ wake), continuation **MUST** be expressed as: *wake → run the DWP Resume
 Protocol → if `blocked`, report and yield → else execute the next atomic task →
 update the state layer → yield.* The plan, not the session, is the unit of
 continuity; a plan **MUST** survive the platform restarting, the model changing,
-or a different agent picking up the next turn.
+or a different agent picking up the next turn. Every resumed action is
+**idempotent** (`PLAN_STATE.md` §5.1): a turn that wakes after an interruption
+inspects the actual evidence and completes only what is missing — it never
+repeats a commit, a gate with unchanged inputs, or a report already sent.
 
 ---
 
@@ -252,4 +261,4 @@ or a different agent picking up the next turn.
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.2.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
