@@ -55,3 +55,42 @@
 Commonly `npm run eslint:check && npm test` (or pnpm), plus `tsc --noEmit`.
 **Do not assume the package manager or script names** — read `package.json`/CI
 and capture the exact commands.
+
+## Testing and validation (verified vs example)
+
+The uniform section every preset carries (`README.md` → "The testing section
+every preset carries"). Everything below is an **illustrative example until it
+is verified against the target repository** in Phase 1 — run the scoped example
+on a real path and record the selected/executed count. Items marked *reference
+run* were verified once in this skill's contributor environment with the tool
+version stated; the target repo's version may differ, so re-verify.
+
+### 1. Full commands
+- Tests: `npm test` (`jest` or `vitest run`; check `package.json`), from the repo root; HTTP integration tests often use supertest against the app instance.
+- Static: `npm run eslint:check` (or `eslint .`; Biome if adopted), `tsc --noEmit` (or `type:check`), `npm run build`.
+
+### 2. Scoped invocation
+**Jest** (flags verified against `jest@29 --help`): `jest <pathPattern>` or `--testPathPattern <regex>` (path filter), `-t "<name>"` (name filter), `--findRelatedTests <src files…>` (impact selection: tests that import the changed sources), `--changedSince <ref>` (impact via git). **Evidence:** the `Tests: N passed` summary. **Zero-selection behavior:** `No tests found` exits **1** by default — `--passWithNoTests` turns that into a silent pass and is forbidden in a gate.
+
+**Vitest** (reference run — vitest 5.0.0, contributor environment):
+`vitest run <file>` selects exactly that file (`Test Files 1 passed`); `vitest run <dir>` selects the directory; `vitest run -t "<name>"` filters by test name; `vitest run --project <name>` selects a workspace project. **Evidence of a correct run:** the `Test Files N passed (N)` line — check `N` is what you expected.
+**Zero-selection behavior (verified):** a path filter that matches nothing prints `No test files found` and exits **1** (detectable); a `-t` name filter that matches nothing exits **0** with every test *skipped* (`Test Files 8 skipped`) — a silent empty run. Never accept `-t` without confirming a non-zero passed count.
+
+### 3. Scoped static checks
+- **ESLint** (example) `eslint src/handlers` / **Biome** (reference run 2.5.12) `biome check <path>` scope natively.
+- **`tsc --noEmit`**: project-wide. Type-check is **project-wide by design**: `tsc --noEmit` reads `tsconfig.json`; `tsc <file>` ignores the project config and is *not* a sound scoped check. Do not fabricate a per-file variant — a single project-wide run is the real (and usually cheap) option.
+
+### 4. Source-to-test mapping
+Co-located `*.test.ts` / `*.spec.ts` next to modules, or `tests/` (`tests/unit/`, `tests/integration/`) mirroring `src/`. Route/handler files map to their handler tests plus the app-level integration test that mounts them.
+
+### 5. Affected consumers
+`jest --findRelatedTests <files>` / `vitest run --changed <ref>`. **Blind spots:** middleware registered in the app factory, route tables, config loaders reading `.env*`, DB migrations/schemas, queue/cron registrations, OpenAPI specs. A change to app-level middleware or config affects every route ⇒ integration suite or full run.
+
+### 6. Escalation and fallback
+Shared/core: `src/common/`, `src/lib/`, `src/middleware/`, `src/config/`, the app factory (`app.ts`), shared clients (DB/HTTP). Always full run: `tsconfig*.json`, `jest`/`vitest` config, `package.json`/lockfile, ESLint/Biome config, migrations, `.env*`, `Dockerfile`/compose when tests run in containers. **Fallback:** `npm run eslint:check && tsc --noEmit && npm test`.
+
+### 7. Layers and posture
+Unit (Jest/Vitest) for pure modules and handlers with mocked I/O — fast base; integration with supertest against the real app (and a test DB) for the HTTP/persistence seams; contract tests where the service publishes an API; few e2e. Unit-first; no ratio quota.
+
+### 8. Zero-selection behavior
+See §2. Jest exits 1 on `No tests found` (unless `--passWithNoTests`); Vitest path miss exits 1, `-t` miss exits 0 skipped.

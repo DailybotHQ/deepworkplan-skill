@@ -66,3 +66,44 @@ Commonly `pnpm run lint && pnpm test && pnpm run build` (or npm/yarn), with
 `next build` as the build gate and a separate e2e job. **Do not assume the
 package manager, the router, or script names** — read `package.json`, the
 config files, and CI, and capture the exact commands.
+
+## Testing and validation (verified vs example)
+
+The uniform section every preset carries (`README.md` → "The testing section
+every preset carries"). Everything below is an **illustrative example until it
+is verified against the target repository** in Phase 1 — run the scoped example
+on a real path and record the selected/executed count. Items marked *reference
+run* were verified once in this skill's contributor environment with the tool
+version stated; the target repo's version may differ, so re-verify.
+
+### 1. Full commands
+- Tests: `pnpm jest` or `pnpm vitest run` (whichever `package.json` wires as `test`), from the repo root; e2e: `pnpm playwright test` or `pnpm cypress run`.
+- Static: `pnpm next lint` (or `pnpm eslint .`; Biome if adopted), `pnpm tsc --noEmit` (or `type-check`), `pnpm next build` (also type-checks).
+
+### 2. Scoped invocation
+**Jest** (flags verified against `jest@29 --help`): `jest <pathPattern>` or `--testPathPattern <regex>` (path filter), `-t "<name>"` (name filter), `--findRelatedTests <src files…>` (impact selection: tests that import the changed sources), `--changedSince <ref>` (impact via git). **Evidence:** the `Tests: N passed` summary. **Zero-selection behavior:** `No tests found` exits **1** by default — `--passWithNoTests` turns that into a silent pass and is forbidden in a gate.
+
+**Vitest** (reference run — vitest 5.0.0, contributor environment):
+`vitest run <file>` selects exactly that file (`Test Files 1 passed`); `vitest run <dir>` selects the directory; `vitest run -t "<name>"` filters by test name; `vitest run --project <name>` selects a workspace project. **Evidence of a correct run:** the `Test Files N passed (N)` line — check `N` is what you expected.
+**Zero-selection behavior (verified):** a path filter that matches nothing prints `No test files found` and exits **1** (detectable); a `-t` name filter that matches nothing exits **0** with every test *skipped* (`Test Files 8 skipped`) — a silent empty run. Never accept `-t` without confirming a non-zero passed count.
+
+**Playwright** (flags verified against `@playwright/test@1.63 test --help`): `playwright test <file>`, `-g "<title>"`, `--project <name>`, `--only-changed [ref]` (impact via git). `No tests found` is reported when a filter matches nothing — confirm the exit code in the target repo before trusting it in a gate.
+
+### 3. Scoped static checks
+- **`next lint --dir <dir>`** (documented example) and **`eslint <path>`** scope natively; **Biome** `biome check <path>` (reference run 2.5.12).
+- **`tsc --noEmit`** / `next build`: project-wide. Type-check is **project-wide by design**: `tsc --noEmit` reads `tsconfig.json`; `tsc <file>` ignores the project config and is *not* a sound scoped check. Do not fabricate a per-file variant — a single project-wide run is the real (and usually cheap) option.
+
+### 4. Source-to-test mapping
+Co-located `*.test.tsx` / `*.spec.tsx` next to components, `__tests__/` folders, or `tests/` mirroring `app/` / `pages/` / `components/` / `lib/`. Route handlers (`app/**/route.ts`) and server actions get unit tests next to them or integration tests under `tests/`.
+
+### 5. Affected consumers
+`jest --findRelatedTests <changed src files>` (import-graph impact) or `vitest run --changed <ref>`. **Blind spots:** `app/layout.tsx` and nested layouts (affect every child route), `middleware.ts`, `next.config.*`, route segment config exports, `.env*`, `public/`, MDX/content files, CSS modules — none are import edges that tests follow. Layout/middleware changes ⇒ the affected route group's tests or the full run.
+
+### 6. Escalation and fallback
+Shared/core: `lib/`, `components/ui/`, `app/layout.tsx`, `middleware.ts`, shared hooks/providers, API clients. Always full run: `next.config.*`, `jest.config.*`/`vitest.config.*`, `tsconfig.json`, `package.json`/lockfile, ESLint/Biome config, `.env*`. **Fallback:** `pnpm next lint && pnpm tsc --noEmit && pnpm test` (+ `pnpm next build`).
+
+### 7. Layers and posture
+Unit (Jest/Vitest) for `lib/`, hooks, pure components — fast base; component tests with Testing Library for behavior; integration for route handlers / server actions with real modules; Playwright/Cypress for a few flows. Unit-first; no ratio quota.
+
+### 8. Zero-selection behavior
+See §2. Jest: `No tests found` exits 1 unless `--passWithNoTests` (never in a gate). Vitest: path miss exits 1, `-t` miss exits 0 skipped.
