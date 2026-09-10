@@ -8,6 +8,11 @@ install ergonomics.
 If you're picking for the first time and aren't sure: **use Method 1
 (`npx skills add`).** It's the cross-agent, auto-detect, easy-to-update path.
 
+> **What is actually tested?** See the
+> [installation and agent compatibility matrix](COMPATIBILITY.md). It separates
+> routes we merely document from routes with install fixtures, and both of
+> those from agents that have actually run the workflow.
+
 ---
 
 ## Quick comparison

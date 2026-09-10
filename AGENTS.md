@@ -26,6 +26,7 @@ the same instructions other agents do.
 | Human contributor guide (narrative companion to this file) | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Design decisions (the *why* behind the layout) | [docs/DESIGN.md](docs/DESIGN.md) |
 | Install guide (compare / update / uninstall) | [docs/INSTALLATION.md](docs/INSTALLATION.md) |
+| Installation + agent support matrix (what is actually tested) | [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
 | OpenClaw-specific notes | [docs/OPENCLAW.md](docs/OPENCLAW.md) |
 | Adding a new sub-skill (step-by-step) | [docs/SUB_SKILL_GUIDE.md](docs/SUB_SKILL_GUIDE.md) |
 | Security posture (secrets handling, boundaries, dogfooded review) | [docs/SECURITY.md](docs/SECURITY.md) |
