@@ -50,7 +50,7 @@ Every Dockerfile, regardless of language:
 >    in a build stage, and only copies the verified binary into the runtime
 >    stage.
 >
-> This is a hard requirement for public / OSS images (methodology-spec §5)
+> This is a hard requirement for public / OSS images (DWP specification §5)
 > and is what Snyk (rule E005) and Socket (Anomaly/Security alerts) audit
 > for. A Dockerfile that fetches-and-executes a remote installer in one
 > shell pipeline will fail `npx skills audit` and every mainstream container

@@ -227,8 +227,9 @@ when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
    `../create/SKILL.md` Step 4.4 item 3, incl. the security pass, final-state
    validation, skills reconciliation, completion and report offer). If the
    Security Review already ran, keep it and replace only the two unstarted
-   closing tasks with the Final Review's remaining parts (b)–(d). Record the
-   decision in `PROGRESS.md`.
+   closing tasks with the Final Review's remaining parts (b)–(d); the Final
+   Review security pass (a) still runs the required local review over the
+   accumulated change set. Record the decision in `PROGRESS.md`.
 4. **Add the new-shape elements** to unstarted tasks and to the plan: a Touched
    Surface (planned surface, risk class, selected gate — derived from
    `docs/TESTING_GUIDE.md`, or the full-suite fallback where the repository

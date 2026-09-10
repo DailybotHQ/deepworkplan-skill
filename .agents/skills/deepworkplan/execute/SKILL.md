@@ -358,7 +358,8 @@ what was tried, the blocker if any, and `[ ]` retained.
 ### Step 7 — Completion
 
 The plan completes through its **Final Review** task (or, for a legacy plan, its
-three closing tasks executed as written). For the Final Review
+three closing tasks executed as written, with the required local-review
+augmentation applied to its Security Review task). For the Final Review
 (`../spec/DWP_SPECIFICATION.md` §6.1; `../guide/execution.md` §6.1), execute in
 this order and do not reorder:
 

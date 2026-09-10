@@ -42,3 +42,12 @@ skip) with explicit consent — read-only by default, edits require per-finding
 yes, never commits or pushes. This is surfaced as an available option during
 `execute`; the addon MUST NOT insert an `apply-review` task file into any
 plan (would violate the single-Final-Review rule).
+
+## Legacy plans
+
+For a pre-2.3.0 plan, apply this same required local-review step to the
+`{N-2}.task_security_review.md` task. If that task is already completed and the
+plan is being explicitly migrated, preserve its completed contents and include
+the local review in the new Final Review security pass instead; record a missing
+reviewer finding there when the reviewer is unavailable. Never silently omit the
+baseline because the plan retains its legacy final-task shape.

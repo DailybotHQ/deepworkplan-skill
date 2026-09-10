@@ -59,7 +59,7 @@ An addon MAY additionally ship per-stack presets, examples, or migration notes.
   scaffolding (Phases 3–7).
 - **Consent** — it never applies an addon without user acceptance. In trust
   mode it MAY *recommend* the obviously-applicable ones, but still surfaces them.
-- **Decline is safe** — a declined addon leaves a baseline-conformant repo.
+- **Decline is safe** — declining an optional addon leaves a baseline-conformant repo; the required local-review baseline is handled separately in Phase 7a.
 - **On accept** — `onboard` reads the addon's `SKILL.md`, runs its hook
   (reasoning about the detected stack), then runs its validation step.
 

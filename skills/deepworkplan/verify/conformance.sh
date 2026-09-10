@@ -426,7 +426,7 @@ check_plan() {
       fail "mandatory final task: Final Review must be the last task (found id $fr_id, highest id $max_id)"
     fi
     if [ -n "$sr_id" ]; then
-      if [ "$migrated" -eq 1 ] && [ "$sr_id" -eq $((max_id - 1)) ] && grep -qE "\[x\][^\n]*[Tt]ask $sr_id\b" "$plan_dir/README.md" 2>/dev/null; then
+      if [ "$migrated" -eq 1 ] && [ "$sr_id" -eq $((max_id - 1)) ] && grep -qE "^[[:space:]]*- \[x\].*(${sr_id}\.task_security_review|[Tt]ask[[:space:]]+${sr_id}\b)" "$plan_dir/README.md" 2>/dev/null; then
         pass "migrated plan keeps its completed Security Review as task $sr_id before the Final Review"
       else
         fail "mixed lifecycle: security_review task alongside a Final Review is valid only for a declared migration with the security review already completed (refine migrate, step 3)"
