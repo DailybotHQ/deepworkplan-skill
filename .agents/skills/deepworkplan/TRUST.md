@@ -33,10 +33,11 @@ network calls**, and emits **no telemetry** of any kind.
 > a decline is recorded, never hidden. No addon ever pipes a remote installer
 > into a shell, copies host credentials anywhere without an explicit visible
 > opt-in, or documents permission-bypass shortcuts. **A repository is fully
-> conformant with zero optional addons**, and the core runtime flows never
-> touch the network. The self-audit below scopes the no-network check to the
-> core and lists the addons separately so you can see exactly where any
-> network reference lives.
+> conformant with zero optional addons**. Core runtime helpers never touch the
+> network; consent-gated onboarding Phase 7a is the sole baseline exception and
+> may run the pinned AI Diff Reviewer install plus extension bootstrap. The
+> self-audit below checks that exception explicitly and lists other addons
+> separately.
 
 ## Permissions it requests (`allowed-tools`)
 

@@ -135,6 +135,12 @@ mutates the target repository — non-destructively and by explicit design:
   rewrite).
 - On the plan-driven path, plan artifacts under `.dwp/` as `create` defines.
 
+**Writes include:** with Phase 0 consent, Phase 7a may run the tag-pinned
+`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+install into `.agents/skills/ai-diff-reviewer/` and bootstrap the repo-tailored
+`.review/extension.md`; decline or offline failure is recorded as a declared
+exception.
+
 **It MUST NOT:** overwrite or delete existing files without explicit approval,
 commit or push (commits happen only when the developer asks or a plan task's
 gate defines them), touch files outside the repo, read or commit secrets, or

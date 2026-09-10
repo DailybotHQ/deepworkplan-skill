@@ -393,7 +393,7 @@ Create:
    security pass — it applies to every 2.3.0 plan. When the target repo lacks
    `.agents/skills/ai-diff-reviewer/` or an extension file at one of the three
    recognized paths, the step's degradation clause (record a `local reviewer
-   not installed` finding and carry it into the completion report. Installation
+   not installed` finding) and carry it into the completion report. Installation
    belongs to onboarding or an explicit addon invocation; Final Review never
    surprise-bootstraps it. Do not omit the step.
 

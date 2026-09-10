@@ -239,7 +239,8 @@ Rules (strict):
      choose a different approach, or record an actionable blocker.
    - **Pre-existing failure** (present before the task's change, confirmed on
      the starting revision): record it as pre-existing under the repository's
-     waiver policy; it neither passes nor blocks silently — say so.
+     waiver policy. It remains non-passing; mark `[x]` only when that policy
+     explicitly permits closure with the failure recorded. Otherwise stop/block.
    - **Stop:** log the issue in the task's Completion & Log, do NOT mark `[x]`,
      populate `state.json.blocked` (task, reason, what it needs) where the state
      layer exists, and report. Interactive: wait for guidance. Unattended: halt

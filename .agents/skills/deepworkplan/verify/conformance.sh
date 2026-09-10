@@ -499,14 +499,14 @@ check_plan() {
       fi
     fi
     unchecked="$(grep -cE '^\s*- \[ \]' "$plan_dir/README.md" 2>/dev/null || true)"
-    if [ "${unchecked:-0}" -eq 0 ] && grep -qE '^\s*- \[x\]' "$plan_dir/README.md" 2>/dev/null; then
-      completed_plan=1
+    if [ "${unchecked:-0}" -ne 0 ] || ! grep -qE '^\s*- \[x\]' "$plan_dir/README.md" 2>/dev/null; then
+      completed_plan=0
     fi
     if [ "$completed_plan" -eq 1 ]; then
       if [ -f "$plan_dir/analysis_results/SECURITY_REVIEW.md" ]; then
         pass "completed plan has analysis_results/SECURITY_REVIEW.md"
         local sr="$plan_dir/analysis_results/SECURITY_REVIEW.md"
-        if grep -qiE 'still (reports?|has)|open critical|unresolved critical finding:' "$sr" \
+        if grep -qiE 'open critical finding|critical finding remains|unresolved critical finding:' "$sr" \
           || (grep -qiE 'unresolved critical' "$sr" && ! grep -qiE 'no unresolved critical|without (an )?unresolved critical|0 unresolved critical|zero unresolved critical' "$sr"); then
           fail "completed plan SECURITY_REVIEW.md still reports an unresolved critical finding (DWP_SPECIFICATION §6.1) — fix or record explicit acceptance"
         elif grep -qiE '(^|[|[:space:]])critical([|[:space:]]|$)|🚨[[:space:]]*critical' "$sr" \

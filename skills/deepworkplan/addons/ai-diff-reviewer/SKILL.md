@@ -243,7 +243,7 @@ Run the pinned install unless the developer explicitly declined in Step 0
 Security-pass detection (SPEC §6.1 / `create` / `execute`) requires
 **skill + an extension file** at one of the three recognized paths. Do
 **not** finish addon onboarding without one — otherwise every later Final
-Review security pass records an `install incomplete` finding instead of a
+Review security pass records a `local reviewer not installed` finding instead of a
 review.
 
 1. If an extension already exists at a recognized path → record it; do not

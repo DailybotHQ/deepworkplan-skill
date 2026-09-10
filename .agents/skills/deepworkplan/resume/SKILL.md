@@ -121,7 +121,7 @@ pointer**, never by replaying everything.
    | Interrupted… | Evidence to check | Then |
    |---|---|---|
    | before the gate ran | uncommitted changes; no gate record | finish the implementation if incomplete; run the gate **once** |
-   | after the gate, before the commit | gate record present and inputs unchanged (fingerprint) | reuse the gate result; commit **once** |
+   | after the gate, before the commit | gate record present, `passes: true`, and inputs unchanged (fingerprint) | reuse the passing gate result; commit **once** |
    | after the commit, before the README/log update | commit exists in `git log`; README still `[ ]` | complete log → README → PROGRESS → `state.json`; do **not** re-commit |
    | between Markdown and `state.json` updates | README `[x]`, state stale | regenerate `state.json`; nothing else |
    | after an external action (report, push, PR, message) | the action's own evidence (report id, remote branch, PR URL in the log) | do **not** repeat it; record that it already happened |
