@@ -140,6 +140,10 @@ On any command invocation, an agent **MUST**:
 - This expectation applies cross-agent. The mechanism is repo-specific (e.g. the
   Dailybot repos use the `dailybot` skill) and is therefore part of the
   reason-per-repo 10% (`DOCUMENTATION_STANDARD.md` §7).
+- Plan-completion reporting is independent of the optional Executive Report
+  (`DWP_SPECIFICATION.md` §6.3): a completion report **MUST NOT** wait for, or
+  require, an Executive Report, and **MUST** be derived from the plan's durable
+  evidence (state layer, task logs), never from a report that may not exist.
 
 ---
 
@@ -163,8 +167,12 @@ watches*, never *what gates apply* — validation discipline
 ### 7.1. Interactive (default)
 
 A human is present in the session. The agent proposes, the human approves the
-refined draft, the agent executes task-by-task, and ambiguity is resolved by
-asking. Everything in this protocol so far describes the interactive profile.
+refined draft (guided mode) or waives the review with `trust`
+(`DWP_SPECIFICATION.md` §3), the agent executes task-by-task, and genuine
+ambiguity is resolved by asking. Within an approved plan the agent **SHOULD**
+proceed from a passing gate to the next task without asking for confirmation
+(`DWP_SPECIFICATION.md` §6.4). Everything in this protocol so far describes the
+interactive profile.
 
 ### 7.2. Unattended
 
@@ -172,9 +180,12 @@ The plan runs with no human watching — an autonomous platform's scheduled turn
 a cloud session, an overnight run. Unattended execution is **opt-in per plan**
 and **MUST** satisfy all of the following:
 
-- **Pre-approved plan.** The refined draft was approved by a human before any
-  unattended turn. An agent **MUST NOT** create *and* execute a plan unattended
-  in one breath; plan approval is the human control point.
+- **Pre-approved plan.** A human approved the plan before any unattended turn —
+  either by approving the refined draft (guided mode) or by materializing it with
+  `trust` (`DWP_SPECIFICATION.md` §3): **a `trust` instruction is plan approval.**
+  What an agent **MUST NOT** do is create *and* execute a plan unattended with no
+  human instruction at all; the human's create-time decision is the control point,
+  and it is recorded in the plan README and, where present, the manifest.
 - **State layer REQUIRED.** The plan **MUST** carry `manifest.json` and
   `state.json` (`PLAN_STATE.md` §2.1) so any later session — agent or human —
   can read exact progress without replaying a transcript.
@@ -188,6 +199,15 @@ and **MUST** satisfy all of the following:
   Protocol (`DWP_SPECIFICATION.md` §5.3), executes at most the next task,
   passes its validation gate, completes per §5.2, and yields. A failing gate is
   a stop condition, never a "continue anyway".
+- **No questions between tasks.** Within the plan's authority the agent **MUST
+  NOT** pause to ask whether to continue, whether to run a gate, or whether to
+  commit; it continues until a §7.3 condition or plan completion. Repairs within
+  a task's authorized scope are attempted before a gate failure becomes a stop
+  (`DWP_SPECIFICATION.md` §6.4).
+- **No optional artifacts by default.** The Executive Report offer
+  (`DWP_SPECIFICATION.md` §6.3) cannot be answered in an unattended run, so the
+  report is **not** generated and the plan is nonetheless complete; the agent
+  records that the offer was not answered and completes per §6.1.
 
 ### 7.3. Stop Conditions and Escalation
 
@@ -201,6 +221,10 @@ when any of these occur:
 3. Reality diverges from the plan's assumptions (missing file, changed API,
    conflicting concurrent work, §5.2 desync that reconciliation cannot resolve).
 4. Two consecutive turns make no verifiable progress on the same task.
+
+An unanswered optional-artifact offer, a missing optional tool or addon, or an
+unavailable reporting channel is **not** a stop condition: the agent records it
+and continues (`DWP_SPECIFICATION.md` §6.3, `ADDONS.md`).
 
 Halting is success, not failure: the blocked record is the escalation message.
 The platform's notification channel (heartbeat report, progress report per §5)

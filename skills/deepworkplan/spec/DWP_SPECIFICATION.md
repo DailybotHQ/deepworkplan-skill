@@ -40,6 +40,15 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 > anatomy for brownfield behavior changes (§5); and (4) §5.3 is promoted to the
 > named, citable **DWP Resume Protocol**. Existing 2.1.0 plans remain conformant.
 
+> **Divergence from 2.2.0 (overview).** 2.3.0 is additive with compatibility:
+> (1) the **Touched Surface** and gate selection by risk class, with full
+> validation as a final-state requirement (§5); (2) one mandatory **Final
+> Review** replacing the three closing tasks, with skills decisions made in the
+> owning task and an optional, on-request Executive Report (§6); (3) a
+> **mode-aware** create flow — trust mode materializes directly (§3); (4) task
+> size, adaptive execution, and an explicit compatibility matrix (§6.4–§6.5).
+> Plans and repositories from 2.2.0 remain conformant (§6.5).
+
 > **Divergence from v1 (overview).** Three breaking changes drive the major bump:
 > (1) the **create flow is single-step** — one refined draft, dropping the v1
 > draft → refined two-step (`RECONCILIATION.md` divergence #3); (2) plan output
@@ -65,9 +74,11 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 |------|-----------|
 | **Plan** | A directory of markdown files specifying an objective and its tasks. Named `PLAN_{snake_case_name}/`. |
 | **Task** | An atomic unit of work, defined in `{N}.task_{title}.md`. |
-| **Refined draft** | The single reviewable artifact produced by `create`, written to `.dwp/drafts/`. |
+| **Refined draft** | The single reviewable artifact produced by `create` in guided mode (or on explicit request), written to `.dwp/drafts/`. Trust mode materializes the plan directly (§3). |
 | **Plan README** | The `README.md` inside a plan; source of truth for "what is done". |
-| **Mandatory final tasks** | The three tasks every plan ends with: Security Review, then Skills & Agents Discovery, then Executive Report. |
+| **Final Review** | The single mandatory final task every new plan ends with: the security pass, the final-state validation, and the reconciliation of task-local skills decisions (§6.1). Plans authored under earlier versions end with three mandatory tasks and remain conformant (§6.5). |
+| **Skills candidate** | A task-local record (stable ID, evidence, disposition) of a reusable pattern decided inside the owning task (§6.2). |
+| **Executive Report** | An optional, on-request stakeholder artifact generated after completion (§6.3). |
 | **Orchestrator plan** | A plan in an orchestrator hub that creates and coordinates **child DWPs** in sub-repos. |
 | **`.dwp/`** | The gitignored repo-root output directory: `.dwp/plans/`, `.dwp/drafts/`. |
 
@@ -98,22 +109,41 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 ---
 
-## 3. The Single-Step Refined-Draft Create Flow
+## 3. The Create Flow — Single Step, Mode-Aware
 
-- The `create` flow **MUST** produce exactly **one** artifact for user review: a
-  **refined draft** written to `.dwp/drafts/{name}_draft_refined.md`.
-- The flow **MUST NOT** produce an intermediate non-refined draft as a separate
-  reviewable step. The legacy `[1/3] Creating draft → [2/3] Refining draft`
-  sequence is removed.
-- The flow **SHOULD** gather information, then directly synthesize the refined
-  draft; the user reviews and approves that single artifact before the plan is
-  materialized into `.dwp/plans/PLAN_{name}/`.
-- The refined draft **MUST** contain enough structure (goal, context, variables,
-  task outline, archetype) for the user to approve or request changes in one pass.
+The `create` flow gathers the objective, context, constraints, and task outline
+once, performs its **requirements analysis** (scope, dependency ordering between
+tasks, validation selection per §5, proportional-rigor tier per §11), and then
+materializes according to the mode the developer chose:
+
+- **Guided mode (default).** The flow **MUST** produce exactly **one** artifact
+  for user review: a **refined draft** written to
+  `.dwp/drafts/{name}_draft_refined.md`, containing enough structure (goal,
+  context, variables, task outline, archetype, tier) for the user to approve or
+  request changes in one pass. The plan folder `.dwp/plans/PLAN_{name}/` is
+  materialized only after approval.
+- **Trust mode (`trust` / `auto`).** The flow **MAY** materialize
+  `.dwp/plans/PLAN_{name}/` **directly**, without writing a draft file, because
+  the developer has waived the intermediate review. The requirements analysis,
+  dependency ordering, and a **plan-quality check** (numbering, links, every task
+  carrying acceptance criteria and a validation gate, the Final Review present)
+  **MUST** still run — trust waives the *review*, not the *analysis*. The approved
+  objective, context, and task outline are captured in the plan README (§4), so
+  nothing reviewable is lost. A plan materialized with `trust` is **pre-approved**
+  for unattended execution (`AGENT_PROTOCOL.md` §7.2).
+- **Explicit draft modes.** `refined-draft {name}` (produce only the draft) and
+  `from-refined-draft {file}` (materialize from an existing draft) **MUST** remain
+  available in both modes; a developer who asks for a draft gets one.
+
+In every mode the flow **MUST NOT** produce an intermediate non-refined draft as
+a separate reviewable step. The legacy `[1/3] Creating draft → [2/3] Refining
+draft` sequence is removed.
 
 > **Divergence from v1.** v1's `dwp-create` was explicitly two-step. v2 collapses
-> it to a single refined draft (`RECONCILIATION.md` divergence #3; this very plan's
-> own refined draft is the worked example).
+> it to a single refined draft (`RECONCILIATION.md` divergence #3).
+> **Divergence from v2.2.** v2.2 required the refined draft in every mode; v2.3
+> makes the flow mode-aware — trust mode materializes directly while keeping the
+> analysis and quality check — so the plan's substance is composed once.
 
 ---
 
@@ -127,16 +157,21 @@ A conformant plan directory **MUST** contain:
 ├── PROMPTS.md                             ← copy-paste execute / resume / status prompts
 ├── PROGRESS.md                            ← running narrative, one entry per completed task
 ├── analysis_results/                      ← task-produced artifacts (MAY start empty)
-│   └── EXECUTIVE_REPORT.md                ← written by the final mandatory task
+│   ├── SKILLS_CANDIDATES.md               ← task-local skills decisions ledger (§6.2)
+│   ├── SECURITY_REVIEW.md                 ← written by the Final Review (§6.1)
+│   └── EXECUTIVE_REPORT.md                ← OPTIONAL, on request after completion (§6.3)
 ├── 1.task_{title}.md                      ← first user-defined task
 ├── …
-├── {N-1}.task_skills_agents_discovery.md  ← mandatory: second-to-last
-└── {N}.task_executive_report.md           ← mandatory: last
+└── {N}.task_final_review.md               ← mandatory: last (§6.1)
 ```
+
+> Plans authored under earlier versions end with
+> `{N-2}.task_security_review.md`, `{N-1}.task_skills_agents_discovery.md`, and
+> `{N}.task_executive_report.md` instead; that shape remains conformant (§6.5).
 
 - Plan names **MUST** follow `PLAN_{snake_case_name}` (lowercase, underscore-separated, 2–5 words).
 - `README.md`, `PROMPTS.md`, `PROGRESS.md`, and `analysis_results/` **MUST** all be present.
-- At least one user-defined task plus the three mandatory final tasks **MUST** be present.
+- At least one user-defined task plus the Final Review (§6.1) **MUST** be present in a plan authored under this version; the legacy three-task ending is accepted per §6.5.
 
 The plan `README.md` **MUST** contain: title + goal; context; plan variables (if
 the tasks reference `{{...}}`); global guidelines; a task list with checkboxes and a
@@ -489,17 +524,26 @@ that implicates a completed task.
 
 ---
 
-## 6. Mandatory Final Tasks
+## 6. Plan Lifecycle — Final Review, Task-Local Skills, Optional Report
 
-Every conformant plan **MUST** end with exactly three mandatory tasks, in this order:
+Every conformant plan authored under this version **MUST** end with exactly
+**one** mandatory task, the **Final Review** (task N). Two responsibilities that
+earlier versions placed in separate closing tasks are relocated: skills
+decisions move **into the task that produced the pattern** (§6.2), and the
+Executive Report becomes an **optional artifact generated on request** (§6.3).
+Nothing in the security pass is relaxed.
 
-### 6.1. Task N-2 — Security Review
+### 6.1. Task N — Final Review
 
+The Final Review **MUST**, in this order:
+
+**(a) Security pass — unchanged in substance.**
 - **MUST** review the plan's full accumulated change set (every commit the plan
-  produced) for: hardcoded secrets or credentials, injection risks and unsafe
-  input handling, new attack surface (endpoints, file/network access, shell
-  execution), weakened authentication/authorization, and sensitive data leaking
-  into logs, docs, or plan outputs.
+  produced, plus staged, unstaged, and relevant untracked intended changes) for:
+  hardcoded secrets or credentials, injection risks and unsafe input handling,
+  new attack surface (endpoints, file/network access, shell execution), weakened
+  authentication/authorization, and sensitive data leaking into logs, docs, or
+  plan outputs.
 - **MUST** review dependencies the plan introduced or upgraded; where the
   ecosystem provides an audit command (e.g. `npm audit`, `pip-audit`,
   `cargo audit`), run it best-effort and record the result.
@@ -512,31 +556,123 @@ Every conformant plan **MUST** end with exactly three mandatory tasks, in this o
 - A **critical** finding (e.g. a committed secret, an exposed credential, an
   unauthenticated sensitive endpoint) **MUST** be fixed — or explicitly
   escalated to and accepted by the user — before the plan can complete.
-  Non-critical findings are recorded and carried into the Executive Report.
+  Non-critical findings are recorded in `SECURITY_REVIEW.md` and, when an
+  Executive Report is requested, carried into it.
+- Where an installed addon augments the security pass (for example a local AI
+  diff review), it runs here under the addon's own never-block rule
+  (`ADDONS.md`); a completed review's critical findings keep the blocking
+  semantics above.
 
-### 6.2. Task N-1 — Skills & Agents Discovery
+**(b) Final-state validation.** The repository's complete applicable validation
+**MUST** run and pass on the final relevant state per §5.1.3. Fixes made during
+the review invalidate affected results, which **MUST** be rerun; the order is
+review → fixes and mirror/consumer refresh → final gates → closure. No
+substantive change ships after its last applicable validation.
 
-- **MUST** review `PROGRESS.md` for patterns used two or more times across the plan.
-- **MUST** check the existing `.agents/` skills/agents catalog for duplicates.
-- **MUST** decide, per pattern, whether to create a new skill/agent, update an
-  existing one, or record a finding.
-- **MUST** write `analysis_results/SKILLS_AGENTS_DISCOVERY.md`, even when the
-  conclusion is "no new skills warranted."
+**(c) Skills reconciliation — no rediscovery.** The Final Review **MUST** check
+that every task carries a skills disposition (§6.2) and that every candidate in
+`analysis_results/SKILLS_CANDIDATES.md` has a recorded disposition; any warranted
+authoring still open **MUST** be completed and validated before (b) is final. It
+**MUST NOT** re-read the whole plan to rediscover patterns and **MUST NOT**
+produce a second, separate discovery report; the ledger is the record.
 
-### 6.3. Task N — Executive Report
+**(d) Completion.** After (a)–(c) pass, the agent reports completion (deliverables,
+validation evidence, limitations, and any pull-request links), offers the
+Executive Report **once** (§6.3), and — where a reporting channel is configured
+(`AGENT_PROTOCOL.md` §5) — sends the completion report. The plan is complete at
+this point regardless of whether the offer is answered.
 
-- **MUST** produce `analysis_results/EXECUTIVE_REPORT.md`, a stakeholder-ready
-  summary covering at minimum: executive summary, plan overview, deliverables
-  table, product impact, technical details, QA/verification guide, key decisions
-  and trade-offs, risks/open questions (including non-critical security findings), next steps.
+The Final Review **MUST** run sequentially after all other tasks (including any
+parallel groups) and **MUST NOT** be placed in a parallel group.
 
-All three final tasks **MUST** run sequentially after all other tasks (including
-any parallel groups) and **MUST NOT** be placed in a parallel group.
+### 6.2. Task-Local Skills Decisions
+
+The question "did this work create a reusable pattern worth a skill or agent?"
+**MUST** be answered inside the task that produced the pattern, while its
+evidence is in context — not re-derived at the end of the plan.
+
+- Every task's Completion & Log **MUST** carry a **skills disposition**: `none`,
+  `update <existing skill/agent>`, `create <name>`, or `defer — <reason and
+  owner>`. `none` in the log is sufficient; a task **MUST NOT** be required to
+  add a no-op row to the ledger.
+- When a pattern is worth recording, the task **MUST** append an entry to
+  `analysis_results/SKILLS_CANDIDATES.md` with a **stable candidate ID**
+  (`T{task}-{seq}`), the evidence pointer, the disposition, and either the
+  artifact produced or the deferral reason. On resume the agent **MUST** update
+  an existing candidate by its ID rather than duplicate it.
+- Warranted, in-scope authoring (a new or updated skill/agent and its catalog
+  entry, per `DOCUMENTATION_STANDARD.md` §4) **MUST** happen **inside that task,
+  before its validation gate and commit**, so the artifact is covered by the same
+  evidence. Before creating anything the task **MUST** check the existing
+  `.agents/` skills/agents catalog for duplicates. Prefer updating an existing
+  capability; a single routine change does not justify a new skill. Out-of-scope work is an explicit deferral with an
+  owner, never an unrequested installation.
+
+### 6.3. Executive Report — Optional, On Request
+
+The Executive Report is **no longer a mandatory task**. Its content specification
+is unchanged: when produced, `analysis_results/EXECUTIVE_REPORT.md` **MUST** be a
+stakeholder-ready summary covering at minimum executive summary, plan overview,
+deliverables table, product impact, technical details, QA/verification guide,
+key decisions and trade-offs, risks/open questions (including non-critical
+security findings), and next steps.
+
+- At completion (§6.1 d) the agent **MUST** offer the report **once**. It
+  **MUST** generate it only on an explicit request — either that answer, or a
+  request the developer made earlier in the plan (for example in the plan's
+  guidelines), or a later request at any time.
+- A later request **MUST** be satisfied from durable evidence (task logs,
+  `PROGRESS.md`, `analysis_results/`, the state layer, and pull-request
+  summaries) without replaying the plan or reloading its entire history.
+- No answer, a declined offer, or an **unattended** run (`AGENT_PROTOCOL.md`
+  §7.2) leaves the plan **complete** with **no** report generated; the unanswered
+  offer is not a stop condition and does not block completion. Completion
+  reporting through the configured channel (§6.1 d) is separate and remains.
+
+### 6.4. Task Size and Adaptive Execution
+
+- **Granularity.** A task is one coherent outcome with a bounded write surface,
+  concrete inputs and outputs, validation relevant to what it changes (§5.0.2),
+  and partial steps that can be checkpointed and resumed. The `create` flow
+  **SHOULD** split work when distinct outcomes carry different failure modes or
+  independent evidence that would otherwise hide behind one checkbox, and
+  **SHOULD** keep tightly coupled edits together; a larger cohesive task **MAY**
+  keep resumable sub-steps. There is **no** task-count quota, and the flow
+  **MUST NOT** multiply approvals, commits, or reports by splitting minor edits
+  into separate tasks.
+- **Adaptive execution within authorization.** Once a plan is approved, the agent
+  **SHOULD** proceed from a passing gate to the next task without asking for
+  confirmation, **SHOULD** attempt repairs within the task's authorized scope
+  when a gate fails (with a concrete hypothesis, stopping blind retries after two
+  attempts without new evidence), and **MUST** pause only at a genuine approval
+  boundary or an unresolved blocker (`AGENT_PROTOCOL.md` §7.3). This is portable
+  behavior expressed in the plan and the protocol, not a host-specific
+  auto-approval setting; it never grants permissions the plan did not list.
+
+### 6.5. Compatibility
+
+| Case | Rule |
+|---|---|
+| **Plan authored under an earlier version** (three mandatory final tasks; nine-section tasks without a Touched Surface) executed by an agent following this version | **Supported.** The plan **MUST** be executed under its own recorded shape: the executor **MUST NOT** add, remove, or reorder its final tasks and **MUST NOT** add a Touched Surface mid-flight; validation falls back to the full applicable suite (§5.1.b). A `refine` session **MAY** migrate it deliberately. A conformance checker **MUST** accept this shape. |
+| **Repository onboarded under an earlier version** (no scoped-invocation documentation) with this version's `onboard` or `create` | **Supported.** Plans fall back to full-suite gates (§5.1.b); the missing documentation is a **finding** that names the targeted, non-destructive, idempotent harness upgrade (`DOCUMENTATION_STANDARD.md`), never a failure. |
+| **Plan authored under this version** with an agent following this version | **Supported** — the target. |
+| **Plan authored under this version** with an agent following an earlier version | **Not supported; documented.** Such an agent expects three final tasks and will report the plan as non-conformant. Repositories that pin an older skill **SHOULD** upgrade the skill before adopting new plans. |
+
+A tool that checks conformance **MUST** distinguish a known legacy artifact
+(accepted) from an artifact that declares this version and is objectively
+invalid under it (rejected); legacy acceptance does not make this version's
+**MUST** requirements permanent warnings.
 
 > **Divergence from v2.13.** Security Review added as a third mandatory final
 > task: completion now requires an explicit security pass over the plan's own
 > changes, keeping `docs/SECURITY.md` (a conformance-floor MUST) current instead
 > of write-once.
+> **Divergence from v2.2.** v2.3 folds the security pass, the final-state
+> validation, and skills reconciliation into a single mandatory **Final Review**;
+> moves skills decisions into the owning task (§6.2); makes the Executive Report
+> optional and on-request with its content unchanged (§6.3); states task-size and
+> adaptive-execution rules (§6.4); and codifies compatibility (§6.5). Plans and
+> repositories from earlier versions remain conformant.
 
 ---
 
@@ -621,7 +757,7 @@ tier, declared in the manifest's `rigor` field when the state layer is present:
 | Tier | When | Form |
 |------|------|------|
 | **micro** | A single atomic change: one concern, roughly one sitting, no coordination — a bug fix, a copy change, a config tweak. | **No plan folder.** The agent states the goal, the acceptance criteria, and the validation gate inline in conversation, executes, validates, commits. |
-| **standard** | Multi-step work with real scope: a feature, a refactor, a migration within one repo. The default tier. | A full plan per §4–§6: plan folder, 9-section tasks, mandatory final tasks. |
+| **standard** | Multi-step work with real scope: a feature, a refactor, a migration within one repo. The default tier. | A full plan per §4–§6: plan folder, 10-section tasks (§5), the Final Review (§6.1). |
 | **deep** | Long-horizon work spanning parallel groups, child repositories, or multiple unattended sessions. | A standard plan plus the orchestrator (§8) and/or team-agents (§9) capabilities, and the state layer (§10). |
 
 - An agent asked to "create a plan" for micro-tier work **MUST** say that a plan
@@ -634,7 +770,8 @@ tier, declared in the manifest's `rigor` field when the state layer is present:
   plan sprouts sub-repos — the agent **MUST** stop and promote the work to the
   next tier rather than stretching the current one.
 - Tier selection is part of plan creation: the `create` flow **SHOULD** state
-  the chosen tier and why in the refined draft.
+  the chosen tier and why in the refined draft (guided mode) or in the plan
+  README (trust mode, §3).
 
 ---
 
