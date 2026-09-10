@@ -36,8 +36,8 @@ inline (the typical case).
   gated on "catalog matches disk."
 - **One task to install the skill + scaffold `.dwp/` and `tmp/`** and offer addons.
 - **Mandatory final task** — the onboard Phase 8 conformance self-check (run
-  `/dwp-verify`), plus the two spec-mandatory final tasks (Skills & Agents
-  Discovery, Executive Report).
+  `/dwp-verify`), folded into the spec-mandatory **Final Review** (security pass,
+  final-state validation, skills reconciliation). The Executive Report is optional.
 
 Each task reuses the **repo's real validation command** as its gate (lint,
 `md`-check, link-check, tests). The plan is created with `/dwp-create`, refined

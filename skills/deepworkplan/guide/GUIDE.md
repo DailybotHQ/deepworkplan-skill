@@ -45,7 +45,8 @@ names its essential files and its conditional triggers.
 | ## 4. Plan-Level README Structure (`PLAN_{plan_title}/README.md`) | [`authoring.md`](./authoring.md) |
 | ## 5. Task File Structure (`N.task_{task_title}.md`) | [`authoring.md`](./authoring.md) |
 | ## 6. Agent Execution Rules (Critical Behavior) | [`execution.md`](./execution.md) |
-| ## 6.1. Mandatory Final Tasks | [`execution.md`](./execution.md) |
+| ## 6.1. Mandatory Final Tasks → now **6.1. Final Review, Task-Local Skills and the Optional Report** (spec 2.3.0 lifecycle) | [`execution.md`](./execution.md) |
+| ## 6.1. Final Review, Task-Local Skills and the Optional Report | [`execution.md`](./execution.md) |
 | ## 🔄 Multi-Project Commit Workflow | [`execution.md`](./execution.md) |
 | ## ⚠️ CRITICAL: Task Completion Tracking (MANDATORY) | [`execution.md`](./execution.md) |
 | ## 7. How to Instruct an Agent to Generate a New Plan | [`prompts.md`](./prompts.md) |

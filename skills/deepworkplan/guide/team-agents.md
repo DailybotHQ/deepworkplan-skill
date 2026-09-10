@@ -68,7 +68,7 @@ Plans can define **parallel task groups** — sets of tasks that can execute sim
 **Key rules for parallel task groups:**
 - Tasks within a parallel group must have **no file dependencies** between them
 - Each teammate must own a distinct set of files (no overlap)
-- Mandatory final tasks (Skills Discovery, Executive Report) are **always sequential**
+- The mandatory Final Review is **always sequential** (legacy plans: their three closing tasks likewise)
 - Integration checkpoints between parallel groups are recommended
 
 ### 14.3. Task File Additions for Team Agents
@@ -212,7 +212,7 @@ When generating a plan with 5+ user-defined task files, teammates can write task
 **What the lead handles (always sequential):**
 - README.md (must be created first — it's the plan index)
 - PROMPTS.md, PROGRESS.md
-- Mandatory final tasks (Skills Discovery, Executive Report) — these follow fixed templates
+- The mandatory Final Review task — it follows a fixed template
 - Team agents metadata sections (depend on knowing all tasks)
 - Final quality verification
 

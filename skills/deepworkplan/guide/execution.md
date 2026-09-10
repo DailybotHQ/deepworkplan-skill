@@ -17,7 +17,7 @@ When an agent is instructed to use this system, it must obey:
 
 3. **Validation required**
    - Never mark a task as completed without running and considering the validations defined in the task file.
-   - For behavior-changing tasks, the validations **must** include the repo's tests and its lint/type-check/format checks, and the task must have added/updated tests for the new behavior (§5.3).
+   - For behavior-changing tasks, the validations **must** include the repo's tests and its lint/type-check/format checks **selected from the task's Touched Surface** (falling back to the full suite when the change is shared/core or no scoped invocation is documented), and the task must have added/updated tests for the new behavior (`authoring.md` §5.3). The complete suite runs on the final state in the Final Review.
 
 4. **Logging & commits**
    - Always update the task's log.
@@ -47,7 +47,7 @@ When an agent is instructed to use this system, it must obey:
    **🔔 Plan completion report (MANDATORY — golden rule):**
    - When ALL tasks in a plan are complete, you MUST send a Dailybot report as a **milestone** with **structured data** (completed/in-progress/blockers) and **metadata** (plan name, repo). The skill prompts for these fields when reporting plan completions.
    - **The message MUST describe what was BUILT, not that a plan ran.** This is the #1 anti-pattern — never send vague reports.
-   - **Before writing the report:** Review PROGRESS.md and completed task summaries to gather all deliverables.
+   - **If an Executive Report is requested:** generate it from durable evidence (task logs, PROGRESS.md, `analysis_results/`, the state layer, PR summaries) without replaying the plan. Do not generate it unrequested.
 
      Examples (the message itself; the skill builds the payload):
      - ✅ GOLD STANDARD: *"Built a full-text search feature for the agents dashboard — users can now search across report content, structured data, metadata, and agent names with real-time highlighted results."* (with structured data listing each deliverable and metadata `{"plan": "PLAN_dashboard_search", "repo": "web-app"}`)
@@ -69,39 +69,43 @@ When an agent is instructed to use this system, it must obey:
 
 ---
 
-## 6.1. Mandatory Final Tasks
+## 6.1. Final Review, Task-Local Skills and the Optional Report
 
-Every DWP plan includes three mandatory tasks that are automatically added by `/dwp-create`:
+Every DWP plan created under spec 2.3.0 ends with **one** mandatory task, the **Final Review**, automatically added by `/dwp-create`. Two responsibilities that older plans placed in separate closing tasks now live elsewhere: skills decisions happen **inside the task that produced the pattern**, and the Executive Report is **optional**. Plans created under earlier versions still carry three closing tasks (Security Review → Skills & Agents Discovery → Executive Report) and are executed under their own shape — never retrofitted mid-flight (`spec/DWP_SPECIFICATION.md` §6.5).
 
-### Security Review (Third-to-Last Task)
+### Final Review (Last Task)
 
-This task runs a security pass over everything the plan changed, before the plan can complete:
+This task closes the plan, in this order:
+
+**(a) Security pass** — over everything the plan changed, before the plan can complete:
 
 - Reviews the plan's full accumulated diff for hardcoded secrets, injection risks, unsafe input handling, new attack surface, and auth/permission changes
 - Audits dependencies the plan introduced or upgraded (best-effort, using the ecosystem's audit tooling where available)
 - Verifies `docs/SECURITY.md` still reflects reality and updates it when the plan changed secrets handling, the auth model, or data boundaries
 - Writes `analysis_results/SECURITY_REVIEW.md`, even when the conclusion is "no findings"
 - A critical finding (e.g. a committed secret) blocks plan completion until fixed or explicitly accepted by the user
+- Where an installed addon augments the pass (for example the AI Diff Reviewer local review, `authoring.md` §5.4), it runs here under the addon's never-block rule
 
 Security is not a separate workstream bolted on at the end of a project — every plan leaves the repository's security documentation current and its own changes audited.
 
-### Skills & Agents Discovery (Second-to-Last Task)
+**(b) Final-state validation** — the repository's complete applicable test, lint, type-check and format suites run and pass on the **final** state (`spec/DWP_SPECIFICATION.md` §5.1.3). Fixes made during the review invalidate affected results, which are rerun: review → fixes and mirror refresh → final gates → closure. Nothing ships after its last applicable validation.
 
-This task evaluates whether the work completed during the plan has created new patterns, components, or architectural structures that justify creating new reusable Skills or Agents. It also evaluates whether existing skills/agents need updates based on the changes made, and whether the skills generator system itself needs improvements.
+**(c) Skills reconciliation** — checks that every task's log carries a skills disposition and that every entry in `analysis_results/SKILLS_CANDIDATES.md` has one; finishes any warranted authoring still open (and validates it before (b) is final). It does **not** re-read the whole plan to rediscover patterns and writes **no** second discovery report — the ledger is the record.
 
-- Evaluates all completed tasks for new patterns
-- Checks existing catalog for duplicates
-- Creates new skills/agents if warranted
-- Updates existing skills/agents if needed
-- Evaluates the skills generator system for improvements
-- Gracefully handles "no changes needed" as a valid outcome
-- Updates the catalog if any changes are made
+**(d) Completion** — reports deliverables, validation evidence, limitations and PR links; offers the Executive Report **once**; sends the completion report through the configured channel (e.g. the Dailybot milestone) regardless of the answer. The plan is complete at this point.
 
-This creates a virtuous cycle: plans → skills → better plans → better skills.
+### Task-Local Skills Decisions (Every Task)
 
-### Executive Report (Last Task)
+The question "did this work create a reusable pattern worth a skill or agent?" is answered **inside each task, while the evidence is in context**:
 
-This task generates `analysis_results/EXECUTIVE_REPORT.md` — a comprehensive report written for cross-functional consumption:
+- Every task's Completion & Log carries a **skills disposition**: `none`, `update <existing>`, `create <name>`, or `defer — <reason and owner>`. `none` needs no ledger row.
+- A real candidate is appended to `analysis_results/SKILLS_CANDIDATES.md` with a stable ID (`T{task}-{seq}`), an evidence pointer and the disposition; on resume an existing ID is updated, never duplicated.
+- Warranted, in-scope authoring (a new or updated skill/agent plus its catalog entry) happens **in that task, before its validation gate and commit**, after checking the existing `.agents/` catalog for duplicates. Prefer updating an existing capability; a single routine change does not justify a new skill.
+- This keeps the virtuous cycle — plans → skills → better plans → better skills — without an end-of-plan re-read (`skills-integration.md` §11).
+
+### Executive Report (Optional, On Request)
+
+`analysis_results/EXECUTIVE_REPORT.md` is generated **only** when the developer asks — at the completion offer, earlier in the plan's guidelines, or at any later time (from durable evidence, without replaying the plan). No answer, a declined offer, or an unattended run leaves the plan complete with no report. When produced it is a comprehensive report written for cross-functional consumption:
 
 - **Executive Summary** — Non-technical overview of what was accomplished
 - **Product Impact** — User-facing changes, business value delivered
@@ -270,7 +274,7 @@ The plan README's task list (`[ ]` / `[x]`) is the **SINGLE SOURCE OF TRUTH** fo
 1. **Update the plan README.md** - Change `[ ]` to `[x]` for the completed task
 2. **Update the Plan Status table** - Update the phase status and completed count
 3. **Update the task file's Completion & Log section** - Record status, timestamp, and summary
-4. **Update PROGRESS.md** - Add task summary (3-5 bullets), key decisions, important values
+4. **Update PROGRESS.md** - Add a short task summary (a few lines), key decisions, important values — the full narrative stays in the task file's Completion & Log; keep PROGRESS.md a bounded working index
 
 ### Example: Before and After
 

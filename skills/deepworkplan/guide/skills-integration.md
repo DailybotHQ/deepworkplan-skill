@@ -127,15 +127,17 @@ Task files should reference skill invocation in their execution checklists:
 * [ ] 6. Commit changes with conventional format
 ```
 
-### Skills & Agents Discovery (Output Direction)
+### Task-Local Skills Decisions (Output Direction)
 
-Every plan includes a mandatory Skills & Agents Discovery task that evaluates:
+Every task decides, **as it completes and while its evidence is in context**, whether its work produced:
 - New patterns created → potential new skills/agents
 - Changes to existing patterns → potential updates to existing skills/agents
 - Skills generator system improvements needed
 
+The disposition (`none` / `update` / `create` / `defer`) is recorded in the task's Completion & Log; real candidates go to `analysis_results/SKILLS_CANDIDATES.md` by stable ID, and warranted in-scope authoring happens inside that task before its gate (`execution.md` §6.1). The Final Review reconciles the ledger — it does not rediscover the plan.
+
 This complements the existing input direction (using existing skills in plans).
-The full cycle: Catalog → Plan (input) → Execution → Discovery → Catalog (output)
+The full cycle: Catalog → Plan (input) → Execution (task-local decisions) → Final Review (reconciliation) → Catalog (output)
 
 ### Keeping the Registry Updated
 
