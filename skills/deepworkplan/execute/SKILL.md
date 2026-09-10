@@ -23,6 +23,10 @@ successful task.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — the two repository
   archetypes (individual repo vs orchestrator hub) that govern how navigation
   and validation commands resolve.
+- [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — **conditional:**
+  read only when something is already wrong (discovery failure, stale
+  installation, missing test command, unsupported host capability,
+  inconsistent plan state).
 - **Guide (essential — read for this flow):** [`../guide/execution.md`](../guide/execution.md) (agent execution rules §6, Final Review and task-local lifecycle §6.1, per-task commit workflow, completion tracking).
 - **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 when Step 2.1 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) §14 when Step 2.2 finds a Team Agents Configuration and team mode is selected; [`../guide/authoring.md`](../guide/authoring.md) §5.3–§5.4 when judging a task's test or security discipline; [`../guide/prompts.md`](../guide/prompts.md) §9 for resume scenarios; [`../create/addon-augmentations.md`](../create/addon-augmentations.md) when the Final Review runs and an augmenting addon is installed; the repository's `docs/TESTING_GUIDE.md` when a task's gate must be widened or derived. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) — the machine-readable state

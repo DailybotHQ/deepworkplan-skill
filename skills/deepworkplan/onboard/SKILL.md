@@ -166,8 +166,14 @@ offer.
      leaving every handwritten section, custom skill, existing command and
      in-flight plan intact (in-flight plans keep their recorded shape; they are
      never migrated here — that is `refine migrate`, on explicit request). Report
-     a **per-file summary** of what was added or changed. Running the upgrade a
-     second time **MUST** change nothing. `upgrade` / "upgrade the harness"
+     a **per-file summary** of what was added or changed, **and name what the
+     upgrade deliberately did not create**: a repository that was never fully
+     onboarded can still be missing baseline harness pieces (`.agents/agents/`,
+     `.agents/docs/`, `CLAUDE.md`, `docs/SECURITY.md`) that a targeted upgrade
+     is not entitled to invent. Say which ones remain and that a full onboarding
+     is the way to close them — never imply the upgrade made the repository
+     conformant when a conformance run would still report findings. Running the
+     upgrade a second time **MUST** change nothing. `upgrade` / "upgrade the harness"
      forces this path; the flow selects it automatically when the signals above
      are present.
 3. **Non-destructive rule (existing repos).** You **MUST NOT** clobber a

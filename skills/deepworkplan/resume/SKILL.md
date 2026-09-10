@@ -22,6 +22,10 @@ pick the plan up without the previous conversation.
   `.dwp/plans/PLAN_{name}/`.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — the two repository
   archetypes (relevant for orchestrator/child-DWP awareness).
+- [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — **conditional:**
+  read only when something is already wrong (discovery failure, stale
+  installation, missing test command, unsupported host capability,
+  inconsistent plan state).
 - [`../execute/SKILL.md`](../execute/SKILL.md) — the execution rules this flow
   resumes into (gate selection, repair/stop, task-local closure, Final Review,
   Dailybot golden rule; team-agents and orchestrator branches on demand).

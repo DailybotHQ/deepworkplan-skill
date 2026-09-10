@@ -172,12 +172,8 @@ Create all required files:
 - [ ] Task 1: {title}
       See: [1.task_{name}.md](./1.task_{name}.md)
 ...
-- [ ] Task N-2: Security Review
-      See: [{N-2}.task_security_review.md](./{N-2}.task_security_review.md)
-- [ ] Task N-1: Skills & Agents Discovery
-      See: [{N-1}.task_skills_agents_discovery.md](./{N-1}.task_skills_agents_discovery.md)
-- [ ] Task N: Executive Report
-      See: [{N}.task_executive_report.md](./{N}.task_executive_report.md)
+- [ ] Task N: Final Review
+      See: [{N}.task_final_review.md](./{N}.task_final_review.md)
 
 ## 5. Execution Rules for the Agent
 {Standard execution rules}
