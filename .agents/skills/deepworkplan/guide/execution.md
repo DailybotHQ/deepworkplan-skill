@@ -16,7 +16,7 @@ When an agent is instructed to use this system, it must obey:
    - Once completed, mark it `[x]` and move to the next.
 
 3. **Validation required**
-   - Never mark a task as completed without running and considering the validations defined in the task file.
+   - Never mark a task as completed unless every Validation command in the task file has been **run and passed**. On failure, stop, log, and do not mark `[x]` (`spec/DWP_SPECIFICATION.md` §5.1).
    - For behavior-changing tasks, the validations **must** include the repo's tests and its lint/type-check/format checks **selected from the task's Touched Surface** (falling back to the full suite when the change is shared/core or no scoped invocation is documented), and the task must have added/updated tests for the new behavior (`authoring.md` §5.3). The complete suite runs on the final state in the Final Review.
 
 4. **Logging & commits**
@@ -37,15 +37,15 @@ When an agent is instructed to use this system, it must obey:
    - If a validation fails or something is unclear, stop and log.
    - Do not continue blindly.
 
-6. **Progress reporting** — handled by the optional Dailybot addon at [`addons/dailybot/`](../addons/dailybot/SKILL.md). Trigger by intent ("report this to Dailybot") or via `/dailybot_report` on Claude Code. The addon defers auth to the Dailybot skill and is opt-in and never-blocking.
+6. **Progress reporting** — handled by the **optional** Dailybot addon at [`addons/dailybot/`](../addons/dailybot/SKILL.md) (`spec/ADDONS.md` §2 / §6.2). A repo with **zero optional addons** is fully conformant; Dailybot is **not** part of the DWP baseline (the only declared baseline exception is the AI Diff Reviewer **local** review). Apply the rules below **only when** the Dailybot skill is installed and authorized in the session; otherwise skip silently and never invent an install. Trigger by intent ("report this to Dailybot") or via `/dailybot_report` on Claude Code. Auth is deferred to the Dailybot skill; reporting is never-blocking.
 
-   **Per-task reports (only for individually significant tasks):**
+   **Per-task reports (only when Dailybot is installed/authorized; only for individually significant tasks):**
    - After a task that ships a feature, fixes a bug, or completes a major refactor, trigger the skill with a standup-style message — e.g., *"Implemented JWT middleware for the API gateway — all protected routes now validate tokens."*
-   - **Skip** intermediate/setup tasks (scaffolding, base classes, config changes) — they'll be covered by the plan completion report.
+   - **Skip** intermediate/setup tasks (scaffolding, base classes, config changes) — they'll be covered by the plan completion report when Dailybot is in use.
    - **NEVER use** internal references: *"Completed Task N: {title} - PLAN_{name}"* — this is tracking, not a standup update.
 
-   **🔔 Plan completion report (MANDATORY — golden rule):**
-   - When ALL tasks in a plan are complete, you MUST send a Dailybot report as a **milestone** with **structured data** (completed/in-progress/blockers) and **metadata** (plan name, repo). The skill prompts for these fields when reporting plan completions.
+   **🔔 Plan completion report (when Dailybot is installed and authorized — golden rule for that channel; never required for DWP conformance):**
+   - When ALL tasks in a plan are complete **and** Dailybot is available, send a Dailybot report as a **milestone** with **structured data** (completed/in-progress/blockers) and **metadata** (plan name, repo). If Dailybot is absent or unauthorized, skip — do not block completion.
    - **The message MUST describe what was BUILT, not that a plan ran.** This is the #1 anti-pattern — never send vague reports.
    - **If an Executive Report is requested:** generate it from durable evidence (task logs, PROGRESS.md, `analysis_results/`, the state layer, PR summaries) without replaying the plan. Do not generate it unrequested.
 
@@ -54,12 +54,12 @@ When an agent is instructed to use this system, it must obey:
      - ❌ NEVER (vague, no detail): *"Completed a deep work plan with multiple tasks executed and validated"*
      - ❌ NEVER (process-focused): *"Plan completed: PLAN_auth_refactor - 8 tasks completed successfully"*
 
-   See [`addons/dailybot/templates/INTEGRATION.md`](../addons/dailybot/templates/INTEGRATION.md) for the full pattern.
+   See [`addons/dailybot/templates/INTEGRATION.md`](../addons/dailybot/templates/INTEGRATION.md) for the full pattern when the addon is in use.
 
-   **General rules:**
+   **General rules (when Dailybot reporting runs):**
    - ALWAYS in English, regardless of conversation language
    - If the reporting script fails or times out, **continue without blocking** — progress reporting is secondary to the actual work.
-   - See `AGENTS.md` "Agent Progress Reporting" section and the progress report skill for the complete standard.
+   - See `AGENTS.md` "Agent Progress Reporting" section and the Dailybot skill for the complete standard.
 
 7. **Multi-repository commits** (for plans spanning multiple projects)
    - Commit changes in **each affected repository separately**
@@ -92,7 +92,7 @@ Security is not a separate workstream bolted on at the end of a project — ever
 
 **(c) Skills reconciliation** — checks that every task's log carries a skills disposition and that every entry in `analysis_results/SKILLS_CANDIDATES.md` has one; finishes any warranted authoring still open (and validates it before (b) is final). It does **not** re-read the whole plan to rediscover patterns and writes **no** second discovery report — the ledger is the record.
 
-**(d) Completion** — reports deliverables, validation evidence, limitations and PR links; offers the Executive Report **once**; sends the completion report through the configured channel (e.g. the Dailybot milestone) regardless of the answer. The plan is complete at this point.
+**(d) Completion** — reports deliverables, validation evidence, limitations and PR links; offers the Executive Report **once**; when Dailybot (or another configured reporting channel) is installed and authorized, sends the completion report there (best-effort, never blocking). Absence of Dailybot does not block completion. The plan is complete at this point.
 
 ### Task-Local Skills Decisions (Every Task)
 

@@ -397,7 +397,7 @@ check_plan() {
   # ---- lifecycle shape ----------------------------------------------------------
   local declared shape="" fr_id="" fr_count=0 sr_id="" sd_id="" er_id="" migrated=0
   declared="$(plan_standard "$plan_dir")"
-  if [ -f "$plan_dir/README.md" ] && grep -q 'migrated from' "$plan_dir/README.md"; then migrated=1; fi
+  if [ -f "$plan_dir/README.md" ] && grep -qE '\*\*Standard:\*\*.*\(migrated from' "$plan_dir/README.md"; then migrated=1; fi
   for f in "$plan_dir"/[0-9]*.task_final_review*.md; do
     [ -f "$f" ] || continue
     fr_count=$((fr_count + 1)); fr_id="$(task_id_of "$f")"
@@ -482,6 +482,42 @@ check_plan() {
       pass "Final Review names its three parts (security pass, final-state validation, skills reconciliation)"
     else
       fail "Final Review file does not mention:$missing (DWP_SPECIFICATION §6.1) — the filename alone does not prove coverage"
+    fi
+  fi
+
+  # Completed-plan security artifact (DWP_SPECIFICATION §6.1 / verify/SKILL.md):
+  # when every task is [x] / Plan Status N/N, SECURITY_REVIEW.md must exist and
+  # must not leave an unresolved critical finding.
+  if [ -f "$plan_dir/README.md" ]; then
+    local status_line done_n total_n unchecked=0 completed_plan=0
+    status_line="$(grep -E 'Plan Status: *[0-9]+/[0-9]+' "$plan_dir/README.md" 2>/dev/null | head -1 || true)"
+    if [ -n "$status_line" ]; then
+      done_n="$(printf '%s' "$status_line" | sed -E 's/.*Plan Status: *([0-9]+)\/([0-9]+).*/\1/')"
+      total_n="$(printf '%s' "$status_line" | sed -E 's/.*Plan Status: *([0-9]+)\/([0-9]+).*/\2/')"
+      if [ -n "$done_n" ] && [ -n "$total_n" ] && [ "$done_n" = "$total_n" ] && [ "$total_n" -gt 0 ]; then
+        completed_plan=1
+      fi
+    fi
+    unchecked="$(grep -cE '^\s*- \[ \]' "$plan_dir/README.md" 2>/dev/null || true)"
+    if [ "${unchecked:-0}" -eq 0 ] && grep -qE '^\s*- \[x\]' "$plan_dir/README.md" 2>/dev/null; then
+      completed_plan=1
+    fi
+    if [ "$completed_plan" -eq 1 ]; then
+      if [ -f "$plan_dir/analysis_results/SECURITY_REVIEW.md" ]; then
+        pass "completed plan has analysis_results/SECURITY_REVIEW.md"
+        local sr="$plan_dir/analysis_results/SECURITY_REVIEW.md"
+        if grep -qiE 'still (reports?|has)|open critical|unresolved critical finding:' "$sr" \
+          || (grep -qiE 'unresolved critical' "$sr" && ! grep -qiE 'no unresolved critical|without (an )?unresolved critical|0 unresolved critical|zero unresolved critical' "$sr"); then
+          fail "completed plan SECURITY_REVIEW.md still reports an unresolved critical finding (DWP_SPECIFICATION §6.1) — fix or record explicit acceptance"
+        elif grep -qiE '(^|[|[:space:]])critical([|[:space:]]|$)|🚨[[:space:]]*critical' "$sr" \
+          && ! grep -qiE 'no unresolved critical|0 critical|zero critical|explicitly accepted|accepted by the (user|developer)|criticals?: *0|no findings' "$sr"; then
+          fail "completed plan SECURITY_REVIEW.md mentions critical findings without a clear resolution/acceptance (DWP_SPECIFICATION §6.1)"
+        else
+          pass "completed plan SECURITY_REVIEW.md has no unresolved critical finding"
+        fi
+      else
+        fail "completed plan missing analysis_results/SECURITY_REVIEW.md (DWP_SPECIFICATION §6.1 / verify/SKILL.md) — Final Review must write it even when clean"
+      fi
     fi
   fi
 

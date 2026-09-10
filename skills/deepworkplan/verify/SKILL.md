@@ -165,7 +165,7 @@ End with one of: **CONFORMANT** (all MUST criteria pass) or **NOT CONFORMANT —
 > **Unsupported newer plan.** If a plan (or `AGENTS.md`) declares a DWP
 > standard newer than this skill implements, the checker fails with an upgrade
 > message. Do not execute such a plan as if it were legacy: upgrade the installed
-> skill (`npx skills add DailybotHQ/deepworkplan-skill@<newer tag> …`), then
+> skill (`npx --yes skills add DailybotHQ/deepworkplan-skill@<newer tag> --skill deepworkplan -y`), then
 > re-run `verify`.
 
 > **Large repo / in-progress onboarding.** A big repo may be mid-onboarding via

@@ -61,8 +61,17 @@ fi
 
 # A matching file count is not proof the contents copied. On some filesystems a
 # copy can produce a right-sized, all-NUL file; verify every byte instead.
-src_sums="$(cd "$SRC" && find . -type f -exec sha256sum {} + | sort -k2)"
-dst_sums="$(cd "$DST" && find . -type f -exec sha256sum {} + | sort -k2)"
+# Prefer GNU sha256sum (Linux CI); fall back to shasum -a 256 (default macOS).
+if command -v sha256sum >/dev/null 2>&1; then
+    src_sums="$(cd "$SRC" && find . -type f -exec sha256sum {} + | sort -k2)"
+    dst_sums="$(cd "$DST" && find . -type f -exec sha256sum {} + | sort -k2)"
+elif command -v shasum >/dev/null 2>&1; then
+    src_sums="$(cd "$SRC" && find . -type f -exec shasum -a 256 {} + | sort -k2)"
+    dst_sums="$(cd "$DST" && find . -type f -exec shasum -a 256 {} + | sort -k2)"
+else
+    echo "ERROR: need sha256sum or shasum to verify the dogfood copy" >&2
+    exit 1
+fi
 
 if [ "$src_sums" != "$dst_sums" ]; then
     echo "ERROR: content mismatch after copy — these files differ:" >&2

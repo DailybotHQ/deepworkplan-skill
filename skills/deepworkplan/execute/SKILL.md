@@ -410,17 +410,22 @@ and reports no unresolved critical finding (`../spec/DWP_SPECIFICATION.md`
 §6.1). If a critical finding is open, the plan is **blocked**, not complete —
 fix it or obtain the user's explicit acceptance before reporting completion.
 
-**🔔 GOLDEN RULE — Dailybot Plan-Completion Report (MANDATORY when Dailybot is
-authorized in the session; best-effort, never blocking):**
+**🔔 GOLDEN RULE — Dailybot Plan-Completion Report (only when the optional
+Dailybot addon is installed **and** authorized in the session; best-effort,
+never blocking; never required for DWP conformance — `../spec/ADDONS.md` §2 /
+§6.2):**
 
-> When a DWP plan finishes execution, you MUST ALWAYS send a Dailybot progress
-> report **as a milestone**. A completed plan is always a significant milestone.
+> When a DWP plan finishes execution **and** Dailybot is available, send a
+> Dailybot progress report **as a milestone**. If the Dailybot skill is not
+> installed, not authorized, or `.dailybot/disabled` is present, **skip
+> silently** — do not invent an install and do not block completion. Dailybot
+> is **not** shipped inside the DWP pack.
 
-Trigger the `dailybot` skill (e.g. `/dailybot_report` or "report this milestone
-to Dailybot") in Daily Standup style describing WHAT the plan accomplished and
-its impact. Mark it as a **milestone** with structured data
-(completed/in-progress/blockers). NEVER use internal references (plan names, task
-counts, DWP terminology).
+When reporting: trigger the `dailybot` skill (e.g. `/dailybot_report` or
+"report this milestone to Dailybot") in Daily Standup style describing WHAT the
+plan accomplished and its impact. Mark it as a **milestone** with structured
+data (completed/in-progress/blockers). NEVER use internal references (plan
+names, task counts, DWP terminology).
 - GOOD: *"Finished the authentication refactor — the API now uses JWT tokens
   across all services with centralized middleware validation."*
 - BAD: *"Plan completed: PLAN_auth_refactor - All 8 tasks completed."*
@@ -431,9 +436,7 @@ milestone. Where the plan carries the state layer (`../spec/PLAN_STATE.md`),
 derive the report's `--json-data` from `state.json` — `completed` from completed
 tasks phrased as outcomes, `blockers` empty on a clean finish — rather than
 recounting from memory. The completion report never waits for, or requires, an
-Executive Report. The `dailybot` skill is installed alongside this skill —
-invoke it there. If reporting fails or is unauthorized, continue without
-blocking.
+Executive Report. If reporting fails, continue without blocking.
 
 For orchestrator plans, the completion rules in [`orchestrator.md`](orchestrator.md)
 (this directory) apply in addition.

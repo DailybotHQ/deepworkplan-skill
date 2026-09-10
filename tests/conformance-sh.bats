@@ -358,6 +358,86 @@ EOF
     [[ "$output" =~ "does not mention" ]]
 }
 
+@test "completed 2.3.0 plan without SECURITY_REVIEW.md fails" {
+    make_conformant_repo
+    make_new_plan
+    cat > .dwp/plans/PLAN_new_fixture/README.md <<'EOF'
+# PLAN_new_fixture
+
+## Goal
+Test fixture (2.3.0 shape).
+
+**Standard:** DWP spec 2.3.0
+
+## Tasks
+- [x] Task 1
+      See: [1.task_first_thing.md](./1.task_first_thing.md)
+- [x] Task 2
+      See: [2.task_final_review.md](./2.task_final_review.md)
+
+Plan Status: 2/2 completed
+EOF
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "SECURITY_REVIEW.md" ]]
+}
+
+@test "completed 2.3.0 plan with clean SECURITY_REVIEW.md passes that gate" {
+    make_conformant_repo
+    make_new_plan
+    cat > .dwp/plans/PLAN_new_fixture/README.md <<'EOF'
+# PLAN_new_fixture
+
+## Goal
+Test fixture (2.3.0 shape).
+
+**Standard:** DWP spec 2.3.0
+
+## Tasks
+- [x] Task 1
+      See: [1.task_first_thing.md](./1.task_first_thing.md)
+- [x] Task 2
+      See: [2.task_final_review.md](./2.task_final_review.md)
+
+Plan Status: 2/2 completed
+EOF
+    printf '# Security review\n\nNo findings.\n\nNo unresolved critical.\n' \
+      > .dwp/plans/PLAN_new_fixture/analysis_results/SECURITY_REVIEW.md
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "completed plan has analysis_results/SECURITY_REVIEW.md" ]]
+    [[ "$output" =~ "no unresolved critical finding" ]]
+}
+
+@test "prose 'migrated from' without Standard migration line does not allow mixed lifecycle" {
+    make_conformant_repo
+    make_new_plan
+    mv .dwp/plans/PLAN_new_fixture/2.task_final_review.md .dwp/plans/PLAN_new_fixture/3.task_final_review.md
+    printf '# Task 2\n\n## Validation\n\n- x\n' > .dwp/plans/PLAN_new_fixture/2.task_security_review.md
+    cat > .dwp/plans/PLAN_new_fixture/README.md <<'EOF'
+# PLAN_new_fixture
+
+We migrated from sessions to JWT in an earlier release.
+
+**Standard:** DWP spec 2.3.0
+
+## Tasks
+- [x] Task 1
+      See: [1.task_first_thing.md](./1.task_first_thing.md)
+- [x] Task 2
+      See: [2.task_security_review.md](./2.task_security_review.md)
+- [ ] Task 3
+      See: [3.task_final_review.md](./3.task_final_review.md)
+
+Plan Status: 2/3 completed
+EOF
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "mixed lifecycle" ]]
+    [[ ! "$output" =~ "plan standard: DWP spec 2.3.0 (declared migration)" ]]
+    [[ ! "$output" =~ "migrated plan keeps its completed Security Review" ]]
+}
+
 @test "missing Touched Surface is a finding, not a failure" {
     make_conformant_repo
     make_new_plan
