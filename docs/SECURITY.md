@@ -11,7 +11,8 @@
 ## What this repository is
 
 A **Markdown-first agent skill pack**: Markdown procedures (`skills/`), a few
-POSIX shell helpers (`setup.sh`, `scripts/`, `skills/deepworkplan/shared/context.sh`),
+POSIX shell helpers (`setup.sh`, `scripts/`, and, inside the pack,
+`skills/deepworkplan/shared/context.sh` and `skills/deepworkplan/verify/conformance.sh`),
 and Bats tests. There is **no runtime service, no HTTP API, no auth flow, and no
 network egress.** The only security-relevant action the skill performs is that it
 **mutates the user's repository** (onboarding writes/reconciles `AGENTS.md`,
@@ -30,6 +31,9 @@ this repo.
   environment variables only** (agent-detection and `DWP_*` overrides). It never
   reads source contents or arbitrary environment for transmission — there is
   nowhere to transmit to.
+- `verify/conformance.sh` is **read-only**: it reads plan files, `AGENTS.md`,
+  `docs/` and `.gitignore` to produce a verdict, and writes nothing. It makes no
+  network call.
 - Releases publish from `main` via CI; publishing credentials live **only** in
   GitHub Actions secrets, never in the tree. Do not echo, log, or commit them.
 - **A secret in a pushed commit MUST be treated as leaked and rotated**, not

@@ -11,7 +11,8 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 
 Author and maintain the current repository's **agent kit**: reusable **skills**, **agents**, and
 **commands**. Reason about the repo — never copy a generic kit. This sub-skill is also the executor of
-the mandatory "Skills & Agents Discovery" plan task.
+the **skills reconciliation** the Final Review performs (DWP spec 2.3.0 §6.1) — and, in a plan created
+under an earlier lifecycle, of that plan's separate "Skills & Agents Discovery" task.
 
 ---
 
@@ -116,9 +117,11 @@ Pick the flow that matches the developer's intent.
 3. Keep delegators thin; keep skills single-procedure.
 4. Update the catalog if name, description, or surface changed.
 
-### E. Evaluate the catalog (Skills & Agents Discovery)
+### E. Evaluate the catalog (skills reconciliation)
 
-This is the flow invoked by the mandatory plan task.
+This is the flow the **Final Review** invokes for its skills-reconciliation pass. A plan
+created under the pre-2.3.0 lifecycle invokes the same flow from its separate
+"Skills & Agents Discovery" task; the procedure is identical either way.
 
 1. Enumerate every skill (`<skills-dir>/*/SKILL.md`) and agent (`<agents-dir>/*.md`).
 2. For each, capture name, one-line description, and model tier (if any).

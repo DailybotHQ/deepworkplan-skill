@@ -62,6 +62,19 @@ Rules that make a replay count:
 
 Run: `python3 tests/efficiency/score-replays.py <scratch-root> [--json out.json]`.
 
+## Portability and adoption evidence
+
+Efficiency is only one axis. Two other claims are load-bearing for this
+methodology, and each has its own write-up with its own stated limits:
+
+| Claim | Evidence | Bounded by |
+|---|---|---|
+| A plan written by one agent can be resumed correctly by a different agent from a different vendor | [`evaluations/cross-agent-handoff.md`](evaluations/cross-agent-handoff.md) — bidirectional, Claude Code ↔ Codex CLI | Two harnesses only. The other seven supported agents have **installation** coverage, not behavioral: [`COMPATIBILITY.md`](COMPATIBILITY.md) |
+| An existing repository upgrades in place without losing handwritten rules, custom skills or in-flight plans | [`evaluations/adoption-pilot.md`](evaluations/adoption-pilot.md) — three fixtures, checksum-verified, idempotent | Constructed fixtures, not a third-party production repo; only the Python fixture has a runnable toolchain here |
+
+Neither is an efficiency claim, and neither may be cited as one. The handoff runs
+were executed concurrently on a shared host, so their timings are meaningless.
+
 ## Snapshot efficiency results
 
 The [efficiency evaluation](evaluations/token-efficiency.md) separates the

@@ -6,14 +6,14 @@ This document is the **normative specification** of the DeepWorkPlan **AI Diff
 Reviewer addon**: an opt-in capability that connects an AI-first repository to
 the **AI Diff Reviewer** (`DailybotHQ/ai-diff-reviewer`, marketplace listing
 "AI Diff Reviewer", current **v2.0.0**) so DWP work — the mandatory
-**Security Review** final task — is augmented with a structured local review
+security pass of the mandatory **Final Review** — is augmented with a structured local review
 (verdict + findings table + severity), and (in **Flow B — dual-surface**,
 optionally) every pull request to the target repo is gated by a CI-side
 review Action with byte-identical parity to the local review. It defines the
 **two officially-supported adoption flows** (§3), **what the addon
 installs/configures** (all opt-in, §4), how it **defers authentication and
 wizard orchestration** to the upstream skill's own consent flows (§5), how
-the **Security Review augmentation** and the optional **`apply-review`
+the **security-pass augmentation** and the optional **`apply-review`
 post-CI companion** are wired into DWP execution (§6), the **never-block**
 rule (§7), the **reconcile-don't-clobber** behavior (§8), the **validation
 checklist** (§9), and the **archetype compatibility** notes (§10).
@@ -28,7 +28,7 @@ for baseline AI-first conformance.
 |-------|-------|
 | **Version** | 2.16.3 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/GUIDE.md` §5.4 |
+| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/authoring.md` §5.4 |
 | **License** | MIT |
 | **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.0.0 (marketplace: "AI Diff Reviewer") |
 
@@ -85,7 +85,7 @@ policy — ask, don't guess). This addon **MUST** offer both.
 ### 3.1 Flow A — local-only
 
 - Vendored skill installed; the CI Action is **NOT** installed.
-- Sub-skills used: **parent default flow** (Security Review augmentation) +
+- Sub-skills used: **parent default flow** (security-pass augmentation) +
   **`generate-extension` (required)** + optionally `open-pr`.
 - Extension requirement: addon onboarding **MUST NOT** complete Flow A
   without an extension file at a recognized path (or an explicit
@@ -156,7 +156,7 @@ only with explicit acceptance, and each reconciled if already present (§8):
   sub-skill (≥12 tool-call Discovery followed by a ~100-line file of
   concrete overrides). This is the primary customization surface — where
   consumers encode their own severity rules and "don't comment on" scopes.
-  Without an extension, Security Review detection (§6.1) fails and the
+  Without an extension, security-pass detection (§6.1) fails and the
   advertised local pass never runs.
 - The addon **MUST** honor the upstream's three-path precedence when
   detecting an existing extension file (first match wins):
@@ -171,10 +171,10 @@ only with explicit acceptance, and each reconciled if already present (§8):
   (a tracked 0-byte file created when a developer previously answered
   "never" to upstream's bootstrap offer). When that marker is present, the
   addon **MUST NOT** bootstrap during onboarding or during later `execute`
-  Security Review — document that the local SR augmentation stays inactive
+  the Final Review's security pass — document that the local augmentation stays inactive
   until the marker is removed and an extension is created.
 - Mid-plan `execute` **MUST NOT** surprise-bootstrap an extension file as a
-  side effect of Security Review (aligns with `execute/SKILL.md`).
+  side effect of the Final Review (aligns with `execute/SKILL.md`).
 
 ### 4.3 CI workflow `pr-review.yml` (Flow B only)
 
@@ -210,7 +210,7 @@ only with explicit acceptance, and each reconciled if already present (§8):
 - The addon **SHOULD** append a short section to the target repo's
   `AGENTS.md` documenting:
   - Which flow was chosen (A or B) and why.
-  - The Security Review augmentation (both flows).
+  - The Final Review security-pass augmentation (both flows).
   - (Flow B) the `pr-review.yml` behavior, the provider-secret requirement,
     the label workflow (`ready` / `pr-reviewed` / optional `skip-ai-review`),
     the `AI review gate` branch-protection target, and the `apply-review`
@@ -246,17 +246,17 @@ only with explicit acceptance, and each reconciled if already present (§8):
 
 ## 6. Integration Points into DWP Execution
 
-This is the "why": when present, the mandatory **Security Review** task
-in every DWP plan gets a structured local review pass, and in Flow B a
+This is the "why": when present, the **security pass** of the mandatory
+**Final Review** in every DWP plan gets a structured local review pass, and in Flow B a
 developer-invoked companion sub-skill closes the loop on any post-push CI
 review.
 
-### 6.1 Augment Security Review (both flows — SHOULD)
+### 6.1 Augment the Final Review's security pass (both flows — SHOULD)
 
 The addon **MUST** wire an additive step into the DWP `create` sub-skill's
-`{N-2}.task_security_review.md` template. When the addon is installed
+`{N}.task_final_review.md` template's security pass. When the addon is installed
 (detected by `.agents/skills/ai-diff-reviewer/` present + an extension file
-at one of the three recognized paths from §4.2), the SR task template gains
+at one of the three recognized paths from §4.2), the Final Review's security pass gains
 an additional post-existing-checks step:
 
 1. Invoke the upstream **parent default flow** ("Review my current branch").
@@ -276,9 +276,13 @@ an additional post-existing-checks step:
   Do **not** treat an unset CI provider secret as an invocation skip — that
   secret is Flow B CI/gate only. Once a local review **did** run, severity
   handling above (§6.1 item 4) still applies.
-- The augmentation is **additive**. The existing manual Security Review
-  reasoning is preserved. On repos without the addon, the SR template body
-  is unchanged.
+- The augmentation is **additive**. The Final Review's own manual security
+  reasoning is preserved. On repos without the addon, the Final Review template
+  body is unchanged.
+- **Legacy plans.** A plan created under the pre-2.3.0 lifecycle carries a
+  separate `{N-2}.task_security_review.md`. The addon augments *that* task in
+  such a plan — same additive step, same severity contract — because a plan is
+  always executed under its own recorded shape and is never silently migrated.
 
 ### 6.2 CI merge gate (Flow B only)
 
@@ -308,8 +312,8 @@ an additional post-existing-checks step:
 - The addon **MUST** describe `apply-review` in the target repo's docs as
   an *available option* during `execute` — never as a mandatory extra task.
   The addon **MUST NOT** materialize `apply-review` as a plan task file —
-  doing so would violate the mandatory-final-task-order rule (Security
-  Review → Skills & Agents Discovery → Executive Report) and turn a
+  doing so would violate the mandatory-final-task rule (a plan ends with the
+  single Final Review, and nothing may follow it) and turn a
   developer-invoked convenience into a scheduled plan step.
 
 ---
@@ -317,9 +321,9 @@ an additional post-existing-checks step:
 ## 7. Never-Block Rule (mandatory)
 
 Soft-fail applies to **invocation** of the local review pass only — not to
-Security Review gate results after a review completed. Post-run severity
-is governed by §6.1 (item 4): `critical` findings block SR completion until
-fixed or explicitly accepted.
+the Final Review's gate results after a review completed. Post-run severity
+is governed by §6.1 (item 4): `critical` findings block the Final Review's
+completion until fixed or explicitly accepted.
 
 - **Local augmentation — invocation soft-fail (Flow A and Flow B):** if the
   vendored skill is **absent**, detection fails (no extension file at a
@@ -330,9 +334,9 @@ fixed or explicitly accepted.
   trust-boundary guarantees. The local parent default flow runs via the
   coding agent and does **not** require a CI provider secret — an unset
   `CURSOR_API_KEY` (or other provider secret) **MUST NOT** suppress the
-  local Security Review pass.
+  local security pass.
 - **Local augmentation — after a review ran:** open/`critical` findings
-  from that pass **MUST** follow §6.1. Agents **MUST NOT** mark Security
+  from that pass **MUST** follow §6.1. Agents **MUST NOT** mark the Final
   Review `[x]` while those criticals remain unfixed and unaccepted. §7 does
   **not** override that gate.
 - **Flow B CI / gate only:** when the dual-surface workflow is installed,
@@ -381,7 +385,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 3. Authentication was **deferred** to the upstream skill's own consent flow
    — no API-key prompting and **no credential** written by this addon.
 4. The chosen flow (A or B) is recorded in `AGENTS.md` (or equivalent
-   docs), and the DWP execution docs describe the Security Review
+   docs), and the DWP execution docs describe the security-pass
    augmentation as **optional and conditional**: soft-fail only on local-review
    *invocation* failures (absent skill / extension / invocation error); `critical`
    findings from a **completed** pass still follow the SR contract (§6.1 / §7).
@@ -403,7 +407,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 
 ### 10.1 Individual repo archetype
 
-- Standard use case. Both flows apply directly. The Security Review
+- Standard use case. Both flows apply directly. The security-pass
   augmentation wires into the repo's own DWP plans.
 
 ### 10.2 Orchestrator hub archetype
@@ -431,7 +435,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
   `open-pr/SKILL.md`, `apply-review/SKILL.md`.
 - Marketplace listing: ["AI Diff Reviewer"](https://github.com/marketplace/actions/ai-diff-reviewer).
 - [`../../create/SKILL.md`](../../create/SKILL.md) §"Three mandatory final tasks" — where the SR augmentation callout is wired.
-- [`../../guide/GUIDE.md`](../../guide/GUIDE.md) §5.4 — the canonical Security Review template body.
+- [`../../guide/authoring.md`](../../guide/authoring.md) §5.4 — the canonical security-discipline rules the Final Review's security pass applies.
 
 ---
 

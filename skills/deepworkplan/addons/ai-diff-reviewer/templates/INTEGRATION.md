@@ -76,7 +76,7 @@ Present both flows plainly:
 > **Flow A — local-only.** Vendored skill + a repo-tailored extension
 > file (via `generate-extension`); no GitHub Actions changes. Best for
 > personal or experimental repos, or teams not (yet) ready for automated
-> PR review. Once both are present, Security Review gains a local review
+> PR review. Once both are present, the Final Review's security pass gains a local review
 > pass — skill alone is not enough.
 >
 > **Flow B — dual-surface.** Skill + CI Action, both reading the same
@@ -135,12 +135,12 @@ identical bytes with `npx skills experimental_install`.
 
 ## 4. Bootstrap the extension file (REQUIRED — both flows, during onboarding)
 
-Security Review detection needs **skill + extension**. Finish this during
+Security-pass detection needs **skill + extension**. Finish this during
 **addon onboarding** (after the vendored skill install, before declaring
 the addon installed). Do **not** rely on mid-plan `execute` / Security
 Review to heal a missing extension — `execute/SKILL.md` forbids surprise-
 bootstrap there (warn once that Flow A/B install is incomplete, continue
-the base Security Review).
+the base security pass).
 
 Where possible, hand off to the upstream `generate-extension` sub-skill —
 its ≥12 tool-call Discovery produces a repo-specific file grounded in the
@@ -250,10 +250,10 @@ Reasoning notes:
 
 ---
 
-## 6. Wire the Security Review augmentation into DWP execution
+## 6. Wire the security-pass augmentation into DWP execution
 
 Once the addon is installed, the DWP `create` sub-skill's
-`{N-2}.task_security_review.md` template already carries the augmentation
+`{N}.task_final_review.md` template already carries the augmentation
 callout (added by `../../create/SKILL.md` — search for
 `ai-diff-reviewer`). Every plan materialized in this repo from now on will
 carry the addon-augmented SR body.
@@ -265,7 +265,7 @@ The shape to convey:
 > **Optional — AI Diff Reviewer review augmentation (best-effort on
 > invocation; criticals still gate SR):** when the AI Diff Reviewer addon
 > is installed (detected via `.agents/skills/ai-diff-reviewer/` + an
-> extension file), the mandatory Security Review task gains an additional
+> extension file), the Final Review's security pass gains an additional
 > local review pass. Invokes the upstream skill's parent default flow
 > ("Review my current branch"), captures verdict + findings table +
 > severity, and appends them to `analysis_results/SECURITY_REVIEW.md`
@@ -311,10 +311,10 @@ Decision notes:
   best-effort to *start*; absence of the skill, missing extension file, or
   invocation/network errors — all mean skip-and-continue — warn once, no
   retries, no diagnostic loop. Once a review **ran**, `critical` findings
-  follow the existing Security Review contract (block until fixed or
+  follow the existing Final Review contract (block until fixed or
   explicitly accepted) — do not mark SR `[x]` anyway. An unset CI provider
   secret is a Flow B CI/gate warning only — it MUST NOT suppress the local
-  Security Review pass (Flow A needs no secret).
+  security pass (Flow A needs no secret).
 - **Vendor-neutral:** never imply DWP requires the AI Diff Reviewer. A
   repo with zero addons is fully conformant.
 - **Both flows are first-class:** Flow A (local-only) is a supported use

@@ -20,8 +20,8 @@ This task does NOT execute any child DWP plans. It reviews the created child pla
 - **Checkpoint position:** After {child DWP creation tasks}, before {next phase}
 - **Manifest:** `.dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md` {or "Not used"}
 - **Child DWPs to verify:**
-  - `repositories/{repo1}/.agent_commands/.../PLAN_{feature}_{repo1_short}/`
-  - `repositories/{repo2}/.agent_commands/.../PLAN_{feature}_{repo2_short}/`
+  - `repositories/{repo1}/.dwp/plans/PLAN_{feature}_{repo1_short}/`
+  - `repositories/{repo2}/.dwp/plans/PLAN_{feature}_{repo2_short}/`
 
 ### Output Contract Verification
 

@@ -15,7 +15,7 @@ AI-first" is itself a multi-task job: analyze the whole codebase, document every
 The plan is created with `/dwp-create`, refined with `/dwp-refine`, executed with
 `/dwp-execute`, and resumed with `/dwp-resume`. It lives under
 `.dwp/plans/PLAN_onboard_{repo}/` per [`../../shared/dwp-paths.md`](../../shared/dwp-paths.md)
-and follows the plan/task anatomy in [`../../guide/GUIDE.md`](../../guide/GUIDE.md).
+and follows the plan/task anatomy in [`../../guide/authoring.md`](../../guide/authoring.md).
 
 ---
 
@@ -47,7 +47,7 @@ for every task is `.dwp/onboard/RECON.md`.
 - [ ] 2. docs/PRODUCT_SPEC.md                      → 2.task_docs_product_spec.md
 - [ ] 3. docs/ARCHITECTURE.md                      → 3.task_docs_architecture.md
 - [ ] 4. docs/STANDARDS.md                         → 4.task_docs_standards.md
-- [ ] 5. docs/TESTING_GUIDE.md                     → 5.task_docs_testing.md
+- [ ] 5. docs/TESTING_GUIDE.md (verified testing map) → 5.task_docs_testing.md
 - [ ] 6. docs/DEVELOPMENT_COMMANDS.md              → 6.task_docs_commands.md
 - [ ] 7. docs/SECURITY.md (+ PERFORMANCE, AI_AGENT_*) → 7.task_docs_rest.md
 - [ ] 8. Per-module README: {module A}             → 8.task_module_a.md
@@ -55,13 +55,16 @@ for every task is `.dwp/onboard/RECON.md`.
 - [ ] … one task per major module from RECON.md …
 - [ ] N-2. .agents/ kit (agents + skills + commands + catalogs)
 - [ ] N-1. Install skill + scaffold .dwp/ and tmp/ + addons offered
-- [ ] N.  MANDATORY FINAL: Phase 8 self-check (conformance gate)
-          + Security Review + Skills & Agents Discovery + Executive Report
+- [ ] N.  MANDATORY FINAL: Final Review — Phase 8 self-check (conformance gate)
+          + security pass + final-state validation + skills reconciliation
+          (skills decisions are task-local; the Executive Report is optional)
 
 ## 5. Execution Rules for the Agent
 Re-anchor to this goal before each task. One task at a time. Run the task's
-validation gate before marking it done. Update PROGRESS.md after each task so the
-plan is resumable.
+validation gate before marking it done (docs tasks: `Touched Surface: not
+applicable — documentation`; the repo's non-runtime checks are the gate). Record
+the task's skills decision in its log before validating. Update PROGRESS.md
+(bounded Active context) after each task so the plan is resumable.
 
 ## 6. Skills & Agents Used
 deepworkplan-onboard (reference), deepworkplan-verify (final conformance), plus
@@ -75,7 +78,7 @@ any stack skills generated in task N-2.
 
 ## Per-task shape (`N.task_{title}.md`)
 
-Each task follows the standard task anatomy (`../../guide/GUIDE.md` §5). The
+Each task follows the standard task anatomy (`../../guide/authoring.md` §5). The
 onboarding-specific point is that **the Acceptance Criteria encode the Phase 0–8
 rules per artifact**, and the **Validation gate is the repo's real check**.
 
@@ -106,6 +109,37 @@ conventions; never override a working one with a generic default.
     grep -rn '\[TODO\|\[TBD\|<your' docs/{CATEGORY}.md   # → zero matches
 ```
 
+### Testing-guide task (the one every later plan depends on)
+
+```markdown
+# Task 5: Generate docs/TESTING_GUIDE.md — the verified testing map
+
+## 3. Goal
+Document, from the real repo, everything a plan needs to select a validation
+gate (DOCUMENTATION_STANDARD §3.4): full and scoped commands, mapping, consumers,
+blind spots, escalation, fallback, and the unit-first posture.
+
+## 4. Touched Surface
+not applicable — documentation (gate: the repo's markdown/link check + the
+verification run below)
+
+## 5. Acceptance Criteria
+- [ ] Full-suite and full lint/format/type-check commands recorded verbatim, with cwd.
+- [ ] Scoped pattern(s) with at least one concrete example from this repo; the
+      example was RUN and selected a non-empty relevant set (count recorded) —
+      or is marked proposed/unverified with the reason and a real fallback.
+- [ ] Source-to-test mapping rule, dependent-consumer policy (tool or list),
+      known blind spots, shared/core escalation paths and the explicit fallback.
+- [ ] Testing posture: where each layer lives; unit-first behavioral coverage;
+      real-seam integration; useful e2e; deterministic fixtures; no quotas.
+- [ ] Current capabilities and any proposed setup in clearly separate sections.
+
+## 7. Validation
+    {repo link-check / md:check}
+    {the scoped example command}     # must select a non-empty relevant set
+    grep -rn '\[TODO\|\[TBD\|<your' docs/TESTING_GUIDE.md   # → zero matches
+```
+
 ### Per-module task (the part that scales worst inline)
 
 ```markdown
@@ -129,21 +163,24 @@ tested (onboard Phase 5). Add a docs/ subfolder only if the module is complex
 ### Mandatory final task
 
 ```markdown
-# Task {N}: Conformance gate + mandatory final tasks
+# Task {N}: Final Review — conformance gate
 
 ## 3. Goal
-Run onboard Phase 8 self-check across everything generated; then the spec's
-three mandatory final tasks: Security Review, Skills & Agents Discovery, and
-the Executive Report.
+Run onboard Phase 8 self-check across everything generated, then the plan's
+single mandatory Final Review (DWP_SPECIFICATION §6.1): security pass,
+final-state validation, skills reconciliation, completion with the one-time
+Executive Report offer.
 
 ## 5. Acceptance Criteria
 - [ ] `/dwp-verify` (or the Phase 8 checklist) reports CONFORMANT.
-- [ ] Smoke test: the repo's own validation command runs clean once.
+- [ ] Final-state validation: the repo's own full validation command runs clean once.
 - [ ] `.agents/docs/` catalog matches what exists on disk (no phantom entries).
-- [ ] Security Review written to `analysis_results/SECURITY_REVIEW.md`;
+- [ ] Security pass written to `analysis_results/SECURITY_REVIEW.md`;
       `docs/SECURITY.md` verified current; no unresolved critical finding.
-- [ ] Executive Report written to `.dwp/plans/PLAN_onboard_{repo}/` summarizing
-      archetype, stack, artifacts generated, smoke-test result, deferred items.
+- [ ] Every task log carries a skills disposition; the candidates ledger is reconciled.
+- [ ] `.dwp/onboard/REPORT.md` records the first usable outcome (verified command
+      and mapping, skill identity/version, capability limits, next action).
+- [ ] Executive Report offered once; generated only if requested.
 
 ## 7. Validation
     bash {skill-path}/deepworkplan/verify/SKILL.md   # read-only conformance

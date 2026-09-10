@@ -64,3 +64,42 @@ build`, or wrapped `package.json` scripts (`npm run lint && npm run test:ci &&
 npm run build`). **Do not assume** the package manager, the test runner, or the
 script names — read `angular.json`, `package.json`, and CI and capture the exact
 commands.
+
+## Testing and validation (verified vs example)
+
+The uniform section every preset carries (`README.md` → "The testing section
+every preset carries"). Everything below is an **illustrative example until it
+is verified against the target repository** in Phase 1 — run the scoped example
+on a real path and record the selected/executed count. Items marked *reference
+run* were verified once in this skill's contributor environment with the tool
+version stated; the target repo's version may differ, so re-verify.
+
+### 1. Full commands
+- Tests: `ng test --watch=false` (Karma + Jasmine, `*.spec.ts`) — or `npx jest` when the repo uses `@angular-builders/jest` / `jest-preset-angular`; e2e: Playwright or Cypress (`npx playwright test`, `npx cypress run`).
+- Static: `ng lint` (`@angular-eslint`), `npx tsc --noEmit -p tsconfig.app.json` (and `tsconfig.spec.json`), `ng build`.
+
+### 2. Scoped invocation
+**Angular CLI + Karma/Jasmine** (documented example — not run in the contributor environment): `ng test --watch=false --include='src/app/orders/**/*.spec.ts'` selects by glob (`--include` accepts globs and file paths); `fdescribe`/`fit` focus a spec at source level (never commit them). **Evidence:** the Karma summary `Executed N of M` — `N` must be the expected count.
+
+**Jest** (flags verified against `jest@29 --help`): `jest <pathPattern>` or `--testPathPattern <regex>` (path filter), `-t "<name>"` (name filter), `--findRelatedTests <src files…>` (impact selection: tests that import the changed sources), `--changedSince <ref>` (impact via git). **Evidence:** the `Tests: N passed` summary. **Zero-selection behavior:** `No tests found` exits **1** by default — `--passWithNoTests` turns that into a silent pass and is forbidden in a gate.
+
+**Playwright** (flags verified against `@playwright/test@1.63 test --help`): `playwright test <file>`, `-g "<title>"`, `--project <name>`, `--only-changed [ref]` (impact via git). `No tests found` is reported when a filter matches nothing — confirm the exit code in the target repo before trusting it in a gate.
+
+### 3. Scoped static checks
+- **`ng lint`** runs the workspace's ESLint projects; **`eslint <path>`** (example) scopes natively.
+- **`tsc --noEmit -p tsconfig.app.json`** / `ng build`: project-wide. Type-check is **project-wide by design**: `tsc --noEmit` reads `tsconfig.json`; `tsc <file>` ignores the project config and is *not* a sound scoped check. Do not fabricate a per-file variant — a single project-wide run is the real (and usually cheap) option.
+
+### 4. Source-to-test mapping
+Co-located `foo.component.spec.ts` / `foo.service.spec.ts` next to each unit; feature-module folders under `src/app/<feature>/`; shared code under `src/app/shared/` and `src/app/core/`.
+
+### 5. Affected consumers
+No native impact selector with Karma; with Jest use `--findRelatedTests`. **Blind spots:** `NgModule` provider/import graphs and standalone-component `imports` arrays, `providedIn: 'root'` services (consumed with no module edge), route configs (`app.routes.ts`), `angular.json`, environment files, global styles, `TestBed` fixtures. A change to a `core/` service or an interceptor affects every feature ⇒ full run.
+
+### 6. Escalation and fallback
+Shared/core: `src/app/core/` (interceptors, guards, singletons), `src/app/shared/`, `app.config.ts` / root module, route configs. Always full run: `angular.json`, `tsconfig*.json`, `karma.conf.js`/`jest.config.*`, `package.json`/lockfile, ESLint config, `src/environments/*`. **Fallback:** `ng lint && ng test --watch=false && ng build`.
+
+### 7. Layers and posture
+Unit (Jasmine/Jest with `TestBed`, `HttpTestingController`) for services, pipes, component logic — fast base; component tests for template behavior; integration where a feature module wires routing + store; a few Playwright/Cypress flows. Unit-first; no ratio quota.
+
+### 8. Zero-selection behavior
+Karma reports `Executed 0 of 0` and exits **0** when `--include` matches nothing — a silent empty run: always check the executed count. Jest exits 1 on `No tests found` (unless `--passWithNoTests`).

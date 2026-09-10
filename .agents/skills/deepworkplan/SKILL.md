@@ -1,7 +1,7 @@
 ---
 name: deepworkplan
 description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
-version: "2.17.0"
+version: "2.17.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -49,10 +49,24 @@ plain install). Before routing anywhere else:
    Work Plans (below) — long-horizon, gated, resumable work an agent can run
    autonomously for hours.
 
-**If the repository is already AI-first**, skip onboarding and route by intent
-**silently** — do not announce the detection or the routing decision (no "the repo
-is already AI-first" / "routing to the create sub-skill" preamble). Just begin the
-matched sub-skill's flow directly.
+**If the repository is already AI-first but its harness predates this skill** —
+`AGENTS.md` / `.agents/` exist, yet there is no `DWP standard:` provenance line,
+the provenance line is older than the standard shipped here, or
+`docs/TESTING_GUIDE.md` lacks the scoped-invocation and mapping content the
+standard requires — **offer the targeted harness upgrade** before routing:
+reinstalling the skill is the whole upgrade path, so no separate installer
+exists. Say in one line what is out of date, then run
+[`onboard/SKILL.md`](onboard/SKILL.md) in `upgrade` mode (Phase 0), which
+reconciles **only** the missing or outdated pieces, leaves every handwritten
+section, custom skill and in-flight plan untouched, and changes nothing on a
+second run. An in-flight plan keeps its recorded lifecycle; migrating one is a
+separate, explicit `refine migrate`. If the developer declines, route by intent
+as normal.
+
+**If the repository is already AI-first and current**, skip onboarding and route
+by intent **silently** — do not announce the detection or the routing decision
+(no "the repo is already AI-first" / "routing to the create sub-skill"
+preamble). Just begin the matched sub-skill's flow directly.
 
 ## What it does
 
@@ -124,6 +138,9 @@ rendered version lives at https://deepworkplan.com/spec.
 - [`shared/adaptation.md`](shared/adaptation.md) — the reasoning-over-copy-paste
   principle and the two repository archetypes (individual repo vs orchestrator
   hub).
+- [`shared/troubleshooting.md`](shared/troubleshooting.md) — read **only when
+  something is already wrong**: discovery failure, stale installation, missing
+  test command, unsupported host capability, inconsistent state.
 
 ### Opt-in addons
 

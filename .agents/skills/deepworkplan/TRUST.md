@@ -11,8 +11,10 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 ## What this skill is
 
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
-agent reads at runtime, plus two small Bash helpers (`setup.sh` for symlinking
-and `shared/context.sh` for repo/branch/`.dwp/` detection). The **core
+agent reads at runtime, plus three small Bash helpers: `setup.sh` (symlinking,
+at the repository root, not inside the pack), and two inside the pack —
+`shared/context.sh` for repo/branch/`.dwp/` detection and
+`verify/conformance.sh` for the read-only conformance check. The **core
 methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
 network calls**, and emits **no telemetry** of any kind.
 
@@ -38,8 +40,9 @@ network calls**, and emits **no telemetry** of any kind.
   reason about it rather than copy a template.
 - **Edit, Write** — generate and reconcile `AGENTS.md`, `docs/`, per-module docs,
   the `.agents/` kit, and write plan artifacts under `.dwp/`.
-- **Bash** — run `shared/context.sh` (reads local git + environment metadata only)
-  and the repo's own validation commands during plan execution.
+- **Bash** — run `shared/context.sh` (reads local git + environment metadata
+  only), `verify/conformance.sh` (reads plan and repository files; writes
+  nothing), and the repo's own validation commands during plan execution.
 
 ## What it does to your machine
 
@@ -60,7 +63,7 @@ non-destructive by design:
 ## What it does NOT do
 
 - No telemetry, no analytics, no "phone home" — ever, including the addons.
-- No network requests in the **core** methodology or its two Bash helpers. (Opt-in
+- No network requests in the **core** methodology or any of its Bash helpers. (Opt-in
   addons may install third-party tools via their official installers, only with
   your consent — see the caveat above.)
 - No background daemon, no persistent external state.
@@ -95,10 +98,11 @@ grep -RInE 'curl|wget|fetch\(|urllib|requests\.|XMLHttpRequest' \
 # 2. See every network reference that DOES exist — all inside opt-in addons:
 grep -RIlE 'curl|wget' skills/deepworkplan/addons || echo 'none'
 
-# 3. The only shipped runtime script is context.sh; confirm it makes no network call:
+# 3. Two scripts ship inside the pack; confirm neither makes a network call:
 find skills/deepworkplan -name '*.sh'
-grep -nE 'curl|wget|http' skills/deepworkplan/shared/context.sh \
-  || echo 'OK: context.sh reads local git + env only'
+grep -nE 'curl|wget|https?://' \
+  skills/deepworkplan/shared/context.sh skills/deepworkplan/verify/conformance.sh \
+  || echo 'OK: both read local files, git and env only'
 
 # 4. No remote-installer pipes or bypass-flag literals anywhere in the pack
 #    (the lexical shapes Snyk E005/E006 and Socket W012 audit for). The

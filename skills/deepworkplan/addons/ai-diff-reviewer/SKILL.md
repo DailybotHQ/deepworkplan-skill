@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-ai-diff-reviewer
-description: "Optional DeepWorkPlan addon that connects an AI-first repo to the AI Diff Reviewer (DailybotHQ/ai-diff-reviewer on GitHub, \"AI Diff Reviewer\" on the Marketplace, current v2.0.0) — installing (with consent) the vendored coding-agent skill (DailybotHQ/ai-diff-reviewer, five sub-skills — parent default flow, generate-extension, setup, open-pr, apply-review) and, if the developer picks Flow B (dual-surface), letting the upstream setup sub-skill write .github/workflows/pr-review.yml so every pull request to the target repo is reviewed in CI with byte-identical parity to the local review. Wires the mandatory DWP Security Review task to run the parent default flow (\"Review my current branch\") as an additive step producing verdict + findings table + severity, appended under a dedicated heading in analysis_results/SECURITY_REVIEW.md. In Flow B, also surfaces the upstream apply-review sub-skill as an OPTIONAL developer-invoked companion during execute for walking through CI-posted findings per-finding (apply / defer / skip) with explicit consent. Opt-in, never required, never blocks on missing skill/extension/invocation errors (completed-review critical findings still follow the Security Review contract), reconciles existing setups instead of clobbering them, defers all install/auth/wizard details to the upstream skill's own consent flows, and lets consumers pick Flow A (local-only) or Flow B (dual-surface) — never guesses, always asks. Use when the developer or team wants structured local review + optional CI merge gate on DWP work."
+description: "Optional DeepWorkPlan addon that connects an AI-first repo to the AI Diff Reviewer (DailybotHQ/ai-diff-reviewer on GitHub, \"AI Diff Reviewer\" on the Marketplace, current v2.0.0) — installing (with consent) the vendored coding-agent skill (DailybotHQ/ai-diff-reviewer, five sub-skills — parent default flow, generate-extension, setup, open-pr, apply-review) and, if the developer picks Flow B (dual-surface), letting the upstream setup sub-skill write .github/workflows/pr-review.yml so every pull request to the target repo is reviewed in CI with byte-identical parity to the local review. Wires the security pass of the mandatory DWP Final Review to run the parent default flow (\"Review my current branch\") as an additive step producing verdict + findings table + severity, appended under a dedicated heading in analysis_results/SECURITY_REVIEW.md. In Flow B, also surfaces the upstream apply-review sub-skill as an OPTIONAL developer-invoked companion during execute for walking through CI-posted findings per-finding (apply / defer / skip) with explicit consent. Opt-in, never required, never blocks on missing skill/extension/invocation errors (completed-review critical findings still follow the Final Review contract), reconciles existing setups instead of clobbering them, defers all install/auth/wizard details to the upstream skill's own consent flows, and lets consumers pick Flow A (local-only) or Flow B (dual-surface) — never guesses, always asks. Use when the developer or team wants structured local review + optional CI merge gate on DWP work."
 version: "2.17.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -10,7 +10,7 @@ metadata: {"openclaw":{"emoji":"🔍","homepage":"https://deepworkplan.com","req
 
 # DeepWorkPlan — AI Diff Reviewer Addon
 
-Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)** (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff Reviewer"**, current **v2.0.0**) so DWP work — the mandatory **Security Review** final task — is augmented with a structured local review (verdict + findings table + severity), and (in Flow B, optionally) every pull request to the target repo is gated by a CI-side review Action pinned to the same tag for byte-identical parity. This is an **opt-in addon**; it is **never** required for a repo to be AI-first. Missing skill/extension or invocation errors **never block** the work; `critical` findings from a **completed** local review still follow the existing Security Review contract (block until fixed or explicitly accepted).
+Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)** (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff Reviewer"**, current **v2.0.0**) so DWP work — the mandatory security pass of the mandatory **Final Review** — is augmented with a structured local review (verdict + findings table + severity), and (in Flow B, optionally) every pull request to the target repo is gated by a CI-side review Action pinned to the same tag for byte-identical parity. This is an **opt-in addon**; it is **never** required for a repo to be AI-first. Missing skill/extension or invocation errors **never block** the work; `critical` findings from a **completed** local review still follow the existing Final Review contract (block until fixed or explicitly accepted).
 
 > ## The rule that overrides everything: this addon DEFERS, it does not reinvent
 >
@@ -24,7 +24,7 @@ Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotH
 > (local-only) or Flow B (dual-surface) — never guess, matching the upstream
 > skill's own ambiguity tie-break policy, (3) if Flow B, defer to the
 > upstream `setup` sub-skill for the CI workflow, and (4) **wire** the parent
-> default flow into DWP `create`/`execute` so the mandatory Security Review is
+> default flow into DWP `create`/`execute` so the Final Review's security pass is
 > augmented with a local review pass, plus (Flow B only) surface `apply-review`
 > as an available companion for post-CI walkthrough. It MUST NOT duplicate,
 > bypass, or weaken any upstream consent, auth, wizard, or review flow — it
@@ -47,7 +47,7 @@ default to either.
 
 | Flow | Use when | Sub-skills used | Sub-skills skipped |
 |------|----------|-----------------|--------------------|
-| **A — local-only** | Personal repos, experimental repos, or teams not (yet) ready for automated PR review. The vendored skill runs locally; the CI Action is NOT installed. | parent default flow (Security Review augmentation) + **`generate-extension` (required for SR detection)** + optionally `open-pr` | `setup` (would install the workflow), `apply-review` (nothing to apply back — no CI review posts) |
+| **A — local-only** | Personal repos, experimental repos, or teams not (yet) ready for automated PR review. The vendored skill runs locally; the CI Action is NOT installed. | parent default flow (security-pass augmentation) + **`generate-extension` (required for SR detection)** + optionally `open-pr` | `setup` (would install the workflow), `apply-review` (nothing to apply back — no CI review posts) |
 | **B — dual-surface** | Team repos, production-facing repos, and anything where automated PR review is wanted. Skill + CI Action, both wired to the same `.review/extension.md` for byte-identical parity. Recommended for team repos. | All five: parent + `generate-extension` + `setup` + `open-pr` + `apply-review` | Nothing — all capabilities are used across the plan lifecycle |
 
 **Parity guarantee (Flow B).** The upstream skill's `prompt.md` is
@@ -61,12 +61,12 @@ extension = same review, locally and in CI.
 ## Read these first (all relative inside the skill)
 
 - [`SPEC.md`](SPEC.md) — the normative (RFC-2119) contract: two flows, what is
-  installed (all opt-in), how auth is deferred, how the Security Review
+  installed (all opt-in), how auth is deferred, how the security-pass
   augmentation is wired, the optional `apply-review` companion, the
   never-block rule, and the vendor-neutral guardrail.
 - [`templates/INTEGRATION.md`](templates/INTEGRATION.md) — reasoning guidance
   (NOT copy-paste): detect-if-already-installed, how to ask for the flow, how
-  to wire the Security Review augmentation, and the consent / never-block
+  to wire the security-pass augmentation, and the consent / never-block
   rules.
 - `../README.md` — the addon mechanism (opt-in, reconcile-don't-clobber, contract).
 
@@ -110,7 +110,7 @@ happen.
 - **AGENTS.md / docs notes (optional)** — a short pointer that the addon is
   installed and which flow was chosen, only when the developer accepts a
   docs-update prompt. Reconcile; never clobber existing sections.
-- **Plan-time Security Review append** — during `execute`, append the local
+- **Plan-time security-pass append** — during `execute`, append the local
   review output under `## AI Diff Reviewer local review` in
   `analysis_results/SECURITY_REVIEW.md` (plan working state, typically
   gitignored). Never rewrite the rest of that file.
@@ -165,7 +165,7 @@ for is the consent-gated, tag-pinned `skills add`/`skills update` above.
    > **Flow A — local-only.** Vendored skill + a repo-tailored extension
    > file (via `generate-extension`); no GitHub Actions changes. Best for
    > personal or experimental repos, or teams not (yet) ready for automated
-   > PR review. Once both are present, the DWP Security Review is augmented
+   > PR review. Once both are present, the DWP Final Review's security pass is augmented
    > with a local review pass — skill alone is not enough.
    >
    > **Flow B — dual-surface.** Skill + CI Action, both reading the same
@@ -218,10 +218,10 @@ installer without their explicit acceptance**.
 
 ### Step 1b — Bootstrap the extension file (REQUIRED for both flows)
 
-Security Review detection (SPEC §6.1 / `create` / `execute`) requires
+Security-pass detection (SPEC §6.1 / `create` / `execute`) requires
 **skill + an extension file** at one of the three recognized paths. Do
 **not** finish addon onboarding without one — otherwise every later
-Security Review will warn "install incomplete" and skip the local pass.
+the Final Review's security pass will warn "install incomplete" and skip the local pass.
 
 1. If an extension already exists at a recognized path → record it; do not
    clobber (and do not migrate fallback/back-compat paths silently — ask).
@@ -235,7 +235,7 @@ Security Review will warn "install incomplete" and skip the local pass.
    for this repo"*.
 
 Mid-plan `execute` **MUST NOT** surprise-bootstrap an extension — that is
-an onboarding concern, not a Security Review side effect.
+an onboarding concern, not a side effect of the Final Review.
 
 ### Step 2 — CI workflow install — DEFER to the upstream `setup` sub-skill (Flow B only)
 
@@ -261,7 +261,7 @@ The addon **MUST NOT** reimplement the wizard. If the developer wants to skip
 the wizard, `templates/INTEGRATION.md` provides a fallback shape and points
 at the reference manual — but the wizard is the primary path.
 
-### Step 3 — Wire the Security Review augmentation into DWP execution
+### Step 3 — Wire the security-pass augmentation into DWP execution
 
 This is the integration value. Reasoning guidance is in
 `templates/INTEGRATION.md` — adapt it to the repo; do not copy verbatim.
@@ -269,7 +269,7 @@ This is the integration value. Reasoning guidance is in
 - Add a short, clearly-optional note to the repo's DWP execution docs (the
   generated `AGENTS.md` reporting section and/or `docs/AI_AGENT_COLLAB.md`)
   describing that **when this addon is installed**, the mandatory
-  `{N-2}.task_security_review.md` template gains an additional post-existing-checks step:
+  `{N}.task_final_review.md` template gains an additional post-existing-checks step in its security pass:
 
   1. **Local review augmentation (both flows)** — invoke the upstream
      parent default flow ("Review my current branch"). Capture verdict +
@@ -321,9 +321,9 @@ skip, and do not fail the onboarding.
   vendored skill is missing, detection fails, or the local review
   invocation errors — stop/continue cleanly. The repo stays
   baseline-conformant. Once a local review **ran**, open `critical`
-  findings still block Security Review completion until fixed or
+  findings still block Final Review completion until fixed or
   explicitly accepted (SPEC §6.1 / §7). An unset CI provider secret does
-  not skip the local Security Review pass (Flow B CI/gate only).
+  not skip the local security pass (Flow B CI/gate only).
 - **Defer to upstream.** No wizard reimplementation, no review-methodology
   reimplementation, no apply-review reimplementation. Point at the vendored
   sub-skills.

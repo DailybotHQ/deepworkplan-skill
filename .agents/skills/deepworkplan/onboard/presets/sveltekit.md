@@ -64,3 +64,42 @@ Commonly `pnpm run lint && pnpm run check && pnpm test && pnpm run build`
 (or npm/yarn), where `check` is `svelte-check` and `build` is `vite build`.
 **Do not assume the package manager or script names** — read `package.json`,
 `svelte.config.js`, and CI, and capture the exact commands.
+
+## Testing and validation (verified vs example)
+
+The uniform section every preset carries (`README.md` → "The testing section
+every preset carries"). Everything below is an **illustrative example until it
+is verified against the target repository** in Phase 1 — run the scoped example
+on a real path and record the selected/executed count. Items marked *reference
+run* were verified once in this skill's contributor environment with the tool
+version stated; the target repo's version may differ, so re-verify.
+
+### 1. Full commands
+- Tests: `pnpm vitest run` (or `pnpm test`; some repos split `test:unit` / `test:e2e`), from the repo root; e2e: `pnpm playwright test`.
+- Static: `pnpm lint` (`eslint` + often `prettier --check`), `pnpm check` (`svelte-kit sync && svelte-check`), `pnpm build` (`vite build`).
+
+### 2. Scoped invocation
+**Vitest** (reference run — vitest 5.0.0, contributor environment):
+`vitest run <file>` selects exactly that file (`Test Files 1 passed`); `vitest run <dir>` selects the directory; `vitest run -t "<name>"` filters by test name; `vitest run --project <name>` selects a workspace project. **Evidence of a correct run:** the `Test Files N passed (N)` line — check `N` is what you expected.
+**Zero-selection behavior (verified):** a path filter that matches nothing prints `No test files found` and exits **1** (detectable); a `-t` name filter that matches nothing exits **0** with every test *skipped* (`Test Files 8 skipped`) — a silent empty run. Never accept `-t` without confirming a non-zero passed count.
+
+**Playwright** (flags verified against `@playwright/test@1.63 test --help`): `playwright test <file>`, `-g "<title>"`, `--project <name>`, `--only-changed [ref]` (impact via git). `No tests found` is reported when a filter matches nothing — confirm the exit code in the target repo before trusting it in a gate.
+
+### 3. Scoped static checks
+- **ESLint / Prettier** (example): `eslint <path>`, `prettier --check <path>` scope natively.
+- **`svelte-check`**: project-wide (it understands `.svelte` and reads the project config); `svelte-check --threshold error` narrows severity, not paths. Type-check is **project-wide by design**: `tsc --noEmit` reads `tsconfig.json`; `tsc <file>` ignores the project config and is *not* a sound scoped check. Do not fabricate a per-file variant — a single project-wide run is the real (and usually cheap) option.
+
+### 4. Source-to-test mapping
+Co-located `*.test.ts` next to `+page.svelte` / `+server.ts` / components, or `src/**/__tests__/`; `src/lib/` utilities with sibling tests; e2e under `tests/` (`*.spec.ts`, Playwright).
+
+### 5. Affected consumers
+`vitest run --changed <ref>`. **Blind spots:** `+layout.svelte` / `+layout.server.ts` (affects every child route with no import edge), `hooks.server.ts`, `svelte.config.js`, `vite.config.*`, `$env` usage, `.env*`. A change under `src/routes/(group)/+layout*` affects the whole group — run that group's tests or the full suite.
+
+### 6. Escalation and fallback
+Shared/core: `src/lib/` (`$lib`), `src/hooks.*`, top-level layouts, `src/params/`. Always full run: `svelte.config.js`, `vite.config.*`, `vitest.config.*`, `tsconfig.json`, `package.json`/lockfile, ESLint/Prettier config, `.env*`. **Fallback:** `pnpm lint && pnpm check && pnpm vitest run` (+ `pnpm build`).
+
+### 7. Layers and posture
+Unit (Vitest) for `$lib` and load functions — fast base; component tests (`@testing-library/svelte`); integration for `+server.ts` endpoints with real load/form actions; Playwright for a few flows. Unit-first; no ratio quota.
+
+### 8. Zero-selection behavior
+See §2 (Vitest path miss → exit 1; `-t` miss → exit 0 skipped).

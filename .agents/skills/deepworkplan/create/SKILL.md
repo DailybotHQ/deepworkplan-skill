@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
-description: Create a Deep Work Plan. Gather context, draft, and refine into a single final plan under .dwp/plans/, with a refined draft staged in .dwp/drafts/. Use when the developer wants a new structured multi-task plan.
-version: "2.17.0"
+description: Create a Deep Work Plan. Gather context, analyze requirements, and materialize a single final plan under .dwp/plans/ — guided mode stages a refined draft in .dwp/drafts/ for review; trust mode materializes directly. Use when the developer wants a new structured multi-task plan.
+version: "2.17.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -10,20 +10,22 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 # DeepWorkPlan — Create
 
 Create a new Deep Work Plan through a smooth, unified flow: the developer
-provides information once, you generate a **single refined draft**, the developer
-reviews it, and you materialize the final plan under `.dwp/plans/PLAN_{name}/`.
+provides information once, you run the **requirements analysis**, and then —
+depending on the mode — either stage a **single refined draft** for review
+(guided) or **materialize the plan directly** under `.dwp/plans/PLAN_{name}/`
+(trust). The plan's substance is composed **once**.
 
-> **Single-step change (vs legacy):** DeepWorkPlan generates the **refined draft
-> directly**. There is **no separate raw-draft file**. This replaces the legacy
-> draft → refined-draft two-step (which wrote `PLAN_{name}_draft.md` and then
-> `PLAN_{name}_draft_refined.md`). The only reviewable draft artifact is now
-> `.dwp/drafts/PLAN_{name}_draft_refined.md`.
+> **Single-step (vs legacy):** there is **no separate raw-draft file**. The only
+> reviewable draft artifact is `.dwp/drafts/PLAN_{name}_draft_refined.md`, and it
+> exists only in guided mode or on explicit request
+> (`../spec/DWP_SPECIFICATION.md` §3).
 
 ## Philosophy
 
 The goal is a delightful, smooth experience. The user provides information once;
-the system handles all intermediate steps (refined-draft creation, review, final
-plan generation) automatically.
+the system handles all intermediate steps (analysis, draft or direct
+materialization, quality check) automatically — and never generates an artifact
+nobody asked for.
 
 ## Shared resources (read these)
 
@@ -33,55 +35,63 @@ plan generation) automatically.
   `.dwp/drafts/` output convention.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
   and the two repository archetypes (individual repo vs orchestrator hub).
-- [`../guide/GUIDE.md`](../guide/GUIDE.md) — the full methodology: plan README
-  structure, task-file anatomy, mandatory final tasks, orchestrator (§13),
-  team agents (§14).
+- **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.4) and [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10).
+- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) if the target repo has an installed addon that augments the Final Review; [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns.
 - [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
   `PROMPTS.md` template for each plan.
+- The target repository's `docs/TESTING_GUIDE.md` (`../spec/DOCUMENTATION_STANDARD.md` §3.4) — the documented full and scoped validation commands and the source-to-test mapping that every generated gate is selected from.
+- **Spec (conditional — read the named sections only when the trigger fires):** [`../spec/DWP_SPECIFICATION.md`](../spec/DWP_SPECIFICATION.md) §11 when the rigor tier is borderline and §5.0.2 when a Touched Surface is genuinely ambiguous; [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §3–§4 **and** [`../spec/schema/`](../spec/schema/) when writing the state layer in Step 4.4 item 7. The step text below is self-sufficient for the ordinary case — read these only when it is not.
 
 ## Parameter Reference
 
 | Input | Classification | Mode | Behavior | Example |
 |-------|---------------|------|----------|---------|
-| (none) | — | guided | Ask for name, then ask questions | `/dwp-create` |
-| `{short text}` | **name-only** | guided | Extract name, ask questions immediately | `/dwp-create improve error handling` |
-| `{long text}` | **full-context** | guided | Infer name, proceed to refined draft directly | `/dwp-create Refactor auth to use JWT across all services. Currently using sessions...` |
-| `trust` or `auto` | — | trust | Ask for name, then ask questions (no confirmations) | `/dwp-create trust` |
-| `{short text} trust` | **name-only** | trust | Extract name, ask questions (no confirmations) | `/dwp-create improve-error-handling trust` |
-| `{long text} trust` | **full-context** | trust | Infer name, proceed directly (no confirmations) | `/dwp-create Refactor auth... trust` |
-| `refined-draft {name}` | — | refined-draft-only | Produce ONLY the refined draft (no final plan) | `/dwp-create refined-draft my_plan` |
-| `from-refined-draft {file}` | — | from-refined-draft | Build final plan from an existing refined draft | `/dwp-create from-refined-draft PLAN_x_draft_refined.md` |
+| (none) | — | guided | Ask for name, then ask questions; analyze; stage the refined draft for review; materialize on approval | `/dwp-create` |
+| `{short text}` | **name-only** | guided | Extract name, ask questions immediately; then as above | `/dwp-create improve error handling` |
+| `{long text}` | **full-context** | guided | Infer name; analyze the provided context; stage the refined draft for review; materialize on approval | `/dwp-create Refactor auth to use JWT across all services. Currently using sessions...` |
+| `trust` or `auto` | — | trust | Ask for name, then ask questions; analyze; **materialize the plan directly** (no draft file, no confirmations); the plan is pre-approved for unattended execution | `/dwp-create trust` |
+| `{short text} trust` | **name-only** | trust | Extract name, ask questions; then as above | `/dwp-create improve-error-handling trust` |
+| `{long text} trust` | **full-context** | trust | Infer name; analyze; materialize directly | `/dwp-create Refactor auth... trust` |
+| `refined-draft {name}` | — | refined-draft-only | Produce ONLY the refined draft (no final plan) — works in either mode | `/dwp-create refined-draft my_plan` |
+| `from-refined-draft {file}` | — | from-refined-draft | Build the final plan from an existing refined draft | `/dwp-create from-refined-draft PLAN_x_draft_refined.md` |
 | `from {file}` | — | from-refined-draft | Alias for `from-refined-draft` | `/dwp-create from PLAN_x_draft_refined.md` |
 
 > **Name format:** users type names in any format; you auto-convert to
-> `snake_case` internally.
+> `snake_case` internally. **Explicit draft parameters win** over the ordinary
+> trust default: `refined-draft … trust` still produces a draft.
 
 ## Modes
 
 ### Guided Mode (default)
-- Collects information from the user.
+- Collects information from the user; runs the requirements analysis (Step 3).
 - Creates the **refined draft** → shows it for review.
 - Asks for confirmation before creating the final plan.
 - User can request adjustments before final generation.
 
 ### Trust Mode (`trust` or `auto`)
-- Collects information from the user.
-- Creates the **refined draft** → final plan automatically (no intermediate
-  confirmations).
+- Collects information from the user; runs the **same** requirements analysis
+  (Step 3) and the **same** plan-quality check (Step 4.5).
+- **Materializes the final plan directly** — no draft file is written. Trust
+  waives the intermediate *review*, never the *analysis* or the quality check.
+- Records the plan as **pre-approved for unattended execution**
+  (`../spec/AGENT_PROTOCOL.md` §7.2): the developer's `trust` instruction is
+  the approval.
 
 ## Trust boundary (write scope)
 
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
 **Writes:** plan artifacts under the gitignored `.dwp/` directory only —
-`.dwp/drafts/` during drafting, `.dwp/plans/PLAN_{name}/` for the materialized
-plan (README, task files, analysis outputs). "Trust mode" skips intermediate
-confirmations of **plan content**, not of the write boundary.
+`.dwp/drafts/` when a draft is produced, `.dwp/plans/PLAN_{name}/` for the
+materialized plan (README, task files, analysis outputs, state layer). "Trust
+mode" skips intermediate confirmations of **plan content**, not of the write
+boundary, and grants no permission the plan does not list.
 
 **It MUST NOT:** modify source files (that is `execute`'s job), write outside
-`.dwp/`, read or include secrets in plan content, or materialize a plan whose
-tasks lack acceptance criteria and validation gates.
+`.dwp/`, read or include secrets in plan content, install anything, make network
+calls, or materialize a plan whose tasks lack acceptance criteria and validation
+gates. Ordinary `create` never requires a source edit, an install, or the network.
 
 ## Unified Workflow
 
@@ -114,20 +124,25 @@ set `trust_mode = true`; otherwise `false`.
 
 **Routing by mode:**
 - `from-refined-draft` → skip to Step 4.3.
-- `refined-draft-only` → gather info, create only the refined draft, skip final
-  plan creation.
+- `refined-draft-only` → gather info, analyze, create only the refined draft,
+  skip final plan creation (in either trust or guided mode).
 - `no input` / `name-only` → Step 1, then Step 2.
 - `full-context` → Step 1, then Step 3.
 
 ### Step 1 — Quick Introduction
 
-Show a brief intro matching the mode (guided vs trust): what will happen and that
-you'll create a refined plan, review it (guided) or proceed (trust), then
-generate the final executable plan.
+Show a brief intro matching the mode: in **guided** mode, that you will analyze
+the requirements, stage a refined plan for review, and then generate the final
+executable plan; in **trust** mode, that you will analyze the requirements and
+materialize the final executable plan directly (no draft, no confirmations), and
+that the plan will be pre-approved for unattended execution.
 
 ### Step 2 — Gather Information (Conversational)
 
-> Skip this entire step for `full-context` input — go straight to Step 3.
+> **Skip the *questions* (2.1–2.5) for `full-context` input.** Steps **2.6** and
+> **2.10** are detections, not questions: they run in **every** mode. For
+> full-context input (and for `from-refined-draft`), skip 2.1–2.5 and run 2.6 and
+> 2.10 at the start of Step 3 against the provided context, then continue.
 
 Collect, conversationally:
 - **2.1 Plan name** (skip if already extracted) — auto-convert to snake_case, add
@@ -135,46 +150,105 @@ Collect, conversationally:
 - **2.2 Objective** — one or two sentences.
 - **2.3 Context** — where the changes live, constraints/rules, tech notes.
 - **2.4 Tasks** — at least 2; if only 1, suggest breaking it down.
-- **2.5 Guidelines (optional)** — branch/commit format, coverage target, etc.
+- **2.5 Guidelines (optional)** — branch/commit format, coverage target, whether
+  an Executive Report is wanted at completion (records an explicit prior request
+  per `../spec/DWP_SPECIFICATION.md` §6.3), etc.
 
-**2.6 Orchestrator detection (automatic).** After 2.3–2.4, auto-detect an
-**orchestrator plan** when: the work spans 2+ sub-repositories with independent
-feature work, or the user explicitly mentions child DWPs / orchestrator /
-"create plans in each repo". If detected, offer the choice between an
-**orchestrator plan** (creates child DWPs per repo, each following its own
-`AGENTS.md`) and a **direct multi-project plan**. See `../guide/GUIDE.md` §13 and
-`../shared/adaptation.md` (orchestrator-hub archetype).
+**2.6 Orchestrator detection (automatic — trigger only).** After 2.3–2.4 (or, for
+full-context input, at the start of Step 3), an
+**orchestrator plan** is indicated when the work spans 2+ sub-repositories with
+independent feature work, or the user explicitly mentions child DWPs /
+orchestrator / "create plans in each repo". **If, and only if, this fires:**
+read [`orchestrator.md`](orchestrator.md) (this directory) and follow its
+gathering steps (2.6 choice, 2.7–2.9). Otherwise skip it entirely.
 
-**2.7–2.9 (orchestrator only):** ask for target repositories (note each repo
-root — for an orchestrator hub this is `repositories/{repo}/`), dependency order,
-and execution mode (Distributed / Sequential with Output Handoff / Sequential
-basic). Default to Distributed.
+**2.10 Team-agents detection (automatic — runs in every mode, including when
+Step 2 was skipped; non-orchestrator plans; trigger only).** Analyze whether 2+
+tasks touch different files/modules
+with no data dependencies and would benefit from parallel execution. This is NOT
+opt-in — but the **only** trigger is the analysis's answer, never the host's
+capabilities. **If, and only if, 2+ tasks are parallelizable:** read
+[`team-agents.md`](team-agents.md) (this directory) and follow its steps (2.10
+configuration, and 2.11 parallel research if that step's own trigger — 2+ repos
+or several independent modules with context missing — also fires). If not
+parallelizable: add nothing, mention nothing, read nothing, even when the host
+supports team agents.
 
-**2.10 Team-agents detection (automatic — always runs, non-orchestrator plans).**
-Always analyze whether 2+ tasks touch different files/modules with no data
-dependencies and would benefit from parallel execution. This is NOT opt-in.
-- If parallelizable: in **guided** mode, inform the user (do not ask) and add the
-  team-agents configuration; in **trust** mode, do it silently. Team-agents
-  metadata is always additive and backward compatible (other agents ignore it).
-- Auto-assign parallel groups (tasks with no cross-dependencies), teammate roles
-  (derived from task content), and default model `sonnet`. Setup/integration and
-  the three mandatory final tasks are always sequential.
-- If not parallelizable: add nothing, mention nothing.
+### Step 3 — Requirements Analysis (both modes, before any file is written)
 
-**Step 2.11 — Parallel Research Phase (Claude Code only, automatic).** Before
-drafting, if the plan spans 2+ repos or several independent modules and context
-isn't already provided, spawn **research teammates** (`subagent_type: "Explore"`,
-one per repo/area) to read each `AGENTS.md`, identify relevant files, contracts,
-and validation commands, then synthesize their findings into enriched context for
-the refined draft. Skip for simple/single-module plans or full-context input.
-Fallback: research sequentially if team agents are unavailable. In trust mode,
-run silently.
+> **First, if Step 2's questions were skipped** (full-context input or
+> `from-refined-draft`): run the two detections now, against the provided
+> context — **2.6 orchestrator** and **2.10 team-agents** — and read their
+> on-demand files only if a trigger fires. A detection is never skipped merely
+> because no questions were asked.
 
-### Step 3 — Create the Refined Draft (Automatic, SINGLE STEP)
+This step is what the draft used to carry implicitly. It runs in **every** mode
+and is the substance of the plan; the mode only decides whether it is first
+staged as a draft (guided) or materialized directly (trust).
 
-> **This is the single-step change.** Produce the **refined draft directly** —
-> one file, written straight to `.dwp/drafts/`. Do NOT create a separate raw
-> `PLAN_{name}_draft.md` first.
+- **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
+  work warrants a plan. A trivial single-concern change is **micro** tier — in
+  **guided** mode say that a plan is disproportionate, offer to state goal +
+  acceptance criteria + validation gate inline, and do that instead. In **trust**
+  mode the developer has already asked for a plan and there is nobody to answer:
+  **do not stop to ask.** Record the micro judgment and the inline alternative in
+  the plan README's Plan Variables (`Rigor: micro — a plan is arguably
+  disproportionate; inline alternative: …`) and materialize the plan anyway; the
+  developer sees the note and can discard it. Otherwise choose `standard` or
+  `deep` and record why (in the draft in guided mode; in the plan README in trust
+  mode). A borderline call is recorded, never asked.
+- **3.2 Requirement inventory.** List every user requirement and constraint
+  (from Steps 2–2.5 or the full-context input). Each one will need an **owning
+  task** and an **observable acceptance criterion**.
+- **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** Each task is
+  one coherent outcome with a bounded write surface, concrete inputs and outputs,
+  and resumable sub-steps. Split when distinct outcomes carry different failure
+  modes or independent evidence that would otherwise hide behind one checkbox;
+  keep tightly coupled edits together; keep resumable sub-steps inside a larger
+  cohesive task rather than exploding it. There is **no** task-count quota and
+  no ritual of a separate task per minor edit. Preserve full detail — this
+  analysis never shortens a requirement to save space.
+- **3.4 Dependency order and prerequisites.** Order tasks so every prerequisite
+  artifact (a decision, a file, a contract) exists before the task that consumes
+  it; record, per task, its owned surface, prerequisite artifacts, and expected
+  outputs (these become the task's Context, Read Before Starting, and Outputs).
+- **3.5 Validation selection (`../spec/DWP_SPECIFICATION.md` §5.0.2, §5.1).**
+  For each behavior-changing task, derive the **planned Touched Surface**, the
+  affected consumers, and the **risk class** (isolated / seam / shared-core /
+  unknown), and select runnable gates from the repository's documented commands
+  and mapping (`docs/TESTING_GUIDE.md`): the tests of the changed behavior plus
+  affected consumers; integration/contract checks **inside** any task that changes
+  a real seam; a widening to the full suite for shared/core, configuration,
+  schema, dependency or toolchain changes or when impact cannot be bounded. Where
+  the repository documents **no** scoped invocation, the task's gate is the full
+  suite by rule — and note in the README that the repository's harness can be
+  upgraded (`../spec/DOCUMENTATION_STANDARD.md` §3.5). Do **not** paste a generic
+  full-suite command into every task: full validation of the **final state** is
+  the Final Review's job (§5.1.3).
+- **3.6 Test and security discipline.** Bake the **test discipline**
+  (`../guide/authoring.md` §5.3) into every behavior-changing task: its
+  Acceptance Criteria require unit-first automated coverage for the new/changed
+  behavior (fast, isolated, observable behavior; integration at real seams; no
+  ratio or count quota), and its Validation runs the selected tests plus
+  lint/type-check/format. Where related work is substantial, prefer a dedicated
+  `N.task_add_tests_for_{feature}.md` task right after the implementation task.
+  Likewise, for any task that touches auth, input handling, secrets/config,
+  network surface, or dependencies, bake the **security discipline** into it
+  (`../guide/authoring.md` §5.4); where the security-sensitive work is
+  substantial, prefer a dedicated `N.task_security_hardening_{feature}.md` task
+  placed after the implementation tasks and **before** the comprehensive-tests
+  task, so findings are fixed before tests encode the behavior and become
+  regression test cases rather than rework.
+- **3.7 Requirements → tasks → gates check.** Before leaving this step, confirm:
+  every requirement from 3.2 has an owning task and an observable acceptance
+  criterion; prerequisites are available in order; every task is cohesive,
+  independently verifiable, and fully detailed; every behavior-changing task has
+  a planned Touched Surface and a non-empty, runnable gate. Fix gaps here, not
+  after materialization.
+
+### Step 4 — Draft or Materialize (by mode)
+
+#### 4.1 Guided Mode — Refined Draft and Review
 
 Show a **2-step** progress UI:
 
@@ -186,12 +260,13 @@ Creating your plan...
 [1/2] Drafting refined plan...
 ```
 
-**3.1 Write the refined draft:**
+**Write the refined draft** — one file, directly (no raw draft first):
 - Resolve `dwp_dir` via `../shared/context.sh`; ensure `<dwp_dir>/drafts/` exists.
 - Compose a professional, complete plan prompt following
-  `../examples/CREATE_PLAN.md`: objective, context (enriched with Step 2.11
-  research if applicable), well-formed tasks, guidelines. Expand every section
-  with full detail and clarity in one pass.
+  `../examples/CREATE_PLAN.md` from the Step 3 analysis: objective, context
+  (enriched with parallel research if `team-agents.md` ran), the tier and why,
+  well-formed tasks with their planned Touched Surface and gates, guidelines.
+  Expand every section with full detail and clarity in one pass.
 - Write **only**: `.dwp/drafts/PLAN_{name}_draft_refined.md`.
 
 ```
@@ -199,177 +274,165 @@ Creating your plan...
 [2/2] Preparing for review...
 ```
 
-### Step 4 — Review & Create Final Plan
-
-#### 4.1 Guided Mode — Show for Review
-
-Present a summary (objective, task count + list, location, constraints) and the
-path `→ .dwp/drafts/PLAN_{name}_draft_refined.md`, then offer:
+Present a summary (objective, tier, task count + list, location, constraints)
+and the path `→ .dwp/drafts/PLAN_{name}_draft_refined.md`, then offer:
 1. Looks good, create the final plan → Step 4.4.
 2. Make adjustments → ask what to change, **edit the refined draft in place**,
    show the menu again.
 3. Show the full refined draft → display it, then re-show the menu.
 4. Stop here → completion message for the draft phase.
 
-#### 4.2 Trust Mode — Automatic Continue
+#### 4.2 Trust Mode — Direct Materialization
 
-Skip review; go directly to Step 4.4. Progress: `[2/2] Creating final plan...`.
+No draft file. Show a **2-step** progress UI and go straight to Step 4.4:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Creating your plan... (trust mode)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[1/2] Analyzing requirements... ✓
+[2/2] Materializing plan...
+```
+
+The approved objective, context, tier, and task outline are captured in the plan
+README (§1, §2, §4), so nothing reviewable is lost. The README's Plan Variables
+record `Pre-approved for unattended execution: yes (trust)`.
 
 #### 4.3 From-Refined-Draft Mode
 
 - Validate the file exists in `.dwp/drafts/`. If not found, list available
-  refined drafts and ask the user to select.
-- Read it; extract plan name, objective, context, tasks, guidelines.
+  refined drafts and ask the user to choose.
+- Read it; extract plan name, objective, context, tier, tasks, guidelines; run
+  Step 3.7 (requirements → tasks → gates check) against it.
 - Skip to Step 4.4.
 
 #### 4.4 Create Final Plan
 
-Follow `../guide/GUIDE.md`. Create:
+Follow `../guide/authoring.md` (§4–§5) and `../guide/structure.md` (§1–§2).
+
+**Before writing:** resolve `dwp_dir`; if `.dwp/plans/PLAN_{name}/` already
+exists, see *Error Handling — plan exists / partial materialization*. Never
+overwrite files that are not part of this plan.
+
+**Write order (recoverable):** task files → `PROMPTS.md` → `PROGRESS.md` →
+`analysis_results/` (+ ledger) → `manifest.json` + `state.json` → **`README.md`
+last**. A plan folder without `README.md` is, by definition, a **partial
+materialization** that a rerun can detect and complete or discard.
+
+Create:
 
 1. **Folder:** `.dwp/plans/PLAN_{name}/`
-2. **README.md** — Goal; Context; Plan Variables (optional); Global Guidelines;
-   Task List with `[ ]` checkboxes + links (including the three mandatory final
-   tasks); Execution Rules; Skills & Agents Used; Plan Status / Notes; Analysis
-   Outputs (referencing `EXECUTIVE_REPORT.md`); Quick Reference to `PROMPTS.md`.
-3. **PROMPTS.md** — from `../examples/PROMPTS_TEMPLATE.md`, replacing
-   `{PLAN_NAME}`.
-4. **PROGRESS.md** — initial template (Task Summaries / Key Decisions / Important
-   Values & Paths).
-5. **analysis_results/** — empty folder inside the plan directory.
-6. **User-defined task files** — `N.task_{title}.md`, each with Context, Read
-   Before Starting (optional), Goal, Instructions (with re-anchoring),
-   Acceptance Criteria, Outputs (optional), Validation, Rollback (optional),
-   Execution Checklist, Completion & Log. For any task that adds new core
-   functionality or changes product behavior, bake the **test discipline** into
-   it (`../guide/GUIDE.md` §5.3): its Acceptance Criteria **must** require
-   automated test coverage for the new/changed behavior, and its Validation
-   **must** run the repo's tests plus lint/type-check/format checks (not the
-   build alone). Where related work is substantial, prefer a dedicated
-   `N.task_add_tests_for_{feature}.md` task right after the implementation task.
-   Likewise, for any task that touches auth, input handling, secrets/config,
-   network surface, or dependencies, bake the **security discipline** into it
-   (`../guide/GUIDE.md` §5.4); where the security-sensitive work is substantial,
-   prefer a dedicated `N.task_security_hardening_{feature}.md` task placed after
-   the implementation tasks and **before** the comprehensive-tests task, so
-   findings are fixed before tests encode the behavior and become regression
-   test cases rather than rework.
+2. **User-defined task files** — `N.task_{title}.md`, each with the ten-section
+   anatomy (`../spec/DWP_SPECIFICATION.md` §5): Context; Read Before Starting;
+   Goal; **Touched Surface** (planned surface, affected consumers, risk class,
+   test mapping used, selected gate and reason — from Step 3.5; `not applicable
+   — <reason>` for pure prose/research); Instructions (with re-anchoring);
+   Acceptance Criteria (incl. the unit-first coverage expectation from 3.6);
+   Outputs; Validation (the selected, runnable gates — scoped where documented,
+   the full suite as fallback, integration checks where the task changes a seam;
+   never a zero-test selector); Rollback (optional); Execution Checklist;
+   Completion & Log. The Execution Checklist **MUST** include, before the
+   validation step: *"Skills decision: record `none` / `update` / `create` /
+   `defer` in the log; append any real candidate to
+   `analysis_results/SKILLS_CANDIDATES.md` by stable ID `T{N}-{seq}`; do any
+   warranted in-scope authoring now"* (`../spec/DWP_SPECIFICATION.md` §6.2). The
+   Completion & Log template **MUST** carry a `Skills disposition:` line and a
+   `Gate record:` line (command, cwd, scope/reason, revision or fingerprint,
+   result, evidence path).
+3. **The Final Review task** — `{N}.task_final_review.md`, **last**, the single
+   mandatory final task (`../spec/DWP_SPECIFICATION.md` §6.1;
+   `../guide/execution.md` §6.1). Its instructions, in order: **(a) security
+   pass** — review the plan's full accumulated diff for hardcoded secrets,
+   injection risks, unsafe input handling, new attack surface, and
+   auth/permission changes; audit dependencies the plan introduced (best-effort,
+   with the ecosystem's audit tooling where available); verify `docs/SECURITY.md`
+   still reflects reality and update it when the plan changed secrets handling,
+   the auth model, or data boundaries; write `analysis_results/SECURITY_REVIEW.md`
+   even when clean; a critical finding blocks completion until fixed or
+   explicitly accepted by the user. **(b) Final-state validation** — run the
+   repository's complete applicable test, lint, type-check and format suites on
+   the final state (§5.1.3); fixes made during review invalidate affected results,
+   which are rerun. **(c) Skills reconciliation** — confirm every task log has a
+   disposition and every `SKILLS_CANDIDATES.md` entry has one; finish any open
+   warranted authoring before (b) is final; no whole-plan rediscovery, no second
+   report. **(d) Completion** — report deliverables, evidence, limitations and
+   PR links; **offer the Executive Report once** (generate only on request; an
+   explicit request recorded in the plan guidelines counts); send the completion
+   report through the configured channel regardless of the answer.
 
-7. **State layer (RECOMMENDED, `../spec/PLAN_STATE.md`)** — write
-   `manifest.json` (plan identity: name, archetype, rigor tier, spec version,
-   task count, creating agent — once, never edited after) and the initial
-   `state.json` (every task `pending`, empty gates). Both atomically
-   (write-temp-then-rename). REQUIRED when the plan will run unattended
-   (`../spec/AGENT_PROTOCOL.md` §7.2) or the workspace has no git.
+   **Addon augmentation (trigger only):** if the target repo has
+   `.agents/skills/ai-diff-reviewer/` **and** an extension file at one of its
+   three recognized paths, read [`addon-augmentations.md`](addon-augmentations.md)
+   (this directory) and add its post-existing-checks step to the Final Review
+   task. Absent addon or extension → add nothing (the addon's never-block rule).
 
-**Proportional rigor check first (`../spec/DWP_SPECIFICATION.md` §11):** before
-materializing anything, confirm the work actually warrants a plan. A trivial
-single-concern change is **micro** tier — say that a plan is disproportionate,
-offer to state goal + acceptance criteria + validation gate inline and just do
-it. Declare the chosen tier (`standard` or `deep`) and why in the refined draft.
+4. **PROMPTS.md** — from `../examples/PROMPTS_TEMPLATE.md`, replacing
+   `{PLAN_NAME}` with the plan name. The template is written for **you**, so
+   strip its authoring scaffolding before writing the file: drop the
+   "Instructions for Agents Creating This File" block and the closing
+   "For agents:" note, and drop or repoint its relative links (they resolve from
+   `examples/`, not from inside a plan folder). What ships is the copy-paste
+   prompts only.
+5. **PROGRESS.md** — a **bounded working index** (`../spec/PLAN_STATE.md` §5.1;
+   `../guide/execution.md`): goal and constraints; active task and next action;
+   unresolved blockers; current contracts and decisions still in force; direct
+   pointers to durable records (task logs, `analysis_results/`). Soft budget
+   ~1,000 words for routine carry-forward; completed detail lives in task logs
+   and is retrieved by pointer — never discard an unresolved constraint to fit.
+6. **analysis_results/** — the folder, plus `SKILLS_CANDIDATES.md` with a
+   two-line header (purpose; entry shape `T{task}-{seq} · pattern · evidence ·
+   disposition`). No other placeholder files.
+7. **State layer (RECOMMENDED, `../spec/PLAN_STATE.md`; REQUIRED for unattended
+   runs and for workspaces without git)** — `manifest.json` (plan identity:
+   name, archetype, rigor tier, `spec_version` **"2.3.0"**, task count, creating
+   agent — written once, never edited after) and the initial `state.json` (every
+   task `pending`, empty gates). Both atomically (write-temp-then-rename); both
+   valid against `../spec/schema/` (no extra fields — the schemas are closed).
+8. **README.md** (last) — Goal; Context; Plan Variables (incl. `Standard: DWP
+   spec 2.3.0`, the tier and why, and in trust mode `Pre-approved for unattended
+   execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
+   Report request if the user made one); Task List with `[ ]` checkboxes + links
+   (the Final Review last); Execution Rules; Skills & Agents Used; Plan Status /
+   Notes; Analysis Outputs table (`SKILLS_CANDIDATES.md` — every task;
+   `SECURITY_REVIEW.md` — Final Review; `EXECUTIVE_REPORT.md` — optional, on
+   request); Quick Reference to `PROMPTS.md`. Add the note: *"Every plan ends
+   with a single Final Review (security pass, final-state validation, skills
+   reconciliation). Skills decisions are made inside each task; the Executive
+   Report is optional and offered at completion. Auto-generated by
+   `/dwp-create`."*
 
-**Three mandatory final tasks (always):**
-- **Security Review** (MANDATORY, **third-to-last**, task `N-2`,
-  `{N-2}.task_security_review.md`): reviews the plan's full accumulated diff for
-  hardcoded secrets, injection risks, unsafe input handling, new attack surface,
-  and auth/permission changes; audits dependencies the plan introduced
-  (best-effort, with the ecosystem's audit tooling where available); verifies
-  `docs/SECURITY.md` still reflects reality and updates it when the plan changed
-  secrets handling, the auth model, or data boundaries; writes
-  `analysis_results/SECURITY_REVIEW.md` even when clean. A critical finding
-  blocks completion until fixed or explicitly accepted by the user
-  (`../spec/DWP_SPECIFICATION.md` §6.1).
+**Conditional branches:** if Step 2.6 fired, apply the **orchestrator
+additions** in [`orchestrator.md`](orchestrator.md); if Step 2.10 fired, apply
+the **team-agents metadata** and, for 5+ user task files where team agents are
+available, the **accelerated generation** in [`team-agents.md`](team-agents.md).
+Neither branch changes the sequential path: every task must work sequentially,
+and the Final Review is always sequential.
 
-  **Addon augmentation — `ai-diff-reviewer` (opt-in, only when installed).**
-  When the target repo has installed the [`ai-diff-reviewer` addon](../addons/ai-diff-reviewer/SKILL.md) — detected via
-  `.agents/skills/ai-diff-reviewer/` present + an extension file at one of the
-  three recognized paths (in precedence order): `.review/extension.md`,
-  `.github/ai-diff-reviewer/extension.md`, or the back-compat
-  `.github/ai-pr-reviewer/extension.md` — the Security Review task template gains
-  an ADDITIONAL post-existing-checks step: invoke the upstream skill's parent
-  default flow ("Review my current branch" / `/ai-diff-reviewer`), capture the
-  verdict, findings table, per-finding bodies, notes, and recommendation, and
-  append them to `analysis_results/SECURITY_REVIEW.md` under a dedicated
-  `## AI Diff Reviewer local review` heading.   The upstream skill's `prompt.md`
-  is byte-identical to the CI Action's `prompts/default.md` at the same tag, so
-  when the same repo also runs the CI Action (Flow B), the local review shares
-  the same methodology and severity model via that prompt plus the extension
-  file; CI round 2+ may surface a shorter finding set under Iteration-Aware
-  Review (local stays a full pass — see addon SPEC §4.3). A `critical` finding
-  follows the existing SR contract
-  (blocks completion until fixed or explicitly accepted); `warning` / `info`
-  findings are appended and reported but do not block. The augmentation is
-  best-effort and conditional per the addon SPEC §7 (never-block rule): skip
-  the **local** review pass (warn once, NEVER fail the task) only when the
-  vendored skill is absent, detection fails (no extension file), or the local
-  review invocation errors. Flow A needs **no** CI provider secret — do NOT
-  treat an unset `CURSOR_API_KEY` (or other provider secret) as a reason to
-  skip the local Security Review pass; that secret is Flow B CI / gate
-  messaging only. **Flow B optional companion (not a plan task):**
-  when the plan's PR has been pushed and CI has posted its review, the developer
-  MAY invoke the upstream `apply-review` sub-skill from within the same
-  `execute` session to walk through CI findings per-finding (apply / defer /
-  skip) with explicit consent — read-only by default, edits require per-finding
-  yes, never commits or pushes. This is surfaced as an available option during
-  `execute`; the addon MUST NOT insert an `apply-review` task file into any
-  plan (would violate the mandatory-final-task-order rule).
-- **Skills & Agents Discovery** (MANDATORY, **second-to-last**, task `N-1`,
-  `{N-1}.task_skills_agents_discovery.md`): reviews completed tasks for new
-  patterns, checks the catalog, creates/updates skills/agents if warranted,
-  evaluates the skills-generator system. If no skills-generator exists in the
-  target repo, write a simplified evaluate-and-document-only version.
-- **Executive Report** (MANDATORY, **last**, task `N`,
-  `{N}.task_executive_report.md`): generates
-  `analysis_results/EXECUTIVE_REPORT.md` with Executive Summary, Product Impact,
-  Technical Details, QA Verification Guide, FAQs, Next Steps.
+#### 4.5 Plan-Quality Check (both modes — before reporting success)
 
-Add to the README a note: "Every plan includes Security Review
-(third-to-last), Skills & Agents Discovery (second-to-last), and Executive
-Report (last). These are auto-generated by `/dwp-create`."
-
-**Quality gates:** atomic, ordered tasks; both mandatory files present;
-`analysis_results/` exists; `PROGRESS.md` exists; numbering correct (user tasks →
-security review → skills discovery → executive report); behavior-changing tasks carry test coverage
-in their Acceptance Criteria and tests + lint/type-check in their Validation
-(`../guide/GUIDE.md` §5.3).
-
-**Accelerate generation with team agents (Claude Code only, automatic):** for
-5+ user-defined task files, the lead creates README/PROMPTS/PROGRESS/
-analysis_results + the mandatory final task files, then spawns teammates (1 per
-2–3 task files) to write user task files in parallel (no file overlap), verifies
-all files, and cleans up. Fallback: generate sequentially.
-
-**Orchestrator additions (orchestrator plans):**
-- README **Child DWP Plans** table (`# | Repository | Child Plan | Status |
-  Depends On`), an **Execution Mode** subsection, and **Dependency Rules**.
-- **ORCHESTRATOR_MANIFEST.md** at `.dwp/plans/PLAN_{name}/ORCHESTRATOR_MANIFEST.md`
-  (template in `../guide/GUIDE.md` §13.8): Shared Context, Child DWP Registry,
-  Dependency Graph, Output Contracts, Execution State.
-- Task files: direct design tasks first (if hybrid); then `create_child_dwp`
-  tasks in dependency order (template
-  `../examples/ORCHESTRATOR_TASK_TEMPLATE_create_child_dwp.md`); optional
-  `integration_checkpoint` tasks
-  (`../examples/ORCHESTRATOR_TASK_TEMPLATE_integration_checkpoint.md`);
-  `execute_child_dwp` tasks for Sequential-with-Output-Handoff mode
-  (`../examples/ORCHESTRATOR_TASK_TEMPLATE_execute_child_dwp.md`); then the two
-  mandatory final tasks last. Each `create_child_dwp` task instructs the agent to
-  navigate to the target repo, read its `AGENTS.md`, and create a child DWP at
-  `repositories/{repo}/.dwp/plans/PLAN_{child}/` using that repo's conventions.
-
-**Team-agents metadata (when Step 2.10 detected parallelizable tasks):** add a
-"Team Agents Configuration (Claude Code Only)" section to the README (Parallel
-Task Groups + Teammate Roles tables) and a "Team Agents Metadata (Claude Code
-Only)" section to each parallel task file (Parallel Group / Teammate Role / Can
-Run With / Blocks / Files Owned). Use `../examples/TEAM_AGENTS_TASK_TEMPLATE.md`.
-Rules: never put required info inside team-agents sections; every task must work
-sequentially; mandatory final tasks are always sequential; file ownership between
-parallel tasks must not overlap.
+Verify, and fix before continuing:
+- **Requirements → tasks → gates** (Step 3.7) hold for the materialized files.
+- Tasks are atomic, ordered, numbered `1..N` without gaps; the Final Review is
+  task `N` and the only final task; every README link resolves.
+- Every task has Acceptance Criteria and a Validation gate; every
+  behavior-changing task has a Touched Surface with a risk class and a non-empty,
+  runnable selection (no zero-test selector); tasks that change a seam carry an
+  integration/contract check; the unit-first coverage expectation is in the
+  Acceptance Criteria (`../guide/authoring.md` §5.3).
+- Every task's checklist has the skills-decision step; `SKILLS_CANDIDATES.md`
+  exists; `PROMPTS.md` and `PROGRESS.md` exist; `manifest.json`/`state.json`
+  (when present) validate and agree with the task files.
+- No placeholder text (`[TODO`, `[TBD`, `{...}` left unfilled) remains.
 
 ### Step 5 — Completion & Execute Option
 
 For a full plan, report success and the location
-`.dwp/plans/PLAN_{name}/`, then offer: (1) execute now → run the **Execute**
+`.dwp/plans/PLAN_{name}/` (in trust mode, state that it is pre-approved for
+unattended execution), then offer: (1) execute now → run the **Execute**
 sub-skill (`../execute/SKILL.md`); (2) review the README first, then ask again;
-(3) done for now → tell them to run `/dwp-execute {name}` later.
+(3) done for now → tell them to run `/dwp-execute {name}` later (or
+`/dwp-execute {name} trust` to run to the end without questions).
 
 **Dailybot kickoff (only when the Dailybot addon is wired — best-effort,
 non-blocking):** after the plan is materialized and approved, send a **regular**
@@ -391,18 +454,37 @@ first `[ ]` task, execute sequentially, validate, commit per task, report.
 
 ## Error Handling
 
-- **Plan name already exists:** offer different name / overwrite / cancel.
+- **Plan name already exists (complete plan — has `README.md`):** offer a
+  different name / overwrite (explicit confirmation, even in trust mode — it is
+  a destructive action) / cancel.
+- **Partial materialization found (folder exists, no `README.md`):** list what
+  exists; offer to **complete** it (regenerate only the missing files from the
+  Step 3 analysis, leaving existing task files intact) or **discard** it
+  (explicit confirmation). Never overwrite unrelated files.
 - **Name auto-converted:** show an informational notice (not an error).
 - **Refined draft not found (from-refined-draft):** list available refined drafts
   in `.dwp/drafts/` and ask the user to choose.
-- **Insufficient tasks (<2):** ask the user to break the work down.
+- **Insufficient tasks (<2):** in **guided** mode, ask the user to break the work
+  down. In **trust** mode there is nobody to ask: if the work is genuinely one
+  atomic change, that is the **micro** tier — record it per Step 3.1 (the Plan
+  Variables note plus the inline alternative) and materialize the one user task
+  plus the Final Review. Never invent filler tasks to reach a count.
+- **No documented validation commands in the target repo:** proceed with the
+  full-suite fallback on every behavior-changing task and say so in the README;
+  suggest onboarding or the harness upgrade (`../spec/DOCUMENTATION_STANDARD.md`
+  §3.5). Never invent a scoped command.
 
 ## Important Notes
 
 - **Git ignore:** everything under `.dwp/` is git-ignored.
 - **Single artifact:** the only draft file is `PLAN_{name}_draft_refined.md` in
-  `.dwp/drafts/` — there is no separate raw draft.
-- **Reference:** follow `../guide/GUIDE.md`; orchestrator → §13; team agents → §14.
+  `.dwp/drafts/` — there is no separate raw draft, and in trust mode there is no
+  draft at all.
+- **One final task:** `{N}.task_final_review.md`. Never generate
+  `task_skills_agents_discovery` or `task_executive_report` files for a new plan
+  (plans from earlier versions that have them are executed as recorded —
+  `../spec/DWP_SPECIFICATION.md` §6.5).
+- **Reference:** follow `../guide/authoring.md` and `../guide/structure.md`; orchestrator → `../guide/orchestrator.md` §13; team agents → `../guide/team-agents.md` §14.
 - **Archetypes:** orchestrator support assumes the orchestrator-hub archetype
   (sub-repos under `repositories/`); an individual repo creates standard plans.
   See `../shared/adaptation.md`.

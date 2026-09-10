@@ -27,6 +27,11 @@ the same instructions other agents do.
 | Design decisions (the *why* behind the layout) | [docs/DESIGN.md](docs/DESIGN.md) |
 | Install guide (compare / update / uninstall) | [docs/INSTALLATION.md](docs/INSTALLATION.md) |
 | Installation + agent support matrix (what is actually tested) | [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
+| Reproducing the evaluation pack (what is measured, and what is not) | [docs/EVALUATION.md](docs/EVALUATION.md) |
+| Efficiency evidence, claims and their limits | [docs/evaluations/token-efficiency.md](docs/evaluations/token-efficiency.md) |
+| Cross-agent handoff trial (Claude Code ↔ Codex, both directions) | [docs/evaluations/cross-agent-handoff.md](docs/evaluations/cross-agent-handoff.md) |
+| Upgrading an existing repository (adoption pilot) | [docs/evaluations/adoption-pilot.md](docs/evaluations/adoption-pilot.md) |
+| Per-preset onboarding coverage | [docs/PRESET_TESTING_MATRIX.md](docs/PRESET_TESTING_MATRIX.md) |
 | OpenClaw-specific notes | [docs/OPENCLAW.md](docs/OPENCLAW.md) |
 | Adding a new sub-skill (step-by-step) | [docs/SUB_SKILL_GUIDE.md](docs/SUB_SKILL_GUIDE.md) |
 | Security posture (secrets handling, boundaries, dogfooded review) | [docs/SECURITY.md](docs/SECURITY.md) |
@@ -47,6 +52,7 @@ the same instructions other agents do.
 | Context detection + `.dwp/` resolution | [skills/deepworkplan/shared/context.sh](skills/deepworkplan/shared/context.sh) |
 | `.dwp/` output path convention | [skills/deepworkplan/shared/dwp-paths.md](skills/deepworkplan/shared/dwp-paths.md) |
 | Reasoning-over-copy-paste principle | [skills/deepworkplan/shared/adaptation.md](skills/deepworkplan/shared/adaptation.md) |
+| Runtime troubleshooting decision path (read only when something is wrong) | [skills/deepworkplan/shared/troubleshooting.md](skills/deepworkplan/shared/troubleshooting.md) |
 | Onboarding presets (per-stack) | [skills/deepworkplan/onboard/presets/](skills/deepworkplan/onboard/presets/README.md) |
 | Devcontainer addon (opt-in) | [skills/deepworkplan/addons/devcontainer/SKILL.md](skills/deepworkplan/addons/devcontainer/SKILL.md) |
 | Dailybot addon (opt-in) | [skills/deepworkplan/addons/dailybot/SKILL.md](skills/deepworkplan/addons/dailybot/SKILL.md) |
@@ -97,7 +103,7 @@ deepworkplan-skill/
 │   ├── ISSUE_TEMPLATE/                         ← bug_report + feature_request + config.yml (NOT installed)
 │   └── markdown-link-check.json                ← link-check config (NOT installed)
 ├── .agents/skills/                             ← THREE vendored dogfood copies (NOT installed on end-user machines)
-│   ├── deepworkplan/                           ← repo-adapted copy of this skill (sync via scripts/refresh-dogfood-skill.sh; NOT auto-overwritten on release)
+│   ├── deepworkplan/                           ← byte-identical dogfood copy of this skill (sync via scripts/refresh-dogfood-skill.sh; NOT auto-overwritten on release)
 │   ├── dailybot/                               ← DailybotHQ/agent-skill — auto-refreshed on release
 │   └── ai-diff-reviewer/                       ← DailybotHQ/ai-diff-reviewer — auto-refreshed on release
 ├── skills-lock.json                            ← pinned versions/hashes for the vendored skills (NOT installed)
@@ -215,7 +221,7 @@ The `auto-release.yml` workflow runs on every merge to `main` and:
 5. **Smoke-tests the just-published tag** — runs `npx skills add
  DailybotHQ/deepworkplan-skill@vX.Y.Z` into a **temp directory** and asserts
  the installed `version:` matches. This proves the release installs for
- consumers **without** overwriting the repo-adapted dogfood copy at
+ consumers **without** overwriting the dogfood copy at
  `.agents/skills/deepworkplan/`.
 6. **Dogfoods addon skills only** — refreshes `.agents/skills/dailybot/` and
  `.agents/skills/ai-diff-reviewer/` to their latest upstream tags (see
@@ -358,13 +364,13 @@ but they are managed differently on purpose:
 
 | Vendored skill | Upstream | Release auto-refresh | Purpose in this repo |
 |----------------|----------|----------------------|----------------------|
-| `.agents/skills/deepworkplan/` | this repo (`skills/deepworkplan/`) | **No** | Repo-adapted contributor dogfood (DWP + Dailybot + AI Diff Reviewer wiring). Sync with `bash scripts/refresh-dogfood-skill.sh` when intentionally refreshing. |
+| `.agents/skills/deepworkplan/` | this repo (`skills/deepworkplan/`) | **No** | Contributor dogfood, kept **byte-identical** to `skills/deepworkplan/` (verified by checksum on every sync). It is excluded from release auto-refresh because that would pull the last published tag instead of this working revision. Sync with `bash scripts/refresh-dogfood-skill.sh`. |
 | `.agents/skills/dailybot/` | [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill) | **Yes** | Powers Dailybot standup reporting for plan lifecycle events (see the Dailybot addon) |
 | `.agents/skills/ai-diff-reviewer/` | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | **Yes** | Powers the local pre-push code review AND the `pr-review.yml` CI Action (same `prompt.md`) |
 
 **Why deepworkplan is excluded.** Blind `npx skills add --force` of this
 repo's own skill into `.agents/skills/deepworkplan/` would overwrite the
-repo-adapted dogfood copy. The release workflow still **smoke-tests** that
+dogfood copy. The release workflow still **smoke-tests** that
 the published tag installs (into a temp directory); it does not commit that
 install back into the tree. When the shipped pack under `skills/deepworkplan/`
 changes and the dogfood copy should follow, run
@@ -392,7 +398,7 @@ pushes. The `[skip release]` marker prevents an infinite auto-release loop.
 - **Do not** hand-edit `.agents/skills/dailybot/` or `.agents/skills/ai-diff-reviewer/`
   — the next release will overwrite those. Contribute upstream, land a release
   there, then this repo's auto-release picks them up.
-- **Do** treat `.agents/skills/deepworkplan/` as repo-adapted: refresh it only
+- **Do** treat `.agents/skills/deepworkplan/` as a generated mirror: refresh it only
   via `scripts/refresh-dogfood-skill.sh` (or an explicit reviewed edit), never
   via release dogfood.
 
