@@ -1,0 +1,43 @@
+{
+  "schema": "https://deepworkplan.com/schema/plan-state/v1.json",
+  "plan": "PLAN_new_shape_fixture",
+  "updated_at": "2026-09-01T10:00:00Z",
+  "status": "in_progress",
+  "completed_count": 1,
+  "task_count": 3,
+  "tasks": [
+    {
+      "id": 1,
+      "file": "1.task_add_greeter.md",
+      "title": "Add greeter",
+      "status": "completed",
+      "completed_at": "2026-09-01T10:00:00Z",
+      "commit": "def5678",
+      "gates": [
+        {
+          "command": "python3 -m unittest tests.test_greeter -v",
+          "passes": true,
+          "exit_code": 0,
+          "last_run": "2026-09-01T09:59:00Z",
+          "evidence": "1 passed (scoped)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "file": "2.task_add_math_helper.md",
+      "title": "Add math helper",
+      "status": "pending",
+      "gates": []
+    },
+    {
+      "id": 3,
+      "file": "3.task_final_review.md",
+      "title": "Final review",
+      "status": "pending",
+      "gates": []
+    }
+  ],
+  "checkpoint": null,
+  "blocked": null
+}
