@@ -292,8 +292,10 @@ an additional post-existing-checks step:
   secret is Flow B CI/gate only. Once a local review **did** run, severity
   handling above (§6.1 item 4) still applies.
 - The augmentation is **additive**. The Final Review's own manual security
-  reasoning is preserved. On repos without the addon, the Final Review template
-  body is unchanged.
+  reasoning is preserved. Every new 2.3.0 Final Review template includes this
+  local-review step; when the reviewer is absent, the step records its missing-
+  reviewer finding instead of being omitted. Legacy plans retain their own
+  recorded shape.
 - **Legacy plans.** A plan created under the pre-2.3.0 lifecycle carries a
   separate `{N-2}.task_security_review.md`. The addon augments *that* task in
   such a plan — same additive step, same severity contract — because a plan is

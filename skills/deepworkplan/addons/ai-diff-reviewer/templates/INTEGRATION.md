@@ -270,8 +270,9 @@ shape to convey:
 > table + severity, and appends them to
 > `analysis_results/SECURITY_REVIEW.md` under `## AI Diff Reviewer local
 > review`. If `.agents/skills/ai-diff-reviewer/` or the extension file is
-> missing, record a `local reviewer not installed` finding (install when
-> the run may write to the harness) — never a silent skip. Soft-fail
+> missing, record a `local reviewer not installed` finding and carry it into
+> the completion report — never a silent skip. Installation belongs to
+> onboarding or an explicit addon invocation. Soft-fail
 > (warn once, record, continue) applies only to **invocation errors** of
 > a review that could start. Once a review ran, a `critical` finding
 > blocks completion until fixed or explicitly accepted; `warning` /
@@ -315,8 +316,8 @@ Decision notes:
   best-effort to *start*; invocation/network errors mean
   warn-once-record-and-continue — no retries, no diagnostic loop. An absent
   skill or extension file is a recorded `local reviewer not installed`
-  finding (plus an install attempt when the run is authorized), never a
-  silent skip. Once a review **ran**, `critical` findings
+  finding, carried into the completion report, never a silent skip. Installation
+  belongs to onboarding or an explicit addon invocation. Once a review **ran**, `critical` findings
   follow the existing Final Review contract (block until fixed or
   explicitly accepted) — do not mark SR `[x]` anyway. An unset CI provider
   secret is a Flow B CI/gate warning only — it MUST NOT suppress the local

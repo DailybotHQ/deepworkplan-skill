@@ -512,8 +512,9 @@ in Phase 7a, and the
 the `ai-diff-reviewer` local pass inside the **Final Review's security pass**,
 appending its findings to
 `.dwp/plans/<plan>/analysis_results/SECURITY_REVIEW.md`. A missing skill or
-extension is a recorded `local reviewer not installed` finding (installed on
-the spot when the run may write to the harness), never a silent skip;
+extension is a recorded `local reviewer not installed` finding, carried into
+the completion report, never a silent skip; installation belongs to onboarding
+Phase 7a or an explicit addon invocation;
 invocation errors soft-fail; `critical` findings from a completed pass still
 block completion until fixed or explicitly accepted. The CI Action (Flow B)
 remains an explicit opt-in. Legacy plans keep their recorded three-final-task

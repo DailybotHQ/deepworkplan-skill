@@ -17,8 +17,9 @@ Use this document whenever you need to generate a new deep-work plan.
 
 This file is the **routing index** of the methodology guide. The guide's content
 is unchanged; it is split into flow-scoped files so an agent loads only what its
-current flow needs (`spec/DWP_SPECIFICATION.md` §5, `docs/adr/0001` in the
-skill repository). Nothing here is compressed — every section that existed in
+current flow needs (`spec/DWP_SPECIFICATION.md` §5). The design rationale is
+maintained in the contributor-only repository ADR, not shipped in the pack.
+Nothing here is compressed — every section that existed in
 the single-file guide exists verbatim in exactly one file below.
 
 ## How to read this guide (by flow)

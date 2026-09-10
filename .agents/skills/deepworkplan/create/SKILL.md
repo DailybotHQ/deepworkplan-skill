@@ -383,8 +383,9 @@ Create:
    warranted authoring before (b) is final; no whole-plan rediscovery, no second
    report. **(d) Completion** — report deliverables, evidence, limitations and
    PR links; **offer the Executive Report once** (generate only on request; an
-   explicit request recorded in the plan guidelines counts); send the completion
-   report through the configured channel regardless of the answer.
+   explicit request recorded in the plan guidelines counts); where a reporting
+   channel is configured (`AGENT_PROTOCOL.md` §5), send the completion report
+   best-effort; otherwise skip it.
 
    **Local review step (required):** read
    [`addon-augmentations.md`](addon-augmentations.md) (this directory) and add
@@ -392,8 +393,9 @@ Create:
    security pass — it applies to every 2.3.0 plan. When the target repo lacks
    `.agents/skills/ai-diff-reviewer/` or an extension file at one of the three
    recognized paths, the step's degradation clause (record a `local reviewer
-   not installed` finding, install when authorized, otherwise carry the
-   finding) applies at execution time; do not omit the step.
+   not installed` finding and carry it into the completion report. Installation
+   belongs to onboarding or an explicit addon invocation; Final Review never
+   surprise-bootstraps it. Do not omit the step.
 
 4. **PROMPTS.md** — from `../examples/PROMPTS_TEMPLATE.md`, replacing
    `{PLAN_NAME}` with the plan name. The template is written for **you**, so

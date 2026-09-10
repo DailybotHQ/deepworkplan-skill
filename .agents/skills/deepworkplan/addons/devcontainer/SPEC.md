@@ -275,7 +275,7 @@ The addon is correctly applied when **all** hold:
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `SKILL.md` (the onboarding hook + flow), `templates/*` (reasoning aids)
 - `../README.md` (addon mechanism), `../../spec/ADDONS.md` (concept + pointer)
-- `methodology-spec/DOCUMENTATION_STANDARD.md` §7 (reason-per-repo),
+- `../../spec/DOCUMENTATION_STANDARD.md` §7 (reason-per-repo),
   `AGENT_PROTOCOL.md` (approval gates), `ARCHETYPES.md`
 
 ---
