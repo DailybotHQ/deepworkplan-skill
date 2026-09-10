@@ -34,3 +34,9 @@ Surface; **affected** = scoped widened to consumers; **full** = discover all tes
 
 | `create-modes` (C1–C5) | — | — | see `create-modes/README.md`: trust = no draft + README last + spec_version 2.3.0 + zero questions; explicit draft wins; partial folder → complete/discard, nothing unrelated overwritten | L4, §3 |
 | `resume-scenarios` (S1–S9) | — | interruption boundaries, stale/contradictory state, takeover, re-validate marker | exactly one missing step completed; no repeated gate/commit/report; bounded reads (S7); legacy untouched (S8) | recovery contract, L5 |
+
+## Fixture corrections (Task 16) — recorded per the immutability rule
+
+- Plan fixtures gained the `Plan Status: X/N completed` line the checker requires (the fixture READMEs said it in prose only).
+- `new-shape-plan` Task 3 now names the Final Review's three parts (security pass, final-state validation, skills reconciliation) — the checker verifies objective structure, not the filename.
+- A task file without a `## Validation` heading gained one. Oracles unchanged.
