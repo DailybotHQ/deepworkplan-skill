@@ -24,6 +24,8 @@ for flow in create execute resume refine onboard status verify; do
     p="$PACK/$flow/$ref"; p="$(cd "$(dirname "$p")" 2>/dev/null && pwd)/$(basename "$p")" || continue
     [ -f "$p" ] || continue
     case "$p" in *.md) total=$(( total + $(wc -c < "$p") )); files="$files ${p#"$PACK"/}";; esac
-  done < <(sed -n '/^## Shared resources/,/^## /p' "$f" | grep -o '](\.\./[^)]*\.md)' | sed 's/](\(.*\))/\1/' | sort -u)
+  done < <(sed -n '/^## Shared resources/,/^## /p' "$f" | awk '
+      /^- /{cond = ($0 ~ /[Cc]onditional/)}      # a new bullet: conditional if its first line says so
+      !cond {print}' | grep -o '](\.\./[^)]*\.md)' | sed 's/](\(.*\))/\1/' | sort -u)
   printf "%-8s %8d bytes  (~%d est. tokens)  <- %s\n" "$flow" "$total" $(( total / 4 )) "$files"
 done

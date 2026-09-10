@@ -17,6 +17,7 @@ tasks, current task, blockers — **without executing or modifying anything**.
 - [`../shared/context.sh`](../shared/context.sh) — resolve `dwp_dir`.
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans at
   `.dwp/plans/PLAN_{name}/`.
+- **Guide (essential — read for this flow):** none. Status is a read-only report; it does not load the methodology guide.
 
 ## Parameter Support
 - `/dwp-status {plan_name}` — check a specific plan.

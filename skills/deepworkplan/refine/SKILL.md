@@ -24,8 +24,8 @@ reorder tasks, update the README).
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — drafts at `.dwp/drafts/`,
   plans at `.dwp/plans/PLAN_{name}/`.
 - [`../shared/context.sh`](../shared/context.sh) — resolve `dwp_dir`.
-- [`../guide/GUIDE.md`](../guide/GUIDE.md) — plan/task structure and mandatory
-  final tasks.
+- **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README §4, task-file anatomy §5, mandatory elements) and [`../guide/structure.md`](../guide/structure.md) (§1–§2 naming and folders).
+- **Guide (conditional — read only when the trigger fires):** [`../guide/orchestrator.md`](../guide/orchestrator.md) / [`../guide/team-agents.md`](../guide/team-agents.md) only for plans that use them; [`../guide/execution.md`](../guide/execution.md) §6.1 when editing final tasks. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns for
   professional rewriting.
 
@@ -80,7 +80,7 @@ structure.
    sections; **save back to the same** `.dwp/drafts/PLAN_{name}_draft_refined.md`
    (no new `_refined` file).
 2. **Convert to a final plan** — extract plan info; create the plan folder and all
-   files following `../guide/GUIDE.md`; **auto-add the mandatory elements** (same
+   files following `../guide/authoring.md`; **auto-add the mandatory elements** (same
    as create): `analysis_results/` folder, `PROGRESS.md` initial template, Security Review
    task (third-to-last), Skills & Agents Discovery task (second-to-last),
    Executive Report task (last),
@@ -132,7 +132,7 @@ location `.dwp/plans/PLAN_{name}/`.
 - **Preserve completed work:** never alter `[x]` tasks unless explicitly asked.
 - **Renumber carefully:** keep task file numbers and README references in sync.
 - **Maintain consistency:** task files follow the standard structure
-  (`../guide/GUIDE.md` §5).
+  (`../guide/authoring.md` §5).
 - **Git ignore:** everything under `.dwp/` is git-ignored.
 - **One draft artifact:** refining a draft edits
   `PLAN_{name}_draft_refined.md` in place; there is no separate raw draft.

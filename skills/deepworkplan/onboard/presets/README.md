@@ -65,7 +65,7 @@ a stack preset to the hub itself. Instead:
   navigation index (e.g. `repositories/README.md`), `ECOSYSTEM_CONTEXT.md` + a
   cross-project standards guide, repository-boundary rules in `AGENTS.md` (commit
   inside each sub-repo, never from the hub root), and the orchestrator/child-DWP
-  capability (see `../../guide/GUIDE.md`).
+  capability (see `../../guide/orchestrator.md`).
 - Each **sub-repo** is onboarded independently with its own matching preset; the
   hub does not document sub-repo internals.
 

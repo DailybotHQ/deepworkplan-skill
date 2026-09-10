@@ -15,6 +15,11 @@ the mandatory "Skills & Agents Discovery" plan task.
 
 ---
 
+## Read scope
+
+- **Guide (essential — read for this flow):** [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 — how skills and agents are referenced from plans and tasks.
+- **Guide (conditional — read only when the trigger fires):** none. [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index.
+
 ## Concepts
 
 - **Skill** — a reusable, parameterized *procedure* invoked in-session (e.g. `/fix-lint`). Encodes

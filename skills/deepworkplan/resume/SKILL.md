@@ -22,6 +22,8 @@ strict order, continuing from the first `[ ]` task.
   archetypes (relevant for orchestrator/child-DWP awareness).
 - [`../execute/SKILL.md`](../execute/SKILL.md) — the execution rules this flow
   resumes into (team-agents, orchestrator task types, Dailybot golden rule).
+- **Guide (essential — read for this flow):** none beyond what `../execute/SKILL.md` names ([`../guide/execution.md`](../guide/execution.md)).
+- **Guide (conditional — read only when the trigger fires):** [`../guide/prompts.md`](../guide/prompts.md) §9 (resume rules and scenarios) when the interruption is unusual. [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index.
 
 ## Parameter Support
 - `/dwp-resume {plan_name}` — resume directly (skip the menu).

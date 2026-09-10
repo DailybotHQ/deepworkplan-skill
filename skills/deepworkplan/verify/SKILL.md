@@ -21,6 +21,8 @@ normative criteria are defined in the specification's Conformance document
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans live at `.dwp/plans/PLAN_{name}/`.
 - [`conformance.sh`](conformance.sh) — the mechanical conformance layer (run it first).
 - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) — the machine-readable state layer the desync checks enforce.
+- **Guide (essential — read for this flow):** none — the spec is the standard being checked.
+- **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2 when a naming or layout finding needs the rationale.
 
 ## Run the mechanical layer first
 

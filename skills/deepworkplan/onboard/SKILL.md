@@ -51,15 +51,15 @@ work reliably without per-session human hand-holding.
   fallback and the orchestrator-hub note. See `presets/README.md` for the full
   index. Read the matching preset in Phase 1 and use it in Phases 3–6.
   **Presets are reasoning aids, not templates.**
-- [`../guide/GUIDE.md`](../guide/GUIDE.md) — the DWP methodology you reference
-  when wiring the skill and (for hubs) the orchestrator/child-DWP capability.
+- **Guide (essential — read for this flow):** [`../guide/structure.md`](../guide/structure.md) (the `.dwp/` layout and naming you scaffold).
+- **Guide (conditional — read only when the trigger fires):** [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`templates/onboarding-plan.md`](templates/onboarding-plan.md) — the
   **reasoning aid** for the plan-driven path (Phase 2b): the shape of a "finish
   onboarding myself" Deep Work Plan a **large** repo emits instead of generating
   everything inline. A template to reason from, **never** to copy verbatim.
 
 > **Ship purity:** every path this flow references is relative inside
-> `skills/deepworkplan/` (`../shared/*`, `presets/*`, `../guide/GUIDE.md`,
+> `skills/deepworkplan/` (`../shared/*`, `presets/*`, `../guide/*.md`,
 > `../addons/*`). Never reference any absolute host path or any
 > `.agent_commands/...` path. The output you write lives in the **target repo**,
 > at paths relative to its root.
@@ -346,7 +346,7 @@ three roles:
 **Orchestrator-hub additions** (only if Phase 2 said hub): add the sub-project
 navigation index link (e.g. `repositories/README.md`) and each sub-project's
 `AGENTS.md`; the **multi-project commit workflow** (commit inside each sub-repo,
-never from the hub root); and **child-DWP** language per `../guide/GUIDE.md`
+never from the hub root); and **child-DWP** language per `../guide/orchestrator.md`
 (orchestrator §).
 
 **`CLAUDE.md`.** Create the symlink `ln -s AGENTS.md CLAUDE.md`. If the target

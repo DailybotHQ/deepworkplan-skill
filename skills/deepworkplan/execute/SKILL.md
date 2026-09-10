@@ -21,8 +21,8 @@ time**, validating and committing after each, and reporting progress.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — the two repository
   archetypes (individual repo vs orchestrator hub) that govern how navigation
   and validation commands resolve.
-- [`../guide/GUIDE.md`](../guide/GUIDE.md) — execution rules (§6), orchestrator
-  protocol (§13), team agents (§14).
+- **Guide (essential — read for this flow):** [`../guide/execution.md`](../guide/execution.md) (agent execution rules §6, final tasks §6.1, per-task commit workflow, completion tracking).
+- **Guide (conditional — read only when the trigger fires):** [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 when Step 2.1 detects an orchestrator plan; [`../guide/team-agents.md`](../guide/team-agents.md) §14 when Step 2.2 finds a Team Agents Configuration; [`../guide/authoring.md`](../guide/authoring.md) §5.3–§5.4 when judging a task's test or security discipline; [`../guide/prompts.md`](../guide/prompts.md) §9 for resume scenarios. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) — the machine-readable state
   layer (`manifest.json` + `state.json`); update it at every completion when the
   plan carries it.
@@ -137,20 +137,20 @@ Rules (strict):
    / `generate-extension`, not mid–Security Review; if the skill is present
    but no extension exists, warn once that Flow A/B install is incomplete
    and continue the base Security Review). Augmentation details live in `../create/SKILL.md`
-   "Three mandatory final tasks" and `../guide/GUIDE.md` §5.4 "AI Diff
+   "Three mandatory final tasks" and `../guide/authoring.md` §5.4 "AI Diff
    Reviewer local pass". The augmentation is best-effort on *invocation*
    only — if the skill/extension is missing or the local review errors,
    warn once and continue; once a review runs, `critical` findings follow
    the existing SR contract (block until fixed or explicitly accepted).
 3. **Run validations** — execute ALL validation commands. If any fail: STOP, log
    the issue in the task's Completion & Log, do NOT mark `[x]`, report and wait
-   for guidance. **Test discipline (`../guide/GUIDE.md` §5.3):** if the task added
+   for guidance. **Test discipline (`../guide/authoring.md` §5.3):** if the task added
    new core functionality or changed product behavior, confirm it added/updated
    automated tests for that behavior and that validation runs the repo's tests +
    lint/type-check (not just the build). If a behavior change shipped with no test
    coverage where the repo supports tests, treat it as an incomplete gate — add the
    missing tests before marking `[x]`, or log it as a blocker.
-   **Security discipline (`../guide/GUIDE.md` §5.4):** if the task touched auth,
+   **Security discipline (`../guide/authoring.md` §5.4):** if the task touched auth,
    input handling, secrets/config, network surface, or dependencies, confirm its
    security acceptance criteria are met and the diff contains no secret material
    before committing.

@@ -15,7 +15,7 @@ AI-first" is itself a multi-task job: analyze the whole codebase, document every
 The plan is created with `/dwp-create`, refined with `/dwp-refine`, executed with
 `/dwp-execute`, and resumed with `/dwp-resume`. It lives under
 `.dwp/plans/PLAN_onboard_{repo}/` per [`../../shared/dwp-paths.md`](../../shared/dwp-paths.md)
-and follows the plan/task anatomy in [`../../guide/GUIDE.md`](../../guide/GUIDE.md).
+and follows the plan/task anatomy in [`../../guide/authoring.md`](../../guide/authoring.md).
 
 ---
 
@@ -75,7 +75,7 @@ any stack skills generated in task N-2.
 
 ## Per-task shape (`N.task_{title}.md`)
 
-Each task follows the standard task anatomy (`../../guide/GUIDE.md` §5). The
+Each task follows the standard task anatomy (`../../guide/authoring.md` §5). The
 onboarding-specific point is that **the Acceptance Criteria encode the Phase 0–8
 rules per artifact**, and the **Validation gate is the repo's real check**.
 

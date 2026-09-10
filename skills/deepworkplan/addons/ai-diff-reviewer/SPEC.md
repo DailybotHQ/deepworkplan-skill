@@ -28,7 +28,7 @@ for baseline AI-first conformance.
 |-------|-------|
 | **Version** | 2.16.3 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/GUIDE.md` §5.4 |
+| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/authoring.md` §5.4 |
 | **License** | MIT |
 | **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.0.0 (marketplace: "AI Diff Reviewer") |
 
@@ -431,7 +431,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
   `open-pr/SKILL.md`, `apply-review/SKILL.md`.
 - Marketplace listing: ["AI Diff Reviewer"](https://github.com/marketplace/actions/ai-diff-reviewer).
 - [`../../create/SKILL.md`](../../create/SKILL.md) §"Three mandatory final tasks" — where the SR augmentation callout is wired.
-- [`../../guide/GUIDE.md`](../../guide/GUIDE.md) §5.4 — the canonical Security Review template body.
+- [`../../guide/authoring.md`](../../guide/authoring.md) §5.4 — the canonical Security Review template body.
 
 ---
 
