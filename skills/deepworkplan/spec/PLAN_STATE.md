@@ -135,6 +135,9 @@ Conforms to [`schema/plan-manifest.schema.json`](schema/plan-manifest.schema.jso
   (`DWP_SPECIFICATION.md` §11, Proportional Rigor).
 - `parent_plan` links a child DWP to its orchestrator plan (`{repo}:{plan_name}`,
   or `null`).
+- `task_count` is the number of tasks **at creation** (provenance). A `refine`
+  that adds, splits, or removes tasks changes the live count in
+  `state.json.task_count` only; the manifest is never rewritten (§2).
 - `created_by` **SHOULD** identify the creating agent and model; it **MUST NOT**
   contain secrets, tokens, or user identifiers beyond a display name.
 
