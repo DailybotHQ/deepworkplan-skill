@@ -102,8 +102,10 @@ modified as `latest`. Present a numbered menu and accept a number, plan name, or
 `latest`. Validate the chosen plan's folder + README.
 
 ### Step 2 — Read Plan Overview
-Read the plan README: goal, context, global guidelines, task list (`[x]` vs
-`[ ]`), execution rules, and its **standard** (`../spec/PLAN_STATE.md` §6.1): a
+Read the plan README (goal, context, global guidelines, task list `[x]`/`[ ]`,
+execution rules) and the `PROGRESS.md` **Active context** block. Do not read
+every task file or log up front — each task is read when it becomes current, and
+older records are retrieved by pointer. Establish the plan's **standard** (`../spec/PLAN_STATE.md` §6.1): a
 declared `**Standard:**` line, else `manifest.spec_version`, else the shape of
 its files. A **legacy** plan (three final tasks, tasks without a Touched
 Surface) is executed **under its own shape** — never retrofitted
@@ -300,15 +302,30 @@ passes `trust` / `auto`):
   `blockers` field derived from `state.json.blocked` — the team sees what is
   stuck and what it needs instead of discovering a silent halt
   (`../addons/dailybot/SPEC.md` §5.1). Best-effort, never blocks.
-- **Checkpoint every task.** Progress lives on disk — the README checkboxes, each
-  task's Completion & Log, and `PROGRESS.md` (summaries, key decisions, important
-  values/paths). After each task this state MUST be current, because it is the
-  only thing that survives a context-window reset.
+- **Checkpoint at task and step boundaries.** Progress lives on disk — the
+  README checkboxes, each task's Completion & Log, `PROGRESS.md`, and
+  `state.json` (`checkpoint` `{task, step, at, note}` at any pause inside a task
+  and **before any planned interruption**). After each task this state MUST be
+  current, because it is the only thing that survives a context-window reset.
+  Persist at meaningful boundaries, not after every tool call.
+- **Keep `PROGRESS.md` a bounded working index** (`../spec/PLAN_STATE.md` §5.1):
+  an **Active context** block — goal and invariants; active task and exact next
+  action; unresolved blockers; current contracts and decisions still in force;
+  direct pointers to durable records — plus a short **Recent outcomes** list
+  (the last few task summaries, a few lines each). Soft budget ~1,000 words.
+  Completed detail lives in the task logs and `analysis_results/`; roll old
+  summaries out to pointers, **never** an unresolved constraint or an active
+  contract — record and justify an overrun instead.
 - **Resume from disk, not memory.** If context is exhausted or a fresh agent takes
-  over, do not rely on conversation history: re-read the plan README, `PROGRESS.md`,
-  and the Completion & Logs, then continue at the first `[ ]` task (this is exactly
-  what the `resume` sub-skill does). Re-anchor to the plan goal before each task to
-  prevent drift over the long horizon.
+  over, do not rely on conversation history: read the compact index (README task
+  list, `PROGRESS.md` Active context, `state.json` checkpoint and the active
+  task's entries), reconcile with the workspace, and continue at the first `[ ]`
+  task (this is exactly what the `resume` sub-skill does). Retrieve older records
+  by pointer — a task's `Read Before Starting`, a decision the index points at —
+  not by rereading the whole history. Re-anchor to the plan goal before each task
+  to prevent drift over the long horizon. On a stable run, retain the
+  already-loaded unchanged context; re-read after a revision change, handoff,
+  compaction, or uncertainty.
 - **No optional artifacts by default.** The Executive Report offer cannot be
   answered unattended: the report is not generated (unless the README recorded an
   explicit prior request), the plan completes, and the unanswered offer is noted.
