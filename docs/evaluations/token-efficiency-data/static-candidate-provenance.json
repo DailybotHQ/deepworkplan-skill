@@ -1,0 +1,9 @@
+{
+  "base_revision": "0da548e2b3beba5f5bb7e1d60edc67d353236457",
+  "snapshot": "PR #36 review corrections for the v3 release; containing commit owns this snapshot",
+  "pack_sha256": "05c68a47e621e20e89760bca3a42fae7ed5e2cb87c30b8b72717b3ae76dbfa0b",
+  "digest_algorithm": "SHA256 of UTF-8 lines sorted by relative path: <file SHA256>  ./<relative path>\\n, for every file under skills/deepworkplan",
+  "measurement_command": "bash tests/efficiency/measure-instruction-load.sh",
+  "historical_instrumented_candidate": "d4ffe58d7516b53027df61d679f87cc05a3e33e2",
+  "historical_static_record": "static-candidate-d4ffe58.txt"
+}

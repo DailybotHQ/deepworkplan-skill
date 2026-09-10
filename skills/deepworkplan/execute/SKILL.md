@@ -158,7 +158,13 @@ Rules (strict):
 2. **For each task** — open `N.task_{title}.md`, read it fully, follow its
    instructions and Execution Checklist. Read its `Read Before Starting`
    pointers and its Touched Surface (planned surface, risk class, selected gate).
-   Then implement.
+   Then implement. Before selecting or running gates, make the **skills decision**
+   (`../spec/DWP_SPECIFICATION.md` §6.2): record `none` / `update <existing>` /
+   `create <name>` / `defer — <reason, owner>`, checking the existing `.agents/`
+   catalog for duplicates. Finish any warranted, in-scope skill/agent authoring
+   and catalog updates now, so the actual surface and its validation include
+   them. Append real candidates to `analysis_results/SKILLS_CANDIDATES.md` by
+   stable ID `T{N}-{seq}`; update an existing ID on resume (`none` needs no row).
 
 3. **Select and run the validation gate — from the actual surface.** After
    implementing, and before running anything:
@@ -240,13 +246,10 @@ Rules (strict):
 
 5. **Task-local closure (before the commit).** When every acceptance criterion
    is met and every selected gate passed:
-   - **Skills decision** (`../spec/DWP_SPECIFICATION.md` §6.2): decide `none` /
-     `update <existing>` / `create <name>` / `defer — <reason, owner>` from this
-     task's evidence and the existing `.agents/` catalog; do any warranted,
-     in-scope authoring **now** (skill/agent + catalog entry) so it is covered
-     by the same gate; append a real candidate to
-     `analysis_results/SKILLS_CANDIDATES.md` by stable ID `T{N}-{seq}` (update
-     an existing ID on resume; `none` needs no ledger row).
+   - **Reconcile the skills decision** recorded before validation. If closure
+     reveals additional warranted authoring, return to implementation and Step 3:
+     reconcile the changed surface and rerun affected gates before closing.
+     A gate from before that edit does not validate the new artifact.
    - **Complete the log**, then the projections, in this order
      (`../spec/PLAN_STATE.md` §5.1): the task's Completion & Log (status,
      timestamp, summary, files changed, gate records, skills disposition,

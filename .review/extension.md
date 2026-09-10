@@ -68,14 +68,15 @@ silent pass. Addons and CI may change; the core loop must not.
   finding is still open/unaccepted. Soft-fail language MUST stay scoped to
   *invocation* failures of optional augmentations — never to gate results
   after a check actually ran.
-- **Always `critical` (methodology / mandatory finals):** inserting a new
-  mandatory final task, removing one of the three, or reordering
-  Security Review → Skills & Agents Discovery → Executive Report in
-  `create/SKILL.md` / `spec/DWP_SPECIFICATION.md` / `guide/GUIDE.md`.
-  Addons **MAY only AUGMENT** an existing final task (e.g. local review
-  under Security Review); they **MUST NOT** become a fourth plan task file
-  or reorder the finals. Same bar as before, elevated from warning —
-  this is the spine of every plan.
+- **Always `critical` (methodology / mandatory finals):** removing any required
+  part of the single Final Review (security pass, final-state validation,
+  task-local skills reconciliation) from a new DWP spec 2.3.0 plan; silently
+  migrating an in-flight legacy plan; or making the optional Executive Report
+  mandatory for new plans. Legacy plans keep Security Review → Skills & Agents
+  Discovery → Executive Report unless explicitly migrated through `refine`.
+  Addons may augment the applicable review, never add mandatory final tasks.
+  The v3 package deliberately adopts this lifecycle; do not flag the authorized
+  consolidation itself as a regression.
 - **Always `critical` (methodology / zero-addon conformance):** any change
   that makes an addon, commercial service, CI provider, or external skill
   **required** for `create` / `execute` / `onboard` / `verify` to succeed
@@ -326,7 +327,7 @@ notes; failures are `critical` findings.
 | M2 | **`.dwp/` durability** | Plans/drafts/progress no longer live under gitignored `.dwp/`, or resume cannot find recorded state |
 | M3 | **Atomic task contract** | Tasks can complete without Acceptance Criteria + Validation (or semantic equivalents) |
 | M4 | **Gate discipline** | `execute` may mark `[x]` despite failed validation, unmet AC, or unaccepted SR `critical` |
-| M5 | **Mandatory finals** | Order/count of Security Review → Skills & Agents Discovery → Executive Report changed, or an addon adds a fourth mandatory task |
+| M5 | **Mandatory finals** | New plans omit a Final Review responsibility; legacy plans are silently migrated; an addon adds a mandatory task; or new plans require an Executive Report |
 | M6 | **Zero-addon baseline** | Core flows require an addon, CI secret, or commercial service to succeed |
 | M7 | **Interruptibility** | A new agent cannot continue a partially executed plan from on-disk progress alone |
 | M8 | **Spec ↔ guide ↔ create/execute** | Normative MUST/MUST NOT disagree across those surfaces on the same rule |

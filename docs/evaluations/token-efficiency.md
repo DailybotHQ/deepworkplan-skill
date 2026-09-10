@@ -6,7 +6,9 @@ provider tokens, billing, or end-to-end time. Detailed requirements, fault
 detection and final validation remain constraints on any efficiency claim.
 
 This evaluation compares the installed pack at baseline
-`eaf54994ac5894b74849f1b8d2b6137df8d83e30` with candidate `d4ffe58`.
+`eaf54994ac5894b74849f1b8d2b6137df8d83e30` with the review-corrected candidate identified by
+[its static provenance record](token-efficiency-data/static-candidate-provenance.json).
+The instrumented trials below remain pinned to `d4ffe58`; they were not rerun.
 Package version, methodology version and schema URL version are distinct; this
 candidate is an unreleased branch snapshot. Later instruction edits require new
 static measurements and affected behavioral checks before making a final-release
@@ -42,13 +44,13 @@ one-level static inventory, not a reconstruction of everything an agent loads.
 
 | Flow | Baseline bytes | Candidate bytes | Change |
 | --- | ---: | ---: | ---: |
-| Create | 145,087 | 79,738 | −45.0% |
-| Execute | 142,506 | 75,112 | −47.3% |
-| Resume | 38,186 | 70,759 | +85.3% |
-| Refine | 122,761 | 58,853 | −52.1% |
-| Onboard | 157,503 | 64,165 | −59.3% |
-| Status | 13,363 | 15,612 | +16.8% |
-| Verify | 29,581 | 39,444 | +33.3% |
+| Create | 145,087 | 80,882 | −44.3% |
+| Execute | 142,506 | 76,850 | −46.1% |
+| Resume | 38,186 | 72,748 | +90.5% |
+| Refine | 122,761 | 59,997 | −51.1% |
+| Onboard | 157,503 | 65,793 | −58.2% |
+| Status | 13,363 | 16,756 | +25.4% |
+| Verify | 29,581 | 41,020 | +38.7% |
 
 [Baseline records](token-efficiency-data/static-baseline.txt) and
 [candidate records](token-efficiency-data/static-candidate.txt) include every
@@ -56,8 +58,8 @@ counted file. Create and execute meet the preregistered 40% static target.
 Resume's increase partly reflects explicit execution-resource links absent from
 the baseline's direct resource list; it does not prove an 85% increase in actual
 resume cost. Status and verification contain additional recovery/compatibility
-instructions. Total installed Markdown grows from 738,989 to 953,428 bytes
-(+29.0%): progressive loading trades a larger complete pack for narrower common
+instructions. Total installed Markdown grows from 738,989 to 964,761 bytes
+(+30.6%): progressive loading trades a larger complete pack for narrower common
 entry paths. No claim that the whole package became smaller is supported.
 
 ## Agent replay interpretation
@@ -119,7 +121,7 @@ upper bound on actual savings.
 
 | Claim | Evidence and boundary |
 | --- | --- |
-| Declared create/execute instruction bytes fall by 45.0%/47.3% in this snapshot | Reproducible static inventory; not tokens or live-session savings |
+| Declared create/execute instruction bytes fall by 44.3%/46.1% in this snapshot | Reproducible static inventory; not tokens or live-session savings |
 | Conditional loading avoids requiring the complete guide on the common entry path | Explicit resource declarations plus the static file list |
 | Relevant fault detection must survive narrower validation | Seeded isolated and shared-core command records; behavior remains a hard gate |
 | Any instrumented live-session comparison (reads, output, commands) | **Not established.** The preregistered three-pair run was not completed: 3 of 6 arms never ran, the other 3 were truncated at unequal progress. Records retained; no delta computed |

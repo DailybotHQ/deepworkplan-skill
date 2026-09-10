@@ -146,7 +146,7 @@ EOF
     echo '{"name": "PLAN_test_fixture"}' > .dwp/plans/PLAN_test_fixture/manifest.json
     run bash "$CONFORMANCE_SH"
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "in sync with README" ]]
+    [[ "$output" =~ "completed_count matches README" ]]
 }
 
 @test "state.json desync against README is detected and fails" {
@@ -224,7 +224,7 @@ EOF
 @test "legacy three-final-task plan still passes (declared 2.2.0 via manifest)" {
     make_conformant_repo
     make_conformant_plan
-    echo '{"completed_count": 1, "task_count": 4, "tasks": [{"file":"1.task_first_thing.md"},{"file":"2.task_security_review.md"},{"file":"3.task_skills_agents_discovery.md"},{"file":"4.task_executive_report.md"}]}' > .dwp/plans/PLAN_test_fixture/state.json
+    echo '{"completed_count": 1, "task_count": 4, "tasks": [{"id":1,"file":"1.task_first_thing.md","status":"completed"},{"id":2,"file":"2.task_security_review.md","status":"pending"},{"id":3,"file":"3.task_skills_agents_discovery.md","status":"pending"},{"id":4,"file":"4.task_executive_report.md","status":"pending"}]}' > .dwp/plans/PLAN_test_fixture/state.json
     echo '{"name": "PLAN_test_fixture", "spec_version": "2.2.0"}' > .dwp/plans/PLAN_test_fixture/manifest.json
     run bash "$CONFORMANCE_SH"
     [ "$status" -eq 0 ]
@@ -362,7 +362,7 @@ EOF
 @test "state.json task_count that differs from the files fails" {
     make_conformant_repo
     make_new_plan
-    echo '{"completed_count": 1, "task_count": 7, "tasks": [{"file":"1.task_first_thing.md"},{"file":"2.task_final_review.md"}]}' > .dwp/plans/PLAN_new_fixture/state.json
+    echo '{"completed_count": 1, "task_count": 7, "tasks": [{"id":1,"file":"1.task_first_thing.md","status":"completed"},{"id":2,"file":"2.task_final_review.md","status":"pending"}]}' > .dwp/plans/PLAN_new_fixture/state.json
     echo '{"name": "PLAN_new_fixture", "spec_version": "2.3.0"}' > .dwp/plans/PLAN_new_fixture/manifest.json
     run bash "$CONFORMANCE_SH"
     [ "$status" -eq 1 ]
@@ -413,4 +413,135 @@ EOF
     run bash "$CONFORMANCE_SH"
     [ "$status" -eq 0 ]
     [[ "$output" =~ "Verdict: CONFORMANT" ]]
+}
+
+# State correspondence must compare task identity and status, not only totals.
+make_new_state() {
+    cat > .dwp/plans/PLAN_new_fixture/state.json <<'EOF'
+{"completed_count":1,"task_count":2,"tasks":[{"id":1,"file":"1.task_first_thing.md","status":"completed"},{"id":2,"file":"2.task_final_review.md","status":"pending"}]}
+EOF
+    echo '{"spec_version":"2.3.0"}' > .dwp/plans/PLAN_new_fixture/manifest.json
+}
+
+@test "per-task state agrees with README, including an in-progress unchecked task" {
+    make_conformant_repo
+    make_new_plan
+    make_new_state
+    python3 - <<'PYEOF'
+import json
+from pathlib import Path
+p = Path('.dwp/plans/PLAN_new_fixture/state.json')
+s = json.loads(p.read_text())
+s['tasks'][1]['status'] = 'in_progress'
+p.write_text(json.dumps(s))
+PYEOF
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "statuses match README" ]]
+}
+
+@test "swapped completed tasks fail even when completed_count is unchanged" {
+    make_conformant_repo
+    make_new_plan
+    make_new_state
+    python3 - <<'PYEOF'
+import json
+from pathlib import Path
+p = Path('.dwp/plans/PLAN_new_fixture/state.json')
+s = json.loads(p.read_text())
+s['tasks'][0]['status'] = 'pending'
+s['tasks'][1]['status'] = 'completed'
+p.write_text(json.dumps(s))
+PYEOF
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "task status disagrees with README: Task 1" ]]
+}
+
+@test "duplicate state entries fail despite matching file sets and task_count" {
+    make_conformant_repo
+    make_new_plan
+    make_new_state
+    python3 - <<'PYEOF'
+import json
+from pathlib import Path
+p = Path('.dwp/plans/PLAN_new_fixture/state.json')
+s = json.loads(p.read_text())
+s['tasks'].append(s['tasks'][1].copy())
+p.write_text(json.dumps(s))
+PYEOF
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "duplicate task entries" ]]
+}
+
+@test "state ids must match their filenames" {
+    make_conformant_repo
+    make_new_plan
+    make_new_state
+    python3 - <<'PYEOF'
+import json
+from pathlib import Path
+p = Path('.dwp/plans/PLAN_new_fixture/state.json')
+s = json.loads(p.read_text())
+s['tasks'][1]['id'] = 1
+p.write_text(json.dumps(s))
+PYEOF
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "duplicate task ids" ]]
+    [[ "$output" =~ "task id disagrees with file" ]]
+}
+
+@test "stale README summary fails despite accurate state and checkboxes" {
+    make_conformant_repo
+    make_new_plan
+    make_new_state
+    sed -i.bak 's/Plan Status: 1\/2/Plan Status: 0\/2/' .dwp/plans/PLAN_new_fixture/README.md
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "README Plan Status count disagrees" ]]
+}
+
+@test "DWP_DIR applies to named plans, all plans and repository checks" {
+    make_conformant_repo
+    make_new_plan
+    mv .dwp "custom state & (plans)"
+    echo 'custom state & (plans)/' > .gitignore
+    export DWP_DIR="$PWD/custom state & (plans)"
+    run bash "$CONFORMANCE_SH" --plan PLAN_new_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "Plan: PLAN_new_fixture" ]]
+    run bash "$CONFORMANCE_SH"
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "Plan: PLAN_new_fixture" ]]
+    run bash "$CONFORMANCE_SH" --repo-only
+    [ "$status" -eq 0 ]
+    [[ ! "$output" =~ "Plan: PLAN_new_fixture" ]]
+}
+
+@test "external DWP_DIR is not required to be gitignored in the repository" {
+    make_conformant_repo
+    make_new_plan
+    mv .dwp "$TMPDIR_TEST/external-state"
+    mkdir repo
+    cd repo
+    make_conformant_repo
+    cd ..
+    export DWP_DIR="$TMPDIR_TEST/external-state"
+    run bash "$CONFORMANCE_SH" --plan PLAN_new_fixture repo
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "Plan: PLAN_new_fixture" ]]
+    run bash "$CONFORMANCE_SH" --repo-only repo
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "outside the repository" ]]
+}
+
+@test "running from a repository subdirectory finds plans at its git root" {
+    make_conformant_repo
+    make_new_plan
+    mkdir src
+    run bash "$CONFORMANCE_SH" --plan PLAN_new_fixture src
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "Plan: PLAN_new_fixture" ]]
 }
