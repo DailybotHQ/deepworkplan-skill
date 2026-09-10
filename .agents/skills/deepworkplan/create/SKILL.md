@@ -417,7 +417,7 @@ Create:
    (write-temp-then-rename); valid against `../spec/schema/plan-state.schema.json`
    (no extra fields — the schema is closed). `manifest.json` was written in item 1
    and is not touched here.
-8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `Standard: DWP
+8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `**Standard:** DWP
    spec 2.3.0`, the tier and why, and in trust mode `Pre-approved for unattended
    execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
    Report request if the user made one); Task List with `[ ]` checkboxes + links

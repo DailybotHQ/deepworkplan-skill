@@ -204,7 +204,7 @@ When a plan involves multiple repositories or complex areas, teammates can resea
 When generating a plan with 5+ user-defined task files, teammates can write task files simultaneously.
 
 **How it works:**
-1. Lead creates the plan skeleton: README.md, PROMPTS.md, PROGRESS.md, analysis_results/, and mandatory final task files
+1. Lead creates the plan skeleton: README.md, PROMPTS.md, PROGRESS.md, analysis_results/, and the single Final Review task file (`{N}.task_final_review.md`)
 2. Lead spawns teammates (1 per 2-3 task files) to generate user-defined task files in parallel
 3. Each teammate receives the refined draft and plan context, and writes their assigned task files
 4. Lead verifies all files, ensures consistency, and cleans up the team

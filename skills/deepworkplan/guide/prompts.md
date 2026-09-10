@@ -11,7 +11,7 @@ When you want Cursor, Claude, or another agent to **generate a new deep-work pla
 >
 > - Ensure the gitignored output root exists (the skill creates it on demand):
 >   - `.dwp/plans/` and `.dwp/drafts/` (git-ignored)
->   - The methodology guide ships in the skill at `guide/GUIDE.md`
+>   - Read `create/SKILL.md` and `guide/authoring.md` for the 2.3.0 plan and task contracts
 > - Then, create a new plan folder:
 >   - `.dwp/plans/PLAN_{plan_title}/`
 > - Inside that plan folder:
@@ -20,7 +20,7 @@ When you want Cursor, Claude, or another agent to **generate a new deep-work pla
 >     - The overall goal
 >     - Context
 >     - Global guidelines
->     - A Task List with `[ ]` items and links to each `N.task_*.md` file
+>     - A Task List with `[ ]` items and links to each `N.task_*.md` file, with the single Final Review task (`{N}.task_final_review.md`) last
 >     - Execution rules for the agent
 >     - A "Skills & Agents Used in This Plan" section mapping tasks to relevant skills/agents (see section 11)
 >     - Reference to PROMPTS.md for ready-to-use prompts
@@ -29,7 +29,7 @@ When you want Cursor, Claude, or another agent to **generate a new deep-work pla
 >     - Replace `{PLAN_NAME}` with the actual plan name
 >     - Include prompts for: execute, resume, resume with status, check status, modify
 >   - For each task in the Task List:
->     - Create a `N.task_{task_title}.md` file following the task template defined in this guide (`guide/GUIDE.md`, §5).
+>     - Create a `N.task_{task_title}.md` file following `create/SKILL.md` Step 4.4 and `guide/authoring.md` §5, including Touched Surface, skills disposition, and validation gates.
 >     - Ensure each task file has:
 >       - Context
 >       - Goal
@@ -105,8 +105,8 @@ When a plan is interrupted and you want to resume execution, use this prompt:
 >    - Complete the current task
 >    - Run all validation commands
 >    - Update the task's Completion & Log section
->    - Mark as `[x]` in the plan README
->    - Commit changes
+>    - Only if every selected gate was run and passed and all acceptance criteria are met, mark as `[x]` in the plan README; otherwise stop, log the failure, and leave `[ ]`.
+>    - Commit changes only after the completion guard passes
 >    - Move to next `[ ]` task
 > 6. **NEVER redo completed `[x]` tasks**
 > 7. **NEVER skip `[ ]` tasks**

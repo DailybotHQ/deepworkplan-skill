@@ -374,12 +374,10 @@ this order and do not reorder:
   [`../create/addon-augmentations.md`](../create/addon-augmentations.md) and run
   the local review pass, appending its output to `SECURITY_REVIEW.md`. When
   the skill or the extension is missing, record a `local reviewer not
-  installed` finding in `SECURITY_REVIEW.md`; if the run is authorized to
-  write to the harness (trust mode or explicit approval), install the missing
-  piece per `../onboard/addons.md` Phase 7a (pinned skill, `generate-extension`)
-  and then run the review; otherwise leave the finding and name it in the
-  completion report — never a silent skip, never a hard stop. An invocation
-  error of a review that could start: warn once, record, continue. Once a
+  installed` finding in `SECURITY_REVIEW.md` and name it in the completion
+  report. Installation belongs to onboarding or an explicit addon invocation;
+  Final Review never surprise-bootstraps it. An invocation error of a review
+  that could start: warn once, record, continue. Once a
   review runs, `critical` findings follow the security-pass contract: **fix or
   obtain explicit acceptance before completion**.
 - **(b) Final-state validation:** the repository's complete applicable test,

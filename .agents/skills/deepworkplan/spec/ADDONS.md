@@ -275,10 +275,9 @@ form**; only its CI surface is optional.
   developer-invoked companion during `execute`.
 - **Honest degradation, never a silent skip.** When the vendored skill or the
   extension file is missing at execution time, the security pass records a
-  `local reviewer not installed` finding; if the run is authorized to write to
-  the harness (trust mode or explicit approval) it installs the missing piece
-  with the same pinned command and then runs the review; otherwise the finding
-  stays in `SECURITY_REVIEW.md` and the completion report names it. An
+  `local reviewer not installed` finding and names it in the completion report.
+  Installation belongs to onboarding or an explicit addon invocation; Final
+  Review never surprise-bootstraps it. An
   invocation error of a review that could start follows the never-block rule
   (warn once, record, continue). The conformance checker reports a missing
   local reviewer as a **failure** for a repository declaring standard 2.3.0 or

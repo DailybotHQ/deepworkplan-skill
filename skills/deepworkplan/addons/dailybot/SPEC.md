@@ -12,7 +12,7 @@ progress-report step** is wired into DWP execution, the **never-block** rule, th
 **reconcile-don't-clobber** behavior, and the **vendor-neutral guardrail**.
 
 The addon is governed by [`../README.md`](../README.md) and
-[`methodology-spec/ADDONS.md`](../../spec/ADDONS.md): it is **never** required for
+[`../../spec/ADDONS.md`](../../spec/ADDONS.md): it is **never** required for
 baseline AI-first conformance.
 
 ## Status of This Document
@@ -21,7 +21,7 @@ baseline AI-first conformance.
 |-------|-------|
 | **Version** | 2.3.0 |
 | **Status** | Stable |
-| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `methodology-spec/ADDONS.md`, `../../spec/PLAN_STATE.md` |
+| **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/PLAN_STATE.md` |
 | **License** | MIT |
 
 > **Additive in 2.2.0.** Reporting grows from a single completion hook into a

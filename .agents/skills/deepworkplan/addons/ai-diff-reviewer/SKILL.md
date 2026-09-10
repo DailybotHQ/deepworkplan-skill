@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-ai-diff-reviewer
-description: "DeepWorkPlan addon — required local review (baseline since standard 2.3.0), optional CI surface — that connects an AI-first repo to the AI Diff Reviewer (DailybotHQ/ai-diff-reviewer on GitHub, \"AI Diff Reviewer\" on the Marketplace, current v2.0.0) — installing (with consent) the vendored coding-agent skill (DailybotHQ/ai-diff-reviewer, five sub-skills — parent default flow, generate-extension, setup, open-pr, apply-review) and, if the developer picks Flow B (dual-surface), letting the upstream setup sub-skill write .github/workflows/pr-review.yml so every pull request to the target repo is reviewed in CI with byte-identical parity to the local review. Wires the security pass of the mandatory DWP Final Review to run the parent default flow (\"Review my current branch\") as an additive step producing verdict + findings table + severity, appended under a dedicated heading in analysis_results/SECURITY_REVIEW.md. In Flow B, also surfaces the upstream apply-review sub-skill as an OPTIONAL developer-invoked companion during execute for walking through CI-posted findings per-finding (apply / defer / skip) with explicit consent. The local review is required: onboard installs it and the Final Review's security pass runs it; a missing install is a recorded finding (with an install attempt when authorized), never a silent skip; invocation errors never block (completed-review critical findings still follow the Final Review contract), reconciles existing setups instead of clobbering them, defers all install/auth/wizard details to the upstream skill's own consent flows, and applies Flow A (local-only) as the baseline and offers Flow B (dual-surface) as an explicit opt-in — never installs the CI surface unrequested. Runs from onboard Phase 7a and the targeted harness upgrade, or directly when the developer wants the optional CI merge gate on DWP work."
+description: "DeepWorkPlan addon — required local review (baseline since standard 2.3.0), optional CI surface — connects an AI-first repo to the AI Diff Reviewer. Onboarding installs the vendored coding-agent skill and extension with consent; the Final Review runs the local pass when present or records a missing-reviewer finding without bootstrapping. Flow B CI setup remains an explicit opt-in delegated to upstream. Invocation errors never block, completed-review critical findings still follow the Final Review contract, and all install/auth/wizard details defer to upstream consent flows."
 version: "2.17.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -94,8 +94,8 @@ extension = same review, locally and in CI.
 - From the **targeted harness upgrade** (`onboard` Phase 0) — when a
   previously onboarded repository lacks the vendored skill or the extension
   file, the upgrade reconciles the missing piece.
-- From **`execute`** — when the Final Review's security pass finds the
-  reviewer missing and the run is authorized to write to the harness.
+- From **`execute`** — the Final Review's security pass runs the local review
+  when installed, or records a missing-reviewer finding; it never installs.
 - **Directly** — `/deepworkplan-addon-ai-diff-reviewer` on an already-onboarded
   repo to add the review integration.
 
@@ -343,8 +343,9 @@ skip, and do not fail the onboarding.
 ## Failure-mode guardrails
 
 - **Required locally; invocation never blocking.** A missing vendored skill or
-  extension file is a recorded finding — plus an install attempt when the run
-  is authorized — never a silent skip and never a hard stop of the plan; a
+  extension file is a recorded finding, never a silent skip and never a hard
+  stop of the plan; installation is handled only by onboarding or an explicit
+  addon invocation. A
   declined install is a recorded declared exception that `verify` keeps
   reporting. A local review invocation error is warn-once-record-and-continue.
   Once a local review **ran**, open `critical`

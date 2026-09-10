@@ -25,11 +25,10 @@ follows the existing security-pass contract
 findings are appended and reported but do not block. Degradation is honest,
 never silent (addon SPEC §6.1, §7): when the vendored skill or the extension
 file is absent, record a `local reviewer not installed` finding in
-`SECURITY_REVIEW.md`, install the missing piece when the run is authorized to
-write to the harness (`../onboard/addons.md` Phase 7a — pinned skill,
-`generate-extension`) during onboarding; the Final Review MUST NOT surprise-
-bootstrap a missing extension or reviewer. Carry the finding into the completion
-report. When a review that could start errors at invocation, warn once, record it
+`SECURITY_REVIEW.md`. Installation belongs to onboarding (`../onboard/addons.md`
+Phase 7a — pinned skill, `generate-extension`) and is not a Final Review side
+effect. Carry the finding into the completion report. When a review that could
+start errors at invocation, warn once, record it
 and continue; critical findings from a completed review still follow the normal
 blocking contract. Flow A needs
 **no** CI provider secret — do NOT

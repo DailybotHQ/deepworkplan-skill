@@ -346,8 +346,8 @@ completion until fixed or explicitly accepted.
   failed invocation in `SECURITY_REVIEW.md`, continue the primary task,
   **not** retry automatically, and **not** enter a diagnostic loop. An
   **absent** skill or extension file is not an invocation failure: it is
-  handled by §6.1 (recorded finding plus an install attempt when authorized),
-  never by a silent skip. This mirrors the upstream skill's own
+  handled by §6.1 (recorded finding; installation is onboarding-only), never by
+  a silent skip. This mirrors the upstream skill's own
   trust-boundary guarantees. The local parent default flow runs via the
   coding agent and does **not** require a CI provider secret — an unset
   `CURSOR_API_KEY` (or other provider secret) **MUST NOT** suppress the
@@ -405,8 +405,8 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 4. The chosen flow (A or B) is recorded in `AGENTS.md` (or equivalent
    docs), and the DWP execution docs describe the security-pass
    local review as **required with honest degradation**: a missing skill or
-   extension is a recorded finding with an install attempt when authorized
-   (§6.1), invocation errors soft-fail (§7); `critical` findings from a
+  extension is a recorded finding and installation remains onboarding-only
+  (§6.1), invocation errors soft-fail (§7); `critical` findings from a
    **completed** pass still follow the SR contract (§6.1 / §7).
 5. (Flow B only) `.github/workflows/pr-review.yml` exists with the upstream
    Action pinned to `@v2` (or a specific tag), the stable-named gate job
