@@ -177,7 +177,12 @@ cold resume.
   execution record; `state.json` is a projection regenerated after them. A fast
   JSON read never authorizes skipping unfinished Markdown work.
 - **Write order and interruption.** Persist at task/step boundaries: task log →
-  README → `state.json` (atomic replace). On interruption between validation,
+  README → `state.json` (atomic replace). Materialization is resumable at any
+  point: `manifest.json` first, a README skeleton with the intended task list and
+  `Plan Status: materializing` second, `analysis_results/PLAN_ANALYSIS.md` third,
+  task files next, and the status line flipped to `0/N completed` last — so an
+  interrupted `create` leaves its shape and reasoning on disk instead of a
+  half-written folder nobody can interpret. On interruption between validation,
   commit, README update and state update, inspect actual evidence (git, files)
   before replaying anything; never duplicate a commit, skill, external write or
   report.

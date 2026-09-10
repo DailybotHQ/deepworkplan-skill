@@ -44,13 +44,13 @@ one-level static inventory, not a reconstruction of everything an agent loads.
 
 | Flow | Baseline bytes | Candidate bytes | Change |
 | --- | ---: | ---: | ---: |
-| Create | 145,087 | 81,452 | −43.9% |
-| Execute | 142,506 | 77,572 | −45.6% |
-| Resume | 38,186 | 73,470 | +92.4% |
-| Refine | 122,761 | 60,387 | −50.8% |
-| Onboard | 157,503 | 67,870 | −56.9% |
-| Status | 13,363 | 17,006 | +27.3% |
-| Verify | 29,581 | 42,209 | +42.7% |
+| Create | 145,087 | 85,020 | −41.4% |
+| Execute | 142,506 | 77,996 | −45.3% |
+| Resume | 38,186 | 73,659 | +92.9% |
+| Refine | 122,761 | 61,352 | −50.0% |
+| Onboard | 157,503 | 68,522 | −56.5% |
+| Status | 13,363 | 17,222 | +28.9% |
+| Verify | 29,581 | 42,563 | +43.9% |
 
 [Baseline records](token-efficiency-data/static-baseline.txt) and
 [candidate records](token-efficiency-data/static-candidate.txt) include every
@@ -58,8 +58,8 @@ counted file. Create and execute meet the preregistered 40% static target.
 Resume's increase partly reflects explicit execution-resource links absent from
 the baseline's direct resource list; it does not prove an 85% increase in actual
 resume cost. Status and verification contain additional recovery/compatibility
-instructions. Total installed Markdown grows from 738,989 to 976,324 bytes
-(+32.1%): progressive loading trades a larger complete pack for narrower common
+instructions. Total installed Markdown grows from 738,989 to 981,895 bytes
+(+32.9%): progressive loading trades a larger complete pack for narrower common
 entry paths. No claim that the whole package became smaller is supported.
 
 ## Agent replay interpretation
@@ -121,7 +121,7 @@ upper bound on actual savings.
 
 | Claim | Evidence and boundary |
 | --- | --- |
-| Declared create/execute instruction bytes fall by 43.9%/45.6% in this snapshot | Reproducible static inventory; not tokens or live-session savings |
+| Declared create/execute instruction bytes fall by 41.4%/45.3% in this snapshot | Reproducible static inventory; not tokens or live-session savings |
 | Conditional loading avoids requiring the complete guide on the common entry path | Explicit resource declarations plus the static file list |
 | Relevant fault detection must survive narrower validation | Seeded isolated and shared-core command records; behavior remains a hard gate |
 | Any instrumented live-session comparison (reads, output, commands) | **Not established.** The preregistered three-pair run was not completed: 3 of 6 arms never ran, the other 3 were truncated at unequal progress. Records retained; no delta computed |

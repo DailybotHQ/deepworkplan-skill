@@ -134,6 +134,17 @@ materializes according to the mode the developer chose:
 - **Explicit draft modes.** `refined-draft {name}` (produce only the draft) and
   `from-refined-draft {file}` (materialize from an existing draft) **MUST** remain
   available in both modes; a developer who asks for a draft gets one.
+- **Materialization order (both modes) — resumable at any point.** The flow
+  **MUST** write `manifest.json` first (identity, standard, intended task count),
+  then a `README.md` skeleton carrying the full intended task list and the line
+  `Plan Status: materializing`, then `analysis_results/PLAN_ANALYSIS.md` (the
+  recorded requirements analysis), then the task files and the remaining
+  artifacts, and **MUST** finish by replacing the status line with
+  `Plan Status: 0/N completed`. A folder whose README is missing, still says
+  `materializing`, or links a task file that does not exist is a **partial
+  materialization**: `create` and `refine` **MUST** offer to complete it from the
+  recorded shape and analysis or discard it; `execute` and `resume` **MUST NOT**
+  run it.
 
 In every mode the flow **MUST NOT** produce an intermediate non-refined draft as
 a separate reviewable step. The legacy `[1/3] Creating draft → [2/3] Refining
@@ -170,7 +181,7 @@ A conformant plan directory **MUST** contain:
 > `{N}.task_executive_report.md` instead; that shape remains conformant (§6.5).
 
 - Plan names **MUST** follow `PLAN_{snake_case_name}` (lowercase, underscore-separated, 2–5 words).
-- `README.md`, `PROMPTS.md`, `PROGRESS.md`, and `analysis_results/` **MUST** all be present.
+- `README.md`, `PROMPTS.md`, `PROGRESS.md`, and `analysis_results/` **MUST** all be present; `manifest.json` and `analysis_results/PLAN_ANALYSIS.md` **MUST** be present in a plan authored under this version (`PLAN_STATE.md` §2; §3 above).
 - At least one user-defined task plus the Final Review (§6.1) **MUST** be present in a plan authored under this version; the legacy three-task ending is accepted per §6.5.
 
 The plan `README.md` **MUST** contain: title + goal; context; plan variables (if

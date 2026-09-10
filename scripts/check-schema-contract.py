@@ -52,11 +52,25 @@ def errors(schema, doc):
 
 def check_plan(plan_dir, ms, ss, problems, notes):
     name = os.path.basename(plan_dir.rstrip("/"))
-    if not os.path.isfile(os.path.join(plan_dir, "README.md")):
+    readme = os.path.join(plan_dir, "README.md")
+    materializing = os.path.isfile(readme) and re.search(r"Plan Status: *materializing", open(readme, encoding="utf-8").read()) is not None
+    if not os.path.isfile(readme) or materializing:
+        why = "README says 'Plan Status: materializing'" if materializing else "no README.md"
+        shape = ""
+        mpath0 = os.path.join(plan_dir, "manifest.json")
+        if os.path.isfile(mpath0):
+            try:
+                m0 = json.load(open(mpath0))
+                bad = errors(ms, m0)
+                present = len([f for f in os.listdir(plan_dir) if re.match(r"^\d+\.task_.*\.md$", f)])
+                shape = f"; manifest declares {m0.get('task_count')} tasks, {present} task files present" + (f"; manifest invalid: {bad[0]}" if bad else "")
+            except Exception as exc:  # noqa: BLE001
+                shape = f"; manifest unreadable ({exc})"
         if os.path.isfile(os.path.join(plan_dir, ".contract-expect-partial")):
-            notes.append(f"{name}: partial materialization detected as expected (fixture marker present)")
+            notes.append(f"{name}: partial materialization detected as expected ({why}{shape})")
             return
-        problems.append(f"{name}: partial materialization — no README.md (a plan folder without README must be completed or discarded, never executed)")
+        problems.append(f"{name}: partial materialization — {why}{shape} (complete or discard it with create/refine, never execute)")
+        return
     mpath, spath = os.path.join(plan_dir, "manifest.json"), os.path.join(plan_dir, "state.json")
     if not (os.path.isfile(mpath) or os.path.isfile(spath)):
         notes.append(f"{name}: no state layer (optional in a git repo)")

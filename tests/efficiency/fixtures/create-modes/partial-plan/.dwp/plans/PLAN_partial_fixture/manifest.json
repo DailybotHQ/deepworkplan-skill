@@ -1,0 +1,17 @@
+{
+  "schema": "https://deepworkplan.com/schema/plan-manifest/v1.json",
+  "spec_version": "2.3.0",
+  "name": "PLAN_partial_fixture",
+  "title": "Partial materialization fixture",
+  "archetype": "individual",
+  "rigor": "standard",
+  "created_at": "2026-09-10T00:00:00Z",
+  "created_by": {
+    "agent": "fixture"
+  },
+  "tags": [
+    "fixture"
+  ],
+  "task_count": 2,
+  "parent_plan": null
+}

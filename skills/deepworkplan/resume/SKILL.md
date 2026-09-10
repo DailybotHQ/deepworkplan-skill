@@ -41,7 +41,9 @@ pick the plan up without the previous conversation.
 
 Normalize the `PLAN_` prefix; validate `.dwp/plans/PLAN_{name}/` and its
 `README.md`. If not found, show available plans and ask the user to choose. A
-folder without `README.md` is a partial materialization — point to `refine`.
+folder without `README.md`, or whose README says `Plan Status: materializing`,
+is a partial materialization (its `manifest.json` records the intended shape) —
+point to `refine`; never execute it.
 
 ## Trust boundary (write scope)
 

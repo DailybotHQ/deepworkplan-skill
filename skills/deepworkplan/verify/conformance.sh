@@ -333,6 +333,24 @@ check_plan() {
     fi
   done
 
+  # Partial materialization (DWP_SPECIFICATION §3): the README skeleton is written
+  # early with `Plan Status: materializing`; a plan still carrying it was never
+  # finished. Report the intended shape from manifest.json and stop checking.
+  if [ -f "$plan_dir/README.md" ] && grep -qE 'Plan Status: *materializing' "$plan_dir/README.md"; then
+    local intended="" present
+    if [ -f "$plan_dir/manifest.json" ]; then intended="$(json_str "$plan_dir/manifest.json" task_count)"; fi
+    present="$(find "$plan_dir" -maxdepth 1 -name '[0-9]*.task_*.md' 2>/dev/null | wc -l | tr -d ' ')"
+    fail "partial materialization: README says 'Plan Status: materializing' (manifest declares ${intended:-?} tasks, $present task files present) — complete or discard it with create/refine; never execute it"
+    return 0
+  fi
+  if [ ! -f "$plan_dir/manifest.json" ]; then
+    local std_for_manifest
+    std_for_manifest="$(plan_standard "$plan_dir")"
+    if [ -n "$std_for_manifest" ] && version_le "2.3.0" "$std_for_manifest"; then
+      warn "harness-version finding: manifest.json missing (plans authored under 2.3.0 write it first, PLAN_STATE.md §2)"
+    fi
+  fi
+
   if [ -d "$plan_dir/analysis_results" ]; then
     pass "analysis_results/"
   else

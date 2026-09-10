@@ -67,15 +67,18 @@ A plan using the state layer has this layout (extending `DWP_SPECIFICATION.md` �
 ├── README.md            ← human source of truth (unchanged)
 ├── PROGRESS.md          ← narrative log (unchanged)
 ├── PROMPTS.md           ← unchanged
-├── manifest.json        ← static identity (NEW — written at materialization)
+├── manifest.json        ← static identity (written FIRST at materialization: the intended shape)
 ├── state.json           ← live state (NEW — rewritten at protocol points)
 ├── analysis_results/
 │   └── SKILLS_CANDIDATES.md ← task-local skills ledger (DWP_SPECIFICATION §6.2; markdown, not JSON)
 └── {N}.task_{...}.md
 ```
 
-- `manifest.json` **MUST** be written exactly once, when the `create` flow
-  materializes the plan, and **MUST NOT** change afterward. Its `spec_version`,
+- `manifest.json` **MUST** be written exactly once, as the **first file** of the
+  plan folder when the `create` flow materializes the plan — before any task
+  file, so an interrupted materialization leaves the plan's identity and
+  intended `task_count` on disk (`DWP_SPECIFICATION.md` §3) — and **MUST NOT**
+  change afterward. Its `spec_version`,
   `created_at`, and `created_by` are **creation provenance**: an authorized
   migration of a plan to a newer standard (§6.1) is declared in the plan README
   and recorded in `PROGRESS.md`; the manifest is **never** rewritten to disguise
@@ -135,7 +138,9 @@ Conforms to [`schema/plan-manifest.schema.json`](schema/plan-manifest.schema.jso
   (`DWP_SPECIFICATION.md` §11, Proportional Rigor).
 - `parent_plan` links a child DWP to its orchestrator plan (`{repo}:{plan_name}`,
   or `null`).
-- `task_count` is the number of tasks **at creation** (provenance). A `refine`
+- `task_count` is the number of task files the materialization **intends to
+  write**, Final Review included (creation provenance; a completed
+  materialization has exactly that many task files on disk). A `refine`
   that adds, splits, or removes tasks changes the live count in
   `state.json.task_count` only; the manifest is never rewritten (§2).
 - `created_by` **SHOULD** identify the creating agent and model; it **MUST NOT**

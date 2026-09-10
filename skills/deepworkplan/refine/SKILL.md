@@ -114,10 +114,14 @@ and — when present — `manifest.json` and `state.json`. Establish:
   `{N}.task_final_review.md` last. **Legacy shape** = three final tasks
   (`security_review` → `skills_agents_discovery` → `executive_report`). Refine
   **retains the plan's shape**; only Step 4 changes it.
-- **Partial materialization**: a folder with task files but **no `README.md`** is
-  an interrupted `create`. Offer to **complete** it (generate only the missing
-  files per `../create/SKILL.md` Step 4.4, leaving existing task files intact)
-  or **discard** it (explicit confirmation). Never overwrite unrelated artifacts.
+- **Partial materialization**: a folder whose `README.md` is missing, says
+  `Plan Status: materializing`, or links a task file that does not exist is an
+  interrupted `create`. Read `manifest.json` and the README task list to report
+  the intended shape against what exists; offer to **complete** it (regenerate
+  only the missing files from `analysis_results/PLAN_ANALYSIS.md` per
+  `../create/SKILL.md` Step 4.4, leaving existing task files and the manifest
+  intact, then flip the status line) or **discard** it (explicit confirmation).
+  Never overwrite unrelated artifacts.
 - Objective, context, guidelines, tasks and their `[x]`/`[ ]` status, and any
   in-progress checkpoint.
 
@@ -256,7 +260,7 @@ when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
 
 ## Error Handling
 - Draft/plan not found → list available options and let the user select.
-- Partial materialization (no `README.md`) → offer complete / discard (3.2).
+- Partial materialization (no `README.md`, `Plan Status: materializing`, or a dangling task link) → offer complete / discard (3.2).
 - Task number out of range → show the valid range for this plan's shape and re-ask.
 - Deleting or splitting a completed `[x]` task → confirm explicitly first.
 - Plan has work in progress (a checkpoint or an `in_progress` task) → warn about

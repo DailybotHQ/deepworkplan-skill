@@ -43,8 +43,8 @@ successful task.
 
 Normalize names by adding the `PLAN_` prefix if missing. Validate that
 `.dwp/plans/PLAN_{name}/` and its `README.md` exist; if not, show available plans
-and ask the user to choose. A folder **without** `README.md` is a partial
-materialization — do not execute it; point to `refine` (which can complete it).
+and ask the user to choose. A folder **without** `README.md`, or whose README says `Plan Status:
+materializing`, is a partial materialization — point to `refine` and stop.
 
 ## Trust boundary (write scope)
 
@@ -461,6 +461,6 @@ For orchestrator plans, the completion rules in [`orchestrator.md`](orchestrator
 - Stale or missing gate evidence on resume → rerun the gate.
 - User requests pause → stop at the current task; `[x]` marks persist.
 - Invalid plan structure → report; ask to fix (`refine`) or proceed with caution;
-  a folder without `README.md` is never executed.
+  a folder without `README.md`, or whose README says `Plan Status: materializing`, is never executed.
 - Plan declares a newer standard than this skill → report and stop (§7.3).
 - Orchestrator-specific errors → [`orchestrator.md`](orchestrator.md).

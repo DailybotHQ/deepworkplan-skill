@@ -62,6 +62,15 @@ PY
     echo "$output" | grep -q "stale/ahead projection"
 }
 
+@test "a README still saying 'Plan Status: materializing' is a partial materialization that names the intended shape" {
+    m="$(mutant)"
+    sed -i 's/Plan Status: *[0-9]*\/[0-9]* completed/Plan Status: materializing/' "$m/README.md"
+    run python3 "$CHECK" --pack "$REPO_ROOT/skills/deepworkplan" --fixtures "$TMPDIR_TEST/none" "$m"
+    [ "$status" -eq 1 ]
+    echo "$output" | grep -q "partial materialization"
+    echo "$output" | grep -q "manifest declares"
+}
+
 @test "a plan folder without README.md is reported as partial materialization" {
     m="$(mutant)"
     rm "$m/README.md"
