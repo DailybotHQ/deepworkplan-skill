@@ -61,3 +61,23 @@ Rules that make a replay count:
   the intended boundary is a FAIL.
 
 Run: `python3 tests/efficiency/score-replays.py <scratch-root> [--json out.json]`.
+
+## Snapshot efficiency results
+
+The [efficiency evaluation](evaluations/token-efficiency.md) separates the
+declared mandatory instruction inventory, historical self-reported replays,
+instrumented paired observations and command-only seeded-fault experiments.
+Its [records](evaluations/token-efficiency-data/protocol.json) pin the source
+revisions and describe deviations from the ideal back-to-back protocol.
+
+Reproduce the recorded aggregates with:
+
+```bash
+python3 tests/efficiency/summarize-paired.py
+```
+
+The summarizer rejects missing pairs and retains nonzero commands and incomplete
+outcomes. It does not certify a live-token, billing or latency claim. Concurrent
+runs, uninstrumented provider settings and a small fixture require narrower
+conclusions. Three repetitions do not remove these limitations. A static
+read-list reduction is not a measured live-session saving.

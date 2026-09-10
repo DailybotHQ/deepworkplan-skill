@@ -5,10 +5,15 @@
 # Bytes are filesystem bytes; "/4" is a labeled estimate, never a token measurement.
 set -euo pipefail
 ROOT="${1:-$(cd "$(dirname "$0")/../.." && pwd)}"
+ROOT="$(cd "$ROOT" && pwd)"
 PACK="$ROOT/skills/deepworkplan"
 [ -d "$PACK" ] || { echo "no pack at $PACK" >&2; exit 1; }
 
-echo "# Instruction load — $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo no-git)"
+REVISION="export (record source revision separately)"
+if [ "$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null || true)" = "$ROOT" ]; then
+  REVISION="$(git -C "$ROOT" rev-parse --short HEAD)"
+fi
+echo "# Instruction load — $REVISION"
 echo
 echo "## Installed Markdown (bytes)"
 ( cd "$PACK" && find . -name '*.md' -type f -print0 | xargs -0 wc -c | grep -v ' total$' | sort -rn | head -12 | sed 's/^ *//; s| \./| |' | awk '{printf "%-52s %8s\n",$2,$1}' )

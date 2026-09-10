@@ -1,0 +1,41 @@
+{
+  "date": "2026-09-10",
+  "scenario": "trust-create-execute",
+  "arms": {
+    "baseline": {
+      "revision": "eaf54994ac5894b74849f1b8d2b6137df8d83e30",
+      "pack_sha256": "aef02a700cc67b2bb8b6d61b6d04aebd350e0f76c059a9d7a3e0cf4ae2aae93d"
+    },
+    "candidate": {
+      "revision": "d4ffe58d7516b53027df61d679f87cc05a3e33e2",
+      "pack_sha256": "c349dad49d322ccd101b78f1c978fc931e968e9f9cc841501aec670e15d84cea"
+    }
+  },
+  "pairs_requested": 3,
+  "harness": "Codex collaboration agents",
+  "model": "inherited parent model; provider model identifier not instrumented",
+  "reasoning": "inherited unchanged; not instrumented",
+  "cold_warm": "fresh context at create; execution reuses that context (warm)",
+  "concurrent_runs": true,
+  "timing_claim_eligible": false,
+  "provider_tokens": null,
+  "protocol_deviations": [
+    "Compared instrumented Codex runs separately from historical Claude Code reports; never pooled.",
+    "Concurrent isolated runs replace back-to-back scheduling; timing is descriptive and cannot establish latency or billing savings.",
+    "Capture output retention added after first eight events; byte/time capture unchanged; initial read contents recoverable from frozen pack and file hashes.",
+    "Preregistered three-pair instrumented comparison NOT met: three of six arms were never run, and all three attempted arms were truncated before final closure at differing progress points. No instrumented session claim ships from this dataset; the retained records are partial evidence only."
+  ],
+  "fixed_prompt": "You are an isolated agent replay for the DWP efficiency evaluation. This is an explicitly requested agent-based validation of the current plan. Do not read the parent repository or other workspaces. Your assigned workspace is WORKSPACE, and the only methodology pack you may read is PACK. Both are frozen inputs; never modify the pack. Use your default inherited model/reasoning; record model as reported by your harness, and unknown settings as unavailable. No network, external messages, tools that install dependencies, or additional agents. Only modify your workspace and its adjacent report/trace files.\n\nExecute this fixed user request using the installed pack, starting with PACK/SKILL.md: \"Create a plan and execute it to add shout(name) to src/greeter.py, returning the existing greet(name) result in uppercase, with exactly one trailing exclamation mark. Preserve greet and math behavior. Add meaningful unittest coverage for shout('Ada') and shout(''), and document both APIs in docs/README.md. I approve the resulting plan against these exact requirements for this isolated fixture; execute through its final validation and closure. trust\"\n\nUse the actual procedure in your arm, including its lifecycle. Do not copy knowledge of any other arm. Whenever a step requires a question not answered by the fixed request, record the exact question and stop that step without asking a human or treating elapsed time as approval. Task-local commits authorized, fixture identity: Evaluation <evaluation@example.invalid>. Do not push.\n\nInstrumentation: route ALL instruction/repository file reads and shell commands through `python3 CAPTURE WORKSPACE read ABSOLUTE_PATH [START_LINE END_LINE]` or `python3 CAPTURE WORKSPACE run COMMAND ARG...`. You may use `run python3 -c ...` for filesystem inspection and edits; don't print file contents through `run` (use read, so byte counts stay exact). Don't truncate a capture response; select line ranges first if the file is large. Use apply_patch for edits if easier. The capture helper records commands, exit status, output bytes, timings and read bytes. Any accidental bypass must be recorded in the report; never invent missing counters. Capture one `run date -u` at start and end. Briefly record the point at which planning finishes, so creating versus execution/final closure can be distinguished. Do not count fixtures' setup commits as your execution commits.\n\nWrite a JSON report beside the workspaces at REPORT with: arm, pair, scenario='trust-create-execute', actual model/harness/reasoning information or unavailable, started_at, planning_finished_at, finished_at, outcome (completed/stopped/failed), exact prompt, files_written, git_commits, questions_needed, failures_and_retries, gate_commands with real executed counts, draft_written, task_files/final_task_files, requirement_checks (observed behavior, preserved behavior, tests, docs, final review, state parity), duplicate_actions, interruptions, limitations. Provider input/output/cached/reasoning tokens are unavailable unless exposed by the harness; never use bytes/4. A behavioral failure is part of the data, not permission to weaken a test. Avoid writing a new general test framework. Your final reply should name the report and summarize the actual outcome and limitations.\n",
+  "arms_attempted": [
+    "pair1-baseline",
+    "pair1-candidate",
+    "pair2-baseline"
+  ],
+  "arms_not_run": [
+    "pair2-candidate",
+    "pair3-baseline",
+    "pair3-candidate"
+  ],
+  "pairs_completed": 0,
+  "instrumented_claim_eligible": false
+}

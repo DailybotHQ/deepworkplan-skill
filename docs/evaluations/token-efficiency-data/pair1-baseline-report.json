@@ -1,0 +1,32 @@
+{
+  "arm": "baseline",
+  "pair": 1,
+  "scenario": "trust-create-execute",
+  "harness": "Codex collaboration agent",
+  "model": "unavailable (not instrumented)",
+  "reasoning": "unavailable (not instrumented)",
+  "started_at": "2026-09-10T04:12:46.240327+00:00",
+  "finished_at": "2026-09-10T04:18:29.907428+00:00",
+  "planning_finished_at": "unavailable (marker not captured before truncation)",
+  "outcome": "stopped",
+  "outcome_detail": "Run truncated before final closure: 4 task(s) marked complete, 1 still open in the fixture plan. Not a completed scenario.",
+  "gate_commands": {
+    "captured_run_events": 50,
+    "nonzero_exit_commands": 0
+  },
+  "provider_tokens": {
+    "input": null,
+    "output": null,
+    "cached_input": null,
+    "reasoning": null
+  },
+  "questions_needed": [],
+  "duplicate_actions": "not assessed (run truncated)",
+  "interruptions": "Run ended by orchestration cutoff, not by an in-scenario stop condition.",
+  "limitations": [
+    "Truncated run: arms stopped at different progress points and are NOT comparable.",
+    "No efficiency conclusion may be drawn from this record in either direction.",
+    "Provider token counters unavailable; byte capture only.",
+    "Concurrent execution on a shared host; timings descriptive only."
+  ]
+}

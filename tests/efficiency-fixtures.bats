@@ -73,3 +73,13 @@ PY
     [ "$status" -eq 0 ]
     for flow in create execute resume refine onboard; do echo "$output" | grep -q "^$flow "; done
 }
+
+@test "measurement of a nested export does not attribute its parent's revision" {
+    git -C "$TMPDIR_TEST" init -q
+    mkdir -p "$TMPDIR_TEST/export/skills"
+    cp -r "$REPO_ROOT/skills/deepworkplan" "$TMPDIR_TEST/export/skills/"
+    run bash "$REPO_ROOT/tests/efficiency/measure-instruction-load.sh" "$TMPDIR_TEST/export"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"# Instruction load — export (record source revision separately)"* ]]
+    [[ "$output" != *"$TMPDIR_TEST/export/skills/deepworkplan/"* ]]
+}
