@@ -36,7 +36,7 @@ nobody asked for.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
   and the two repository archetypes (individual repo vs orchestrator hub).
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.4) and [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10).
-- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) if the target repo has an installed addon that augments the Final Review; [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
+- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) **always when composing the Final Review** (required local-review step on every 2.3.0 plan — do not gate this read on whether the target already has the reviewer installed); [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns.
 - [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
   `PROMPTS.md` template for each plan.
@@ -315,14 +315,39 @@ Follow `../guide/authoring.md` (§4–§5) and `../guide/structure.md` (§1–§
 exists, see *Error Handling — plan exists / partial materialization*. Never
 overwrite files that are not part of this plan.
 
-**Write order (recoverable):** task files → `PROMPTS.md` → `PROGRESS.md` →
-`analysis_results/` (+ ledger) → `manifest.json` + `state.json` → **`README.md`
-last**. A plan folder without `README.md` is, by definition, a **partial
-materialization** that a rerun can detect and complete or discard.
+**Write order (resumable at any point):** `manifest.json` → `README.md`
+**skeleton** (goal, context, variables, guidelines and the full task list with
+titles and links, with `Plan Status: materializing`) → `analysis_results/PLAN_ANALYSIS.md`
+(the Step 3 record) → task files in order → `PROMPTS.md` → `PROGRESS.md` →
+`analysis_results/SKILLS_CANDIDATES.md` → `state.json` → **flip the README to
+`Plan Status: 0/N completed`** as the last write. From the second write onward,
+the plan's intended shape is on disk in human-readable form; from the third, any
+agent can regenerate a missing task file faithfully. A folder whose README is
+missing, still says `materializing`, or links a task file that does not exist is
+a **partial materialization**: `create` and `refine` complete or discard it,
+`execute` and `resume` never run it.
 
 Create:
 
-1. **Folder:** `.dwp/plans/PLAN_{name}/`
+1. **Folder + `manifest.json` (first write):** create `.dwp/plans/PLAN_{name}/`
+   and immediately write `manifest.json` — plan identity: name, title, archetype,
+   rigor tier, `spec_version` **"2.3.0"**, `task_count` = the number of task files
+   this materialization will write (Final Review included), creating agent —
+   atomically (write-temp-then-rename), valid against
+   `../spec/schema/plan-manifest.schema.json` (closed schema), written once,
+   never edited after.
+1b. **README skeleton (second write):** write `README.md` with everything in
+   item 8 except the final status: the Task List names **every** intended task
+   with its future filename and link, and the status line reads
+   `Plan Status: materializing` (no count). This is the resumable record of the
+   plan's shape; it is flipped in item 9 and never left as `materializing` on a
+   finished plan.
+1c. **`analysis_results/PLAN_ANALYSIS.md` (third write):** the Step 3 record —
+   requirement inventory, tier and why, task decomposition with each task's
+   owned surface, prerequisites and outputs, the planned Touched Surface, risk
+   class and selected gate per behavior-changing task, and the mode. Compact
+   (aim under ~600 words); it lets a fresh agent regenerate a missing task file
+   without re-deriving the plan, and gives `refine` the original reasoning.
 2. **User-defined task files** — `N.task_{title}.md`, each with the ten-section
    anatomy (`../spec/DWP_SPECIFICATION.md` §5): Context; Read Before Starting;
    Goal; **Touched Surface** (planned surface, affected consumers, risk class,
@@ -361,11 +386,14 @@ Create:
    explicit request recorded in the plan guidelines counts); send the completion
    report through the configured channel regardless of the answer.
 
-   **Addon augmentation (trigger only):** if the target repo has
-   `.agents/skills/ai-diff-reviewer/` **and** an extension file at one of its
-   three recognized paths, read [`addon-augmentations.md`](addon-augmentations.md)
-   (this directory) and add its post-existing-checks step to the Final Review
-   task. Absent addon or extension → add nothing (the addon's never-block rule).
+   **Local review step (required):** read
+   [`addon-augmentations.md`](addon-augmentations.md) (this directory) and add
+   its AI Diff Reviewer post-existing-checks step to the Final Review task's
+   security pass — it applies to every 2.3.0 plan. When the target repo lacks
+   `.agents/skills/ai-diff-reviewer/` or an extension file at one of the three
+   recognized paths, the step's degradation clause (record a `local reviewer
+   not installed` finding, install when authorized, otherwise carry the
+   finding) applies at execution time; do not omit the step.
 
 4. **PROMPTS.md** — from `../examples/PROMPTS_TEMPLATE.md`, replacing
    `{PLAN_NAME}` with the plan name. The template is written for **you**, so
@@ -383,13 +411,13 @@ Create:
 6. **analysis_results/** — the folder, plus `SKILLS_CANDIDATES.md` with a
    two-line header (purpose; entry shape `T{task}-{seq} · pattern · evidence ·
    disposition`). No other placeholder files.
-7. **State layer (RECOMMENDED, `../spec/PLAN_STATE.md`; REQUIRED for unattended
-   runs and for workspaces without git)** — `manifest.json` (plan identity:
-   name, archetype, rigor tier, `spec_version` **"2.3.0"**, task count, creating
-   agent — written once, never edited after) and the initial `state.json` (every
-   task `pending`, empty gates). Both atomically (write-temp-then-rename); both
-   valid against `../spec/schema/` (no extra fields — the schemas are closed).
-8. **README.md** (last) — Goal; Context; Plan Variables (incl. `Standard: DWP
+7. **`state.json` (RECOMMENDED, `../spec/PLAN_STATE.md`; REQUIRED for unattended
+   runs and for workspaces without git)** — the initial projection: every task
+   `pending`, empty gates, `task_count` equal to the manifest's. Atomically
+   (write-temp-then-rename); valid against `../spec/schema/plan-state.schema.json`
+   (no extra fields — the schema is closed). `manifest.json` was written in item 1
+   and is not touched here.
+8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `Standard: DWP
    spec 2.3.0`, the tier and why, and in trust mode `Pre-approved for unattended
    execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
    Report request if the user made one); Task List with `[ ]` checkboxes + links
@@ -401,6 +429,9 @@ Create:
    reconciliation). Skills decisions are made inside each task; the Executive
    Report is optional and offered at completion. Auto-generated by
    `/dwp-create`."*
+9. **Flip the README status (last write):** replace `Plan Status: materializing`
+   with `Plan Status: 0/N completed` where N equals `manifest.task_count` and
+   the number of task files on disk. Only now is the plan complete.
 
 **Conditional branches:** if Step 2.6 fired, apply the **orchestrator
 additions** in [`orchestrator.md`](orchestrator.md); if Step 2.10 fired, apply
@@ -421,8 +452,10 @@ Verify, and fix before continuing:
   integration/contract check; the unit-first coverage expectation is in the
   Acceptance Criteria (`../guide/authoring.md` §5.3).
 - Every task's checklist has the skills-decision step; `SKILLS_CANDIDATES.md`
-  exists; `PROMPTS.md` and `PROGRESS.md` exist; `manifest.json`/`state.json`
-  (when present) validate and agree with the task files.
+  exists; `PROMPTS.md`, `PROGRESS.md` and `analysis_results/PLAN_ANALYSIS.md`
+  exist; `manifest.json` validates and its `task_count` equals the task files
+  written; `state.json` (when present) validates and agrees with the task files;
+  the README no longer says `materializing` and every task link resolves.
 - No placeholder text (`[TODO`, `[TBD`, `{...}` left unfilled) remains.
 
 ### Step 5 — Completion & Execute Option
@@ -457,10 +490,19 @@ first `[ ]` task, execute sequentially, validate, commit per task, report.
 - **Plan name already exists (complete plan — has `README.md`):** offer a
   different name / overwrite (explicit confirmation, even in trust mode — it is
   a destructive action) / cancel.
-- **Partial materialization found (folder exists, no `README.md`):** list what
-  exists; offer to **complete** it (regenerate only the missing files from the
-  Step 3 analysis, leaving existing task files intact) or **discard** it
-  (explicit confirmation). Never overwrite unrelated files.
+- **Partial materialization found (folder exists and its `README.md` is missing,
+  says `Plan Status: materializing`, or links a task file that does not exist):**
+  read `manifest.json` (intended `task_count`, title) and the README task list
+  when present, and report which intended files exist and which are missing;
+  offer to **complete** it — regenerate only the missing files from
+  `analysis_results/PLAN_ANALYSIS.md` (or, when that record is also missing,
+  from the manifest, the README task list and the existing task files, rebuilding
+  Step 3 for the gaps; in guided mode ask only for what no file states, in trust
+  mode derive it and say so in the README), leave existing task files and the
+  manifest untouched, then flip the status line — or **discard** it (explicit
+  confirmation, even in trust mode). Never overwrite unrelated files. A folder
+  with neither a manifest nor a README is handled the same way with the intended
+  count unknown.
 - **Name auto-converted:** show an informational notice (not an error).
 - **Refined draft not found (from-refined-draft):** list available refined drafts
   in `.dwp/drafts/` and ask the user to choose.

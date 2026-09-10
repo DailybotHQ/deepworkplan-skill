@@ -456,7 +456,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
   [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md),
   `open-pr/SKILL.md`, `apply-review/SKILL.md`.
 - Marketplace listing: ["AI Diff Reviewer"](https://github.com/marketplace/actions/ai-diff-reviewer).
-- [`../../create/SKILL.md`](../../create/SKILL.md) §"Three mandatory final tasks" — where the SR augmentation callout is wired.
+- [`../../create/SKILL.md`](../../create/SKILL.md) Step 4.4 (“Local review step (required)”) — where the Final Review local-review wiring is authored into every 2.3.0 plan.
 - [`../../guide/authoring.md`](../../guide/authoring.md) §5.4 — the canonical security-discipline rules the Final Review's security pass applies.
 
 ---

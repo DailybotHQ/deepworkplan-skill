@@ -46,11 +46,14 @@ etc.) are interpreted as in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 ## 2. What an Addon Is
 
-- An **addon** is a self-contained, optional capability that the onboarding flow
-  **MAY** layer onto a repository.
-- An addon **MUST NOT** be required by the AI-first baseline
+- An **addon** is a self-contained capability that the onboarding flow
+  **MAY** layer onto a repository. Most addons are **optional**; the declared
+  exception is the **AI Diff Reviewer local review** (§6.5), which is part of
+  the required baseline since standard 2.3.0.
+- An **optional** addon **MUST NOT** be required by the AI-first baseline
   (`DOCUMENTATION_STANDARD.md` §§2–7). A repository **MUST** be fully conformant
-  with **zero** addons installed.
+  with **zero optional addons** installed (the local-review baseline component
+  is not an optional addon).
 - Addons are **archetype-agnostic** (`ARCHETYPES.md`): one **MAY** be layered onto
   either an individual repo or an orchestrator hub.
 - Addons live under the DWP skill at `skills/deepworkplan/addons/{addon-name}/`.

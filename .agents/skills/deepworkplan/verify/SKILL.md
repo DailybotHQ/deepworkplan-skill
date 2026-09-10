@@ -36,6 +36,11 @@ bash {skill_dir}/verify/conformance.sh --repo-only
 bash {skill_dir}/verify/conformance.sh --plan PLAN_{name}
 ```
 
+The checker resolves the git root even when invoked from a subdirectory and
+honors the absolute `DWP_DIR` override for repository, all-plan and named-plan
+checks. An in-repository output directory must be gitignored; an external one
+is already outside the checkout.
+
 Its exit code is CI-friendly: a repo can run it as a pipeline gate. It accepts both plan lifecycle shapes (the 2.3.0 single Final Review and the pre-2.3.0 three-final-task ending) and reports harness-version findings for repositories onboarded under an earlier standard. Then layer
 the judgment checks (real commands, real toolchain, catalog-matches-disk) on
 top — the script verifies *structure*; you verify *substance*.
@@ -100,6 +105,10 @@ done
 git check-ignore .dwp >/dev/null 2>&1 && echo ".dwp gitignored: ok" || echo ".dwp gitignored: FAIL"
 test -d .dwp/plans && test -d .dwp/drafts && echo ".dwp structure: ok" || echo ".dwp structure: FAIL"
 git check-ignore tmp >/dev/null 2>&1 && echo "tmp gitignored: ok" || echo "tmp gitignored: SHOULD"
+
+# 7. AI Diff Reviewer local review installed (required since DWP standard 2.3.0; a finding on legacy repos)
+test -f .agents/skills/ai-diff-reviewer/SKILL.md && echo "ai-diff-reviewer skill: ok" || echo "ai-diff-reviewer skill: MISSING"
+{ test -f .review/extension.md || test -f .github/ai-diff-reviewer/extension.md || test -f .github/ai-pr-reviewer/extension.md; } && echo "review extension: ok" || echo "review extension: MISSING"
 ```
 
 Then, by reading rather than grepping:
@@ -110,6 +119,7 @@ Then, by reading rather than grepping:
 - **Semantic limits (disclosed).** The mechanical layer checks structure: names, order, counts, links, headings, keywords. Whether a Touched Surface is *correct*, a scoped command *actually selects* the right tests, or a Final Review *actually reviewed* the diff is judged by reading — report those as manual review items with evidence, never as automatic passes.
 - **Catalog matches disk.** Confirm `.agents/docs/` (the skills/agents catalog) lists exactly the skills, agents, and commands that exist under `.agents/` — no dead links, no missing entries.
 - **Skill resolvable.** Confirm the DeepWorkPlan skill is installed or referenced so its sub-skills can be invoked.
+- **Local reviewer present.** The AI Diff Reviewer local review (`../spec/ADDONS.md` §6.5) is part of the baseline since 2.3.0: the vendored skill at `.agents/skills/ai-diff-reviewer/` plus an extension file at a recognized path. Missing pieces are a **failure** for a repository declaring 2.3.0 or newer and a harness-version **finding** for a legacy one; a declared exception recorded in `AGENTS.md` is reported, not excused. The CI surface (`pr-review.yml`) is optional and never checked as required.
 
 ## Plan checks (when verifying a plan)
 
@@ -120,7 +130,7 @@ For each plan under `.dwp/plans/PLAN_{name}/`:
 - **Security discipline.** Tasks that touch auth, input handling, secrets/config, network surface, or dependencies carry security expectations in their Acceptance Criteria (`DWP_SPECIFICATION.md` §5.1.2); where the plan has a dedicated security-hardening task, it is ordered before the comprehensive-tests task.
 - `PROGRESS.md` exists and is updated, so the plan is resumable.
 - **Lifecycle shape (one of two, never mixed — `DWP_SPECIFICATION.md` §6, §6.5).** The plan's standard is read from its README `**Standard:**` line, else `manifest.json` `spec_version`, else it is legacy (`PLAN_STATE.md` §6.1). A **2.3.0** plan ends with exactly one `{N}.task_final_review*.md` as the last task, and that file names its three parts (security pass, final-state validation, skills reconciliation) — the filename alone proves nothing. A **legacy** plan ends with `security_review` (N-2), `skills_agents_discovery` (N-1), `executive_report` (N). A **declared migration** may keep an already-completed `security_review` as N-1 before the Final Review. Mixed, missing, duplicate or misordered final tasks fail; task ids must be unique and contiguous (sorted numerically — 10 comes after 9). A plan that declares a standard **newer** than this skill supports fails with an upgrade message and is **not** executed as legacy. On a completed plan, `analysis_results/SECURITY_REVIEW.md` exists and reports no unresolved critical finding.
-- **Correspondence.** Every task file is referenced from the README and every README task link resolves; when the state layer is present, `state.json`'s `task_count` and task entries match the files on disk. `Read Before Starting` references to nonexistent tasks are findings.
+- **Correspondence.** Every task file is referenced from the README and every README task link resolves; when the state layer is present, `state.json`'s `task_count`, unique numeric IDs and unique task entries match the files on disk one-to-one. Each task's completed status agrees with its README checkbox; `completed_count` and the README summary agree with those tasks. `Read Before Starting` references to nonexistent tasks are findings.
 - **2.3.0 findings (never failures).** Tasks without a `Touched Surface` section (required for behavior-changing tasks; documentation/research tasks may state not applicable) and a missing `analysis_results/SKILLS_CANDIDATES.md` (acceptable until the first candidate exists — task logs may record `none`) are reported as findings. Legacy plans are not asked for either.
 - Tasks re-anchor to the plan goal before executing.
 - **State layer (when present).** `state.json` and `manifest.json` parse, and

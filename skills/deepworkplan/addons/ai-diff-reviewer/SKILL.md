@@ -75,9 +75,10 @@ extension = same review, locally and in CI.
 ## Read these first (all relative inside the skill)
 
 - [`SPEC.md`](SPEC.md) — the normative (RFC-2119) contract: two flows, what is
-  installed (all opt-in), how auth is deferred, how the security-pass
-  augmentation is wired, the optional `apply-review` companion, the
-  never-block rule, and the vendor-neutral guardrail.
+  installed (local review required since 2.3.0; CI surface opt-in), how auth
+  is deferred, how the security-pass augmentation is wired, the optional
+  `apply-review` companion, the never-block rule, and the vendor-neutral
+  guardrail.
 - [`templates/INTEGRATION.md`](templates/INTEGRATION.md) — reasoning guidance
   (NOT copy-paste): detect-if-already-installed, how to ask for the flow, how
   to wire the security-pass augmentation, and the consent / never-block

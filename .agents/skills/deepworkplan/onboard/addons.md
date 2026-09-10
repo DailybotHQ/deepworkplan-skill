@@ -1,18 +1,51 @@
-# DeepWorkPlan — Onboard: optional addons (read only in Phase 7b)
+# DeepWorkPlan — Onboard: the required local review and the optional addons (read in Phase 7a and 7b)
 
-Verbatim from the main procedure. Addons are **opt-in**: a repository is fully
-conformant with zero addons, and none is required to create or execute plans.
-Read this file only to make the Phase 7b offer; never enable an addon without
-the developer's explicit acceptance of that addon's offer.
+Verbatim from the main procedure. Five addons ship under `../addons/`. Four are
+**opt-in**: a repository is fully conformant with zero optional addons, and none
+of them is required to create or execute plans. The fifth — the **AI Diff
+Reviewer local review** — is part of the baseline since standard 2.3.0
+(`../spec/ADDONS.md` §6.5) and is installed in Phase 7a; only its CI surface is
+optional. Read this file to run Phase 7a and to make the Phase 7b offer; never
+enable an optional addon without the developer's explicit acceptance of that
+addon's offer.
+
+## Phase 7a — Install the AI Diff Reviewer local review (required)
+
+Read [`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md)
+and run its flow as a required step, under the Phase 0 onboarding consent:
+
+1. **Reconcile, don't clobber.** Detect an existing vendored skill at
+   `.agents/skills/ai-diff-reviewer/`, an extension file at one of the three
+   recognized paths (`.review/extension.md` > `.github/ai-diff-reviewer/extension.md`
+   > `.github/ai-pr-reviewer/extension.md`), a `.review/.skip-bootstrap`
+   marker, and any existing `pr-review.yml`. Fill gaps only.
+2. **Install the vendored skill, pinned:**
+   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+   (both `--yes` and `-y` are required in non-TTY; never an unpinned ref, never
+   a remote installer piped to a shell). Assert the vendored `SKILL.md` version
+   equals the requested tag.
+3. **Bootstrap the extension file** by handing off to the upstream
+   `generate-extension` sub-skill ("generate a `.review/extension.md` for this
+   repo"). The local review does not run without it.
+4. **Flow A is the baseline.** Offer **Flow B** (the CI Action via the upstream
+   `setup` sub-skill, `pr-review.yml`, provider secret set by the maintainer)
+   as an explicit opt-in — never install it unrequested, never default to it.
+5. **Record.** Note in `AGENTS.md` that the local review is installed and
+   which flow is active. When the install cannot run here (sandbox, offline)
+   or the developer declines, record the reason in the onboarding report and,
+   for a decline, a declared exception in `AGENTS.md`; `verify` keeps reporting
+   the gap until the reviewer is installed. Run the addon's validation step
+   (SPEC §9).
 
 ## Phase 7b — Offer optional addons (opt-in)
 
-After the core AI-first scaffolding, **enumerate** the available addons under
-`../addons/` and offer each as an **explicit opt-in** step. Addons are **never
-required** — a repo is fully conformant with zero addons. In **trust mode**, you
-MAY recommend the obviously-applicable ones, but still surface them.
+After Phase 7a, **enumerate** the remaining addons under `../addons/` and offer
+each as an **explicit opt-in** step. Optional addons are **never required** — a
+repo is fully conformant with zero optional addons. In **trust mode**, you MAY
+recommend the obviously-applicable ones, but still surface them.
 
-Five addons ship today; enumerate **all** and offer each independently:
+Five addons ship today; the table lists all of them (the AI Diff Reviewer row
+records its Phase 7a status). Offer the four optional ones independently:
 
 | Addon | Folder | Recommend in trust mode when… |
 |-------|--------|-------------------------------|
@@ -20,7 +53,7 @@ Five addons ship today; enumerate **all** and offer each independently:
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | the repo has a lockfile + a dependency-heavy stack and wants safe, batched, validated upgrades — recommend only when a lockfile is present; **never auto-install for everyone**. |
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **default-on when detected** — in trust mode **apply** it (generate `DESIGN.md`), in guided mode **strongly recommend** and ask; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended when detected, always asked, never auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
-| **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | the developer/team wants structured local code review on the DWP Final Review's security pass and/or a CI PR merge gate — **do NOT auto-install for everyone**; always ask Flow A (local-only) vs Flow B (dual-surface), never default. |
+| **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | **not offered here — installed in Phase 7a** (required local review, baseline since 2.3.0). In Phase 7b only confirm the Flow B (CI Action) opt-in decision if it was left open; never install the CI surface unrequested. |
 
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
@@ -122,28 +155,15 @@ WCAG AA contrast / degradation rules / plain-text fallbacks — token references
 resolve, new profiles were asked about). If declined, skip it — the repo stays
 baseline-conformant.
 
-The fifth addon is **AI Diff Reviewer**
+The fifth addon, **AI Diff Reviewer**
 ([`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md) +
-[`SPEC.md`](../addons/ai-diff-reviewer/SPEC.md)). Offer it **only when relevant** —
-the developer or team wants structured code-review quality on DWP work, a local
-pre-push review, and/or a CI PR merge gate; in trust mode recommend it **only**
-on that signal and **never auto-install it for everyone**. If accepted: read
-that addon's `SKILL.md` and run its flow — **ask Flow A (local-only) vs Flow B
-(dual-surface) explicitly and NEVER default** (matches the upstream skill's
-ambiguity tie-break); detect whether the vendored skill / extension file /
-`pr-review.yml` already exist (reconcile-don't-clobber); offer the **opt-in**
-vendored-skill install via
-`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
-(**tag-pinned**; both `--yes` and `-y` required); in Flow B hand off CI-workflow authoring to
-the upstream `setup` sub-skill (never invent credentials — `CURSOR_API_KEY` /
-provider secrets are the consumer's responsibility); wire the security pass of
-the mandatory DWP **Final Review** to run the upstream parent default flow as an
-additive local-review pass; and (Flow B only) surface `apply-review` as an optional
-developer-invoked companion during `execute`. Every **local** augmentation is
-strictly **best-effort and never blocks** the work if the skill or extension is
-absent or the local review invocation errors — an unset CI provider secret does
-**not** skip the local security pass (Flow B CI/gate only). The core
-DeepWorkPlan methodology has **zero AI Diff Reviewer dependency** — this addon
-is purely optional review quality. After applying,
-run the addon's validation step (SPEC §9). If declined, skip it and continue —
-the repo stays baseline-conformant.
+[`SPEC.md`](../addons/ai-diff-reviewer/SPEC.md)), was installed in Phase 7a as
+the required local review. Nothing is offered again here except the **Flow B**
+CI surface when that question was left open: if the developer wants the CI PR
+merge gate, hand off CI-workflow authoring to the upstream `setup` sub-skill
+(never invent credentials — `CURSOR_API_KEY` / provider secrets are the
+consumer's responsibility) and surface `apply-review` as an optional
+developer-invoked companion during `execute`. The core DeepWorkPlan flows have
+**zero dependency on a commercial service, CI provider or secret** — the
+required local review runs through the developer's own coding agent. If Flow B
+is declined, the repo stays on Flow A and is fully conformant.

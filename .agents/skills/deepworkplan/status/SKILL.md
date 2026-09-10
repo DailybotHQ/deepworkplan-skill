@@ -112,8 +112,11 @@ log has a blocker note) · Stale (no activity for a long time — optional) ·
 
 ## Error Handling
 - Plan folder doesn't exist → report; list available plans; ask to select.
-- README missing → report a partial materialization; list what exists; suggest
-  `/dwp-refine` (complete or discard) or `/dwp-create`.
+- README missing, or README says `Plan Status: materializing` → report a partial
+  materialization; read `manifest.json` (intended title and `task_count`) and
+  the README task list when present and list which intended files exist and
+  which are missing; suggest `/dwp-refine` (complete or discard) or
+  `/dwp-create`. Never report it as executable.
 - `state.json` unreadable or invalid → report it as a finding; fall back to the
   README; suggest `/dwp-resume` (which regenerates it).
 - No plans exist → report "No plans found in `.dwp/plans/`"; suggest

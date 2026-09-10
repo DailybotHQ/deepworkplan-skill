@@ -20,7 +20,7 @@ source (CSS custom properties, a Tailwind config, design-token files, component
 styles — or a CLI rendering layer, or message-composition conventions) rather
 than copying a third-party brand file. It is governed by `../README.md` and
 `methodology-spec/ADDONS.md`: it is **never** required for baseline AI-first
-conformance — a repo with zero addons is fully conformant.
+conformance — a repo with zero optional addons is fully conformant.
 
 ## Status of This Document
 
@@ -149,7 +149,7 @@ message-composition helpers and their docs).
 
 ### 3.5 Recommendation Strength — per profile
 
-This addon is **never** part of the zero-addon baseline (a repo with no addons
+This addon is **never** part of the baseline (a repo with no optional addons
 is fully conformant — `ADDONS.md` §2). When a profile's signal **is** detected,
 its recommendation strength differs:
 

@@ -50,6 +50,20 @@ done
 
 cd "$TARGET"
 
+# Match shared/context.sh: resolve from the git root (or cwd outside git),
+# retaining the documented absolute DWP_DIR override without parsing JSON.
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  cd "$(git rev-parse --show-toplevel)"
+fi
+PLAN_ROOT="${DWP_DIR:-$PWD/.dwp}"
+case "$PLAN_ROOT" in
+  /*) ;;
+  *) echo "error: DWP_DIR must be an absolute path" >&2; exit 2 ;;
+esac
+if [ -d "$PLAN_ROOT" ]; then
+  PLAN_ROOT="$(cd "$PLAN_ROOT" && pwd -P)"
+fi
+
 PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
@@ -181,18 +195,25 @@ check_repo() {
     warn "docs/ missing (agent workspaces adapt this; repos MUST have it)"
   fi
 
-  if [ -d .dwp/plans ] && [ -d .dwp/drafts ]; then
+  check_local_reviewer
+
+  if [ -d "$PLAN_ROOT/plans" ] && [ -d "$PLAN_ROOT/drafts" ]; then
     pass ".dwp/plans + .dwp/drafts"
   else
     fail ".dwp/plans + .dwp/drafts"
   fi
 
   if [ "$IS_GIT" -eq 1 ]; then
-    if git check-ignore .dwp >/dev/null 2>&1; then
-      pass ".dwp/ gitignored"
-    else
-      fail ".dwp/ gitignored"
-    fi
+    case "$PLAN_ROOT/" in
+      "$PWD/"*)
+        if git check-ignore "${PLAN_ROOT#"$PWD"/}" >/dev/null 2>&1; then
+          pass ".dwp/ gitignored (or configured plan output directory)"
+        else
+          fail ".dwp/ gitignored (or configured plan output directory)"
+        fi
+        ;;
+      *) pass "plan output directory outside the repository (DWP_DIR override)" ;;
+    esac
   else
     # Agent workspace without git (ARCHETYPES.md §4): the state layer replaces
     # the git log, so every plan must carry it. Enforced per-plan below.
@@ -232,6 +253,37 @@ check_repo_standard() {
   fi
   if [ -z "$declared" ] && [ -f AGENTS.md ]; then
     warn "harness-version finding: AGENTS.md has no 'DWP standard:' provenance line — run the onboard sub-skill in upgrade mode"
+  fi
+}
+
+# AI Diff Reviewer local review: part of the baseline since DWP standard 2.3.0
+# (ADDONS.md §6.5). Vendored skill + an extension file at a recognized path.
+# A repository declaring 2.3.0+ without both FAILS; a legacy repository gets a
+# harness-version finding. The CI surface (pr-review.yml) is optional — never checked.
+check_local_reviewer() {
+  local declared="" has_skill=0 has_ext=0 what f
+  if [ -f AGENTS.md ]; then
+    declared="$(grep -oE 'DWP standard: *[0-9]+\.[0-9]+\.[0-9]+' AGENTS.md 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+  fi
+  [ -f .agents/skills/ai-diff-reviewer/SKILL.md ] && has_skill=1
+  for f in .review/extension.md .github/ai-diff-reviewer/extension.md .github/ai-pr-reviewer/extension.md; do
+    if [ -f "$f" ]; then has_ext=1; break; fi
+  done
+  if [ "$has_skill" -eq 1 ] && [ "$has_ext" -eq 1 ]; then
+    pass "AI Diff Reviewer local review installed (vendored skill + extension file)"
+    return 0
+  fi
+  if [ "$has_skill" -eq 0 ] && [ "$has_ext" -eq 0 ]; then
+    what="vendored skill (.agents/skills/ai-diff-reviewer/) and extension file (.review/extension.md) missing"
+  elif [ "$has_skill" -eq 0 ]; then
+    what="vendored skill missing (.agents/skills/ai-diff-reviewer/)"
+  else
+    what="extension file missing (.review/extension.md)"
+  fi
+  if [ -n "$declared" ] && version_le "2.3.0" "$declared" && version_le "$declared" "$SUPPORTED_SPEC"; then
+    fail "AI Diff Reviewer local review: $what — required since DWP standard 2.3.0 (ADDONS.md §6.5); run the onboard sub-skill in upgrade mode (a declared exception in AGENTS.md is reported, not excused)"
+  else
+    warn "harness-version finding: AI Diff Reviewer local review: $what — required since DWP standard 2.3.0 (ADDONS.md §6.5); run the onboard sub-skill in upgrade mode"
   fi
 }
 
@@ -280,6 +332,24 @@ check_plan() {
       fail "$f"
     fi
   done
+
+  # Partial materialization (DWP_SPECIFICATION §3): the README skeleton is written
+  # early with `Plan Status: materializing`; a plan still carrying it was never
+  # finished. Report the intended shape from manifest.json and stop checking.
+  if [ -f "$plan_dir/README.md" ] && grep -qE 'Plan Status: *materializing' "$plan_dir/README.md"; then
+    local intended="" present
+    if [ -f "$plan_dir/manifest.json" ]; then intended="$(json_str "$plan_dir/manifest.json" task_count)"; fi
+    present="$(find "$plan_dir" -maxdepth 1 -name '[0-9]*.task_*.md' 2>/dev/null | wc -l | tr -d ' ')"
+    fail "partial materialization: README says 'Plan Status: materializing' (manifest declares ${intended:-?} tasks, $present task files present) — complete or discard it with create/refine; never execute it"
+    return 0
+  fi
+  if [ ! -f "$plan_dir/manifest.json" ]; then
+    local std_for_manifest
+    std_for_manifest="$(plan_standard "$plan_dir")"
+    if [ -n "$std_for_manifest" ] && version_le "2.3.0" "$std_for_manifest"; then
+      warn "harness-version finding: manifest.json missing (plans authored under 2.3.0 write it first, PLAN_STATE.md §2)"
+    fi
+  fi
 
   if [ -d "$plan_dir/analysis_results" ]; then
     pass "analysis_results/"
@@ -528,7 +598,7 @@ check_state_desync() {
     return 0
   fi
   if [ "$md_done" -eq "$state_done" ]; then
-    pass "state.json in sync with README ($state_done completed)"
+    pass "state.json completed_count matches README ($state_done completed)"
   else
     fail "state.json desync: README shows $md_done completed, state.json says $state_done (markdown wins — regenerate state.json, PLAN_STATE.md §5)"
   fi
@@ -545,23 +615,82 @@ check_state_tasks() {
     fail "state.json task_count ($state_count) differs from the task files on disk ($task_count) — regenerate state.json (PLAN_STATE.md §5)"
   fi
   if command -v python3 >/dev/null 2>&1; then
-    local mism
-    mism="$(python3 - "$plan_dir" <<'PYEOF'
+    local problems
+    problems="$(python3 - "$plan_dir" <<'PYEOF'
 import json, os, re, sys
+from collections import Counter
+
 d = sys.argv[1]
-try:
-    tasks = json.load(open(os.path.join(d, "state.json"))).get("tasks", [])
-except Exception:
-    print(""); sys.exit(0)
+state = json.load(open(os.path.join(d, "state.json")))
+tasks = state.get("tasks", [])
 files = {f for f in os.listdir(d) if re.match(r"^\d+\.task_.*\.md$", f)}
-listed = {t.get("file") for t in tasks if isinstance(t, dict)}
-print(len(files - listed) + len(listed - files))
+if not isinstance(tasks, list) or any(not isinstance(t, dict) for t in tasks):
+    print("state.json tasks must be an array of task objects")
+    sys.exit(0)
+listed = [t.get("file") for t in tasks]
+if any(not isinstance(f, str) for f in listed):
+    print("state.json task entries require a file name")
+    sys.exit(0)
+if len(tasks) != len(files) or set(listed) != files:
+    print("state.json task entries do not match the task files one-to-one")
+if any(n > 1 for n in Counter(listed).values()):
+    print("state.json has duplicate task entries")
+ids = [t.get("id") for t in tasks]
+if any(type(i) is not int for i in ids):
+    print("state.json task ids must be integers")
+elif len(set(ids)) != len(ids):
+    print("state.json has duplicate task ids")
+for task in tasks:
+    match = re.match(r"^(\d+)\.task_", task["file"])
+    if match and task.get("id") != int(match[1]):
+        print("state.json task id disagrees with file: " + task["file"])
+
+# Read only task checkboxes outside fenced examples. Accept either Task N
+# labels or direct task-file links; other checklist items are not plan tasks.
+readme = open(os.path.join(d, "README.md")).read()
+checks = {}
+fence = None
+for line in readme.splitlines():
+    marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+    if marker:
+        token = marker[1][0]
+        fence = None if fence == token else (fence or token)
+        continue
+    if fence:
+        continue
+    box = re.match(r"^\s*- \[([ xX])\]\s*(.*)", line)
+    if not box:
+        continue
+    task = re.search(r"\b[Tt]ask\s+(\d+)\b|(?:^|\[)(\d+)\.task_", box[2])
+    if task:
+        ident = int(task[1] or task[2])
+        if ident in checks:
+            print("README has duplicate task checkbox: " + str(ident))
+        checks[ident] = box[1].lower() == "x"
+if set(checks) != set(range(1, len(files) + 1)):
+    print("README task checkboxes do not match the task ids on disk")
+for task in tasks:
+    ident = task.get("id")
+    status = task.get("status")
+    if status not in ("pending", "in_progress", "completed", "blocked", "skipped"):
+        print("state.json invalid task status: " + task["file"])
+    if type(ident) is int and ident in checks:
+        if (status == "completed") != checks[ident]:
+            print("state.json task status disagrees with README: Task " + str(ident))
+done = sum(t.get("status") == "completed" for t in tasks)
+if state.get("completed_count") != done:
+    print("state.json completed_count disagrees with task statuses")
+summary = re.search(r"Plan Status: *([0-9]+)/([0-9]+)", readme)
+if summary and (int(summary[1]), int(summary[2])) != (sum(checks.values()), len(files)):
+    print("README Plan Status count disagrees with task checkboxes/files")
 PYEOF
 )"
-    if [ -z "$mism" ] || [ "$mism" = "0" ]; then
-      pass "state.json task entries match the task files"
+    if [ -z "$problems" ]; then
+      pass "state.json task entries and statuses match README and task files"
     else
-      fail "state.json task entries do not match the task files ($mism mismatch(es)) — regenerate state.json"
+      while IFS= read -r problem; do
+        fail "$problem (markdown wins — regenerate state.json when stale)"
+      done <<< "$problems"
     fi
   fi
 }
@@ -572,14 +701,14 @@ if [ "$MODE" = "repo" ] || [ "$MODE" = "all" ]; then
 fi
 
 if [ "$MODE" = "plan" ]; then
-  if [ -d ".dwp/plans/$PLAN_FILTER" ]; then
-    check_plan ".dwp/plans/$PLAN_FILTER"
+  if [ -d "$PLAN_ROOT/plans/$PLAN_FILTER" ]; then
+    check_plan "$PLAN_ROOT/plans/$PLAN_FILTER"
   else
     echo "Plan: $PLAN_FILTER"
-    fail "plan directory .dwp/plans/$PLAN_FILTER exists"
+    fail "plan directory $PLAN_ROOT/plans/$PLAN_FILTER exists"
   fi
-elif [ "$MODE" = "all" ] && [ -d .dwp/plans ]; then
-  for plan_dir in .dwp/plans/PLAN_*; do
+elif [ "$MODE" = "all" ] && [ -d "$PLAN_ROOT/plans" ]; then
+  for plan_dir in "$PLAN_ROOT"/plans/PLAN_*; do
     [ -d "$plan_dir" ] || continue
     check_plan "$plan_dir"
   done

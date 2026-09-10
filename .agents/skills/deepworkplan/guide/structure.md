@@ -20,7 +20,10 @@ not per-run output.
       ├─ README.md                         ← plan overview, task index
       ├─ PROMPTS.md                        ← ready-to-use prompts for this plan
       ├─ PROGRESS.md                       ← running progress summary (updated each task)
+      ├─ manifest.json                     ← plan identity, written FIRST (intended task count; never edited)
+      ├─ state.json                        ← live state projection (rewritten at protocol points)
       ├─ analysis_results/                 ← analysis outputs & reports
+      │   ├─ PLAN_ANALYSIS.md              ← the recorded requirements analysis (written before any task file)
       │   ├─ SKILLS_CANDIDATES.md          ← task-local skills decisions (ledger, by stable ID)
       │   ├─ SECURITY_REVIEW.md            ← written by the Final Review (security pass + final-state validation)
       │   └─ EXECUTIVE_REPORT.md           ← OPTIONAL — generated only on request after completion
@@ -66,7 +69,7 @@ generated `PLAN_{name}_draft.md` and then refined it into
 
 ---
 
-> **Mode-aware since spec 2.3.0.** Guided mode writes the refined draft above and materializes after approval. **Trust mode materializes `.dwp/plans/PLAN_{name}/` directly** — no draft file — while still running the requirements analysis and a plan-quality check; the approved outline lives in the plan README, and a plan created with `trust` is pre-approved for unattended execution (`spec/DWP_SPECIFICATION.md` §3). Explicit `refined-draft` / `from-refined-draft` requests still produce a draft in either mode.
+> **Mode-aware since spec 2.3.0.** Guided mode writes the refined draft above and materializes after approval. Materialization is resumable at any point: `manifest.json` first, then a README skeleton with the intended task list and `Plan Status: materializing`, then `analysis_results/PLAN_ANALYSIS.md`, then the task files; the status line is flipped to `0/N completed` as the last write (`spec/DWP_SPECIFICATION.md` §3). **Trust mode materializes `.dwp/plans/PLAN_{name}/` directly** — no draft file — while still running the requirements analysis and a plan-quality check; the approved outline lives in the plan README, and a plan created with `trust` is pre-approved for unattended execution (`spec/DWP_SPECIFICATION.md` §3). Explicit `refined-draft` / `from-refined-draft` requests still produce a draft in either mode.
 
 ## 2. Naming Conventions
 

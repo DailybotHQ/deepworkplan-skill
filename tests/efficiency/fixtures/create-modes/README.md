@@ -20,5 +20,5 @@ Generated plan shape (all): `N.task_final_review.md` last and only final task; n
 | R2 | copy of `../legacy-plan-v217/` | `/dwp-refine plan PLAN_legacy_fixture` → edit Task 2 | legacy shape retained (three final tasks untouched); insert range `1..N-3`; no Final Review added; no migration suggested |
 | R3 | copy of `../new-shape-plan/` with Task 2 expanded to two independent outcomes | split Task 2 | every requirement of the original lands in exactly one child; pointers updated; nothing summarized away |
 | R4 | copy of `../legacy-plan-v217/` | `/dwp-refine migrate PLAN_legacy_fixture` | completed Task 1 untouched; unstarted legacy finals → single Final Review; Touched Surface added to unstarted code tasks; README `**Standard:** … (migrated from 2.2.0 …)` line; `manifest.json` byte-identical |
-| R5 | draft from C1 | `/dwp-refine PLAN_x_draft_refined.md` → convert | plan per create Step 4.4; README last; no report task |
+| R5 | draft from C1 | `/dwp-refine PLAN_x_draft_refined.md` → convert | plan per create Step 4.4; status flipped last / no report task |
 | R6 | copy of `../new-shape-plan/` | edit the acceptance criteria of completed Task 1 | refine lists the impact and, only on confirmation, marks Task 1 `[ ] (re-validate…)`, state `pending` with gates kept and evidence prefixed `invalidated by refine`; log appended, never rewritten |

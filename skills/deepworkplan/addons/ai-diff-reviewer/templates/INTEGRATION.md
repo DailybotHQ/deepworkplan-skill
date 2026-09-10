@@ -259,25 +259,27 @@ callout (added by `../../create/SKILL.md` — search for
 `ai-diff-reviewer`). Every plan materialized in this repo from now on will
 carry the addon-augmented SR body.
 
-Add a short, clearly-optional note to the repo's DWP execution docs (the
-generated `AGENTS.md` reporting section and/or `docs/AI_AGENT_COLLAB.md`).
-The shape to convey:
+Add a short note to the repo's DWP execution docs (the generated
+`AGENTS.md` reporting section and/or `docs/AI_AGENT_COLLAB.md`). The
+shape to convey:
 
-> **Optional — AI Diff Reviewer review augmentation (best-effort on
-> invocation; criticals still gate SR):** when the AI Diff Reviewer addon
-> is installed (detected via `.agents/skills/ai-diff-reviewer/` + an
-> extension file), the Final Review's security pass gains an additional
-> local review pass. Invokes the upstream skill's parent default flow
-> ("Review my current branch"), captures verdict + findings table +
-> severity, and appends them to `analysis_results/SECURITY_REVIEW.md`
-> under `## AI Diff Reviewer local review`. Soft-fail (warn + skip) only
-> if the skill/extension is missing or the local review errors. Once a
-> review ran, a `critical` finding blocks completion until fixed or
-> explicitly accepted; `warning` / `info` findings are appended and
-> reported but do not block. In Flow B, an OPTIONAL post-PR companion is
-> available — the `apply-review` sub-skill walks through CI-posted
-> findings per-finding (apply / defer / skip) with explicit consent,
-> read-only by default, never commits or pushes.
+> **Required — AI Diff Reviewer local review (baseline since standard
+> 2.3.0; criticals still gate SR):** the Final Review's security pass
+> always runs the local review. Invokes the upstream skill's parent
+> default flow ("Review my current branch"), captures verdict + findings
+> table + severity, and appends them to
+> `analysis_results/SECURITY_REVIEW.md` under `## AI Diff Reviewer local
+> review`. If `.agents/skills/ai-diff-reviewer/` or the extension file is
+> missing, record a `local reviewer not installed` finding (install when
+> the run may write to the harness) — never a silent skip. Soft-fail
+> (warn once, record, continue) applies only to **invocation errors** of
+> a review that could start. Once a review ran, a `critical` finding
+> blocks completion until fixed or explicitly accepted; `warning` /
+> `info` findings are appended and reported but do not block. In Flow B
+> (opt-in CI surface), an OPTIONAL post-PR companion is available — the
+> `apply-review` sub-skill walks through CI-posted findings per-finding
+> (apply / defer / skip) with explicit consent, read-only by default,
+> never commits or pushes.
 
 Decision notes:
 
