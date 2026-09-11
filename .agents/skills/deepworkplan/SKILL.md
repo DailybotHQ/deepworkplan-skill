@@ -1,7 +1,7 @@
 ---
 name: deepworkplan
 description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
-version: "2.17.1"
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -12,10 +12,11 @@ metadata: {"openclaw":{"emoji":"🧠","homepage":"https://deepworkplan.com","req
 
 Models matter; context matters more. The **DeepWorkPlan** skill turns any
 repository into a structured environment — context, guardrails, and a durable
-plan — where any coding agent executes reliably on long-horizon work. It makes
+plan — where any coding agent executes reliably on short or long work. It makes
 the repository "AI-first" — `AGENTS.md` + `docs/` + per-module docs + `.agents/`
 (with the `.claude → .agents` and `.cursor → .agents` symlinks) — and runs structured **Deep Work
-Plans**: multi-task plans an AI agent drafts, refines, executes task-by-task,
+Plans**: Lite plans for bounded work and Full task-file plans for longer work;
+an AI agent drafts, refines, executes task-by-task,
 and resumes. All plan and draft outputs land in a gitignored `.dwp/` directory
 at the repo root (`.dwp/plans/`, `.dwp/drafts/`).
 
@@ -108,7 +109,7 @@ full step-by-step flow.
 
 | Developer says… | Route to |
 |------------------|----------|
-| "create a plan", "new deep work plan", "/dwp-create" | **Create** → read [`create/SKILL.md`](create/SKILL.md) |
+| "create a plan", "plan this small fix", "organize this work", "new deep work plan", "/dwp-create" | **Create** → read [`create/SKILL.md`](create/SKILL.md) |
 | "execute the plan", "run the plan", "/dwp-execute" | **Execute** → read [`execute/SKILL.md`](execute/SKILL.md) |
 | "refine the draft", "modify the plan", "/dwp-refine" | **Refine** → read [`refine/SKILL.md`](refine/SKILL.md) |
 | "resume", "continue the interrupted plan", "/dwp-resume" | **Resume** → read [`resume/SKILL.md`](resume/SKILL.md) |

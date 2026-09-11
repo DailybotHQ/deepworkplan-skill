@@ -694,7 +694,8 @@ check_state_desync() {
 }
 
 check_state_tasks() {
-  # state.json task entries must correspond 1:1 to the task files on disk.
+# state.json task entries must correspond 1:1 to the task files on disk. v1
+# uses `file`; v2 Full uses a typed file locator. Lite is checked separately.
   local plan_dir="$1" task_count="$2" state_count
   state_count="$(json_int "$plan_dir/state.json" task_count)"
   [ -n "$state_count" ] || return 0
@@ -716,9 +717,10 @@ files = {f for f in os.listdir(d) if re.match(r"^\d+\.task_.*\.md$", f)}
 if not isinstance(tasks, list) or any(not isinstance(t, dict) for t in tasks):
     print("state.json tasks must be an array of task objects")
     sys.exit(0)
-listed = [t.get("file") for t in tasks]
+v2 = state.get("schema") == "https://deepworkplan.com/schema/plan-state/v2.json"
+listed = [t.get("locator", {}).get("value") if v2 else t.get("file") for t in tasks]
 if any(not isinstance(f, str) for f in listed):
-    print("state.json task entries require a file name")
+    print("state.json task entries require a task-file locator")
     sys.exit(0)
 if len(tasks) != len(files) or set(listed) != files:
     print("state.json task entries do not match the task files one-to-one")
@@ -729,10 +731,12 @@ if any(type(i) is not int for i in ids):
     print("state.json task ids must be integers")
 elif len(set(ids)) != len(ids):
     print("state.json has duplicate task ids")
-for task in tasks:
-    match = re.match(r"^(\d+)\.task_", task["file"])
+for task, filename in zip(tasks, listed):
+    if v2 and task.get("locator", {}).get("kind") != "file":
+        print("Full v2 state task locator must have kind=file: " + str(filename))
+    match = re.match(r"^(\d+)\.task_", filename)
     if match and task.get("id") != int(match[1]):
-        print("state.json task id disagrees with file: " + task["file"])
+        print("state.json task id disagrees with file: " + filename)
 
 # Read only task checkboxes outside fenced examples. Accept either Task N
 # labels or direct task-file links; other checklist items are not plan tasks.
@@ -758,11 +762,11 @@ for line in readme.splitlines():
         checks[ident] = box[1].lower() == "x"
 if set(checks) != set(range(1, len(files) + 1)):
     print("README task checkboxes do not match the task ids on disk")
-for task in tasks:
+for task, filename in zip(tasks, listed):
     ident = task.get("id")
     status = task.get("status")
     if status not in ("pending", "in_progress", "completed", "blocked", "skipped"):
-        print("state.json invalid task status: " + task["file"])
+        print("state.json invalid task status: " + filename)
     if type(ident) is int and ident in checks:
         if (status == "completed") != checks[ident]:
             print("state.json task status disagrees with README: Task " + str(ident))

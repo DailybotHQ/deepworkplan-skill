@@ -58,10 +58,21 @@ Everything under `.dwp/` is **temporary execution work**, not permanent
 repository content. The stable methodology documentation lives inside the
 DeepWorkPlan skill (`guide/`, `examples/`).
 
-### 1.2. Single-step refined draft (vs the legacy two-step)
+### 1.2. Lite-first plan materialization (vs the legacy draft flow)
 
-DeepWorkPlan v2 produces **one** reviewable draft artifact: the **refined
-draft**, written directly to `.dwp/drafts/PLAN_{name}_draft_refined.md`. There is
+New plans start as ready, executable **Lite** folders under `.dwp/plans/`, not
+as a normal draft artifact. Lite keeps the normal README, manifest, state,
+prompts, progress and analysis folders, but stores small task records inline in
+the README. Guided creation asks whether to retain Lite or promote it to Full;
+trust creation makes that decision from the recommendation or an explicit
+boundary option. `lite` and `full` may be combined with `trust`/`auto` at either
+edge of the command context. `LITE_PLANS.md` is authoritative.
+
+### 1.3. Legacy refined-draft compatibility
+
+DeepWorkPlan retains **one** reviewable legacy draft artifact when a developer
+explicitly requests it: the **refined draft**, written directly to
+`.dwp/drafts/PLAN_{name}_draft_refined.md`. There is
 **no** separate raw-draft file. This replaces the legacy two-step flow that first
 generated `PLAN_{name}_draft.md` and then refined it into
 `PLAN_{name}_draft_refined.md`. See `create/SKILL.md` for the create flow and
@@ -69,7 +80,10 @@ generated `PLAN_{name}_draft.md` and then refined it into
 
 ---
 
-> **Mode-aware since spec 2.3.0.** Guided mode writes the refined draft above and materializes after approval. Materialization is resumable at any point: `manifest.json` first, then a README skeleton with the intended task list and `Plan Status: materializing`, then `analysis_results/PLAN_ANALYSIS.md`, then the task files; the status line is flipped to `0/N completed` as the last write (`spec/DWP_SPECIFICATION.md` §3). **Trust mode materializes `.dwp/plans/PLAN_{name}/` directly** — no draft file — while still running the requirements analysis and a plan-quality check; the approved outline lives in the plan README, and a plan created with `trust` is pre-approved for unattended execution (`spec/DWP_SPECIFICATION.md` §3). Explicit `refined-draft` / `from-refined-draft` requests still produce a draft in either mode.
+> **Lite-first since spec 2.4.0.** Guided and trust modes materialize a ready
+> Lite folder, run the same requirements analysis and quality check, then retain
+> Lite or promote safely to Full. Explicit `refined-draft` /
+> `from-refined-draft` requests remain available as compatibility paths.
 
 ## 2. Naming Conventions
 

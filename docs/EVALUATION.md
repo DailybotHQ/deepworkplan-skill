@@ -71,6 +71,7 @@ methodology, and each has its own write-up with its own stated limits:
 |---|---|---|
 | A plan written by one agent can be resumed correctly by a different agent from a different vendor | [`evaluations/cross-agent-handoff.md`](evaluations/cross-agent-handoff.md) — bidirectional, Claude Code ↔ Codex CLI | Two harnesses only. The other seven supported agents have **installation** coverage, not behavioral: [`COMPATIBILITY.md`](COMPATIBILITY.md) |
 | An existing repository upgrades in place without losing handwritten rules, custom skills or in-flight plans | [`evaluations/adoption-pilot.md`](evaluations/adoption-pilot.md) — three fixtures, checksum-verified, idempotent | Constructed fixtures, not a third-party production repo; only the Python fixture has a runnable toolchain here |
+| Lite plans remain executable and may promote without weakening state contracts | [`evaluations/lite-plan-lifecycle.md`](evaluations/lite-plan-lifecycle.md) — conformance and schema fixtures | Structural coverage only; no cross-harness recommendation-quality claim |
 
 Neither is an efficiency claim, and neither may be cited as one. The handoff runs
 were executed concurrently on a shared host, so their timings are meaningless.

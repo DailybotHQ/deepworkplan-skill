@@ -180,3 +180,19 @@ Release on every merge to `main`. Contributors never hand-edit `version:` fields
 router plus six sub-skills plus addons is exactly the kind of thing where
 hand-bumping versions drifts out of sync — and a wrong version is what users see
 first.
+
+## 14. Lite first, Full by promotion (not a second planning product)
+
+Every new request materializes one executable **Lite** plan directory. Lite keeps
+the durable DWP contract — README, manifest, state, progress, prompts, analysis
+results, task records, gates and Final Review — while storing bounded task records
+inline instead of creating a large file per task. It is not a draft and it never
+runs product work during creation.
+
+The create skill recommends Lite or Full from scope, risk, dependencies and
+expected horizon. `lite` and `full` are explicit overrides; `trust` changes only
+whether a human reviews the recommendation. A Lite plan can be promoted safely
+to Full before execution or between tasks, preserving task IDs and evidence. The
+reverse conversion is deliberately absent: collapsing a detailed plan would make
+state recovery and audit history ambiguous. This lets DWP structure a small
+change without making long-horizon rigor optional.

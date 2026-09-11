@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-resume
-description: Resume an interrupted Deep Work Plan from its recorded progress state — reconcile Markdown, state.json and the actual workspace, recover safely at any interruption boundary without duplicating a gate, commit or report, take over from another agent, and continue with a bounded working context. Use when the developer wants to continue a plan in .dwp/plans/ that was paused or interrupted mid-execution.
-version: "2.17.1"
+description: Resume interrupted Lite or Full Deep Work Plans from durable Markdown and state, including safe recovery of promotions without duplicating completed work or gates.
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -33,6 +33,20 @@ pick the plan up without the previous conversation.
 - **Guide (conditional — read only when the trigger fires):** [`../guide/prompts.md`](../guide/prompts.md) §9 (resume rules and scenarios) when the interruption is unusual; [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §5–§6 when the plan carries `state.json` and a desync, a takeover, or a standard question needs the normative rule. [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index.
 
 ## Parameter Support
+
+## Lite and promotion recovery
+
+For v2 Lite plans, read the README's canonical task index, inline anchor record,
+state locator and checkpoint before reading older history. A README checkbox wins
+over state on desync. Do not treat missing task files as partial when the format
+is Lite. Conversely, a `promotion` marker or `materialization: promoting` is a
+hard recovery boundary: inspect its phase, preserve existing files and route to
+`/dwp-refine promote` to complete the missing transaction step. Never execute
+product work in a mixed representation.
+
+An explicit execute/resume request can approve a ready current Lite scope. If a
+new requirement changes scope, criteria or gate, record the checkpoint and use
+refine; do not promote or alter approvals implicitly.
 - `/dwp-resume {plan_name}` — resume directly (skip the menu).
 - `/dwp-resume latest` — resume the most recently modified plan.
 - `/dwp-resume {plan_name} trust` (or `auto`, or "run to the end") — resume

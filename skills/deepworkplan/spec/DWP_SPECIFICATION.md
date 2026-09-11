@@ -27,7 +27,7 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.3.0 |
+| **Version** | 2.4.0 |
 | **Status** | Stable |
 | **Supersedes** | `DWP_SPECIFICATION.md` 2.2.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md`, `PLAN_STATE.md` |
@@ -48,6 +48,12 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 > **mode-aware** create flow — trust mode materializes directly (§3); (4) task
 > size, adaptive execution, and an explicit compatibility matrix (§6.4–§6.5).
 > Plans and repositories from 2.2.0 remain conformant (§6.5).
+
+> **Divergence from 2.3.0 (overview).** 2.4.0 adds a Lite-first lifecycle:
+> creation produces an executable Lite plan, then recommends retaining Lite or
+> promoting to Full. Both representations keep the same validation, recovery and
+> Final Review obligations. `LITE_PLANS.md` defines the representation and the
+> boundary-option grammar; v1 state remains valid for existing plans.
 
 > **Divergence from v1 (overview).** Three breaking changes drive the major bump:
 > (1) the **create flow is single-step** — one refined draft, dropping the v1
@@ -75,6 +81,8 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 | **Plan** | A directory of markdown files specifying an objective and its tasks. Named `PLAN_{snake_case_name}/`. |
 | **Task** | An atomic unit of work, defined in `{N}.task_{title}.md`. |
 | **Refined draft** | The single reviewable artifact produced by `create` in guided mode (or on explicit request), written to `.dwp/drafts/`. Trust mode materializes the plan directly (§3). |
+| **Lite plan** | An executable plan whose compact task records live in `README.md`; it carries the normal state, validation and Final Review contract. |
+| **Full plan** | An executable plan whose task records live in individual task files; a Lite plan may promote to this representation without losing history. |
 | **Plan README** | The `README.md` inside a plan; source of truth for "what is done". |
 | **Final Review** | The single mandatory final task every new plan ends with: the security pass, the final-state validation, and the reconciliation of task-local skills decisions (§6.1). Plans authored under earlier versions end with three mandatory tasks and remain conformant (§6.5). |
 | **Skills candidate** | A task-local record (stable ID, evidence, disposition) of a reusable pattern decided inside the owning task (§6.2). |
@@ -110,6 +118,26 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 ---
 
 ## 3. The Create Flow — Single Step, Mode-Aware
+
+### 3.0 Lite-first override (2.4.0)
+
+For plans created under 2.4.0, the following rules supersede the historical
+guided-draft wording in this section. `create` **MUST** materialize a ready,
+executable Lite plan first; it **MUST NOT** execute product work. The Lite README
+contains compact, anchored task records with goal, touched surface, acceptance
+criteria, validation and dependency information, and the plan carries
+`PROMPTS.md`, `PROGRESS.md`, `analysis_results/`, `manifest.json` and
+`state.json`. The creator recommends retaining Lite or promoting to Full from
+scope, risk, dependencies and expected horizon.
+
+In guided mode, the developer reviews that ready Lite plan and chooses retain,
+promote, or revise. In trust mode, the agent applies the recommendation or an
+explicit `lite`/`full` override, then returns control with an execution command.
+`trust`/`auto` and `lite`/`full` may occur at either edge of the context; mixed
+`lite` and `full` is an error and `--` ends option parsing. Promotion is an
+atomic Lite-to-Full representation change before work or between tasks; it
+preserves IDs, completed records and gate evidence. Full-to-Lite conversion is
+not automatic. `LITE_PLANS.md` is normative for representation and recovery.
 
 The `create` flow gathers the objective, context, constraints, and task outline
 once, performs its **requirements analysis** (scope, dependency ordering between
@@ -175,6 +203,11 @@ A conformant plan directory **MUST** contain:
 ├── …
 └── {N}.task_final_review.md               ← mandatory: last (§6.1)
 ```
+
+A 2.4.0 **Lite** plan replaces the individual task files above with compact
+anchored task records in `README.md`; a 2.4.0 **Full** plan uses the task-file
+shape. Both include `manifest.json` and `state.json` with v2 schema URLs and a
+mandatory Final Review. See `LITE_PLANS.md` for the authoritative layouts.
 
 > Plans authored under earlier versions end with
 > `{N-2}.task_security_review.md`, `{N-1}.task_skills_agents_discovery.md`, and

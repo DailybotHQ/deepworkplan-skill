@@ -99,6 +99,16 @@ Slash commands, hooks, subagents and proprietary task APIs are conveniences: whe
 they are absent the sequential path still works. What an agent cannot do without
 is executing tools and reading/writing the repository.
 
+## Lite and Full plans
+
+The Lite/Full lifecycle is **structurally tested** by `tests/lite-plans.bats` and
+the schema-contract checker: a ready Lite plan with inline task locators passes
+conformance, unsafe locators fail, and legacy v1 plans retain their v1 schema
+path. This is not a claim that every listed agent has behavior-tested Lite
+creation. The portable contract is Markdown plus JSON and shell validation, so
+agents that can read and write their workspace can follow it; behavior evidence
+continues to be recorded per harness above.
+
 ## Cross-agent handoff
 
 See [the handoff record](evaluations/cross-agent-handoff.md) for the

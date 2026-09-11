@@ -23,10 +23,11 @@
 
 DeepWorkPlan turns any repository into a **structured environment** — context,
 guardrails, and a durable plan — where any coding agent executes with precision
-and finishes long-horizon work. It makes the repo AI-first (an adapted
+and finishes short- and long-horizon work. It makes the repo AI-first (an adapted
 `AGENTS.md`, `docs/`, per-module docs, and `.agents/` config), then drives
-structured, multi-task **Deep Work Plans**: plan, execute, refine, resume, and
-report on long-running work, with all plan output living in a gitignored
+structured **Deep Work Plans**: a compact executable **Lite** plan for bounded
+work, or a per-task **Full** plan for longer work; then execute, refine, resume,
+and report with all plan output living in a gitignored
 `.dwp/` directory.
 
 > DeepWorkPlan is spec-driven development where the repository itself becomes the harness.
@@ -42,7 +43,7 @@ report on long-running work, with all plan output living in a gitignored
 | Skill | What it does |
 |-------|-------------|
 | **deepworkplan-onboard** | Make any repo AI-first. Reasons about the repo's stack and archetype (orchestrator hub vs individual repo), then generates an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and the `.claude → .agents` / `.cursor → .agents` symlinks. Offers opt-in addons. |
-| **deepworkplan-create** | Create a Deep Work Plan. Gathers context, drafts, and refines into a single final plan under `.dwp/plans/`, with the refined draft staged in `.dwp/drafts/`. |
+| **deepworkplan-create** | Create a Deep Work Plan. Starts every request as an executable Lite plan, recommends Lite or Full from the work's risk and horizon, and promotes safely to Full only when needed. |
 | **deepworkplan-execute** | Execute an existing plan task-by-task, run each task's validation, and log progress. |
 | **deepworkplan-refine** | Refine a plan draft, or modify the scope/tasks of an existing final plan. |
 | **deepworkplan-resume** | Resume an interrupted plan from its recorded progress state. |
@@ -118,6 +119,13 @@ cd ~/deepworkplan-skill
 agent's skills directory so they're discoverable as independent slash commands.
 
 ### Invoke a skill
+
+`/dwp-create` accepts mode tokens at either edge of the request. `trust` (or
+`auto`) skips the guided review; `lite` and `full` override the recommendation.
+For example: `/dwp-create trust fix the broken link`, `/dwp-create lite trust
+rename this setting`, and `/dwp-create redesign the auth flow full trust`.
+`lite` and `full` together are rejected. A direct-edit request remains direct;
+the router only offers DWP when the developer asks to plan or organize work.
 
 Once installed, describe what you want and the agent routes to the right
 sub-skill:

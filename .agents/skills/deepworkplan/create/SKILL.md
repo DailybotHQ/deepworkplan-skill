@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
-description: Create a Deep Work Plan. Gather context, analyze requirements, and materialize a single final plan under .dwp/plans/ — guided mode stages a refined draft in .dwp/drafts/ for review; trust mode materializes directly. Use when the developer wants a new structured multi-task plan.
-version: "2.17.1"
+description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -10,15 +10,48 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 # DeepWorkPlan — Create
 
 Create a new Deep Work Plan through a smooth, unified flow: the developer
-provides information once, you run the **requirements analysis**, and then —
-depending on the mode — either stage a **single refined draft** for review
-(guided) or **materialize the plan directly** under `.dwp/plans/PLAN_{name}/`
-(trust). The plan's substance is composed **once**.
+provides information once, you run the **requirements analysis**, and materialize
+a Lite plan folder under `.dwp/plans/PLAN_{name}/`. Guided mode presents that
+proposal for review; trust chooses its ready representation without a review.
+Both modes return control to the developer to execute later.
 
-> **Single-step (vs legacy):** there is **no separate raw-draft file**. The only
-> reviewable draft artifact is `.dwp/drafts/PLAN_{name}_draft_refined.md`, and it
-> exists only in guided mode or on explicit request
-> (`../spec/DWP_SPECIFICATION.md` §3).
+> **Lite-first (v2.4):** normal create writes no draft file. A Lite plan is a
+> complete proposal, not a partial Full plan. Explicit `refined-draft` commands
+> remain compatibility aliases for existing workflows.
+
+## Lite-first command grammar
+
+Parse boundary options before interpreting the remaining text. `trust` and
+`auto` select trust mode; `lite` and `full` express an optional format
+preference. Each may be a contiguous token at the beginning or end, in either
+order: `/dwp-create trust lite add retry`, `/dwp-create add retry lite trust`,
+`/dwp-create trust add retry`, and `/dwp-create add retry full` are equivalent
+forms. Remove all recognized boundary options before classifying context.
+
+Repeated identical options are harmless. `lite` plus `full` is an explicit
+conflict: report it rather than guessing. `--` ends option parsing; everything
+after it is literal context. Do not scan the middle of context, quotations or
+code for option words. `trust` with no context asks for the goal. The resulting
+plan is handed off; create never modifies product source or calls execute.
+
+## Lite-first lifecycle
+
+Write `manifest.json`, `README.md`, `PROGRESS.md`, `PROMPTS.md`, appropriate
+`analysis_results/` and `state.json` using the v2 schemas. A Lite README has
+one shared rules section and compact anchored task records (`#task-N`) containing
+goal, touched surface, acceptance criteria, validation and completion evidence.
+It includes an inline Final Review. It does not create task files or boilerplate
+solely to meet a task count. `materializing`, `ready` and `promoting` are distinct
+from review approval and execution status.
+
+Guided mode writes a `pending` proposal, shows the observed signals and format
+recommendation, and lets the developer retain Lite, promote Full, edit, or stop.
+Trust records the same rationale, chooses Lite or Full, marks it ready and
+pre-approved, and returns the execute command. An explicit Full preference wins;
+an explicit Lite preference is retained only if compact records can express every
+requirement and gate. Unknown scope triggers discovery, not an automatic Full
+classification. Small planning work is a valid Lite plan; never route it to an
+inline non-DWP alternative merely because it is small.
 
 ## Philosophy
 
@@ -97,8 +130,12 @@ gates. Ordinary `create` never requires a source edit, an install, or the networ
 
 ### Step 0 — Parse Parameters & Determine Mode
 
-**0.1 Detect trust mode:** if the LAST word is `trust` or `auto`, remove it and
-set `trust_mode = true`; otherwise `false`.
+**0.1 Parse boundary options:** before special modes or input classification,
+consume contiguous `trust`/`auto`, `lite` and `full` tokens from either boundary
+in either order. `trust_mode` is true when `trust` or `auto` occurred; record a
+single format preference when `lite` or `full` occurred. Repeated identical
+options are valid. A `lite`/`full` conflict is an error. Stop parsing at `--`;
+all following text is literal context. Never inspect ordinary context words.
 
 **0.2 Detect special modes (check FIRST word):**
 - `refined-draft` → `mode = "refined-draft-only"`, remaining text = plan name.
@@ -149,7 +186,8 @@ Collect, conversationally:
   `PLAN_` prefix internally.
 - **2.2 Objective** — one or two sentences.
 - **2.3 Context** — where the changes live, constraints/rules, tech notes.
-- **2.4 Tasks** — at least 2; if only 1, suggest breaking it down.
+- **2.4 Tasks** — one bounded task is valid for Lite; split only when outcomes,
+  risks or gates genuinely differ. Never invent padding to reach a count.
 - **2.5 Guidelines (optional)** — branch/commit format, coverage target, whether
   an Executive Report is wanted at completion (records an explicit prior request
   per `../spec/DWP_SPECIFICATION.md` §6.3), etc.
@@ -187,14 +225,9 @@ and is the substance of the plan; the mode only decides whether it is first
 staged as a draft (guided) or materialized directly (trust).
 
 - **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
-  work warrants a plan. A trivial single-concern change is **micro** tier — in
-  **guided** mode say that a plan is disproportionate, offer to state goal +
-  acceptance criteria + validation gate inline, and do that instead. In **trust**
-  mode the developer has already asked for a plan and there is nobody to answer:
-  **do not stop to ask.** Record the micro judgment and the inline alternative in
-  the plan README's Plan Variables (`Rigor: micro — a plan is arguably
-  disproportionate; inline alternative: …`) and materialize the plan anyway; the
-  developer sees the note and can discard it. Otherwise choose `standard` or
+  work warrants a plan. A trivial single-concern change is **micro** tier and is
+  a first-class Lite plan: record a concise goal, gate and Final Review rather
+  than routing the developer out of DWP. Otherwise choose `standard` or
   `deep` and record why (in the draft in guided mode; in the plan README in trust
   mode). A borderline call is recorded, never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
@@ -248,7 +281,25 @@ staged as a draft (guided) or materialized directly (trust).
 
 ### Step 4 — Draft or Materialize (by mode)
 
-#### 4.1 Guided Mode — Refined Draft and Review
+#### 4.0 Lite-first materialization (normal path)
+
+For every normal create request, materialize the Lite folder first. Write the
+v2 manifest first, then a README with `Plan Format`, `Materialization`,
+`Approval`, decision record and anchored `## Task N {#task-N}` entries, then
+`PROGRESS.md`, `PROMPTS.md`, optional analysis outputs and v2 `state.json`.
+Write the README status last. A Lite proposal is valid when it is ready for
+review; it is not executable until approved. Its inline Final Review is last.
+
+Choose Lite when shared rules plus compact task records fully express the work.
+Choose Full when dependencies or instruction detail need separate task files.
+In guided mode show Lite, the recommendation and reasons, then offer retain
+Lite, promote Full, edit, or stop. In trust mode choose and materialize the
+representation silently, record `Pre-approved for unattended execution: yes
+(trust)`, and report `/dwp-execute PLAN_{name}`. Do not invoke execute.
+
+The refined-draft sections below run only for explicit compatibility commands.
+
+#### 4.1 Guided Mode — Refined Draft and Review (explicit compatibility command)
 
 Show a **2-step** progress UI:
 
@@ -282,7 +333,7 @@ and the path `→ .dwp/drafts/PLAN_{name}_draft_refined.md`, then offer:
 3. Show the full refined draft → display it, then re-show the menu.
 4. Stop here → completion message for the draft phase.
 
-#### 4.2 Trust Mode — Direct Materialization
+#### 4.2 Trust Mode — Direct Full Materialization (explicit compatibility command)
 
 No draft file. Show a **2-step** progress UI and go straight to Step 4.4:
 

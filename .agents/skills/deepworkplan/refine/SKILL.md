@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-refine
-description: Refine a Deep Work Plan draft or modify an existing final plan — add, edit, split or reorder tasks, update the README, convert a draft, or explicitly migrate a legacy plan — keeping README links, task IDs, dependencies and the state layer synchronized and never silently rewriting completed work. Use when the developer wants to adjust scope, tasks, or details of a draft in .dwp/drafts/ or a plan in .dwp/plans/.
-version: "2.17.1"
+description: Refine a Deep Work Plan draft or plan — safely edit scope, promote a Lite plan to Full task files, recover partial promotion, or explicitly migrate legacy plans while preserving completed evidence.
+version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -42,6 +42,7 @@ on explicit request — migrate a legacy plan to the current standard).
 | `plan {plan_name}` | Modify an existing final plan | `/dwp-refine plan auth_refactor` |
 | `plan latest` | Modify the most recent plan | `/dwp-refine plan latest` |
 | `migrate {plan_name}` | **Explicit** migration of a legacy plan (three final tasks) to the current standard — the only way a plan changes standard | `/dwp-refine migrate auth_refactor` |
+| `promote {plan_name}` | Promote a ready Lite plan to Full task files without changing scope | `/dwp-refine promote small_fix` |
 
 ## Trust boundary (write scope)
 
@@ -67,6 +68,29 @@ anything (refinement output stays uncommitted working state).
 - A draft filename / `latest` → Step 2 (Draft Workflow).
 - `plan {name}` / `plan latest` → Step 3 (Plan Workflow).
 - `migrate {name}` → Step 4 (Explicit Migration).
+- `promote {name}` → Step 5 (Lite Promotion).
+
+### Step 5 — Lite Promotion
+
+Promotion changes only task representation. Read `spec/LITE_PLANS.md`, the Lite
+README decision record and v2 state first. Refuse a pending proposal, an active
+task, an unresolved blocker, unknown format or existing promotion marker. A
+scope/requirement change is refine, not promotion.
+
+1. Record `promotion: lite → full` intent atomically in state and README.
+2. Generate Full task files for unchanged logical task IDs, preserving criteria,
+   gates, logs, completion status and lineage. Completed Lite work is never split
+   or granted invented evidence; unstarted work may split only with new IDs and a
+   recorded lineage.
+3. Validate contiguous IDs, links, gates, final review and Markdown/state
+   correspondence before switching the README's authoritative task representation.
+4. Rewrite the state projection atomically with `format: full`, then clear the
+   promotion marker last. Preserve manifest creation provenance and never rewrite
+   it to disguise a changed live task count.
+
+If interrupted, retain the marker and identify the exact missing boundary;
+complete only missing files and preserve user edits. Execute/resume must not run
+a marked plan. Full-to-Lite downgrade is not automatic.
 
 ### Step 1 — Interactive Selection
 Ask whether to refine **a draft** (polish or convert to a final plan) or **an

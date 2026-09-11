@@ -108,7 +108,7 @@ except Exception:
 }
 
 # The newest DWP spec this checker implements (DWP_SPECIFICATION.md "Version").
-SUPPORTED_SPEC="2.3.0"
+SUPPORTED_SPEC="2.4.0"
 
 version_le() {
   # $1 <= $2 for dotted numeric versions (bash 3.2 safe; no arrays).
@@ -355,6 +355,14 @@ check_plan() {
     pass "analysis_results/"
   else
     fail "analysis_results/"
+  fi
+
+  # Lite v2 plans use inline task anchors instead of task files. They are valid
+  # only when state declares Lite and materialization is ready; unresolved
+  # promotion remains a recovery boundary.
+  if [ -f "$plan_dir/state.json" ] && [ "$(json_str "$plan_dir/state.json" format)" = "lite" ]; then
+    check_lite_plan "$plan_dir"
+    return 0
   fi
 
   # ---- task inventory: count, numeric ids, uniqueness, contiguity -------------
@@ -623,6 +631,51 @@ check_plan() {
   fi
 }
 
+check_lite_plan() {
+  local plan_dir="$1" problems
+  if [ "$(json_str "$plan_dir/state.json" materialization)" != "ready" ]; then
+    fail "Lite plan materialization is not ready — complete or recover it with create/refine before execution"
+    return 0
+  fi
+  if grep -q '"promotion"[[:space:]]*:[[:space:]]*{' "$plan_dir/state.json"; then
+    fail "Lite plan has an unresolved promotion marker — recover it with refine before execution"
+    return 0
+  fi
+  problems="$(python3 - "$plan_dir" <<'PYEOF'
+import json, re, sys
+p = sys.argv[1]
+state = json.load(open(p + '/state.json'))
+readme = open(p + '/README.md').read()
+tasks = state.get('tasks', [])
+if not tasks:
+    print('Lite state has no tasks')
+ids = [t.get('id') for t in tasks]
+if sorted(ids) != list(range(1, len(tasks) + 1)):
+    print('Lite task IDs are not contiguous')
+for task in tasks:
+    locator = task.get('locator', {})
+    if locator.get('kind') != 'inline' or locator.get('value') != '#task-' + str(task.get('id')):
+        print('Lite task has invalid inline locator: ' + str(task.get('id')))
+    if readme.count('{#task-' + str(task.get('id')) + '}') != 1:
+        print('Lite task anchor is missing or duplicated: ' + str(task.get('id')))
+    for heading in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
+        pattern = r'(?s){#task-' + str(task.get('id')) + r'}.*?(?=\n## |\Z)'
+        section = re.search(pattern, readme)
+        if not section or heading.lower() not in section.group(0).lower():
+            print('Lite task lacks ' + heading + ': ' + str(task.get('id')))
+if 'Final Review' not in readme:
+    print('Lite plan lacks Final Review')
+PYEOF
+)"
+  if [ -z "$problems" ]; then
+    pass "Lite task anchors, records and Final Review are valid"
+  else
+    while IFS= read -r problem; do fail "$problem"; done <<< "$problems"
+  fi
+  check_state_desync "$plan_dir"
+  pass "Lite plan uses inline task representation"
+}
+
 check_state_desync() {
   # Markdown wins: compare README [x] count against state.json completed_count.
   local plan_dir="$1"
@@ -641,7 +694,8 @@ check_state_desync() {
 }
 
 check_state_tasks() {
-  # state.json task entries must correspond 1:1 to the task files on disk.
+# state.json task entries must correspond 1:1 to the task files on disk. v1
+# uses `file`; v2 Full uses a typed file locator. Lite is checked separately.
   local plan_dir="$1" task_count="$2" state_count
   state_count="$(json_int "$plan_dir/state.json" task_count)"
   [ -n "$state_count" ] || return 0
@@ -663,9 +717,10 @@ files = {f for f in os.listdir(d) if re.match(r"^\d+\.task_.*\.md$", f)}
 if not isinstance(tasks, list) or any(not isinstance(t, dict) for t in tasks):
     print("state.json tasks must be an array of task objects")
     sys.exit(0)
-listed = [t.get("file") for t in tasks]
+v2 = state.get("schema") == "https://deepworkplan.com/schema/plan-state/v2.json"
+listed = [t.get("locator", {}).get("value") if v2 else t.get("file") for t in tasks]
 if any(not isinstance(f, str) for f in listed):
-    print("state.json task entries require a file name")
+    print("state.json task entries require a task-file locator")
     sys.exit(0)
 if len(tasks) != len(files) or set(listed) != files:
     print("state.json task entries do not match the task files one-to-one")
@@ -676,10 +731,12 @@ if any(type(i) is not int for i in ids):
     print("state.json task ids must be integers")
 elif len(set(ids)) != len(ids):
     print("state.json has duplicate task ids")
-for task in tasks:
-    match = re.match(r"^(\d+)\.task_", task["file"])
+for task, filename in zip(tasks, listed):
+    if v2 and task.get("locator", {}).get("kind") != "file":
+        print("Full v2 state task locator must have kind=file: " + str(filename))
+    match = re.match(r"^(\d+)\.task_", filename)
     if match and task.get("id") != int(match[1]):
-        print("state.json task id disagrees with file: " + task["file"])
+        print("state.json task id disagrees with file: " + filename)
 
 # Read only task checkboxes outside fenced examples. Accept either Task N
 # labels or direct task-file links; other checklist items are not plan tasks.
@@ -705,11 +762,11 @@ for line in readme.splitlines():
         checks[ident] = box[1].lower() == "x"
 if set(checks) != set(range(1, len(files) + 1)):
     print("README task checkboxes do not match the task ids on disk")
-for task in tasks:
+for task, filename in zip(tasks, listed):
     ident = task.get("id")
     status = task.get("status")
     if status not in ("pending", "in_progress", "completed", "blocked", "skipped"):
-        print("state.json invalid task status: " + task["file"])
+        print("state.json invalid task status: " + filename)
     if type(ident) is int and ident in checks:
         if (status == "completed") != checks[ident]:
             print("state.json task status disagrees with README: Task " + str(ident))

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-manifest/v2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "spec_version", "name", "archetype", "rigor", "created_at", "task_count", "plan_format"],
+  "properties": {
+    "schema": {"const": "https://deepworkplan.com/schema/plan-manifest/v2.json"},
+    "spec_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "name": {"type": "string", "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$"},
+    "title": {"type": "string", "maxLength": 200},
+    "archetype": {"enum": ["individual", "orchestrator-hub", "agent-workspace"]},
+    "rigor": {"enum": ["micro", "standard", "deep"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "created_by": {"type": "object"},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "task_count": {"type": "integer", "minimum": 1},
+    "plan_format": {"enum": ["lite", "full"]},
+    "parent_plan": {"type": ["string", "null"]}
+  }
+}
