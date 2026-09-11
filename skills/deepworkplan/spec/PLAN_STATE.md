@@ -359,6 +359,21 @@ declares a standard it objectively violates (`DWP_SPECIFICATION.md` §6.5).
 
 ## 7. References
 
+### v2 evidence compatibility
+
+New Lite and Full plans use the v2 schemas. A task's typed `locator` replaces
+v1's `file`; the execution evidence contract is unchanged: `started_at`,
+`completed_at`, `commit`, `gates` and `outcome` remain supported with the same
+types and limits. After validating a task, commit its owned changes and record
+the commit hash in state. A plan without source changes need not invent a commit.
+Gate, checkpoint and blocker objects remain structured and closed. Promotion
+records carry `from: lite`, `to: full` and phase `intent`, `tasks_written` or
+`switched`; all phases block execution until recovery clears the marker.
+
+The v1 schemas and existing v1 plans are unchanged. Schema validity describes
+shape; the conformance checker and agent additionally verify completion evidence,
+task correspondence and the meaning of validation results.
+
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - [`schema/plan-manifest.schema.json`](schema/plan-manifest.schema.json),
   [`schema/plan-state.schema.json`](schema/plan-state.schema.json),
