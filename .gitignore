@@ -100,3 +100,7 @@ SHA256SUMS
 # Evaluation fixtures deliberately contain .dwp/ plan directories (dev-only, immutable)
 !tests/efficiency/fixtures/**/.dwp/
 !tests/efficiency/fixtures/**/.dwp/**
+
+# Lifecycle fixtures deliberately contain .dwp/ plan directories (dev-only, immutable)
+!tests/fixtures/**/.dwp/
+!tests/fixtures/**/.dwp/**

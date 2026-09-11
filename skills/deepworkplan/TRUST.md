@@ -61,7 +61,7 @@ non-destructive by design:
   before replacing or deleting anything you already have.
 - **Proposes before large changes.** Onboarding presents a plan and waits for your
   confirmation before big or destructive edits.
-- **Keeps working state out of version control.** Plans and drafts land in a
+- **Keeps working state out of version control.** Plans land in a
   gitignored `.dwp/` directory; onboarding **appends** to `.gitignore` rather than
   rewriting it.
 - **Touches no secrets.** It never reads or commits credentials, and keeps changes

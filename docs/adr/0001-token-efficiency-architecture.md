@@ -135,6 +135,10 @@ composed once. *Failure mode:* a lower-quality plan slips through without review
 *Safety rule:* the same quality gates run on the materialized plan (numbering,
 gates present, acceptance criteria present, links resolve). *Falsified if:* Task 18
 scores trust-mode plans lower than guided-mode plans on the same fixture.
+>
+> **Superseded by DWP 2.4.0:** the refined draft, `.dwp/drafts/` and the
+> explicit draft modes were removed; `create` materializes an executable Lite
+> plan instead. This record is kept as the decision that was current at the time.
 
 **L5 — Bounded working context backed by durable evidence.**
 `PROGRESS.md` becomes a working index (goal/constraints, active task and next

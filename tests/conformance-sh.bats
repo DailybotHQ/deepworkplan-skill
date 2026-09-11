@@ -25,7 +25,7 @@ make_conformant_repo() {
     printf '# Security\n\nNo secrets in this fixture.\n' > docs/SECURITY.md
     ln -s .agents .claude
     ln -s .agents .cursor
-    mkdir -p .dwp/plans .dwp/drafts
+    mkdir -p .dwp/plans
     echo '.dwp/' > .gitignore
 }
 
@@ -189,7 +189,7 @@ EOF
     # Same structure but never `git init`: PLAN_STATE.md is REQUIRED.
     printf '# AGENTS.md\n\n## Quick Commands\n\n- `make test`\n' > AGENTS.md
     mkdir -p .agents/agents .agents/commands .agents/skills .agents/docs docs
-    mkdir -p .dwp/plans .dwp/drafts
+    mkdir -p .dwp/plans
     make_conformant_plan
     run bash "$CONFORMANCE_SH"
     [ "$status" -eq 1 ]

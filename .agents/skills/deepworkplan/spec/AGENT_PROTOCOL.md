@@ -167,7 +167,7 @@ watches*, never *what gates apply* — validation discipline
 ### 7.1. Interactive (default)
 
 A human is present in the session. The agent proposes, the human approves the
-refined draft (guided mode) or waives the review with `trust`
+ready Lite plan (guided mode) or waives the review with `trust`
 (`DWP_SPECIFICATION.md` §3), the agent executes task-by-task, and genuine
 ambiguity is resolved by asking. Within an approved plan the agent **SHOULD**
 proceed from a passing gate to the next task without asking for confirmation
@@ -181,7 +181,7 @@ a cloud session, an overnight run. Unattended execution is **opt-in per plan**
 and **MUST** satisfy all of the following:
 
 - **Pre-approved plan.** A human approved the plan before any unattended turn —
-  either by approving the refined draft (guided mode) or by materializing it with
+  either by approving the materialized plan (guided mode) or by creating it with
   `trust` (`DWP_SPECIFICATION.md` §3): **a `trust` instruction is plan approval.**
   What an agent **MUST NOT** do is create *and* execute a plan unattended with no
   human instruction at all; the human's create-time decision is the control point,

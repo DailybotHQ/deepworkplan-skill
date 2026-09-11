@@ -5,10 +5,10 @@ Validates every plan fixture's manifest.json / state.json against the shipped
 JSON Schemas (skills/deepworkplan/spec/schema/) with a real JSON Schema
 validator, then runs contract checks the schemas cannot express:
 
-  * closed-schema direction: an extra top-level field is INVALID (v1 schemas are
-    closed; 2.3.0 adds no field — PLAN_STATE.md §6);
-  * both supported directions: a 2.2.0 legacy fixture and a 2.3.0 fixture are
-    both VALID against the unchanged v1 schemas;
+  * closed-schema direction: an extra top-level field is INVALID (both schema
+    families are closed);
+  * both supported directions: legacy v1 plans and Lite/Full v2 plans select
+    their declared schema family rather than being silently coerced;
   * unknown future spec_version: schema-valid, but flagged by the contract
     (an executor must not treat it as legacy — DWP_SPECIFICATION.md §6.5);
   * zero-test evidence: a passing gate record whose evidence says it ran or
@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover
     print("FAIL jsonschema is not installed (pip install jsonschema) — cannot run the contract check")
     sys.exit(1)
 
-SUPPORTED_SPEC = (2, 3, 0)
+SUPPORTED_SPEC = (2, 4, 0)
 ZERO_EVIDENCE = re.compile(r"(ran|selected|executed)\s*=\s*0(\s*/|\b)|no tests? (ran|found|collected)|NO TESTS RAN", re.I)
 
 
@@ -41,8 +41,12 @@ def vtuple(v):
 
 def load_schemas(pack):
     d = os.path.join(pack, "spec", "schema")
-    return (json.load(open(os.path.join(d, "plan-manifest.schema.json"))),
-            json.load(open(os.path.join(d, "plan-state.schema.json"))))
+    return {
+        "https://deepworkplan.com/schema/plan-manifest/v1.json": json.load(open(os.path.join(d, "plan-manifest.schema.json"))),
+        "https://deepworkplan.com/schema/plan-state/v1.json": json.load(open(os.path.join(d, "plan-state.schema.json"))),
+        "https://deepworkplan.com/schema/plan-manifest/v2.json": json.load(open(os.path.join(d, "plan-manifest-v2.schema.json"))),
+        "https://deepworkplan.com/schema/plan-state/v2.json": json.load(open(os.path.join(d, "plan-state-v2.schema.json"))),
+    }
 
 
 def errors(schema, doc):
@@ -50,7 +54,15 @@ def errors(schema, doc):
     return [f"{list(e.path)}: {e.message[:90]}" for e in sorted(v.iter_errors(doc), key=lambda e: list(e.path))]
 
 
-def check_plan(plan_dir, ms, ss, problems, notes):
+def schema_for(doc, schemas, label):
+    declared = doc.get("schema")
+    schema = schemas.get(declared)
+    if schema is None:
+        return None, f"unknown {label} schema URL {declared!r}"
+    return schema, None
+
+
+def check_plan(plan_dir, schemas, problems, notes):
     name = os.path.basename(plan_dir.rstrip("/"))
     readme = os.path.join(plan_dir, "README.md")
     materializing = os.path.isfile(readme) and re.search(r"Plan Status: *materializing", open(readme, encoding="utf-8").read()) is not None
@@ -61,7 +73,8 @@ def check_plan(plan_dir, ms, ss, problems, notes):
         if os.path.isfile(mpath0):
             try:
                 m0 = json.load(open(mpath0))
-                bad = errors(ms, m0)
+                schema, why = schema_for(m0, schemas, "manifest")
+                bad = [why] if why else errors(schema, m0)
                 present = len([f for f in os.listdir(plan_dir) if re.match(r"^\d+\.task_.*\.md$", f)])
                 shape = f"; manifest declares {m0.get('task_count')} tasks, {present} task files present" + (f"; manifest invalid: {bad[0]}" if bad else "")
             except Exception as exc:  # noqa: BLE001
@@ -75,7 +88,7 @@ def check_plan(plan_dir, ms, ss, problems, notes):
     if not (os.path.isfile(mpath) or os.path.isfile(spath)):
         notes.append(f"{name}: no state layer (optional in a git repo)")
         return
-    for label, path, schema in (("manifest", mpath, ms), ("state", spath, ss)):
+    for label, path in (("manifest", mpath), ("state", spath)):
         if not os.path.isfile(path):
             problems.append(f"{name}: {label}.json missing while the other state file exists")
             continue
@@ -84,9 +97,10 @@ def check_plan(plan_dir, ms, ss, problems, notes):
         except Exception as e:
             problems.append(f"{name}: {label}.json does not parse ({e})")
             continue
-        errs = errors(schema, doc)
+        schema, why = schema_for(doc, schemas, label)
+        errs = [why] if why else errors(schema, doc)
         if errs:
-            problems.append(f"{name}: {label}.json INVALID against the v1 schema: " + "; ".join(errs[:3]))
+            problems.append(f"{name}: {label}.json INVALID against its declared schema: " + "; ".join(errs[:3]))
         else:
             notes.append(f"{name}: {label}.json valid")
         if label == "manifest":
@@ -110,7 +124,11 @@ def check_plan(plan_dir, ms, ss, problems, notes):
                     problems.append(f"{name}: state.completed_count={doc.get('completed_count')} exceeds README [x]={md_done} — stale/ahead projection (markdown wins)")
 
 
-def negative_cases(ms, ss, problems, notes):
+def negative_cases(schemas, problems, notes):
+    ms = schemas["https://deepworkplan.com/schema/plan-manifest/v1.json"]
+    ss = schemas["https://deepworkplan.com/schema/plan-state/v1.json"]
+    ms2 = schemas["https://deepworkplan.com/schema/plan-manifest/v2.json"]
+    ss2 = schemas["https://deepworkplan.com/schema/plan-state/v2.json"]
     base_m = {"schema": "https://deepworkplan.com/schema/plan-manifest/v1.json", "spec_version": "2.3.0", "name": "PLAN_contract_probe",
               "archetype": "individual", "rigor": "standard", "created_at": "2026-09-01T00:00:00Z", "task_count": 2}
     base_s = {"schema": "https://deepworkplan.com/schema/plan-state/v1.json", "plan": "PLAN_contract_probe", "updated_at": "2026-09-01T00:00:00Z",
@@ -145,6 +163,17 @@ def negative_cases(ms, ss, problems, notes):
         problems.append("probe: a v2 schema URL must not validate against the v1 schema")
     else:
         notes.append("probe: v2 schema URL rejected by the v1 schema")
+    lite_m = dict(base_m, schema="https://deepworkplan.com/schema/plan-manifest/v2.json", spec_version="2.4.0", plan_format="lite")
+    lite_s = {"schema": "https://deepworkplan.com/schema/plan-state/v2.json", "plan": "PLAN_contract_probe", "updated_at": "2026-09-01T00:00:00Z", "status": "pending", "completed_count": 0, "task_count": 1, "format": "lite", "materialization": "ready", "promotion": None, "checkpoint": None, "blocked": None, "tasks": [{"id": 1, "locator": {"kind": "inline", "value": "#task-1"}, "title": "a", "status": "pending", "gates": []}]}
+    if errors(ms2, lite_m) or errors(ss2, lite_s):
+        problems.append("probe: a 2.4.0 Lite state/manifest must validate against v2")
+    else:
+        notes.append("probe: 2.4.0 Lite state/manifest valid against v2")
+    bad_locator = copy.deepcopy(lite_s); bad_locator["tasks"][0]["locator"]["value"] = "../escape.md"
+    if not errors(ss2, bad_locator):
+        problems.append("probe: a Lite task locator must reject paths outside the plan")
+    else:
+        notes.append("probe: invalid Lite task locator rejected")
 
 
 def main():
@@ -153,7 +182,7 @@ def main():
     ap.add_argument("--fixtures", default="tests/efficiency/fixtures")
     ap.add_argument("plans", nargs="*")
     a = ap.parse_args()
-    ms, ss = load_schemas(a.pack)
+    schemas = load_schemas(a.pack)
     problems, notes = [], []
     plans = list(a.plans)
     if os.path.isdir(a.fixtures):
@@ -161,8 +190,8 @@ def main():
             if os.path.basename(os.path.dirname(root)) == "plans" and os.path.basename(root).startswith("PLAN_"):
                 plans.append(root)
     for p in sorted(set(plans)):
-        check_plan(p, ms, ss, problems, notes)
-    negative_cases(ms, ss, problems, notes)
+        check_plan(p, schemas, problems, notes)
+    negative_cases(schemas, problems, notes)
     for n in notes:
         print("ok  ", n)
     for p in problems:

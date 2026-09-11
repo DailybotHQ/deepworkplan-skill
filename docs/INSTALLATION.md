@@ -191,7 +191,7 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
   `.claude → .agents` / `.cursor → .agents` symlinks. It's non-destructive and idempotent, and it adds
   `.dwp/` to your `.gitignore`.
 - **Plans** land under a gitignored `.dwp/` directory at the repo root
-  (`.dwp/plans/PLAN_<slug>/`, `.dwp/drafts/`), overridable via the `DWP_DIR`
+  (`.dwp/plans/PLAN_<slug>/`), overridable via the `DWP_DIR`
   environment variable.
 
 ---

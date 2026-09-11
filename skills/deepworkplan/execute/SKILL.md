@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-execute
-description: Execute an existing Deep Work Plan task-by-task — select each task's validation from its actual touched surface, repair or stop on failure without weakening a gate, close each task locally (skills decision, compact log, gate record, state), and finish with the Final Review and an optional report offer. Use when the developer wants to run or continue executing a plan in .dwp/plans/.
+description: Execute Lite or Full Deep Work Plans task-by-task — select validation from the actual surface, preserve state and evidence, recover safely, and finish with the Final Review.
 version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -46,6 +46,30 @@ Normalize names by adding the `PLAN_` prefix if missing. Validate that
 and ask the user to choose. A folder **without** `README.md`, whose README says
 `Plan Status: materializing`, or whose README **links a task file that does not
 exist**, is a partial materialization — point to `refine` and stop.
+
+## Lite plan execution
+
+Read `spec/LITE_PLANS.md` when the plan declares v2 state or `Plan Format: Lite`.
+A Lite plan is valid without task files. Its canonical README task index and
+anchored `#task-N` records are the source of truth; completion logs and state
+are evidence, not competing task status. Ignore fenced example checkboxes.
+
+Before execution, read `Materialization` and `Approval`. Refuse `materializing`
+and `promoting` plans — those are recovery boundaries, not proposals. Approval is
+a separate axis: a `ready` plan whose approval is still `pending` is a valid
+proposal, and **an explicit execute request for it approves its current scope** —
+record `Approval: approved` in the README and state before the first task, then
+proceed. What is never allowed is starting a proposal that nobody asked for: a
+plan created with trust is `pre_approved` but still begins only on an explicit
+execute request, and `create` never calls execute itself. Read the first
+unchecked anchored task, perform its gate, update its compact log, then README,
+PROGRESS and state in the usual safe order. The inline Final Review remains last
+and performs the same security, final validation and skills reconciliation.
+
+When scope exceeds the compact task record, stop for refine rather than silently
+expanding work. A v2 state locator is authoritative: `inline` resolves to a
+unique README anchor; `file` resolves to one Full task file. Missing, duplicate,
+absolute or traversal locators are invalid plans, not fallback guesses.
 
 ## Trust boundary (write scope)
 

@@ -425,7 +425,7 @@ different purposes. Both **MUST** be gitignored (tracking only an index
 
 | Directory | Requirement | Purpose |
 |-----------|-------------|---------|
-| `.dwp/` | **MUST** (once the DWP skill is installed) | **Structured** Deep Work Plan output — `.dwp/plans/` and `.dwp/drafts/`. Owned by the DWP flows. See `DWP_SPECIFICATION.md`. |
+| `.dwp/` | **MUST** (once the DWP skill is installed) | **Structured** Deep Work Plan output — `.dwp/plans/`. Owned by the DWP flows. See `DWP_SPECIFICATION.md`. |
 | `tmp/` | **SHOULD** | **Unstructured** repo-root scratch space for ephemeral agent/developer work: exploratory output, data exports, inter-agent prompt handoffs, throwaway experiments. Agents **SHOULD** write temporary/throwaway artifacts here rather than polluting the source tree, `docs/`, or `.dwp/`. |
 
 The distinction matters: `.dwp/` is the methodology's **structured** output (plans an agent can resume), while `tmp/` is **freeform** scratch that can be deleted at any time. Common `tmp/` sub-uses observed across the audited repos: `tmp/scratch/`, `tmp/exports/`, `tmp/{tool}_prompts/`. An onboarding agent **SHOULD** create `tmp/` (with a `.gitkeep`) and add it to `.gitignore`, and **SHOULD** note the convention in `AGENTS.md`.

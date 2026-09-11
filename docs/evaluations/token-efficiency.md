@@ -15,6 +15,13 @@ static measurements and affected behavioral checks before making a final-release
 claim. Source revisions and content digests are in
 [the protocol](token-efficiency-data/protocol.json).
 
+> **Frozen against a pre-2.4.0 flow.** These trials measured the draft-first
+> `create` flow. DWP 2.4.0 removed the refined draft and `.dwp/drafts/`
+> entirely, so `tests/efficiency/score-replays.py`'s `draft_written` oracle and
+> the recorded replays describe a flow that no longer exists. They are kept
+> unchanged as historical evidence at `d4ffe58`, not as a current expectation;
+> a Lite-versus-Full measurement would be a new evaluation.
+
 ## Reproduce the observations
 
 From the contributor checkout:

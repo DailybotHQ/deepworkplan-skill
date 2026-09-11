@@ -1,5 +1,5 @@
 ---
-description: Refine a draft or modify an existing final plan (provided by the installed `deepworkplan` skill)
+description: Modify an existing plan — edit scope, add or split tasks, promote a Lite plan to Full, or migrate a legacy plan (provided by the installed `deepworkplan` skill)
 ---
 
 # /dwp-refine — provided by the `deepworkplan` skill
@@ -11,8 +11,8 @@ description: Refine a draft or modify an existing final plan (provided by the in
 
 Route this invocation to the **refine** sub-skill of the installed `deepworkplan`
 skill and follow it: read `<skill-path>/deepworkplan/refine/SKILL.md` and execute
-its flow. Plan and draft outputs land in this repo's gitignored `.dwp/`
-(`.dwp/plans/`, `.dwp/drafts/`) — never the legacy
+its flow. Plan output lands in this repo's gitignored `.dwp/`
+(`.dwp/plans/`) — never the legacy
 `.agent_commands/agent_deep_work_plans/results/` path.
 
 > Other agents: invoke the skill's `deepworkplan-refine` sub-skill directly

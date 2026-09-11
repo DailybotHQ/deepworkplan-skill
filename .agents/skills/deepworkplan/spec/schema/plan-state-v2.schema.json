@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-state/v2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "plan", "updated_at", "status", "completed_count", "task_count", "format", "materialization", "tasks"],
+  "properties": {
+    "schema": {"const": "https://deepworkplan.com/schema/plan-state/v2.json"},
+    "plan": {"type": "string", "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "updated_by": {"type": "object"},
+    "status": {"enum": ["pending", "in_progress", "completed", "blocked"]},
+    "completed_count": {"type": "integer", "minimum": 0},
+    "task_count": {"type": "integer", "minimum": 1},
+    "format": {"enum": ["lite", "full"]},
+    "materialization": {"enum": ["materializing", "ready", "promoting"]},
+    "approval": {"enum": ["pending", "approved", "pre_approved"]},
+    "promotion": {"type": ["object", "null"]},
+    "checkpoint": {"type": ["object", "null"]},
+    "blocked": {"type": ["object", "null"]},
+    "tasks": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/task"}}
+  },
+  "$defs": {
+    "task": {"type": "object", "additionalProperties": false, "required": ["id", "locator", "title", "status", "gates"], "properties": {"id": {"type": "integer", "minimum": 1}, "locator": {"type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": {"kind": {"enum": ["inline", "file"]}, "value": {"type": "string", "pattern": "^(#task-[1-9][0-9]*|[1-9][0-9]*\\.task_[a-z0-9_]+\\.md)$"}}}, "title": {"type": "string"}, "status": {"enum": ["pending", "in_progress", "completed", "blocked", "skipped"]}, "gates": {"type": "array"}}}
+  }
+}

@@ -118,7 +118,7 @@ deepworkplan-skill/
     ├── shared/                                 ← context.sh, dwp-paths.md, adaptation.md
     ├── create/SKILL.md                         ← create a Deep Work Plan
     ├── execute/SKILL.md                        ← execute a plan task-by-task
-    ├── refine/SKILL.md                         ← refine a draft / modify a final plan
+    ├── refine/SKILL.md                         ← modify a plan / promote Lite to Full
     ├── resume/SKILL.md                         ← resume an interrupted plan
     ├── status/SKILL.md                         ← report plan status
     ├── verify/SKILL.md                         ← verify repo/plan conformance (read-only)
@@ -256,7 +256,7 @@ breaking change that requires a MAJOR version bump and a migration note in
 - Skill `name` fields in frontmatter (skills.sh registry references them).
 - The six `/deepworkplan-*` slash commands (`create`, `execute`, `refine`,
   `resume`, `status`, `onboard`).
-- The `.dwp/` output convention (`.dwp/plans/`, `.dwp/drafts/`) and the
+- The `.dwp/` output convention (`.dwp/plans/`) and the
   `DWP_DIR` / `DWP_AGENT_TOOL` env-var overrides read by `shared/context.sh`.
 - `setup.sh` flags (`--host`, `--help`) and the resulting symlink names.
 

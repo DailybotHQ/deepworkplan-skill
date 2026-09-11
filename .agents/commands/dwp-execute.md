@@ -11,8 +11,8 @@ description: Execute an existing deep work plan task-by-task (provided by the in
 
 Route this invocation to the **execute** sub-skill of the installed `deepworkplan`
 skill and follow it: read `.agents/skills/deepworkplan/execute/SKILL.md` and execute
-its flow. Plan and draft outputs land in this repo's gitignored `.dwp/`
-(`.dwp/plans/`, `.dwp/drafts/`).
+its flow. Plan output lands in this repo's gitignored `.dwp/`
+(`.dwp/plans/`).
 
 > Other agents: invoke the skill's `deepworkplan-execute` sub-skill directly
 > (`/deepworkplan-execute` in Claude Code, `#deepworkplan-execute` elsewhere). This

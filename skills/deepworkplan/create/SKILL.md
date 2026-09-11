@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-create
-description: Create a Deep Work Plan. Gather context, analyze requirements, and materialize a single final plan under .dwp/plans/ — guided mode stages a refined draft in .dwp/drafts/ for review; trust mode materializes directly. Use when the developer wants a new structured multi-task plan.
+description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
 version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -10,20 +10,55 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 # DeepWorkPlan — Create
 
 Create a new Deep Work Plan through a smooth, unified flow: the developer
-provides information once, you run the **requirements analysis**, and then —
-depending on the mode — either stage a **single refined draft** for review
-(guided) or **materialize the plan directly** under `.dwp/plans/PLAN_{name}/`
-(trust). The plan's substance is composed **once**.
+provides information once, you run the **requirements analysis**, and materialize
+a Lite plan folder under `.dwp/plans/PLAN_{name}/`. Guided mode presents that
+proposal for review; trust chooses its ready representation without a review.
+Both modes return control to the developer to execute later.
 
-> **Single-step (vs legacy):** there is **no separate raw-draft file**. The only
-> reviewable draft artifact is `.dwp/drafts/PLAN_{name}_draft_refined.md`, and it
-> exists only in guided mode or on explicit request
-> (`../spec/DWP_SPECIFICATION.md` §3).
+> **Lite-first (v2.4):** `create` writes no draft file and no `.dwp/drafts/`
+> directory. A Lite plan is a complete proposal, not a partial Full plan — it is
+> the reviewable artifact the refined draft used to be, except that it is already
+> executable. The `refined-draft` / `from-refined-draft` commands were removed in
+> 2.4.0; see `../spec/LITE_PLANS.md`.
+
+## Lite-first command grammar
+
+Parse boundary options before interpreting the remaining text. `trust` and
+`auto` select trust mode; `lite` and `full` express an optional format
+preference. Each may be a contiguous token at the beginning or end, in either
+order: `/dwp-create trust lite add retry`, `/dwp-create add retry lite trust`,
+`/dwp-create trust add retry`, and `/dwp-create add retry full` are equivalent
+forms. Remove all recognized boundary options before classifying context.
+
+Repeated identical options are harmless. `lite` plus `full` is an explicit
+conflict: report it rather than guessing. `--` ends option parsing; everything
+after it is literal context. Do not scan the middle of context, quotations or
+code for option words. `trust` with no context asks for the goal. The resulting
+plan is handed off; create never modifies product source or calls execute.
+
+## Lite-first lifecycle
+
+Write `manifest.json`, `README.md`, `PROGRESS.md`, `PROMPTS.md`, appropriate
+`analysis_results/` and `state.json` using the v2 schemas. A Lite README has
+one shared rules section and compact anchored task records (`#task-N`) containing
+goal, touched surface, acceptance criteria, validation and completion evidence.
+It includes an inline Final Review. It does not create task files or boilerplate
+solely to meet a task count. `materializing`, `ready` and `promoting` are distinct
+from review approval and execution status.
+
+Guided mode writes a `pending` proposal, shows the observed signals and format
+recommendation, and lets the developer retain Lite, promote Full, edit, or stop.
+Trust records the same rationale, chooses Lite or Full, marks it ready and
+pre-approved, and returns the execute command. An explicit Full preference wins;
+an explicit Lite preference is retained only if compact records can express every
+requirement and gate. Unknown scope triggers discovery, not an automatic Full
+classification. Small planning work is a valid Lite plan; never route it to an
+inline non-DWP alternative merely because it is small.
 
 ## Philosophy
 
 The goal is a delightful, smooth experience. The user provides information once;
-the system handles all intermediate steps (analysis, draft or direct
+the system handles all intermediate steps (analysis, materialization
 materialization, quality check) automatically — and never generates an artifact
 nobody asked for.
 
@@ -32,7 +67,7 @@ nobody asked for.
 - [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch,
   agent tool, and the `.dwp/` output location (`dwp_dir`).
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — the `.dwp/plans/` +
-  `.dwp/drafts/` output convention.
+  `.dwp/plans/` output convention.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
   and the two repository archetypes (individual repo vs orchestrator hub).
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.4) and [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10).
@@ -45,45 +80,58 @@ nobody asked for.
 
 ## Parameter Reference
 
+Boundary options (`trust`/`auto`, `lite`/`full`) are parsed first (Step 0.1) and
+removed before the remaining text is classified. Every ordinary row below
+materializes a **Lite plan folder** — no draft file is written.
+
 | Input | Classification | Mode | Behavior | Example |
 |-------|---------------|------|----------|---------|
-| (none) | — | guided | Ask for name, then ask questions; analyze; stage the refined draft for review; materialize on approval | `/dwp-create` |
+| (none) | — | guided | Ask for name, then ask questions; analyze; materialize the Lite plan; present it with the format recommendation for review | `/dwp-create` |
 | `{short text}` | **name-only** | guided | Extract name, ask questions immediately; then as above | `/dwp-create improve error handling` |
-| `{long text}` | **full-context** | guided | Infer name; analyze the provided context; stage the refined draft for review; materialize on approval | `/dwp-create Refactor auth to use JWT across all services. Currently using sessions...` |
-| `trust` or `auto` | — | trust | Ask for name, then ask questions; analyze; **materialize the plan directly** (no draft file, no confirmations); the plan is pre-approved for unattended execution | `/dwp-create trust` |
-| `{short text} trust` | **name-only** | trust | Extract name, ask questions; then as above | `/dwp-create improve-error-handling trust` |
-| `{long text} trust` | **full-context** | trust | Infer name; analyze; materialize directly | `/dwp-create Refactor auth... trust` |
-| `refined-draft {name}` | — | refined-draft-only | Produce ONLY the refined draft (no final plan) — works in either mode | `/dwp-create refined-draft my_plan` |
-| `from-refined-draft {file}` | — | from-refined-draft | Build the final plan from an existing refined draft | `/dwp-create from-refined-draft PLAN_x_draft_refined.md` |
-| `from {file}` | — | from-refined-draft | Alias for `from-refined-draft` | `/dwp-create from PLAN_x_draft_refined.md` |
+| `{long text}` | **full-context** | guided | Infer name; analyze the provided context; materialize the Lite plan and present it for review | `/dwp-create Refactor auth to use JWT across all services. Currently using sessions...` |
+| `trust` or `auto` | — | trust | Ask for name, then ask questions; analyze; materialize the chosen representation directly (no review, no confirmations); the plan is pre-approved for unattended execution | `/dwp-create trust` |
+| `{text} trust` / `trust {text}` | **name-only** or **full-context** | trust | Same, with the context preserved from either boundary | `/dwp-create trust fix the settings label` |
+| `lite` (either boundary) | — | unchanged | Format **preference**: retain Lite unless a compact record cannot carry a required requirement or gate — then explain why Full is needed | `/dwp-create lite rename this setting` |
+| `full` (either boundary) | — | unchanged | Format **preference**: an explicit Full wins; the same folder is materialized and then expanded to task files (Step 4.0 → 4.4) | `/dwp-create redesign the auth flow full` |
+| `lite` **and** `full` | — | — | Conflict: report it and ask which one; never silently pick one, including in trust | `/dwp-create lite full ...` → error |
+| `--` | — | unchanged | Ends option parsing; everything after it is literal context | `/dwp-create trust -- full rewrite of the parser` |
 
 > **Name format:** users type names in any format; you auto-convert to
-> `snake_case` internally. **Explicit draft parameters win** over the ordinary
-> trust default: `refined-draft … trust` still produces a draft.
+> `snake_case` internally.
+
+> **Removed in 2.4.0:** `refined-draft`, `from-refined-draft` and its `from`
+> alias. There is no draft artifact and no `.dwp/drafts/` directory — the Lite
+> plan replaces them. If a repo still has a `.dwp/drafts/` folder from an earlier
+> version, DWP neither reads nor writes it; the developer may delete it. To build
+> a plan from an old draft's content, paste that content as the create context.
 
 ## Modes
 
 ### Guided Mode (default)
 - Collects information from the user; runs the requirements analysis (Step 3).
-- Creates the **refined draft** → shows it for review.
-- Asks for confirmation before creating the final plan.
-- User can request adjustments before final generation.
+- **Materializes the Lite plan** (Step 4.0) → shows it with the format
+  recommendation and the observed signals behind it.
+- Asks the developer to retain Lite, promote to Full, edit, or stop. The plan
+  stays `Approval: pending` until they choose.
+- Never expands to Full without that explicit choice.
 
 ### Trust Mode (`trust` or `auto`)
 - Collects information from the user; runs the **same** requirements analysis
   (Step 3) and the **same** plan-quality check (Step 4.5).
-- **Materializes the final plan directly** — no draft file is written. Trust
-  waives the intermediate *review*, never the *analysis* or the quality check.
+- **Materializes the chosen representation directly** — Lite, or Lite then
+  expanded to Full when the rubric or an explicit `full` says so. Trust waives the intermediate *review*, never the *analysis*, the
+  *quality check*, or the *execution handoff*.
 - Records the plan as **pre-approved for unattended execution**
   (`../spec/AGENT_PROTOCOL.md` §7.2): the developer's `trust` instruction is
-  the approval.
+  the approval. `trust` authorizes the planning decisions — it never calls
+  execute.
 
 ## Trust boundary (write scope)
 
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
 **Writes:** plan artifacts under the gitignored `.dwp/` directory only —
-`.dwp/drafts/` when a draft is produced, `.dwp/plans/PLAN_{name}/` for the
+`.dwp/plans/PLAN_{name}/` for the
 materialized plan (README, task files, analysis outputs, state layer). "Trust
 mode" skips intermediate confirmations of **plan content**, not of the write
 boundary, and grants no permission the plan does not list.
@@ -97,16 +145,14 @@ gates. Ordinary `create` never requires a source edit, an install, or the networ
 
 ### Step 0 — Parse Parameters & Determine Mode
 
-**0.1 Detect trust mode:** if the LAST word is `trust` or `auto`, remove it and
-set `trust_mode = true`; otherwise `false`.
+**0.1 Parse boundary options:** before special modes or input classification,
+consume contiguous `trust`/`auto`, `lite` and `full` tokens from either boundary
+in either order. `trust_mode` is true when `trust` or `auto` occurred; record a
+single format preference when `lite` or `full` occurred. Repeated identical
+options are valid. A `lite`/`full` conflict is an error. Stop parsing at `--`;
+all following text is literal context. Never inspect ordinary context words.
 
-**0.2 Detect special modes (check FIRST word):**
-- `refined-draft` → `mode = "refined-draft-only"`, remaining text = plan name.
-- `from-refined-draft` or `from` → `mode = "from-refined-draft"`, remaining text
-  = refined-draft file path.
-- Otherwise → continue to input classification (0.3).
-
-**0.3 Classify remaining input:**
+**0.2 Classify remaining input:**
 
 | Condition | Classification | What to do |
 |-----------|---------------|------------|
@@ -123,9 +169,6 @@ set `trust_mode = true`; otherwise `false`.
 > plan, not what to DO. Go directly to Step 2.
 
 **Routing by mode:**
-- `from-refined-draft` → skip to Step 4.3.
-- `refined-draft-only` → gather info, analyze, create only the refined draft,
-  skip final plan creation (in either trust or guided mode).
 - `no input` / `name-only` → Step 1, then Step 2.
 - `full-context` → Step 1, then Step 3.
 
@@ -134,14 +177,14 @@ set `trust_mode = true`; otherwise `false`.
 Show a brief intro matching the mode: in **guided** mode, that you will analyze
 the requirements, stage a refined plan for review, and then generate the final
 executable plan; in **trust** mode, that you will analyze the requirements and
-materialize the final executable plan directly (no draft, no confirmations), and
+materialize the final executable plan directly (no confirmations), and
 that the plan will be pre-approved for unattended execution.
 
 ### Step 2 — Gather Information (Conversational)
 
 > **Skip the *questions* (2.1–2.5) for `full-context` input.** Steps **2.6** and
 > **2.10** are detections, not questions: they run in **every** mode. For
-> full-context input (and for `from-refined-draft`), skip 2.1–2.5 and run 2.6 and
+> full-context input, skip 2.1–2.5 and run 2.6 and
 > 2.10 at the start of Step 3 against the provided context, then continue.
 
 Collect, conversationally:
@@ -149,7 +192,8 @@ Collect, conversationally:
   `PLAN_` prefix internally.
 - **2.2 Objective** — one or two sentences.
 - **2.3 Context** — where the changes live, constraints/rules, tech notes.
-- **2.4 Tasks** — at least 2; if only 1, suggest breaking it down.
+- **2.4 Tasks** — one bounded task is valid for Lite; split only when outcomes,
+  risks or gates genuinely differ. Never invent padding to reach a count.
 - **2.5 Guidelines (optional)** — branch/commit format, coverage target, whether
   an Executive Report is wanted at completion (records an explicit prior request
   per `../spec/DWP_SPECIFICATION.md` §6.3), etc.
@@ -177,26 +221,20 @@ supports team agents.
 ### Step 3 — Requirements Analysis (both modes, before any file is written)
 
 > **First, if Step 2's questions were skipped** (full-context input or
-> `from-refined-draft`): run the two detections now, against the provided
+> full-context input): run the two detections now, against the provided
 > context — **2.6 orchestrator** and **2.10 team-agents** — and read their
 > on-demand files only if a trigger fires. A detection is never skipped merely
 > because no questions were asked.
 
-This step is what the draft used to carry implicitly. It runs in **every** mode
+This step runs in **every** mode
 and is the substance of the plan; the mode only decides whether it is first
-staged as a draft (guided) or materialized directly (trust).
+reviewed before execution (guided) or handed off directly (trust).
 
 - **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
-  work warrants a plan. A trivial single-concern change is **micro** tier — in
-  **guided** mode say that a plan is disproportionate, offer to state goal +
-  acceptance criteria + validation gate inline, and do that instead. In **trust**
-  mode the developer has already asked for a plan and there is nobody to answer:
-  **do not stop to ask.** Record the micro judgment and the inline alternative in
-  the plan README's Plan Variables (`Rigor: micro — a plan is arguably
-  disproportionate; inline alternative: …`) and materialize the plan anyway; the
-  developer sees the note and can discard it. Otherwise choose `standard` or
-  `deep` and record why (in the draft in guided mode; in the plan README in trust
-  mode). A borderline call is recorded, never asked.
+  work warrants a plan. A trivial single-concern change is **micro** tier and is
+  a first-class Lite plan: record a concise goal, gate and Final Review rather
+  than routing the developer out of DWP. Otherwise choose `standard` or
+  `deep` and record why in the plan README. A borderline call is recorded, never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
   task** and an **observable acceptance criterion**.
@@ -246,68 +284,158 @@ staged as a draft (guided) or materialized directly (trust).
   a planned Touched Surface and a non-empty, runnable gate. Fix gaps here, not
   after materialization.
 
-### Step 4 — Draft or Materialize (by mode)
+### Step 4 — Materialize (Lite first), then expand only if needed
 
-#### 4.1 Guided Mode — Refined Draft and Review
+#### 4.0 Lite-first materialization (the normal path — both modes)
 
-Show a **2-step** progress UI:
+Every ordinary create request lands here. There is **one plan identity and one
+folder** from proposal through completion: Lite and Full describe the *task
+representation*, not two different products. `create` never modifies product
+source and never calls execute.
 
+**Before writing:** resolve `dwp_dir` via `../shared/context.sh`. If
+`.dwp/plans/PLAN_{name}/` already exists, see *Error Handling — plan exists /
+partial materialization*.
+
+**Decide the representation before the second write.** Apply *Format selection*
+below to the Step 3 analysis, together with any explicit `lite`/`full`
+preference, and then branch — a task contract is authored **once**, never
+inline and then again as a file:
+
+| Mode | Chosen format | What to materialize |
+| --- | --- | --- |
+| guided | Lite | The Lite representation below. This is the reviewable proposal. |
+| guided | Full | The Lite representation below, as the compact proposal to review, recording that Full expansion is required before execution. Expanding on the developer's approval is Step 4.4 — that expansion **is** the approval action, not a rewrite of settled work. |
+| trust | Lite | The Lite representation below. |
+| trust | Full | **Skip to Step 4.4** for this same folder. Nobody reviews a trust plan, so writing the Lite representation on the way to Full would author every task twice and buy nothing. Write `plan_format: "full"` in the manifest and go. |
+
+**Write order for a Lite plan (resumable at any point):**
+
+1. **`manifest.json` (first write)** — immutable creation identity, written once
+   and never edited: `schema` =
+   `https://deepworkplan.com/schema/plan-manifest/v2.json`, `spec_version`
+   **"2.4.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
+   `created_by`, `task_count` (the creation count, Final Review included) and
+   **`plan_format`** (`"lite"`, or `"full"` when an explicit `full` preference or
+   the rubric already decided Full). Atomic (write-temp-then-rename); valid
+   against `../spec/schema/plan-manifest-v2.schema.json` — the schema is closed.
+   A later change of live task count **never** rewrites this file.
+2. **`README.md` skeleton (second write)** — everything in *Lite README anatomy*
+   below except the status line, which reads `Plan Status: materializing`.
+3. **`analysis_results/`** — the folder, plus `SKILLS_CANDIDATES.md` with the
+   two-line header. Write `PLAN_ANALYSIS.md` only when the Step 3 evidence
+   warrants a separate record; a small Lite plan does not need one, and an empty
+   analysis file is busywork, not rigor.
+4. **`PROMPTS.md`** — from `../examples/PROMPTS_TEMPLATE.md`, stripped of its
+   authoring scaffolding (see Step 4.4 item 4).
+5. **`PROGRESS.md`** — the bounded working index (`../spec/PLAN_STATE.md` §5.1).
+6. **`state.json`** — `schema` =
+   `https://deepworkplan.com/schema/plan-state/v2.json`, `plan`, `updated_at`,
+   `status: "pending"`, `completed_count: 0`, `task_count`, **`format`**
+   (`"lite"` — this branch only writes Lite; a Full plan's state is written by
+   Step 4.4), **`materialization`** (`"ready"` once every file above is on
+   disk), **`approval`** (`"pending"` in guided mode, `"pre_approved"` in trust —
+   the same value the README's `Approval` row shows), `promotion: null`, and one
+   `tasks[]` entry per task:
+   `{ "id": N, "locator": { "kind": "inline", "value": "#task-N" }, "title": …,
+   "status": "pending", "gates": [] }`. Atomic; valid against
+   `../spec/schema/plan-state-v2.schema.json` — closed schema, so evidence rides
+   in the gate `evidence` string, not in new fields.
+7. **Flip the README status (last write)** — replace `Plan Status: materializing`
+   with `Plan Status: 0/N completed`. Only now is the plan materialized.
+
+A folder whose `README.md` is missing or still says `materializing` is a
+**partial materialization**: `create` and `refine` complete or discard it;
+`execute` and `resume` never run it. That is a different thing from a finished
+Lite plan awaiting review — a complete proposal is not a corrupt plan.
+
+**Lite README anatomy.** One shared rules section, then compact anchored task
+records. Do not paste the ten-section task template into the README.
+
+```markdown
+# Plan: {Title}
+
+## 1. Goal            ## 2. Context            ## 3. Global Guidelines
+
+## Plan Variables
+| Variable | Value |
+| --- | --- |
+| Standard | DWP spec 2.4.0 |
+| Plan Format | Lite |
+| Materialization | ready |
+| Approval | pending            ← guided; `pre-approved (trust)` in trust mode |
+| Rigor | micro \| standard \| deep |
+| Pre-approved for unattended execution | no \| yes (trust) |
+
+## Format Decision
+Observed signals (task count, touched modules, risk/seams, reversibility,
+external coordination, validation cost, ambiguity) → recommendation + why.
+One concise record here; machine state is derived from it, never duplicated.
+
+## 4. Task List
+- [ ] Task 1: {title} — [#task-1](#task-1)
+- [ ] Task N: Final Review — [#task-N](#task-N)
+
+## 5. Execution Rules        ## 6. Skills & Agents Used
+## 7. Plan Status / Notes    → `Plan Status: 0/N completed`
+
+## Task 1 {#task-1}
+**Goal** · **Touched Surface** (planned surface, risk class, test mapping,
+selected gate and why) · **Acceptance Criteria** · **Validation** (a runnable
+command) · **Completion log** (status, skills disposition, gate record).
+
+## Task N: Final Review {#task-N}
+The same mandatory Final Review — security pass, final-state validation, skills
+reconciliation — kept concise and inline. Its evidence lands in
+`analysis_results/SECURITY_REVIEW.md`.
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Creating your plan...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[1/2] Drafting refined plan...
-```
+**Anchor rules.** Each `{#task-N}` occurs **exactly once**; IDs are contiguous
+`1..N`; the Task List checkbox line is the canonical index and the only thing
+that defines completion. Checkboxes inside fenced examples are **not** progress.
+A locator is `inline` (a README anchor) or `file` (one Full task file) — never a
+path with `..`, an absolute path, or a missing target.
 
-**Write the refined draft** — one file, directly (no raw draft first):
-- Resolve `dwp_dir` via `../shared/context.sh`; ensure `<dwp_dir>/drafts/` exists.
-- Compose a professional, complete plan prompt following
-  `../examples/CREATE_PLAN.md` from the Step 3 analysis: objective, context
-  (enriched with parallel research if `team-agents.md` ran), the tier and why,
-  well-formed tasks with their planned Touched Surface and gates, guidelines.
-  Expand every section with full detail and clarity in one pass.
-- Write **only**: `.dwp/drafts/PLAN_{name}_draft_refined.md`.
+**Lite is not ungated.** Every task keeps scoped acceptance criteria, a runnable
+validation gate, a completion log and a state entry. One bounded task plus the
+Final Review is a valid plan; never pad to reach a count.
 
-```
-[1/2] Drafting refined plan... ✓
-[2/2] Preparing for review...
-```
+**Format selection.** Choose Lite when the shared rules plus compact task records
+carry every requirement and gate. Choose Full when instruction detail,
+dependencies or contracts cannot fit a reviewable compact record — risk alone
+argues for *stronger gates*, not necessarily longer task prompts, and unresolved
+scope calls for discovery, not an automatic Full. Record the signals and the
+reason; this is auditable judgment, not a claim that every model decides alike.
+An explicit `full` wins. An explicit `lite` is honored unless a requirement or
+gate would be lost — then say exactly which one, and why Full is required.
 
-Present a summary (objective, tier, task count + list, location, constraints)
-and the path `→ .dwp/drafts/PLAN_{name}_draft_refined.md`, then offer:
-1. Looks good, create the final plan → Step 4.4.
-2. Make adjustments → ask what to change, **edit the refined draft in place**,
-   show the menu again.
-3. Show the full refined draft → display it, then re-show the menu.
-4. Stop here → completion message for the draft phase.
+**Then, by mode:**
 
-#### 4.2 Trust Mode — Direct Materialization
+- **Guided** — present the materialized Lite proposal, the recommendation and
+  the signals behind it, then offer: (1) retain Lite → Step 4.5; (2) expand to
+  Full → Step 4.4, writing task files for the same task IDs; (3) edit → adjust
+  and re-present; (4) stop. `Approval` stays `pending` until they choose. When
+  the recommendation is Full, say so plainly: the proposal is reviewable but the
+  plan is not executable as Lite until it is expanded.
+- **Trust** — the format was already chosen and materialized once, per the
+  branch table above. Record `Pre-approved for unattended execution: yes (trust)`
+  and `Approval: pre-approved (trust)`, then go to Step 4.5 and hand off with
+  `/dwp-execute PLAN_{name}`. Never invoke execute.
 
-No draft file. Show a **2-step** progress UI and go straight to Step 4.4:
+Promotion **after** creation is not this step: it is `/dwp-refine promote`
+(`../refine/SKILL.md` Step 5), which writes a recoverable marker first.
+`../spec/LITE_PLANS.md` is normative for representation, promotion and recovery.
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Creating your plan... (trust mode)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> Steps 4.1–4.3 were the refined-draft flows. They were removed in 2.4.0; the
+> numbering below is unchanged so existing cross-references keep resolving.
 
-[1/2] Analyzing requirements... ✓
-[2/2] Materializing plan...
-```
+#### 4.4 Create Final Plan (Full representation)
 
-The approved objective, context, tier, and task outline are captured in the plan
-README (§1, §2, §4), so nothing reviewable is lost. The README's Plan Variables
-record `Pre-approved for unattended execution: yes (trust)`.
-
-#### 4.3 From-Refined-Draft Mode
-
-- Validate the file exists in `.dwp/drafts/`. If not found, list available
-  refined drafts and ask the user to choose.
-- Read it; extract plan name, objective, context, tier, tasks, guidelines; run
-  Step 3.7 (requirements → tasks → gates check) against it.
-- Skip to Step 4.4.
-
-#### 4.4 Create Final Plan
+Reached from Step 4.0 when the format is Full — by the rubric, or by an explicit
+`full` preference, or by a guided promote choice. The folder, `manifest.json` and
+the analysis written in Step 4.0 are **reused**, not recreated: this step adds
+the task files and switches the README to the task-file representation for the
+same task IDs. It is never an entry point of its own.
 
 Follow `../guide/authoring.md` (§4–§5) and `../guide/structure.md` (§1–§2).
 
@@ -331,11 +459,14 @@ Create:
 
 1. **Folder + `manifest.json` (first write):** create `.dwp/plans/PLAN_{name}/`
    and immediately write `manifest.json` — plan identity: name, title, archetype,
-   rigor tier, `spec_version` **"2.3.0"**, `task_count` = the number of task files
-   this materialization will write (Final Review included), creating agent —
-   atomically (write-temp-then-rename), valid against
-   `../spec/schema/plan-manifest.schema.json` (closed schema), written once,
-   never edited after.
+   rigor tier, `spec_version` **"2.4.0"**, `plan_format` **"full"**, `task_count`
+   = the number of task files this materialization will write (Final Review
+   included), creating agent — atomically (write-temp-then-rename), valid against
+   `../spec/schema/plan-manifest-v2.schema.json` (closed schema), written once,
+   never edited after. When Step 4.0 already wrote the manifest, keep it: only a
+   manifest created with `plan_format: "lite"` that has **not** yet been
+   materialized may be written with `"full"` here. Plans created under 2.3.0 and
+   earlier keep their v1 schema URL and remain conformant.
 1b. **README skeleton (second write):** write `README.md` with everything in
    item 8 except the final status: the Task List names **every** intended task
    with its future filename and link, and the status line reads
@@ -415,12 +546,16 @@ Create:
    disposition`). No other placeholder files.
 7. **`state.json` (RECOMMENDED, `../spec/PLAN_STATE.md`; REQUIRED for unattended
    runs and for workspaces without git)** — the initial projection: every task
-   `pending`, empty gates, `task_count` equal to the manifest's. Atomically
-   (write-temp-then-rename); valid against `../spec/schema/plan-state.schema.json`
-   (no extra fields — the schema is closed). `manifest.json` was written in item 1
+   `pending`, empty gates, `task_count` equal to the manifest's, `format: "full"`,
+   `materialization: "ready"`, `approval` (`"pending"` guided / `"pre_approved"`
+   trust), `promotion: null`, and one `locator` per task —
+   `{ "kind": "file", "value": "N.task_….md" }`. Atomically
+   (write-temp-then-rename); valid against
+   `../spec/schema/plan-state-v2.schema.json` (no extra fields — the schema is
+   closed). Existing v1 plans keep `file` and their v1 schema URL. `manifest.json` was written in item 1
    and is not touched here.
 8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `**Standard:** DWP
-   spec 2.3.0`, the tier and why, and in trust mode `Pre-approved for unattended
+   spec 2.4.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
    execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
    Report request if the user made one); Task List with `[ ]` checkboxes + links
    (the Final Review last); Execution Rules; Skills & Agents Used; Plan Status /
@@ -442,9 +577,26 @@ available, the **accelerated generation** in [`team-agents.md`](team-agents.md).
 Neither branch changes the sequential path: every task must work sequentially,
 and the Final Review is always sequential.
 
-#### 4.5 Plan-Quality Check (both modes — before reporting success)
+#### 4.5 Plan-Quality Check (both modes and both formats — before reporting success)
 
-Verify, and fix before continuing:
+**For a Lite plan**, verify and fix before continuing:
+- **Requirements → tasks → gates** (Step 3.7) hold for the task records.
+- Task IDs are contiguous `1..N`; each `{#task-N}` anchor occurs exactly once;
+  every Task List link resolves to its anchor; the Final Review is task `N` and
+  the only final task.
+- Every task record has a Goal, a Touched Surface, Acceptance Criteria, a
+  runnable Validation gate and a completion-log placeholder. No task was padded
+  in to reach a count.
+- `manifest.json` validates against the v2 manifest schema with
+  `plan_format: "lite"`; `state.json` validates against the v2 state schema, its
+  `task_count` and `completed_count` agree with the records, every locator is
+  `inline` pointing at that task's anchor, and its `approval` matches the README's
+  `Approval` row.
+- The README carries the Format Decision, `Plan Format`, `Materialization` and
+  `Approval`, no longer says `materializing`, and no placeholder text remains.
+- **No file under `.dwp/drafts/` was written.**
+
+**For a Full plan**, verify and fix before continuing:
 - **Requirements → tasks → gates** (Step 3.7) hold for the materialized files.
 - Tasks are atomic, ordered, numbered `1..N` without gaps; the Final Review is
   task `N` and the only final task; every README link resolves.
@@ -462,7 +614,19 @@ Verify, and fix before continuing:
 
 ### Step 5 — Completion & Execute Option
 
-For a full plan, report success and the location
+For a **Lite** plan, report success and the location `.dwp/plans/PLAN_{name}/`,
+state the format and why it was chosen, and name the execute command. In guided
+mode the plan is still `Approval: pending` — say so, and that executing it is
+what approves its current scope. In trust mode state that it is ready and
+pre-approved for unattended execution. Then offer: (1) execute now → run the
+**Execute** sub-skill (`../execute/SKILL.md`); (2) review the README first, then
+ask again; (3) done for now → `/dwp-execute {name}` later (or
+`/dwp-execute {name} trust` to run to the end without questions); (4) promote to
+Full instead → `/dwp-refine promote {name}`. **Return control either way**:
+`create` finishes by handing off, never by starting the work — including in
+trust mode.
+
+For a **Full** plan, report success and the location
 `.dwp/plans/PLAN_{name}/` (in trust mode, state that it is pre-approved for
 unattended execution), then offer: (1) execute now → run the **Execute**
 sub-skill (`../execute/SKILL.md`); (2) review the README first, then ask again;
@@ -476,10 +640,6 @@ non-blocking):** after the plan is materialized and approved, send a **regular**
 model (`../addons/dailybot/SPEC.md` §5.1). One kickoff per plan; skip silently
 if Dailybot is absent, unauthenticated, or `.dailybot/disabled` exists. Never
 block on this.
-
-For `refined-draft-only` mode, report the single refined draft saved at
-`.dwp/drafts/PLAN_{name}_draft_refined.md` and the next step: run
-`/dwp-create from PLAN_{name}_draft_refined.md` to build the final plan.
 
 ### Step 6 — Execute Plan (Optional)
 
@@ -506,8 +666,6 @@ first `[ ]` task, execute sequentially, validate, commit per task, report.
   with neither a manifest nor a README is handled the same way with the intended
   count unknown.
 - **Name auto-converted:** show an informational notice (not an error).
-- **Refined draft not found (from-refined-draft):** list available refined drafts
-  in `.dwp/drafts/` and ask the user to choose.
 - **Insufficient tasks (<2):** in **guided** mode, ask the user to break the work
   down. In **trust** mode there is nobody to ask: if the work is genuinely one
   atomic change, that is the **micro** tier — record it per Step 3.1 (the Plan
@@ -521,9 +679,8 @@ first `[ ]` task, execute sequentially, validate, commit per task, report.
 ## Important Notes
 
 - **Git ignore:** everything under `.dwp/` is git-ignored.
-- **Single artifact:** the only draft file is `PLAN_{name}_draft_refined.md` in
-  `.dwp/drafts/` — there is no separate raw draft, and in trust mode there is no
-  draft at all.
+- **Single artifact:** the plan folder is the only thing `create` produces.
+  There is no draft file and no `.dwp/drafts/` directory in 2.4.0.
 - **One final task:** `{N}.task_final_review.md`. Never generate
   `task_skills_agents_discovery` or `task_executive_report` files for a new plan
   (plans from earlier versions that have them are executed as recorded —

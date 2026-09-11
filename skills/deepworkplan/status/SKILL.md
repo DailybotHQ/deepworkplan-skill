@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-status
-description: Report the status of a Deep Work Plan — completed tasks, what's left, current checkpoint, blockers and any Markdown/state/git inconsistency — from the compact state projection, without executing or modifying anything. Use when the developer asks for plan status or what remains.
+description: Report Lite or Full Deep Work Plan status — format, approval, readiness, progress, checkpoint, blockers and Markdown/state consistency — without modifying anything.
 version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -21,6 +21,7 @@ modifying anything**, and without loading the whole plan.
 - **Guide (essential — read for this flow):** none. Status is a read-only report; it does not load the methodology guide.
 
 ## Parameter Support
+
 - `/dwp-status {plan_name}` — check a specific plan.
 - `/dwp-status latest` — check the most recently modified plan.
 - `/dwp-status all` — check all plans.
@@ -28,6 +29,16 @@ modifying anything**, and without loading the whole plan.
 
 Normalize the `PLAN_` prefix; validate that single plans exist under
 `.dwp/plans/`. If not found, show available plans and ask the user to choose.
+
+## Lite-aware status
+
+For v2 plans report format, materialization, approval and promotion separately
+from execution progress. Read them from `state.json`; fall back to the README's
+`Approval` row when the field is absent, and to `pending` when neither is present. A ready pending-review Lite proposal is valid but not
+executable. Resolve inline task locators against unique README anchors and count
+only canonical task-index checkboxes, never fenced examples. Report a missing or
+duplicate anchor, pending approval, or promotion marker as a finding; do not
+repair it in this read-only flow.
 
 ## Trust boundary (write scope)
 

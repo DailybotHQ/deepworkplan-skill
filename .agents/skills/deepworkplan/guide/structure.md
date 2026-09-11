@@ -5,7 +5,7 @@
 
 ## 1. Top-Level Folder Structure
 
-All deep-work plan **outputs** (plans and drafts) live under a single gitignored
+All deep-work plan **outputs** live under a single gitignored
 `.dwp/` directory at the repository root. The methodology guide and example
 prompts ship **inside the DeepWorkPlan skill** (`skills/deepworkplan/guide/` and
 `skills/deepworkplan/examples/`), not under `.dwp/` — they are reference content,
@@ -13,8 +13,6 @@ not per-run output.
 
 ```text
 .dwp/                                          ← gitignored output root
-├─ drafts/                                      ← create-flow refined drafts workspace
-│   └─ PLAN_{plan_title}_draft_refined.md       ← single refined draft (see §1.2)
 └─ plans/                                        ← generated, per-plan folders
    └─ PLAN_{plan_title}/
       ├─ README.md                         ← plan overview, task index
@@ -27,11 +25,15 @@ not per-run output.
       │   ├─ SKILLS_CANDIDATES.md          ← task-local skills decisions (ledger, by stable ID)
       │   ├─ SECURITY_REVIEW.md            ← written by the Final Review (security pass + final-state validation)
       │   └─ EXECUTIVE_REPORT.md           ← OPTIONAL — generated only on request after completion
-      ├─ 1.task_{task_title}.md            ← task 1 (detailed, single-task focus)
-      ├─ 2.task_{task_title}.md            ← task 2
+      ├─ 1.task_{task_title}.md            ← task 1 — FULL plans only
+      ├─ 2.task_{task_title}.md            ← task 2 — FULL plans only
       ├─ ...
       └─ N.task_final_review.md            ← MANDATORY: the single final task
 ```
+
+> A **Lite** plan has the same folder minus the `N.task_*.md` files: its task
+> records live inline in `README.md` behind `{#task-N}` anchors, and the Final
+> Review is the last of them (`spec/LITE_PLANS.md`).
 
 > Plans created under earlier versions end with `N-2.task_security_review.md`,
 > `N-1.task_skills_agents_discovery.md` and `N.task_executive_report.md`; that
@@ -44,7 +46,7 @@ not per-run output.
 
 ### 1.1. Git ignore rule
 
-The `.dwp/` directory (containing `drafts/` and `plans/`) is **disposable** and
+The `.dwp/` directory (containing `plans/`) is **disposable** and
 should be git-ignored in its entirety.
 
 Add (or ensure) in `.gitignore`:
@@ -58,18 +60,30 @@ Everything under `.dwp/` is **temporary execution work**, not permanent
 repository content. The stable methodology documentation lives inside the
 DeepWorkPlan skill (`guide/`, `examples/`).
 
-### 1.2. Single-step refined draft (vs the legacy two-step)
+### 1.2. Lite-first plan materialization
 
-DeepWorkPlan v2 produces **one** reviewable draft artifact: the **refined
-draft**, written directly to `.dwp/drafts/PLAN_{name}_draft_refined.md`. There is
-**no** separate raw-draft file. This replaces the legacy two-step flow that first
-generated `PLAN_{name}_draft.md` and then refined it into
-`PLAN_{name}_draft_refined.md`. See `create/SKILL.md` for the create flow and
-`refine/SKILL.md` for editing the refined draft in place.
+New plans start as ready, executable **Lite** folders under `.dwp/plans/`. Lite keeps the normal README, manifest, state,
+prompts, progress and analysis folders, but stores small task records inline in
+the README. Guided creation asks whether to retain Lite or promote it to Full;
+trust creation makes that decision from the recommendation or an explicit
+boundary option. `lite` and `full` may be combined with `trust`/`auto` at either
+edge of the command context. `LITE_PLANS.md` is authoritative.
+
+### 1.3. Drafts were removed in 2.4.0
+
+There is no draft artifact and no `.dwp/drafts/` directory. Earlier versions
+staged a **refined draft** at `.dwp/drafts/PLAN_{name}_draft_refined.md` for
+review before materializing a plan; the Lite plan replaces it, and is already
+executable rather than merely reviewable. The `refined-draft`,
+`from-refined-draft` and `from` create parameters, and refine's draft workflow,
+are gone. A `.dwp/drafts/` folder left by an earlier version is inert — DWP
+neither reads nor writes it, and the developer may delete it.
 
 ---
 
-> **Mode-aware since spec 2.3.0.** Guided mode writes the refined draft above and materializes after approval. Materialization is resumable at any point: `manifest.json` first, then a README skeleton with the intended task list and `Plan Status: materializing`, then `analysis_results/PLAN_ANALYSIS.md`, then the task files; the status line is flipped to `0/N completed` as the last write (`spec/DWP_SPECIFICATION.md` §3). **Trust mode materializes `.dwp/plans/PLAN_{name}/` directly** — no draft file — while still running the requirements analysis and a plan-quality check; the approved outline lives in the plan README, and a plan created with `trust` is pre-approved for unattended execution (`spec/DWP_SPECIFICATION.md` §3). Explicit `refined-draft` / `from-refined-draft` requests still produce a draft in either mode.
+> **Lite-first since spec 2.4.0.** Guided and trust modes materialize a ready
+> Lite folder, run the same requirements analysis and quality check, then retain
+> Lite or promote safely to Full.
 
 ## 2. Naming Conventions
 
