@@ -333,9 +333,16 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 2.3.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 2.4.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
+
+  The version in that line is the **umbrella DWP standard** — the `Version` of
+  `DWP_SPECIFICATION.md` — not the version of this document or of any other
+  single spec document. Each spec document carries its own version and they
+  advance independently, so recording one of those would compare unrelated
+  scales: a conformance checker reads this line against the DWP standard it
+  implements and rejects a repository declaring one it does not support.
 - **Legacy versus declared.** A conformance checker **MUST** distinguish a
   repository onboarded under an earlier version (no §3.4 content, no declaration)
   from a repository that declares this version and lacks a **MUST**: the former

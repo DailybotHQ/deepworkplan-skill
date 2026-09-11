@@ -96,7 +96,7 @@ When this flow finishes, the target repo contains:
    escalation paths and fallback, plus the unit-first posture — so every future
    plan can select its gates instead of guessing (`../spec/DOCUMENTATION_STANDARD.md` §3.4).
 7. **A recorded standard and a first usable outcome** — the provenance line
-   `DWP standard: 2.3.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
+   `DWP standard: 2.4.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
    a `.dwp/onboard/REPORT.md` that names the verified command and mapping, the
    installed skill identity and version, the active capability limits (what
    could not be verified and why), and the next useful action.
@@ -162,7 +162,7 @@ Phase 0 consent; a decline is recorded as a declared exception).
    - **Existing and previously onboarded → harness upgrade.** `AGENTS.md`
      and/or `.agents/` already exist **and** the repository's guidance predates
      the installed skill's requirements: no `DWP standard:` provenance line, a
-     provenance line older than the standard this skill implements (2.3.0), or a
+     provenance line older than the standard this skill implements (2.4.0), or a
      `docs/TESTING_GUIDE.md` without the scoped-invocation / mapping / posture
      content of `../spec/DOCUMENTATION_STANDARD.md` §3.4. In this case run the
      **targeted upgrade** (§3.5) instead of a full re-onboarding: recon only what
@@ -426,7 +426,7 @@ context. It MUST serve three roles:
    (`full` / `scoped`). **Mark** any command that
    runs only in CI or only inside a container (e.g. "must run **inside** the
    Docker container"), and any scoped pattern that is proposed/unverified.
-4. **Provenance** — one line, `DWP standard: 2.3.0 (onboarded YYYY-MM-DD;
+4. **Provenance** — one line, `DWP standard: 2.4.0 (onboarded YYYY-MM-DD;
    skill x.y.z)` (on upgrade: `…; upgraded YYYY-MM-DD; skill x.y.z`), so a
    checker and a future agent can tell which standard the repository declares
    (`../spec/DOCUMENTATION_STANDARD.md` §3.5).
