@@ -38,3 +38,26 @@ PY
   run grep -q 'never route it to an' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
   [ "$status" -eq 0 ]
 }
+
+@test "create materializes Lite with the v2 schemas, not a draft" {
+  # The Lite-first path must name the concrete v2 schemas it validates against;
+  # prose alone let an agent fall through to the v1 Full writer.
+  run grep -q 'spec/schema/plan-manifest-v2.schema.json' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  [ "$status" -eq 0 ]
+  run grep -q 'spec/schema/plan-state-v2.schema.json' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  [ "$status" -eq 0 ]
+  run grep -q '"kind": "inline", "value": "#task-N"' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  [ "$status" -eq 0 ]
+  # No shipped reader may still promise a refined draft as the default output.
+  run grep -q 'stage the refined draft for review' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  [ "$status" -ne 0 ]
+  run grep -q 'Creates the \*\*refined draft\*\*' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  [ "$status" -ne 0 ]
+}
+
+@test "the generated dwp-create wrapper advertises the Lite-first flow" {
+  run grep -q 'single-step refined draft' "$REPO_ROOT/skills/deepworkplan/onboard/command-templates/dwp-create.md"
+  [ "$status" -ne 0 ]
+  run grep -q 'Lite' "$REPO_ROOT/skills/deepworkplan/onboard/command-templates/dwp-create.md"
+  [ "$status" -eq 0 ]
+}

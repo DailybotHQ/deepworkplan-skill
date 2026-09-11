@@ -13,8 +13,8 @@ not per-run output.
 
 ```text
 .dwp/                                          ← gitignored output root
-├─ drafts/                                      ← create-flow refined drafts workspace
-│   └─ PLAN_{plan_title}_draft_refined.md       ← single refined draft (see §1.2)
+├─ drafts/                                      ← legacy refined-draft workspace (compat only, see §1.3)
+│   └─ PLAN_{plan_title}_draft_refined.md       ← written only on an explicit `refined-draft` request
 └─ plans/                                        ← generated, per-plan folders
    └─ PLAN_{plan_title}/
       ├─ README.md                         ← plan overview, task index
