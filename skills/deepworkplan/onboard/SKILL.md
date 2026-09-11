@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-onboard
 description: Make any repository AI-first — reason (never template) an adapted AGENTS.md, docs/, per-module docs and .agents/ kit from the real repo, discover and verify its full and scoped validation commands and source-to-test mapping, install the DeepWorkPlan skill, and, for a repository onboarded under an earlier version, perform a targeted, non-destructive, idempotent harness upgrade. Use when the developer wants to onboard or upgrade a repository for AI agents.
-version: "4.0.0"
+version: "4.0.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
