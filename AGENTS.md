@@ -401,6 +401,24 @@ pushes. The `[skip release]` marker prevents an infinite auto-release loop.
   via `scripts/refresh-dogfood-skill.sh` (or an explicit reviewed edit), never
   via release dogfood.
 
+**Pinned install commands are NOT auto-refreshed — and are CI-gated.**
+Release dogfood updates the *vendored copy* under `.agents/skills/`. It does
+**not** rewrite the install commands the shipped pack **teaches** under
+`skills/deepworkplan/`, because those live in prose
+(`npx --yes skills add DailybotHQ/ai-diff-reviewer@vX.Y.Z …`). The two drifted
+apart once — the pack taught `@v2.0.0` while the vendored addon was already
+`2.0.1`, so every repository onboarded from it installed a stale reviewer.
+
+The invariant is now a CI gate: **every exact `ai-diff-reviewer@vX.Y.Z` pin in
+`skills/deepworkplan/` must equal the `version:` of the vendored
+`.agents/skills/ai-diff-reviewer/SKILL.md`** (`tests/agents-dogfood.bats`). When
+a release moves the vendored addon, update the documented pins in the same PR —
+`grep -rn 'ai-diff-reviewer@v[0-9]' skills/` finds them all.
+
+`DailybotHQ/ai-diff-reviewer@v2` (no patch) is a different thing: the **GitHub
+Action's floating major tag**, deliberately left floating so patch fixes flow
+automatically. The gate ignores it. Do not pin it to a patch.
+
 ## Local AI Diff Reviewer
 
 The vendored `ai-diff-reviewer` skill remains available for local reviews

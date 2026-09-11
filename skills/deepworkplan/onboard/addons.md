@@ -20,7 +20,7 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
    > `.github/ai-pr-reviewer/extension.md`), a `.review/.skip-bootstrap`
    marker, and any existing `pr-review.yml`. Fill gaps only.
 2. **Install the vendored skill, pinned:**
-   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.1 --skill ai-diff-reviewer -y`
    (both `--yes` and `-y` are required in non-TTY; never an unpinned ref, never
    a remote installer piped to a shell). Assert the vendored `SKILL.md` version
    equals the requested tag.

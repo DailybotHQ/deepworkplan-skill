@@ -254,7 +254,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.1 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
