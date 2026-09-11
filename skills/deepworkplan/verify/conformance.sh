@@ -108,7 +108,7 @@ except Exception:
 }
 
 # The newest DWP spec this checker implements (DWP_SPECIFICATION.md "Version").
-SUPPORTED_SPEC="2.3.0"
+SUPPORTED_SPEC="2.4.0"
 
 version_le() {
   # $1 <= $2 for dotted numeric versions (bash 3.2 safe; no arrays).
@@ -355,6 +355,14 @@ check_plan() {
     pass "analysis_results/"
   else
     fail "analysis_results/"
+  fi
+
+  # Lite v2 plans use inline task anchors instead of task files. They are valid
+  # only when state declares Lite and materialization is ready; unresolved
+  # promotion remains a recovery boundary.
+  if [ -f "$plan_dir/state.json" ] && [ "$(json_str "$plan_dir/state.json" format)" = "lite" ]; then
+    check_lite_plan "$plan_dir"
+    return 0
   fi
 
   # ---- task inventory: count, numeric ids, uniqueness, contiguity -------------
@@ -621,6 +629,51 @@ check_plan() {
       fail "state.json (REQUIRED in a workspace without git, PLAN_STATE.md §2.1)"
     fi
   fi
+}
+
+check_lite_plan() {
+  local plan_dir="$1" problems
+  if [ "$(json_str "$plan_dir/state.json" materialization)" != "ready" ]; then
+    fail "Lite plan materialization is not ready — complete or recover it with create/refine before execution"
+    return 0
+  fi
+  if grep -q '"promotion"[[:space:]]*:[[:space:]]*{' "$plan_dir/state.json"; then
+    fail "Lite plan has an unresolved promotion marker — recover it with refine before execution"
+    return 0
+  fi
+  problems="$(python3 - "$plan_dir" <<'PYEOF'
+import json, re, sys
+p = sys.argv[1]
+state = json.load(open(p + '/state.json'))
+readme = open(p + '/README.md').read()
+tasks = state.get('tasks', [])
+if not tasks:
+    print('Lite state has no tasks')
+ids = [t.get('id') for t in tasks]
+if sorted(ids) != list(range(1, len(tasks) + 1)):
+    print('Lite task IDs are not contiguous')
+for task in tasks:
+    locator = task.get('locator', {})
+    if locator.get('kind') != 'inline' or locator.get('value') != '#task-' + str(task.get('id')):
+        print('Lite task has invalid inline locator: ' + str(task.get('id')))
+    if readme.count('{#task-' + str(task.get('id')) + '}') != 1:
+        print('Lite task anchor is missing or duplicated: ' + str(task.get('id')))
+    for heading in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
+        pattern = r'(?s){#task-' + str(task.get('id')) + r'}.*?(?=\n## |\Z)'
+        section = re.search(pattern, readme)
+        if not section or heading.lower() not in section.group(0).lower():
+            print('Lite task lacks ' + heading + ': ' + str(task.get('id')))
+if 'Final Review' not in readme:
+    print('Lite plan lacks Final Review')
+PYEOF
+)"
+  if [ -z "$problems" ]; then
+    pass "Lite task anchors, records and Final Review are valid"
+  else
+    while IFS= read -r problem; do fail "$problem"; done <<< "$problems"
+  fi
+  check_state_desync "$plan_dir"
+  pass "Lite plan uses inline task representation"
 }
 
 check_state_desync() {
