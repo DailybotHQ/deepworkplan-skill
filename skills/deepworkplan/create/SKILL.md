@@ -297,7 +297,19 @@ source and never calls execute.
 `.dwp/plans/PLAN_{name}/` already exists, see *Error Handling — plan exists /
 partial materialization*.
 
-**Write order (resumable at any point):**
+**Decide the representation before the second write.** Apply *Format selection*
+below to the Step 3 analysis, together with any explicit `lite`/`full`
+preference, and then branch — a task contract is authored **once**, never
+inline and then again as a file:
+
+| Mode | Chosen format | What to materialize |
+| --- | --- | --- |
+| guided | Lite | The Lite representation below. This is the reviewable proposal. |
+| guided | Full | The Lite representation below, as the compact proposal to review, recording that Full expansion is required before execution. Expanding on the developer's approval is Step 4.4 — that expansion **is** the approval action, not a rewrite of settled work. |
+| trust | Lite | The Lite representation below. |
+| trust | Full | **Skip to Step 4.4** for this same folder. Nobody reviews a trust plan, so writing the Lite representation on the way to Full would author every task twice and buy nothing. Write `plan_format: "full"` in the manifest and go. |
+
+**Write order for a Lite plan (resumable at any point):**
 
 1. **`manifest.json` (first write)** — immutable creation identity, written once
    and never edited: `schema` =
@@ -320,7 +332,8 @@ partial materialization*.
 6. **`state.json`** — `schema` =
    `https://deepworkplan.com/schema/plan-state/v2.json`, `plan`, `updated_at`,
    `status: "pending"`, `completed_count: 0`, `task_count`, **`format`**
-   (`"lite"`), **`materialization`** (`"ready"` once every file above is on
+   (`"lite"` — this branch only writes Lite; a Full plan's state is written by
+   Step 4.4), **`materialization`** (`"ready"` once every file above is on
    disk), **`approval`** (`"pending"` in guided mode, `"pre_approved"` in trust —
    the same value the README's `Approval` row shows), `promotion: null`, and one
    `tasks[]` entry per task:
@@ -398,15 +411,16 @@ gate would be lost — then say exactly which one, and why Full is required.
 
 **Then, by mode:**
 
-- **Guided** — present the materialized Lite plan, the recommendation and the
-  signals behind it, then offer: (1) retain Lite → Step 4.5; (2) promote to Full
-  → Step 4.4, writing task files for the same task IDs; (3) edit → adjust and
-  re-present; (4) stop. `Approval` stays `pending` until they choose.
-- **Trust** — apply the rubric or the explicit preference without asking. If the
-  result is Full, continue into Step 4.4 for the same folder. Record
-  `Pre-approved for unattended execution: yes (trust)` and
-  `Approval: pre-approved (trust)`, then go to Step 4.5 and hand off with
-  `/dwp-execute PLAN_{name}`.
+- **Guided** — present the materialized Lite proposal, the recommendation and
+  the signals behind it, then offer: (1) retain Lite → Step 4.5; (2) expand to
+  Full → Step 4.4, writing task files for the same task IDs; (3) edit → adjust
+  and re-present; (4) stop. `Approval` stays `pending` until they choose. When
+  the recommendation is Full, say so plainly: the proposal is reviewable but the
+  plan is not executable as Lite until it is expanded.
+- **Trust** — the format was already chosen and materialized once, per the
+  branch table above. Record `Pre-approved for unattended execution: yes (trust)`
+  and `Approval: pre-approved (trust)`, then go to Step 4.5 and hand off with
+  `/dwp-execute PLAN_{name}`. Never invoke execute.
 
 Promotion **after** creation is not this step: it is `/dwp-refine promote`
 (`../refine/SKILL.md` Step 5), which writes a recoverable marker first.

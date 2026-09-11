@@ -650,7 +650,7 @@ check_plan() {
 }
 
 check_lite_plan() {
-  local plan_dir="$1" problems
+  local plan_dir="$1" problems lite_materialization
   if ! json_valid "$plan_dir/state.json"; then
     fail "Lite state.json parses"
     return 0
@@ -674,12 +674,15 @@ check_lite_plan() {
     check_state_desync "$plan_dir"
     return 0
   fi
-  if [ "$(json_str "$plan_dir/state.json" materialization)" != "ready" ]; then
-    fail "Lite plan materialization is not ready — complete or recover it with create/refine before execution"
+  # Order matters: a promoting plan is also "not ready", but it has its own
+  # recovery path. Check the promotion boundary first so the finding names it.
+  lite_materialization="$(json_str "$plan_dir/state.json" materialization)"
+  if [ "$lite_materialization" = "promoting" ] || grep -q '"promotion"[[:space:]]*:[[:space:]]*{' "$plan_dir/state.json"; then
+    fail "Lite plan has an unresolved promotion marker — finish it with '/dwp-refine promote' before execution; execute and resume must not run a mixed representation"
     return 0
   fi
-  if grep -q '"promotion"[[:space:]]*:[[:space:]]*{' "$plan_dir/state.json"; then
-    fail "Lite plan has an unresolved promotion marker — recover it with refine before execution"
+  if [ "$lite_materialization" != "ready" ]; then
+    fail "Lite plan materialization is not ready — complete or discard this partial materialization with create/refine before execution"
     return 0
   fi
   problems="$(python3 - "$plan_dir" <<'PYEOF'

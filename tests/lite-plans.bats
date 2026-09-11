@@ -120,6 +120,19 @@ run_mutant() { run env DWP_DIR="$MUT" bash "$REPO_ROOT/skills/deepworkplan/verif
 
 @test "an unresolved promotion marker is rejected as a recovery boundary" {
   mutant_setup
+  # The canonical interrupted promotion: BOTH the marker and materialization
+  # move. It must name the promotion recovery path, not the generic "not ready".
+  state_patch 'd["promotion"]={"from":"lite","to":"full","phase":"tasks_written"}; d["materialization"]="promoting"'
+  run_mutant
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"unresolved promotion marker"* ]]
+  [[ "$output" == *"/dwp-refine promote"* ]]
+  [[ "$output" != *"materialization is not ready"* ]]
+  mutant_teardown
+}
+
+@test "a promotion marker left behind without the phase flag is still caught" {
+  mutant_setup
   state_patch 'd["promotion"]={"from":"lite","to":"full","phase":"tasks_written"}'
   run_mutant
   [ "$status" -ne 0 ]

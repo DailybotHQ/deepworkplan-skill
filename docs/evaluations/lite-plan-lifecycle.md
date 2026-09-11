@@ -41,30 +41,69 @@ One defect was found by this suite rather than by review: the shared
 fenced Markdown example in any plan README — Lite, Full or legacy — was reported
 as a false desync. It is fixed and covered.
 
-## Behavioral boundary — an explicit acceptance gap
+## Behavioral track — five scenarios actually run
 
-These checks prove **representation and guardrails**. They do **not** prove that
-an agent harness makes good Lite-versus-Full recommendations, nor that ordinary
-language routes to DWP.
+| Field | Value |
+| --- | --- |
+| Harness | Claude Code |
+| Model | Claude Opus 5 (1M context) |
+| Fixture | Isolated throwaway git repo: a small Python service with a real `AGENTS.md` Quick Commands block (`pytest`, `compileall`), one pre-existing passing test, and the pack installed at `.agents/skills/deepworkplan/` |
+| Oracle | `verify/conformance.sh --plan` on every artifact, plus the repo's own gates |
+| Independence | **Low.** The runs were driven by the same session that authored the instructions. They prove the flow is executable and self-consistent; they are not an independent reproduction. |
 
-The following scenarios are specified in the design but **have not been run in an
-agent harness at this revision**, and are therefore recorded as an open gap, not
-as a pass:
+| # | Scenario | Result |
+| --- | --- | --- |
+| B1 | `/dwp-create <small context>` (guided) | Lite plan materialized, `Approval: pending`, CONFORMANT with the proposal advisory. Six files, no task files, **nothing written under `.dwp/drafts/`**, and `git status` clean — creation touched no source. |
+| B2 | `/dwp-create <small context> trust` | Lite plan, `approval: pre_approved`, CONFORMANT. Returned an execute command and did **not** execute; `git status` clean. |
+| B3 | `/dwp-create full trust <large context>` | Full plan (4 tasks) materialized directly, CONFORMANT. Exercised the v2 Full path with `kind: file` locators end to end for the first time. |
+| B4 | `/dwp-refine promote` on B1 | Marker → task files → authoritative switch → marker cleared last. Task IDs, acceptance criteria and gates carried over verbatim; `manifest.json` untouched (`plan_format` stays `lite` — it records the *creation* format); CONFORMANT after. While the marker was set, conformance refused the plan. |
+| B5 | Execute B2's Task 1, interrupt, resume in a fresh session | Task 1 implemented against real source, gate passed and recorded; interruption left a coherent checkpoint. Resume identified Task 2 from the README index, the state locator and the checkpoint alone — no conversation history, no redo of Task 1, gate evidence preserved. The inline Final Review then closed the plan at 2/2, CONFORMANT. |
 
-- ordinary-language small planning discovery (positive routing), including
-  non-English phrasing;
-- direct-action requests staying direct (negative routing);
-- guided retain-after-review, and guided edit-then-promote;
-- trust handoff with zero source writes;
-- large trust Full handoff;
-- interrupted promotion recovery driven by an agent rather than by a fixture;
-- fresh-session Lite continuation through the Final Review.
+### Two defects the trials found that the test suite had not
 
-No Lite-versus-Full efficiency comparison (artifact count, instruction bytes) was
-measured here either. Nothing in this record may be cited as a token, cost or
-latency saving.
+1. **Double authoring on the `full` path.** Step 4.0's write order produced a
+   Lite README and `state.json` with `format: "lite"` unconditionally, and only
+   *then* branched to Step 4.4 — so `/dwp-create full trust` authored every task
+   contract twice, once inline and once as a file, and wrote a state that
+   contradicted its own manifest. Step 4.0 now decides the representation before
+   the second write and branches; a trust Full plan never writes the Lite
+   representation. This is the duplication the design requirements told the
+   regression task to look for.
+2. **Interrupted promotion got the wrong recovery message.** `check_lite_plan`
+   tested `materialization != "ready"` before the promotion marker, so a real
+   interrupted promotion — which sets *both* — always hit the generic
+   "not ready … recover it with create/refine" and the dedicated promotion
+   branch was unreachable. The existing test passed only because its mutant set
+   the marker while leaving `materialization: ready`, an inconsistent state. The
+   guards are reordered, and the test now asserts the canonical case.
 
-A behavior-tested claim requires a fresh agent session, an isolated repository,
-and the replay evidence protocol in [`../EVALUATION.md`](../EVALUATION.md). Until
-such a replay is recorded, Lite recommendation quality and planning-intent
-routing are reported as **structurally tested**, not behavior-tested.
+### Measured artifact cost, same fixture
+
+| Plan | Format | Files | Total | Task-contract bytes |
+| --- | --- | ---: | ---: | ---: |
+| B1 (small) | Lite | 6 | 6,347 B | 2,032 B |
+| B2 (small) | Lite | 6 | 5,264 B | 1,637 B |
+| B3 (large) | Full | 11 | 12,464 B | 6,208 B |
+
+Lite and Full here describe *different work*, so this is not a like-for-like
+comparison and no efficiency claim follows from it. What it does show is that a
+small Lite plan carries a complete gated contract in ~1.6–2.0 KB with no
+per-task files.
+
+## Still not covered
+
+These remain unexercised and are recorded as open gaps, not passes:
+
+- **Natural-language routing (R11).** Every trial above was driven by an explicit
+  `/dwp-create`. Whether "plan this small fix" activates DWP, whether a Spanish
+  phrasing does, and whether "just fix this directly" correctly stays out of DWP
+  were **not** tested. The routing corpus remains unrun.
+- **Recommendation quality (R09).** B1–B3 confirm that a *chosen* format
+  materializes correctly. They do not show that the rubric picks well on
+  borderline work, and a single session cannot establish that.
+- **Cross-harness reproduction.** One harness, one model, low independence.
+- **Guided edit-then-promote**, as distinct from the direct promotion in B4.
+
+A cross-harness claim requires the replay evidence protocol in
+[`../EVALUATION.md`](../EVALUATION.md). Lite recommendation quality and
+planning-intent routing stay reported as **not behavior-tested**.
