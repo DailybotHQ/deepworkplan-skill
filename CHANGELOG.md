@@ -9,6 +9,17 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [4.0.2] — 2026-09-11
+
+### Changes
+
+- Merge pull request #39 from DailybotHQ/fix/v4-lifecycle-contracts
+- docs(readme): document the verify sub-skill and the methodology it rests on
+- chore(dogfood): resync the vendored copy to 4.0.1 after merging main
+- Merge remote-tracking branch 'origin/main' into fix/v4-lifecycle-contracts
+- fix(addon): repin the documented AI Diff Reviewer install to v2.0.1 and gate it
+
+
 ## [4.0.1] — 2026-09-11
 
 ### Changes
