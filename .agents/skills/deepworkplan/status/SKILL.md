@@ -33,7 +33,8 @@ Normalize the `PLAN_` prefix; validate that single plans exist under
 ## Lite-aware status
 
 For v2 plans report format, materialization, approval and promotion separately
-from execution progress. A ready pending-review Lite proposal is valid but not
+from execution progress. Read them from `state.json`; fall back to the README's
+`Approval` row when the field is absent, and to `pending` when neither is present. A ready pending-review Lite proposal is valid but not
 executable. Resolve inline task locators against unique README anchors and count
 only canonical task-index checkboxes, never fenced examples. Report a missing or
 duplicate anchor, pending approval, or promotion marker as a finding; do not

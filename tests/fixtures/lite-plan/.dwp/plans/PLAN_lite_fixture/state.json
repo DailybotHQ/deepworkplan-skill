@@ -7,9 +7,28 @@
   "task_count": 2,
   "format": "lite",
   "materialization": "ready",
+  "approval": "approved",
   "promotion": null,
   "tasks": [
-    {"id": 1, "locator": {"kind": "inline", "value": "#task-1"}, "title": "Update fixture", "status": "pending", "gates": []},
-    {"id": 2, "locator": {"kind": "inline", "value": "#task-2"}, "title": "Final Review", "status": "pending", "gates": []}
+    {
+      "id": 1,
+      "locator": {
+        "kind": "inline",
+        "value": "#task-1"
+      },
+      "title": "Update fixture",
+      "status": "pending",
+      "gates": []
+    },
+    {
+      "id": 2,
+      "locator": {
+        "kind": "inline",
+        "value": "#task-2"
+      },
+      "title": "Final Review",
+      "status": "pending",
+      "gates": []
+    }
   ]
 }

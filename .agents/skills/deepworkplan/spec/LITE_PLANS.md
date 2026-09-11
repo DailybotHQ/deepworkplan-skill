@@ -49,6 +49,10 @@ and resume stop while a marker remains. Unchanged task IDs and evidence persist;
 new scope follows refine and invalidates affected evidence. Full-to-Lite is not
 automatic. v1 Full and legacy plans retain their recorded shape. v1 schemas stay
 closed; Lite uses v2 schema URLs with typed inline/file locators. Creation format
-lives in the v2 manifest; mutable format, readiness, approval and promotion live
-in README/state. Existing draft commands are compatibility aliases; normal create
+lives in the immutable v2 manifest. Mutable format, materialization, approval and
+promotion live in `state.json`, which is the machine-readable authority; the
+README carries the same facts in human-readable form and wins on task-completion
+desync. `approval` is optional in the v2 state schema so that a plan written
+before it was recorded still validates: when it is absent, treat the README's
+`Approval` row as the value, and `pending` when neither is present. Existing draft commands are compatibility aliases; normal create
 writes no draft.

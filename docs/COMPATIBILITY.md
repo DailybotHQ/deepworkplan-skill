@@ -103,9 +103,12 @@ is executing tools and reading/writing the repository.
 
 The Lite/Full lifecycle is **structurally tested** by `tests/lite-plans.bats` and
 the schema-contract checker: a ready Lite plan with inline task locators passes
-conformance, unsafe locators fail, and legacy v1 plans retain their v1 schema
-path. This is not a claim that every listed agent has behavior-tested Lite
-creation. The portable contract is Markdown plus JSON and shell validation, so
+conformance; interrupted materialization, unresolved promotion, duplicate or
+missing anchors, gate-less tasks, false counts and unsafe locators all fail; and
+legacy v1 plans retain their v1 schema path. This is **not** a claim that any
+listed agent has behavior-tested Lite creation — planning-intent routing and
+recommendation quality remain an explicit open gap, recorded in
+[the lifecycle evaluation](evaluations/lite-plan-lifecycle.md). The portable contract is Markdown plus JSON and shell validation, so
 agents that can read and write their workspace can follow it; behavior evidence
 continues to be recorded per harness above.
 

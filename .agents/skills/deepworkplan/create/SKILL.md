@@ -329,7 +329,9 @@ partial materialization*.
    `https://deepworkplan.com/schema/plan-state/v2.json`, `plan`, `updated_at`,
    `status: "pending"`, `completed_count: 0`, `task_count`, **`format`**
    (`"lite"`), **`materialization`** (`"ready"` once every file above is on
-   disk), `promotion: null`, and one `tasks[]` entry per task:
+   disk), **`approval`** (`"pending"` in guided mode, `"pre_approved"` in trust —
+   the same value the README's `Approval` row shows), `promotion: null`, and one
+   `tasks[]` entry per task:
    `{ "id": N, "locator": { "kind": "inline", "value": "#task-N" }, "title": …,
    "status": "pending", "gates": [] }`. Atomic; valid against
    `../spec/schema/plan-state-v2.schema.json` — closed schema, so evidence rides
@@ -597,7 +599,8 @@ Create:
 7. **`state.json` (RECOMMENDED, `../spec/PLAN_STATE.md`; REQUIRED for unattended
    runs and for workspaces without git)** — the initial projection: every task
    `pending`, empty gates, `task_count` equal to the manifest's, `format: "full"`,
-   `materialization: "ready"`, `promotion: null`, and one `locator` per task —
+   `materialization: "ready"`, `approval` (`"pending"` guided / `"pre_approved"`
+   trust), `promotion: null`, and one `locator` per task —
    `{ "kind": "file", "value": "N.task_….md" }`. Atomically
    (write-temp-then-rename); valid against
    `../spec/schema/plan-state-v2.schema.json` (no extra fields — the schema is
@@ -638,8 +641,9 @@ and the Final Review is always sequential.
   in to reach a count.
 - `manifest.json` validates against the v2 manifest schema with
   `plan_format: "lite"`; `state.json` validates against the v2 state schema, its
-  `task_count` and `completed_count` agree with the records, and every locator is
-  `inline` pointing at that task's anchor.
+  `task_count` and `completed_count` agree with the records, every locator is
+  `inline` pointing at that task's anchor, and its `approval` matches the README's
+  `Approval` row.
 - The README carries the Format Decision, `Plan Format`, `Materialization` and
   `Approval`, no longer says `materializing`, and no placeholder text remains.
 - **No file under `.dwp/drafts/` was written.**

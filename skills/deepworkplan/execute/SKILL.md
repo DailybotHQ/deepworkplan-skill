@@ -54,9 +54,14 @@ A Lite plan is valid without task files. Its canonical README task index and
 anchored `#task-N` records are the source of truth; completion logs and state
 are evidence, not competing task status. Ignore fenced example checkboxes.
 
-Before execution, read `Materialization` and `Approval`. Refuse `materializing`,
-`promoting` or approval `pending` plans. A ready Lite plan begins only after an
-explicit execute request, even if it was created with trust. Read the first
+Before execution, read `Materialization` and `Approval`. Refuse `materializing`
+and `promoting` plans — those are recovery boundaries, not proposals. Approval is
+a separate axis: a `ready` plan whose approval is still `pending` is a valid
+proposal, and **an explicit execute request for it approves its current scope** —
+record `Approval: approved` in the README and state before the first task, then
+proceed. What is never allowed is starting a proposal that nobody asked for: a
+plan created with trust is `pre_approved` but still begins only on an explicit
+execute request, and `create` never calls execute itself. Read the first
 unchecked anchored task, perform its gate, update its compact log, then README,
 PROGRESS and state in the usual safe order. The inline Final Review remains last
 and performs the same security, final validation and skills reconciliation.

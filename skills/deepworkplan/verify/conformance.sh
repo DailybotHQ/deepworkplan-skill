@@ -93,6 +93,22 @@ json_valid() {
   fi
 }
 
+plan_format_of() {
+  # $1 = state.json path. Prints the declared plan format, or nothing.
+  # Dispatch must survive without python3: misreading a Lite plan as Full would
+  # report a healthy plan as broken, so fall back to a literal grep.
+  local declared
+  declared="$(json_str "$1" format)"
+  if [ -z "$declared" ] && [ -f "$1" ]; then
+    if grep -qE '"format"[[:space:]]*:[[:space:]]*"lite"' "$1"; then
+      declared="lite"
+    elif grep -qE '"format"[[:space:]]*:[[:space:]]*"full"' "$1"; then
+      declared="full"
+    fi
+  fi
+  printf '%s' "$declared"
+}
+
 json_str() {
   # $1 = file, $2 = top-level key. Prints the string value, or nothing.
   if command -v python3 >/dev/null 2>&1; then
@@ -360,7 +376,7 @@ check_plan() {
   # Lite v2 plans use inline task anchors instead of task files. They are valid
   # only when state declares Lite and materialization is ready; unresolved
   # promotion remains a recovery boundary.
-  if [ -f "$plan_dir/state.json" ] && [ "$(json_str "$plan_dir/state.json" format)" = "lite" ]; then
+  if [ -f "$plan_dir/state.json" ] && [ "$(plan_format_of "$plan_dir/state.json")" = "lite" ]; then
     check_lite_plan "$plan_dir"
     return 0
   fi
@@ -641,6 +657,21 @@ check_lite_plan() {
     fail "Lite manifest.json present and parses"
     return 0
   fi
+  # A Lite plan keeps its task records in the README, so a missing README is a
+  # partial materialization — report it instead of letting the parser below die
+  # on the open() and abort the whole run.
+  if [ ! -f "$plan_dir/README.md" ]; then
+    fail "Lite plan has no README.md — its task records live there; complete or discard this partial materialization with create/refine"
+    return 0
+  fi
+  # Every other JSON-dependent check in this script degrades when python3 is
+  # absent rather than blocking. Do the same here: without it the structural
+  # checks cannot run, but a healthy plan must not be reported as broken.
+  if ! command -v python3 >/dev/null 2>&1; then
+    warn "Lite task-record validation skipped (python3 unavailable)"
+    check_state_desync "$plan_dir"
+    return 0
+  fi
   if [ "$(json_str "$plan_dir/state.json" materialization)" != "ready" ]; then
     fail "Lite plan materialization is not ready — complete or recover it with create/refine before execution"
     return 0
@@ -710,13 +741,49 @@ PYEOF
   fi
   check_state_desync "$plan_dir"
   pass "Lite plan uses inline task representation"
+
+  # Approval is a separate axis from structural validity: a ready Lite plan that
+  # nobody has approved yet is a valid proposal, not a defect. Report it so the
+  # reader knows why execute would not start it on its own.
+  case "$(json_str "$plan_dir/state.json" approval)" in
+    approved|pre_approved) pass "Lite plan is approved for execution" ;;
+    pending|"")            warn "Lite plan is a valid proposal awaiting approval — an explicit execute request approves its current scope" ;;
+    *)                     fail "Lite plan has an unknown approval value" ;;
+  esac
 }
 
 check_state_desync() {
   # Markdown wins: compare README [x] count against state.json completed_count.
   local plan_dir="$1"
   local md_done state_done
-  md_done="$(grep -cE '^\s*- \[x\]' "$plan_dir/README.md" 2>/dev/null || true)"
+  # Checked boxes inside a fenced example are documentation, not progress. Count
+  # them fence-aware when python3 is available; degrade to the flat grep when it
+  # is not, exactly as the JSON helpers above degrade.
+  if command -v python3 >/dev/null 2>&1; then
+    md_done="$(python3 - "$plan_dir/README.md" <<'PYEOF'
+import re, sys
+fence = None
+done = 0
+try:
+    lines = open(sys.argv[1]).read().splitlines()
+except OSError:
+    print(0); raise SystemExit
+for line in lines:
+    marker = re.match(r'^\s*(`{3,}|~{3,})', line)
+    if marker:
+        token = marker.group(1)[0]
+        fence = None if fence == token else (fence or token)
+        continue
+    if fence:
+        continue
+    if re.match(r'^\s*- \[x\]', line, re.I):
+        done += 1
+print(done)
+PYEOF
+)"
+  else
+    md_done="$(grep -cE '^[[:space:]]*- \[x\]' "$plan_dir/README.md" 2>/dev/null || true)"
+  fi
   state_done="$(json_int "$plan_dir/state.json" completed_count)"
   if [ -z "$state_done" ]; then
     warn "state.json desync check skipped (python3 unavailable or field missing)"

@@ -14,6 +14,7 @@
     "task_count": {"type": "integer", "minimum": 1},
     "format": {"enum": ["lite", "full"]},
     "materialization": {"enum": ["materializing", "ready", "promoting"]},
+    "approval": {"enum": ["pending", "approved", "pre_approved"]},
     "promotion": {"type": ["object", "null"]},
     "checkpoint": {"type": ["object", "null"]},
     "blocked": {"type": ["object", "null"]},
