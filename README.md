@@ -32,6 +32,27 @@ and report with all plan output living in a gitignored
 
 > DeepWorkPlan is spec-driven development where the repository itself becomes the harness.
 
+**What it rests on**
+
+- **You steer; the agents do the hours.** You decide what *done* means and where
+  the lines are. The plan carries your intent, so the work does not need
+  correcting every twenty minutes.
+- **The plan is what the agent returns to.** Long work fills any model's context
+  and detail falls away. Atomic tasks, validation gates and resumable state give
+  the agent something durable to come back to, lap after lap.
+- **Done is a contract, not a feeling.** Every task names its acceptance criteria
+  and the checks that must pass. An agent does not get to *decide* it finished —
+  it passes, or the task stays open.
+- **The repository is the harness.** Context, tools, guardrails and state live in
+  your repo as plain files any agent can read. No lock-in, no external brain, and
+  it survives a context reset or a change of agent mid-flight.
+- **Context is the scarcest resource.** Instructions load progressively by
+  trigger, validation is selected from what each task actually touched, and
+  skills are decided task-locally — so the plan pays for itself instead of
+  crowding out the work.
+
+**At a glance**
+
 - **License:** [MIT](LICENSE)
 - **Security policy:** [SECURITY.md](SECURITY.md)
 - **Changes:** [CHANGELOG.md](CHANGELOG.md)
@@ -48,6 +69,7 @@ and report with all plan output living in a gitignored
 | **deepworkplan-refine** | Modify the scope or tasks of an existing plan, or promote a Lite plan to Full task files. |
 | **deepworkplan-resume** | Resume an interrupted plan from its recorded progress state. |
 | **deepworkplan-status** | Report the status of a plan — completed tasks, what's left, and blockers — without executing. |
+| **deepworkplan-verify** | Check the repository and its plans against the standard — read-only, pass/fail, exits `0`/`1`. Confirms the harness is in place and that every plan's tasks, gates, evidence and final review actually hold, so "done" is auditable rather than asserted. |
 | **deepworkplan-author** | Author or update reusable skills, agents, and commands in the current repo — reasons about the repo's `.agents/` layout, follows the Open Agent Skills frontmatter contract, and keeps the `.agents/docs/` catalog in sync. Backs the `/skill-create` and `/agent-create` aliases. |
 
 A root **deepworkplan** meta-skill acts as a router — it describes all
