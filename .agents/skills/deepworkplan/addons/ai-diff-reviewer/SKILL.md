@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-ai-diff-reviewer
 description: "DeepWorkPlan addon — required local review (baseline since standard 2.3.0), optional CI surface — connects an AI-first repo to the AI Diff Reviewer. Onboarding installs the vendored coding-agent skill and extension with consent; the Final Review runs the local pass when present or records a missing-reviewer finding without bootstrapping. Flow B CI setup remains an explicit opt-in delegated to upstream. Invocation errors never block, completed-review critical findings still follow the Final Review contract, and all install/auth/wizard details defer to upstream consent flows."
-version: "4.0.0"
+version: "4.0.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
