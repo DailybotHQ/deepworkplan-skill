@@ -35,6 +35,18 @@ successful task.
 
 ## Parameter Support
 
+- `/dwp-execute {plan_name}` — execute directly (skip the selection menu).
+- `/dwp-execute latest` — execute the most recently modified plan.
+- `/dwp-execute {plan_name} trust` (or `auto`, or an explicit "run to the end")
+  — unattended: no questions between tasks (see *Autonomous mode*).
+- No parameter → interactive selection (Step 1).
+
+Normalize names by adding the `PLAN_` prefix if missing. Validate that
+`.dwp/plans/PLAN_{name}/` and its `README.md` exist; if not, show available plans
+and ask the user to choose. A folder **without** `README.md`, whose README says
+`Plan Status: materializing`, or whose README **links a task file that does not
+exist**, is a partial materialization — point to `refine` and stop.
+
 ## Lite plan execution
 
 Read `spec/LITE_PLANS.md` when the plan declares v2 state or `Plan Format: Lite`.
@@ -53,18 +65,6 @@ When scope exceeds the compact task record, stop for refine rather than silently
 expanding work. A v2 state locator is authoritative: `inline` resolves to a
 unique README anchor; `file` resolves to one Full task file. Missing, duplicate,
 absolute or traversal locators are invalid plans, not fallback guesses.
-
-- `/dwp-execute {plan_name}` — execute directly (skip the selection menu).
-- `/dwp-execute latest` — execute the most recently modified plan.
-- `/dwp-execute {plan_name} trust` (or `auto`, or an explicit "run to the end")
-  — unattended: no questions between tasks (see *Autonomous mode*).
-- No parameter → interactive selection (Step 1).
-
-Normalize names by adding the `PLAN_` prefix if missing. Validate that
-`.dwp/plans/PLAN_{name}/` and its `README.md` exist; if not, show available plans
-and ask the user to choose. A folder **without** `README.md`, whose README says
-`Plan Status: materializing`, or whose README **links a task file that does not
-exist**, is a partial materialization — point to `refine` and stop.
 
 ## Trust boundary (write scope)
 

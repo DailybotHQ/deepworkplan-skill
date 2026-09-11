@@ -22,6 +22,14 @@ modifying anything**, and without loading the whole plan.
 
 ## Parameter Support
 
+- `/dwp-status {plan_name}` — check a specific plan.
+- `/dwp-status latest` — check the most recently modified plan.
+- `/dwp-status all` — check all plans.
+- No parameter → interactive scope selection (Step 1).
+
+Normalize the `PLAN_` prefix; validate that single plans exist under
+`.dwp/plans/`. If not found, show available plans and ask the user to choose.
+
 ## Lite-aware status
 
 For v2 plans report format, materialization, approval and promotion separately
@@ -30,13 +38,6 @@ executable. Resolve inline task locators against unique README anchors and count
 only canonical task-index checkboxes, never fenced examples. Report a missing or
 duplicate anchor, pending approval, or promotion marker as a finding; do not
 repair it in this read-only flow.
-- `/dwp-status {plan_name}` — check a specific plan.
-- `/dwp-status latest` — check the most recently modified plan.
-- `/dwp-status all` — check all plans.
-- No parameter → interactive scope selection (Step 1).
-
-Normalize the `PLAN_` prefix; validate that single plans exist under
-`.dwp/plans/`. If not found, show available plans and ask the user to choose.
 
 ## Trust boundary (write scope)
 

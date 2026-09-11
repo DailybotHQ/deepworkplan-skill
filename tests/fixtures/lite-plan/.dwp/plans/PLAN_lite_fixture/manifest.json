@@ -1,0 +1,10 @@
+{
+  "schema": "https://deepworkplan.com/schema/plan-manifest/v2.json",
+  "spec_version": "2.4.0",
+  "name": "PLAN_lite_fixture",
+  "archetype": "individual",
+  "rigor": "micro",
+  "created_at": "2026-09-11T00:00:00Z",
+  "task_count": 2,
+  "plan_format": "lite"
+}

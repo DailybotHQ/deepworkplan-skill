@@ -34,6 +34,18 @@ pick the plan up without the previous conversation.
 
 ## Parameter Support
 
+- `/dwp-resume {plan_name}` — resume directly (skip the menu).
+- `/dwp-resume latest` — resume the most recently modified plan.
+- `/dwp-resume {plan_name} trust` (or `auto`, or "run to the end") — resume
+  unattended: no questions between tasks (`../execute/SKILL.md` *Autonomous mode*).
+- No parameter → interactive selection (Step 1).
+
+Normalize the `PLAN_` prefix; validate `.dwp/plans/PLAN_{name}/` and its
+`README.md`. If not found, show available plans and ask the user to choose. A
+folder without `README.md`, or whose README says `Plan Status: materializing`,
+is a partial materialization (its `manifest.json` records the intended shape) —
+point to `refine`; never execute it.
+
 ## Lite and promotion recovery
 
 For v2 Lite plans, read the README's canonical task index, inline anchor record,
@@ -47,17 +59,6 @@ product work in a mixed representation.
 An explicit execute/resume request can approve a ready current Lite scope. If a
 new requirement changes scope, criteria or gate, record the checkpoint and use
 refine; do not promote or alter approvals implicitly.
-- `/dwp-resume {plan_name}` — resume directly (skip the menu).
-- `/dwp-resume latest` — resume the most recently modified plan.
-- `/dwp-resume {plan_name} trust` (or `auto`, or "run to the end") — resume
-  unattended: no questions between tasks (`../execute/SKILL.md` *Autonomous mode*).
-- No parameter → interactive selection (Step 1).
-
-Normalize the `PLAN_` prefix; validate `.dwp/plans/PLAN_{name}/` and its
-`README.md`. If not found, show available plans and ask the user to choose. A
-folder without `README.md`, or whose README says `Plan Status: materializing`,
-is a partial materialization (its `manifest.json` records the intended shape) —
-point to `refine`; never execute it.
 
 ## Trust boundary (write scope)
 

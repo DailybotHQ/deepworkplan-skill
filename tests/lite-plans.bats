@@ -5,6 +5,10 @@ setup() {
   FIXTURE="$REPO_ROOT/tests/fixtures/lite-plan/.dwp"
 }
 
+require_jsonschema() {
+  python3 -c 'import jsonschema' 2>/dev/null || skip "jsonschema not installed"
+}
+
 @test "a ready Lite plan passes the format-aware conformance path" {
   run env DWP_DIR="$FIXTURE" bash "$REPO_ROOT/skills/deepworkplan/verify/conformance.sh" --plan PLAN_lite_fixture "$REPO_ROOT"
   [ "$status" -eq 0 ]
@@ -12,6 +16,7 @@ setup() {
 }
 
 @test "Lite v2 schemas accept inline locators and reject an invalid locator" {
+  require_jsonschema
   run python3 - "$REPO_ROOT" "$FIXTURE" <<'PY'
 import copy, json, sys
 from jsonschema import Draft202012Validator
