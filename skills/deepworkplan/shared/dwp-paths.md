@@ -1,21 +1,22 @@
 # dwp-paths.md — The `.dwp/` Output Convention
 
 > Source of truth for **where Deep Work Plan outputs live**. Every DeepWorkPlan
-> sub-skill reads this to resolve plan and draft paths.
+> sub-skill reads this to resolve plan paths.
 
 ## The convention
 
-All plans and drafts live under a single gitignored repo-root directory, `.dwp/`:
+All plans live under a single gitignored repo-root directory, `.dwp/`:
 
 ```
 .dwp/
-├── plans/      ← PLAN_{name}/ directories (the executed plans)
-└── drafts/     ← PLAN_{name}_draft_refined.md (the create-flow refined draft)
+└── plans/      ← PLAN_{name}/ directories (the plans)
 ```
 
-- A plan lives at `.dwp/plans/PLAN_{name}/`.
-- The `create` flow stages its single reviewable artifact — the **refined
-  draft** — at `.dwp/drafts/PLAN_{name}_draft_refined.md`.
+- A plan lives at `.dwp/plans/PLAN_{name}/`, Lite or Full alike.
+- `create` writes the plan folder directly. There is no separate draft artifact
+  and no `.dwp/drafts/` directory: the Lite plan **is** the reviewable artifact
+  (`../spec/LITE_PLANS.md`). Both were removed in 2.4.0. A `.dwp/drafts/` folder
+  left over from an earlier version is inert — DWP neither reads nor writes it.
 
 ## Default location & override
 
@@ -28,7 +29,7 @@ All plans and drafts live under a single gitignored repo-root directory, `.dwp/`
 
 ## `.dwp/` is gitignored
 
-`.dwp/` **MUST** be added to the repository's `.gitignore`. Plans and drafts are
+`.dwp/` **MUST** be added to the repository's `.gitignore`. Plans are
 working artifacts, not tracked source. (Orchestrator hubs follow the same rule:
 child plans live at `repositories/{repo}/.dwp/plans/PLAN_{child}/`, also
 gitignored.)
@@ -40,7 +41,6 @@ gitignored.)
 | Concept | Legacy path | New path |
 |---------|-------------|----------|
 | Plans | `.agent_commands/agent_deep_work_plans/results/plans/PLAN_{name}/` | `.dwp/plans/PLAN_{name}/` |
-| Refined draft | `.agent_commands/agent_deep_work_plans/results/drafts/PLAN_{name}_draft_refined.md` | `.dwp/drafts/PLAN_{name}_draft_refined.md` |
 
 The legacy `.agent_commands/agent_deep_work_plans/results/` tree **MUST NOT** be
 used by repos onboarded to DeepWorkPlan v2; migration moves any existing plans

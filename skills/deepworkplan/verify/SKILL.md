@@ -101,9 +101,9 @@ for f in .agents/commands/dwp-*.md; do
   grep -qi 'deepworkplan' "$f" && [ "$lines" -le 40 ] && echo "$(basename "$f"): thin ok" || echo "$(basename "$f"): CHECK ($lines lines)"
 done
 
-# 6. .dwp/ gitignored with plans/ + drafts/; tmp/ gitignored
+# 6. .dwp/ gitignored with plans/; tmp/ gitignored
 git check-ignore .dwp >/dev/null 2>&1 && echo ".dwp gitignored: ok" || echo ".dwp gitignored: FAIL"
-test -d .dwp/plans && test -d .dwp/drafts && echo ".dwp structure: ok" || echo ".dwp structure: FAIL"
+test -d .dwp/plans && echo ".dwp structure: ok" || echo ".dwp structure: FAIL"
 git check-ignore tmp >/dev/null 2>&1 && echo "tmp gitignored: ok" || echo "tmp gitignored: SHOULD"
 
 # 7. AI Diff Reviewer local review installed (required since DWP standard 2.3.0; a finding on legacy repos)
@@ -152,7 +152,7 @@ Repository
   [ ] docs/ — missing SECURITY.md
   [x] .agents/ + catalog matches disk
   [x] .cursor -> .agents
-  [x] .dwp/ gitignored (plans/, drafts/)
+  [x] .dwp/ gitignored (plans/)
   [x] tmp/ gitignored
   [x] skill resolvable
 

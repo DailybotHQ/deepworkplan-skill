@@ -181,7 +181,6 @@ If the target repo does NOT have the DeepWorkPlan skill installed:
    and `examples/`), then ensure the gitignored output root exists:
    ```
    .dwp/
-   ├── drafts/
    └── plans/
    ```
 2. Reason about the target repo's tech stack (validation commands, test patterns,

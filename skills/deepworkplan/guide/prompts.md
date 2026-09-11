@@ -10,7 +10,7 @@ When you want Cursor, Claude, or another agent to **generate a new deep-work pla
 > **Prompt to the agent:**
 >
 > - Ensure the gitignored output root exists (the skill creates it on demand):
->   - `.dwp/plans/` and `.dwp/drafts/` (git-ignored)
+>   - `.dwp/plans/` (git-ignored)
 >   - Read `create/SKILL.md` and `guide/authoring.md` for the 2.3.0 plan and task contracts
 > - Then, create a new plan folder:
 >   - `.dwp/plans/PLAN_{plan_title}/`

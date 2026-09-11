@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-refine
-description: Refine a Deep Work Plan draft or plan — safely edit scope, promote a Lite plan to Full task files, recover partial promotion, or explicitly migrate legacy plans while preserving completed evidence.
+description: Refine a Deep Work Plan — safely edit scope, add, split or reorder tasks, promote a Lite plan to Full task files, recover a partial promotion, or explicitly migrate a legacy plan, always preserving completed evidence.
 version: "3.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -9,26 +9,23 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 
 # DeepWorkPlan — Refine
 
-Polish a **refined draft** or modify an **existing final plan** (add / edit /
-split / reorder tasks, update the README, convert a draft to a plan, or — only
+Modify an **existing plan** (add / edit /
+split / reorder tasks, update the README, promote a Lite plan to Full, or — only
 on explicit request — migrate a legacy plan to the current standard).
 
-> **Single-step change (vs legacy):** there is exactly one draft artifact — the
-> **refined draft** at `.dwp/drafts/PLAN_{name}_draft_refined.md`. Refining a
-> draft **edits it in place** (or converts it into a final plan). The legacy
-> distinction where "refine the draft" produced a separate `_refined` file from a
-> raw draft is gone, and the old three-option "Refine / Convert / Both" collapses
-> to **Edit in place** or **Convert to plan**. In trust mode there may be no draft
-> at all (`../create/SKILL.md` Step 4.2); refine then works on the plan.
+> **No drafts (2.4.0):** `create` materializes an executable Lite plan directly,
+> so there is nothing to "refine into a plan" any more. `refine` operates on a
+> plan folder under `.dwp/plans/`. The `.dwp/drafts/` directory and the
+> `PLAN_{name}_draft_refined.md` artifact were removed in 2.4.0.
 
 ## Shared resources (read these)
 
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — drafts at `.dwp/drafts/`,
+- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans at `.dwp/plans/`,
   plans at `.dwp/plans/PLAN_{name}/`.
 - [`../shared/context.sh`](../shared/context.sh) — resolve `dwp_dir`.
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README §4, task-file anatomy §5 incl. the Touched Surface, mandatory elements) and [`../guide/structure.md`](../guide/structure.md) (§1–§2 naming and folders).
 - **Guide (conditional — read only when the trigger fires):** [`../guide/orchestrator.md`](../guide/orchestrator.md) / [`../guide/team-agents.md`](../guide/team-agents.md) only for plans that use them; [`../guide/execution.md`](../guide/execution.md) §6.1 when editing the Final Review (or a legacy plan's final tasks). Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
-- **Shared contract (conditional — read the named steps only when the trigger fires):** [`../create/SKILL.md`](../create/SKILL.md) Steps 3.5–3.7 and 4.4–4.5 when converting a draft, adding or splitting a task, completing a partial materialization, or migrating — the **one** contract for task anatomy, gate selection, the Final Review, the ledger, the write order and the plan-quality check (refine never has a second template); [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §5–§6 when the plan carries `state.json` (regeneration, evidence invalidation) or on `migrate` (the declared-migration line).
+- **Shared contract (conditional — read the named steps only when the trigger fires):** [`../create/SKILL.md`](../create/SKILL.md) Steps 3.5–3.7 and 4.4–4.5 when promoting a Lite plan, adding or splitting a task, completing a partial materialization, or migrating — the **one** contract for task anatomy, gate selection, the Final Review, the ledger, the write order and the plan-quality check (refine never has a second template); [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §5–§6 when the plan carries `state.json` (regeneration, evidence invalidation) or on `migrate` (the declared-migration line).
 - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns for
   professional rewriting.
 
@@ -36,9 +33,7 @@ on explicit request — migrate a legacy plan to the current standard).
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| (none) | Interactive — choose draft or plan | `/dwp-refine` |
-| `{draft_filename}` | Refine a specific refined draft | `/dwp-refine PLAN_x_draft_refined.md` |
-| `latest` | Refine the most recent refined draft | `/dwp-refine latest` |
+| (none) | Interactive — choose a plan | `/dwp-refine` |
 | `plan {plan_name}` | Modify an existing final plan | `/dwp-refine plan auth_refactor` |
 | `plan latest` | Modify the most recent plan | `/dwp-refine plan latest` |
 | `migrate {plan_name}` | **Explicit** migration of a legacy plan (three final tasks) to the current standard — the only way a plan changes standard | `/dwp-refine migrate auth_refactor` |
@@ -48,7 +43,7 @@ on explicit request — migrate a legacy plan to the current standard).
 
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
-**Writes:** edits confined to the target plan's files under `.dwp/drafts/` or
+**Writes:** edits confined to the target plan's files under
 `.dwp/plans/PLAN_{name}/` — task content, ordering, the README's task list and
 counts, `PROGRESS.md`, and the **regenerated** `state.json` — kept mutually
 consistent. Deleting a completed task, dropping the Final Review (or a legacy
@@ -63,65 +58,20 @@ anything (refinement output stays uncommitted working state).
 
 ## Workflow
 
+> Step 2 was the draft workflow; it was removed in 2.4.0. The remaining step
+> numbers are unchanged so existing cross-references keep resolving.
+
 ### Step 0 — Determine Target Type
 - No parameters → Step 1 (interactive).
-- A draft filename / `latest` → Step 2 (Draft Workflow).
 - `plan {name}` / `plan latest` → Step 3 (Plan Workflow).
 - `migrate {name}` → Step 4 (Explicit Migration).
 - `promote {name}` → Step 5 (Lite Promotion).
 
-### Step 5 — Lite Promotion
-
-Promotion changes only task representation. Read `spec/LITE_PLANS.md`, the Lite
-README decision record and v2 state first. Refuse a pending proposal, an active
-task, an unresolved blocker, unknown format or existing promotion marker. A
-scope/requirement change is refine, not promotion.
-
-1. Record `promotion: lite → full` intent atomically in state and README.
-2. Generate Full task files for unchanged logical task IDs, preserving criteria,
-   gates, logs, completion status and lineage. Completed Lite work is never split
-   or granted invented evidence; unstarted work may split only with new IDs and a
-   recorded lineage.
-3. Validate contiguous IDs, links, gates, final review and Markdown/state
-   correspondence before switching the README's authoritative task representation.
-4. Rewrite the state projection atomically with `format: full`, then clear the
-   promotion marker last. Preserve manifest creation provenance and never rewrite
-   it to disguise a changed live task count.
-
-If interrupted, retain the marker and identify the exact missing boundary;
-complete only missing files and preserve user edits. Execute/resume must not run
-a marked plan. Full-to-Lite downgrade is not automatic.
-
 ### Step 1 — Interactive Selection
-Ask whether to refine **a draft** (polish or convert to a final plan) or **an
-existing final plan** (add / edit / split / reorder tasks, adjust context). Route
-to Step 2 or Step 3. Mention `migrate` only if the selected plan is legacy.
-
-## Draft Workflow
-
-### Step 2 — Select and Refine the Refined Draft
-
-**2.1 Select.** If not specified, list `*.md` files in `.dwp/drafts/` (excluding
-README) and let the user pick by number, filename, or `latest`.
-
-**2.2 Read** the refined draft fully: objective, context, tier, tasks, plan name,
-structure.
-
-**2.3 Choose action:**
-1. **Edit the refined draft in place** — improve/polish the prompt; rewrite
-   professionally following `../examples/CREATE_PLAN.md`; expand and detail all
-   sections; **save back to the same** `.dwp/drafts/PLAN_{name}_draft_refined.md`
-   (no new `_refined` file).
-2. **Convert to a final plan** — extract plan info; run the requirements →
-   tasks → gates check (`../create/SKILL.md` Step 3.7); create the plan folder
-   and all files exactly as `../create/SKILL.md` Step 4.4 does (ten-section task
-   files with Touched Surface and selected gates, the single
-   `{N}.task_final_review.md` last, `PROMPTS.md`, the bounded `PROGRESS.md`
-   index, `analysis_results/SKILLS_CANDIDATES.md`, `manifest.json` with
-   `spec_version` "2.3.0" + `state.json`, README **last** with the Analysis
-   Outputs section and the Final Review note); run the plan-quality check
-   (Step 4.5); then offer to execute via the **Execute** sub-skill
-   (`../execute/SKILL.md`). No report task is ever generated.
+List the plans under `.dwp/plans/` and ask which one to modify (add / edit /
+split / reorder tasks, adjust context, promote a Lite plan). Route to Step 3, or
+to Step 5 when the developer asks to promote. Mention `migrate` only if the
+selected plan is legacy.
 
 ## Plan Workflow
 
@@ -268,6 +218,28 @@ when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
 6. **Synchronize** (Step 3.6) and report: what was reshaped, what was preserved,
    what the executor will do differently from here.
 
+### Step 5 — Lite Promotion
+
+Promotion changes only task representation. Read `spec/LITE_PLANS.md`, the Lite
+README decision record and v2 state first. Refuse a pending proposal, an active
+task, an unresolved blocker, unknown format or existing promotion marker. A
+scope/requirement change is refine, not promotion.
+
+1. Record `promotion: lite → full` intent atomically in state and README.
+2. Generate Full task files for unchanged logical task IDs, preserving criteria,
+   gates, logs, completion status and lineage. Completed Lite work is never split
+   or granted invented evidence; unstarted work may split only with new IDs and a
+   recorded lineage.
+3. Validate contiguous IDs, links, gates, final review and Markdown/state
+   correspondence before switching the README's authoritative task representation.
+4. Rewrite the state projection atomically with `format: full`, then clear the
+   promotion marker last. Preserve manifest creation provenance and never rewrite
+   it to disguise a changed live task count.
+
+If interrupted, retain the marker and identify the exact missing boundary;
+complete only missing files and preserve user edits. Execute/resume must not run
+a marked plan. Full-to-Lite downgrade is not automatic.
+
 ## Important Notes
 - **Preserve completed work:** never alter `[x]` tasks unless explicitly asked;
   invalidation (3.7) marks them for re-validation, it does not rewrite them.
@@ -280,11 +252,11 @@ when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
 - **No mandatory report:** refine never adds an Executive Report task; it may
   record an explicit report request in the README guidelines.
 - **Git ignore:** everything under `.dwp/` is git-ignored.
-- **One draft artifact:** refining a draft edits
-  `PLAN_{name}_draft_refined.md` in place; there is no separate raw draft.
+- **No draft artifact:** `refine` always operates on a plan folder under
+  `.dwp/plans/`. Nothing is written to `.dwp/drafts/` — it no longer exists.
 
 ## Error Handling
-- Draft/plan not found → list available options and let the user select.
+- Plan not found → list available plans and let the user select.
 - Partial materialization (no `README.md`, `Plan Status: materializing`, or a dangling task link) → offer complete / discard (3.2).
 - Task number out of range → show the valid range for this plan's shape and re-ask.
 - Deleting or splitting a completed `[x]` task → confirm explicitly first.

@@ -46,7 +46,7 @@ this repo.
 - The skill operates on the **developer's local repository**; it must not copy
   repository contents, plan artifacts, or git metadata off the machine.
 - Plan working state (`.dwp/`) is **gitignored by default**. Do not commit
-  `.dwp/plans/*`, drafts, or analysis output, and do not relocate sensitive
+  `.dwp/plans/*` or analysis output, and do not relocate sensitive
   working state into committed source.
 - Generated docs describe **conventions and locations**, never live secret
   values. When onboarding documents a repo's secret-handling convention, it

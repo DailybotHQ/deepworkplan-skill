@@ -15,9 +15,11 @@ a Lite plan folder under `.dwp/plans/PLAN_{name}/`. Guided mode presents that
 proposal for review; trust chooses its ready representation without a review.
 Both modes return control to the developer to execute later.
 
-> **Lite-first (v2.4):** normal create writes no draft file. A Lite plan is a
-> complete proposal, not a partial Full plan. Explicit `refined-draft` commands
-> remain compatibility aliases for existing workflows.
+> **Lite-first (v2.4):** `create` writes no draft file and no `.dwp/drafts/`
+> directory. A Lite plan is a complete proposal, not a partial Full plan — it is
+> the reviewable artifact the refined draft used to be, except that it is already
+> executable. The `refined-draft` / `from-refined-draft` commands were removed in
+> 2.4.0; see `../spec/LITE_PLANS.md`.
 
 ## Lite-first command grammar
 
@@ -56,7 +58,7 @@ inline non-DWP alternative merely because it is small.
 ## Philosophy
 
 The goal is a delightful, smooth experience. The user provides information once;
-the system handles all intermediate steps (analysis, draft or direct
+the system handles all intermediate steps (analysis, materialization
 materialization, quality check) automatically — and never generates an artifact
 nobody asked for.
 
@@ -65,7 +67,7 @@ nobody asked for.
 - [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch,
   agent tool, and the `.dwp/` output location (`dwp_dir`).
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — the `.dwp/plans/` +
-  `.dwp/drafts/` output convention.
+  `.dwp/plans/` output convention.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
   and the two repository archetypes (individual repo vs orchestrator hub).
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.4) and [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10).
@@ -93,14 +95,15 @@ materializes a **Lite plan folder** — no draft file is written.
 | `full` (either boundary) | — | unchanged | Format **preference**: an explicit Full wins; the same folder is materialized and then expanded to task files (Step 4.0 → 4.4) | `/dwp-create redesign the auth flow full` |
 | `lite` **and** `full` | — | — | Conflict: report it and ask which one; never silently pick one, including in trust | `/dwp-create lite full ...` → error |
 | `--` | — | unchanged | Ends option parsing; everything after it is literal context | `/dwp-create trust -- full rewrite of the parser` |
-| `refined-draft {name}` | — | refined-draft-only | **Legacy compatibility.** Produce ONLY the refined draft (no plan folder) | `/dwp-create refined-draft my_plan` |
-| `from-refined-draft {file}` | — | from-refined-draft | **Legacy compatibility.** Build a Full plan from an existing refined draft | `/dwp-create from-refined-draft PLAN_x_draft_refined.md` |
-| `from {file}` | — | from-refined-draft | Alias for `from-refined-draft` | `/dwp-create from PLAN_x_draft_refined.md` |
 
 > **Name format:** users type names in any format; you auto-convert to
-> `snake_case` internally. **Explicit draft parameters win** over the ordinary
-> Lite-first default: `refined-draft … trust` still produces a draft, and it is
-> the only way to get one.
+> `snake_case` internally.
+
+> **Removed in 2.4.0:** `refined-draft`, `from-refined-draft` and its `from`
+> alias. There is no draft artifact and no `.dwp/drafts/` directory — the Lite
+> plan replaces them. If a repo still has a `.dwp/drafts/` folder from an earlier
+> version, DWP neither reads nor writes it; the developer may delete it. To build
+> a plan from an old draft's content, paste that content as the create context.
 
 ## Modes
 
@@ -116,8 +119,7 @@ materializes a **Lite plan folder** — no draft file is written.
 - Collects information from the user; runs the **same** requirements analysis
   (Step 3) and the **same** plan-quality check (Step 4.5).
 - **Materializes the chosen representation directly** — Lite, or Lite then
-  expanded to Full when the rubric or an explicit `full` says so. No draft file
-  is written. Trust waives the intermediate *review*, never the *analysis*, the
+  expanded to Full when the rubric or an explicit `full` says so. Trust waives the intermediate *review*, never the *analysis*, the
   *quality check*, or the *execution handoff*.
 - Records the plan as **pre-approved for unattended execution**
   (`../spec/AGENT_PROTOCOL.md` §7.2): the developer's `trust` instruction is
@@ -129,7 +131,7 @@ materializes a **Lite plan folder** — no draft file is written.
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
 **Writes:** plan artifacts under the gitignored `.dwp/` directory only —
-`.dwp/drafts/` when a draft is produced, `.dwp/plans/PLAN_{name}/` for the
+`.dwp/plans/PLAN_{name}/` for the
 materialized plan (README, task files, analysis outputs, state layer). "Trust
 mode" skips intermediate confirmations of **plan content**, not of the write
 boundary, and grants no permission the plan does not list.
@@ -150,13 +152,7 @@ single format preference when `lite` or `full` occurred. Repeated identical
 options are valid. A `lite`/`full` conflict is an error. Stop parsing at `--`;
 all following text is literal context. Never inspect ordinary context words.
 
-**0.2 Detect special modes (check FIRST word):**
-- `refined-draft` → `mode = "refined-draft-only"`, remaining text = plan name.
-- `from-refined-draft` or `from` → `mode = "from-refined-draft"`, remaining text
-  = refined-draft file path.
-- Otherwise → continue to input classification (0.3).
-
-**0.3 Classify remaining input:**
+**0.2 Classify remaining input:**
 
 | Condition | Classification | What to do |
 |-----------|---------------|------------|
@@ -173,9 +169,6 @@ all following text is literal context. Never inspect ordinary context words.
 > plan, not what to DO. Go directly to Step 2.
 
 **Routing by mode:**
-- `from-refined-draft` → skip to Step 4.3.
-- `refined-draft-only` → gather info, analyze, create only the refined draft,
-  skip final plan creation (in either trust or guided mode).
 - `no input` / `name-only` → Step 1, then Step 2.
 - `full-context` → Step 1, then Step 3.
 
@@ -184,14 +177,14 @@ all following text is literal context. Never inspect ordinary context words.
 Show a brief intro matching the mode: in **guided** mode, that you will analyze
 the requirements, stage a refined plan for review, and then generate the final
 executable plan; in **trust** mode, that you will analyze the requirements and
-materialize the final executable plan directly (no draft, no confirmations), and
+materialize the final executable plan directly (no confirmations), and
 that the plan will be pre-approved for unattended execution.
 
 ### Step 2 — Gather Information (Conversational)
 
 > **Skip the *questions* (2.1–2.5) for `full-context` input.** Steps **2.6** and
 > **2.10** are detections, not questions: they run in **every** mode. For
-> full-context input (and for `from-refined-draft`), skip 2.1–2.5 and run 2.6 and
+> full-context input, skip 2.1–2.5 and run 2.6 and
 > 2.10 at the start of Step 3 against the provided context, then continue.
 
 Collect, conversationally:
@@ -228,21 +221,20 @@ supports team agents.
 ### Step 3 — Requirements Analysis (both modes, before any file is written)
 
 > **First, if Step 2's questions were skipped** (full-context input or
-> `from-refined-draft`): run the two detections now, against the provided
+> full-context input): run the two detections now, against the provided
 > context — **2.6 orchestrator** and **2.10 team-agents** — and read their
 > on-demand files only if a trigger fires. A detection is never skipped merely
 > because no questions were asked.
 
-This step is what the draft used to carry implicitly. It runs in **every** mode
+This step runs in **every** mode
 and is the substance of the plan; the mode only decides whether it is first
-staged as a draft (guided) or materialized directly (trust).
+reviewed before execution (guided) or handed off directly (trust).
 
 - **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
   work warrants a plan. A trivial single-concern change is **micro** tier and is
   a first-class Lite plan: record a concise goal, gate and Final Review rather
   than routing the developer out of DWP. Otherwise choose `standard` or
-  `deep` and record why (in the draft in guided mode; in the plan README in trust
-  mode). A borderline call is recorded, never asked.
+  `deep` and record why in the plan README. A borderline call is recorded, never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
   task** and an **observable acceptance criterion**.
@@ -420,74 +412,16 @@ Promotion **after** creation is not this step: it is `/dwp-refine promote`
 (`../refine/SKILL.md` Step 5), which writes a recoverable marker first.
 `../spec/LITE_PLANS.md` is normative for representation, promotion and recovery.
 
-The refined-draft sections below run **only** for the explicit legacy
-compatibility commands in the Parameter Reference.
-
-#### 4.1 Guided Mode — Refined Draft and Review (explicit compatibility command)
-
-Show a **2-step** progress UI:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Creating your plan...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[1/2] Drafting refined plan...
-```
-
-**Write the refined draft** — one file, directly (no raw draft first):
-- Resolve `dwp_dir` via `../shared/context.sh`; ensure `<dwp_dir>/drafts/` exists.
-- Compose a professional, complete plan prompt following
-  `../examples/CREATE_PLAN.md` from the Step 3 analysis: objective, context
-  (enriched with parallel research if `team-agents.md` ran), the tier and why,
-  well-formed tasks with their planned Touched Surface and gates, guidelines.
-  Expand every section with full detail and clarity in one pass.
-- Write **only**: `.dwp/drafts/PLAN_{name}_draft_refined.md`.
-
-```
-[1/2] Drafting refined plan... ✓
-[2/2] Preparing for review...
-```
-
-Present a summary (objective, tier, task count + list, location, constraints)
-and the path `→ .dwp/drafts/PLAN_{name}_draft_refined.md`, then offer:
-1. Looks good, create the final plan → Step 4.4.
-2. Make adjustments → ask what to change, **edit the refined draft in place**,
-   show the menu again.
-3. Show the full refined draft → display it, then re-show the menu.
-4. Stop here → completion message for the draft phase.
-
-#### 4.2 Trust Mode — Direct Full Materialization (explicit compatibility command)
-
-No draft file. Show a **2-step** progress UI and go straight to Step 4.4:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Creating your plan... (trust mode)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[1/2] Analyzing requirements... ✓
-[2/2] Materializing plan...
-```
-
-The approved objective, context, tier, and task outline are captured in the plan
-README (§1, §2, §4), so nothing reviewable is lost. The README's Plan Variables
-record `Pre-approved for unattended execution: yes (trust)`.
-
-#### 4.3 From-Refined-Draft Mode
-
-- Validate the file exists in `.dwp/drafts/`. If not found, list available
-  refined drafts and ask the user to choose.
-- Read it; extract plan name, objective, context, tier, tasks, guidelines; run
-  Step 3.7 (requirements → tasks → gates check) against it.
-- Skip to Step 4.4.
+> Steps 4.1–4.3 were the refined-draft flows. They were removed in 2.4.0; the
+> numbering below is unchanged so existing cross-references keep resolving.
 
 #### 4.4 Create Final Plan (Full representation)
 
-Reached from Step 4.0 when the format is Full, and from the legacy
-compatibility commands. The folder, `manifest.json` and the analysis written in
-Step 4.0 are **reused**, not recreated: this step adds the task files and
-switches the README to the task-file representation for the same task IDs.
+Reached from Step 4.0 when the format is Full — by the rubric, or by an explicit
+`full` preference, or by a guided promote choice. The folder, `manifest.json` and
+the analysis written in Step 4.0 are **reused**, not recreated: this step adds
+the task files and switches the README to the task-file representation for the
+same task IDs. It is never an entry point of its own.
 
 Follow `../guide/authoring.md` (§4–§5) and `../guide/structure.md` (§1–§2).
 
@@ -693,10 +627,6 @@ model (`../addons/dailybot/SPEC.md` §5.1). One kickoff per plan; skip silently
 if Dailybot is absent, unauthenticated, or `.dailybot/disabled` exists. Never
 block on this.
 
-For `refined-draft-only` mode, report the single refined draft saved at
-`.dwp/drafts/PLAN_{name}_draft_refined.md` and the next step: run
-`/dwp-create from PLAN_{name}_draft_refined.md` to build the final plan.
-
 ### Step 6 — Execute Plan (Optional)
 
 If the user chose to execute, hand off to the **Execute** sub-skill
@@ -722,8 +652,6 @@ first `[ ]` task, execute sequentially, validate, commit per task, report.
   with neither a manifest nor a README is handled the same way with the intended
   count unknown.
 - **Name auto-converted:** show an informational notice (not an error).
-- **Refined draft not found (from-refined-draft):** list available refined drafts
-  in `.dwp/drafts/` and ask the user to choose.
 - **Insufficient tasks (<2):** in **guided** mode, ask the user to break the work
   down. In **trust** mode there is nobody to ask: if the work is genuinely one
   atomic change, that is the **micro** tier — record it per Step 3.1 (the Plan
@@ -737,9 +665,8 @@ first `[ ]` task, execute sequentially, validate, commit per task, report.
 ## Important Notes
 
 - **Git ignore:** everything under `.dwp/` is git-ignored.
-- **Single artifact:** the only draft file is `PLAN_{name}_draft_refined.md` in
-  `.dwp/drafts/` — there is no separate raw draft, and in trust mode there is no
-  draft at all.
+- **Single artifact:** the plan folder is the only thing `create` produces.
+  There is no draft file and no `.dwp/drafts/` directory in 2.4.0.
 - **One final task:** `{N}.task_final_review.md`. Never generate
   `task_skills_agents_discovery` or `task_executive_report` files for a new plan
   (plans from earlier versions that have them are executed as recorded —

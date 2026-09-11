@@ -4,13 +4,13 @@ Scenarios for the `create` flow. Each is run against a copy of `../isolated-chan
 
 | # | Invocation | Expected artifacts | Must hold |
 |---|---|---|---|
-| C1 | `/dwp-create <full context>` (guided) | `.dwp/drafts/PLAN_x_draft_refined.md` first; plan folder only after approval | draft carries tier + tasks with planned Touched Surface and gates |
-| C2 | `/dwp-create <full context> trust` | **no** draft file; `.dwp/plans/PLAN_x/` written manifest → README skeleton (`materializing`) → `PLAN_ANALYSIS.md` → tasks, status flipped last; README says pre-approved (trust); `manifest.json.spec_version == "2.3.0"` | quality ≥ C1 on the rubric; zero questions asked |
-| C3 | `/dwp-create refined-draft x trust` | only the draft (explicit draft wins over trust) | no plan folder |
-| C4 | `/dwp-create from PLAN_x_draft_refined.md` | plan folder from the draft; Step 3.7 check applied | identical task set to the draft |
+| C1 | `/dwp-create <full context>` (guided) | `.dwp/plans/PLAN_x/` materialized as a ready **Lite** plan and presented for review; `Approval: pending`; **nothing** under `.dwp/drafts/` | README carries the Format Decision, `{#task-N}` anchors, tier, and a runnable gate per task |
+| C2 | `/dwp-create <full context> trust` | `.dwp/plans/PLAN_x/` written manifest → README skeleton (`materializing`) → analysis → `PROMPTS.md`/`PROGRESS.md` → `state.json`, status flipped last; README says pre-approved (trust); `manifest.json.spec_version == "2.4.0"` and `plan_format` set | quality ≥ C1 on the rubric; zero questions asked; an execute command is returned and execute is **not** invoked |
+| C3 | `/dwp-create full <full context> trust` | same folder and identity as C2, expanded to `N.task_*.md` files; `state.json.format == "full"` with `kind: file` locators | no second folder; manifest `task_count` not rewritten |
+| C6 | `/dwp-create lite full x` | explicit conflict reported; nothing written | no plan folder, no partial state |
 | C5 | rerun `create` for a name whose folder is `partial-plan/` (manifest + README skeleton still `materializing` + `PLAN_ANALYSIS.md` + one of two task files) | report intended 2 tasks vs 1 present; offer complete / discard; complete regenerates only the missing task file from `PLAN_ANALYSIS.md` and flips the status line | no unrelated file overwritten; manifest untouched |
 
-Generated plan shape (all): `N.task_final_review.md` last and only final task; no `task_skills_agents_discovery` / `task_executive_report`; every code task has a Touched Surface; `analysis_results/SKILLS_CANDIDATES.md` present; every checklist has the skills-decision step.
+Generated plan shape (Full): `N.task_final_review.md` last and only final task; no `task_skills_agents_discovery` / `task_executive_report`; every code task has a Touched Surface; `analysis_results/SKILLS_CANDIDATES.md` present; every checklist has the skills-decision step. For **Lite**, the same holds with the Final Review as the last inline `{#task-N}` record and no task files. In every scenario, **no file is written under `.dwp/drafts/`** — drafts were removed in 2.4.0.
 
 ## Refine scenarios (Task 9 → replayed in Task 18)
 
@@ -20,5 +20,5 @@ Generated plan shape (all): `N.task_final_review.md` last and only final task; n
 | R2 | copy of `../legacy-plan-v217/` | `/dwp-refine plan PLAN_legacy_fixture` → edit Task 2 | legacy shape retained (three final tasks untouched); insert range `1..N-3`; no Final Review added; no migration suggested |
 | R3 | copy of `../new-shape-plan/` with Task 2 expanded to two independent outcomes | split Task 2 | every requirement of the original lands in exactly one child; pointers updated; nothing summarized away |
 | R4 | copy of `../legacy-plan-v217/` | `/dwp-refine migrate PLAN_legacy_fixture` | completed Task 1 untouched; unstarted legacy finals → single Final Review; Touched Surface added to unstarted code tasks; README `**Standard:** … (migrated from 2.2.0 …)` line; `manifest.json` byte-identical |
-| R5 | draft from C1 | `/dwp-refine PLAN_x_draft_refined.md` → convert | plan per create Step 4.4; status flipped last / no report task |
+| R5 | Lite plan from C1 | `/dwp-refine promote PLAN_x` | representation-only: same task ids, criteria and gates; promotion marker written first and cleared last; interrupting mid-promotion leaves a recoverable marker, never a runnable mixed shape |
 | R6 | copy of `../new-shape-plan/` | edit the acceptance criteria of completed Task 1 | refine lists the impact and, only on confirmation, marks Task 1 `[ ] (re-validate…)`, state `pending` with gates kept and evidence prefixed `invalidated by refine`; log appended, never rewritten |

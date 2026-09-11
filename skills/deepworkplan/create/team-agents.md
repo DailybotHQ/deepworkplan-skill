@@ -20,11 +20,11 @@ dependencies and would benefit from parallel execution. This is NOT opt-in.
 - If not parallelizable: add nothing, mention nothing.
 
 **Step 2.11 — Parallel Research Phase (Claude Code only, automatic).** Before
-drafting, if the plan spans 2+ repos or several independent modules and context
+materialization, if the plan spans 2+ repos or several independent modules and context
 isn't already provided, spawn **research teammates** (`subagent_type: "Explore"`,
 one per repo/area) to read each `AGENTS.md`, identify relevant files, contracts,
 and validation commands, then synthesize their findings into enriched context for
-the refined draft. Skip for simple/single-module plans or full-context input.
+the plan. Skip for simple/single-module plans or full-context input.
 Fallback: research sequentially if team agents are unavailable. In trust mode,
 run silently.
 

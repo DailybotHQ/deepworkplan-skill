@@ -182,9 +182,9 @@ These hooks apply to ALL tasks (sequential and parallel). They're a general Clau
 
 Team agents can speed up the **plan creation process itself** (not just execution) in two phases:
 
-#### Phase 1: Parallel Research (before drafting)
+#### Phase 1: Parallel Research (before materialization)
 
-When a plan involves multiple repositories or complex areas, teammates can research different areas simultaneously before the draft is created.
+When a plan involves multiple repositories or complex areas, teammates can research different areas simultaneously before the plan is materialized.
 
 **When to activate (automatic):**
 - Plan involves 2+ repositories (need to read AGENTS.md, understand architecture)
@@ -195,18 +195,18 @@ When a plan involves multiple repositories or complex areas, teammates can resea
 1. Lead spawns research teammates (1 per repo or major area)
 2. Each teammate reads AGENTS.md, explores relevant code, identifies patterns and constraints
 3. Teammates return structured findings to the lead
-4. Lead synthesizes research into enriched context for the draft
+4. Lead synthesizes research into enriched context for the plan
 
-**Result:** The draft and refined plan are significantly more accurate because they're based on real codebase research rather than assumptions.
+**Result:** The plan is significantly more accurate because it is based on real codebase research rather than assumptions.
 
-#### Phase 2: Parallel Task File Generation (after drafting)
+#### Phase 2: Parallel Task File Generation (after the Full format is chosen)
 
 When generating a plan with 5+ user-defined task files, teammates can write task files simultaneously.
 
 **How it works:**
 1. Lead creates the plan skeleton: README.md, PROMPTS.md, PROGRESS.md, analysis_results/, and the single Final Review task file (`{N}.task_final_review.md`)
 2. Lead spawns teammates (1 per 2-3 task files) to generate user-defined task files in parallel
-3. Each teammate receives the refined draft and plan context, and writes their assigned task files
+3. Each teammate receives the plan context, and writes their assigned task files
 4. Lead verifies all files, ensures consistency, and cleans up the team
 
 **What the lead handles (always sequential):**

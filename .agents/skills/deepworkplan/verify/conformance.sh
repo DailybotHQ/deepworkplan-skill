@@ -213,10 +213,12 @@ check_repo() {
 
   check_local_reviewer
 
-  if [ -d "$PLAN_ROOT/plans" ] && [ -d "$PLAN_ROOT/drafts" ]; then
-    pass ".dwp/plans + .dwp/drafts"
+  # 2.4.0 removed .dwp/drafts/; only plans/ is required. A leftover drafts/
+  # directory is inert and is neither required nor reported.
+  if [ -d "$PLAN_ROOT/plans" ]; then
+    pass ".dwp/plans"
   else
-    fail ".dwp/plans + .dwp/drafts"
+    fail ".dwp/plans"
   fi
 
   if [ "$IS_GIT" -eq 1 ]; then

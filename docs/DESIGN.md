@@ -101,7 +101,7 @@ breaks discovery for some agents. The validator rejects `deepworkplan_*` names.
 ## 7. The `.dwp/` output convention (gitignored working state)
 
 All Deep Work Plan output lives in a gitignored `.dwp/` directory at the repo
-root (`.dwp/plans/PLAN_<slug>/`, `.dwp/drafts/`), resolved by
+root (`.dwp/plans/PLAN_<slug>/`), resolved by
 [`shared/context.sh`](../skills/deepworkplan/shared/context.sh) and overridable
 via `DWP_DIR`. We chose a single conventional, gitignored directory because:
 

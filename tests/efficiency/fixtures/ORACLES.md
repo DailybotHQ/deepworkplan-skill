@@ -32,7 +32,7 @@ Surface; **affected** = scoped widened to consumers; **full** = discover all tes
 - **Candidate arm:** the final head of `feat/token-efficiency-upgrade`.
 - Both arms run in the **same session/harness/model settings, back-to-back**, on fresh copies of the same fixture (cold) and once more warm; at least three paired runs for any quantitative live claim; failures and retries included.
 
-| `create-modes` (C1–C5) | — | — | see `create-modes/README.md`: trust = no draft + manifest first, README skeleton `materializing`, status flipped last + spec_version 2.3.0 + zero questions; explicit draft wins; partial folder → complete/discard, nothing unrelated overwritten | L4, §3 |
+| `create-modes` (C1–C5) | — | — | see `create-modes/README.md`: Lite-first + manifest first, README skeleton `materializing`, status flipped last + spec_version 2.4.0 + zero questions in trust; no `.dwp/drafts/` write in any scenario; explicit `full` expands the same folder; `lite`+`full` is an error; partial folder → complete/discard, nothing unrelated overwritten | L4, §3 |
 | `resume-scenarios` (S1–S9) | — | interruption boundaries, stale/contradictory state, takeover, re-validate marker | exactly one missing step completed; no repeated gate/commit/report; bounded reads (S7); legacy untouched (S8) | recovery contract, L5 |
 
 ## Fixture corrections (Task 16) — recorded per the immutability rule

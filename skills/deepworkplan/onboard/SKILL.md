@@ -89,7 +89,7 @@ When this flow finishes, the target repo contains:
    the `.claude → .agents` and `.cursor → .agents` symlinks. Skills/agents/commands are
    **stack-appropriate**, not generic boilerplate.
 5. **DeepWorkPlan skill installed** + a gitignored **`.dwp/`** scaffold
-   (`.dwp/plans/`, `.dwp/drafts/`, with READMEs and a `.gitignore` rule).
+   (`.dwp/plans/`, with a README and a `.gitignore` rule).
 6. **A verified testing map** in `docs/TESTING_GUIDE.md` — the full and scoped
    validation commands (one scoped selection actually run where the toolchain
    is runnable), the source-to-test mapping, consumer policy, blind spots,
@@ -367,8 +367,8 @@ developer break the tie.
    it.
 2. Generate **`AGENTS.md` + `CLAUDE.md` (Phase 3) up front** (or as task 1) so
    the plan's tasks have the index and mandatory rules to anchor to.
-3. Instead of generating the rest inline, **emit a Deep Work Plan draft** under
-   `.dwp/drafts/` whose atomic tasks are reasoned from recon — see
+3. Instead of generating the rest inline, **materialize a Deep Work Plan** under
+   `.dwp/plans/` whose atomic tasks are reasoned from recon — see
    [`templates/onboarding-plan.md`](templates/onboarding-plan.md) for the shape
    (a **reasoning aid**, not a copy-paste). Typical decomposition:
    - one task **per `docs/` category** (Phase 4), each gated on "no placeholders
@@ -385,7 +385,7 @@ developer break the tie.
 
    Each task carries explicit **Acceptance Criteria** and a runnable
    **validation gate** (the repo's real lint / `md`-check / test).
-4. Hand off to the normal loop: refine the draft with `/dwp-refine`, finalize,
+4. Hand off to the normal loop: adjust the plan with `/dwp-refine` if needed,
    then `/dwp-execute` it task-by-task. It is resumable with `/dwp-resume` and
    inspectable with `/dwp-status`.
 
@@ -616,7 +616,7 @@ and **stack-appropriate**, not generic boilerplate.
    unverifiable dependency (no version, no checksum, no rollback; the shape
    Snyk W012 flags).
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
-   create `.dwp/plans/` and `.dwp/drafts/`, each with a `README.md` placeholder,
+   create `.dwp/plans/` with a `README.md` placeholder,
    and add `.dwp/` to the repo's `.gitignore` (append the rule
    non-destructively — do not rewrite the file). `.dwp/` is the only DWP output
    location; it **replaces** any pre-v2 DWP output tree (see
@@ -693,7 +693,7 @@ done.
    `dwp-status`, `dwp-verify`) and are thin delegators (no leftover `<skill-path>`
    placeholder, no copied flow body).
 6. **DeepWorkPlan skill is discoverable** and `.dwp/` exists, is gitignored
-   (`git check-ignore .dwp` confirms), and has `plans/` + `drafts/`. **`tmp/`
+   (`git check-ignore .dwp` confirms), and has `plans/`. **`tmp/`
    exists and is gitignored** (`git check-ignore tmp` confirms). **The AI Diff
    Reviewer local review is installed**: `.agents/skills/ai-diff-reviewer/SKILL.md`
    exists and an extension file is present at a recognized path

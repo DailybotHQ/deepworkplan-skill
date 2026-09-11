@@ -16,9 +16,9 @@ plan — where any coding agent executes reliably on short or long work. It make
 the repository "AI-first" — `AGENTS.md` + `docs/` + per-module docs + `.agents/`
 (with the `.claude → .agents` and `.cursor → .agents` symlinks) — and runs structured **Deep Work
 Plans**: Lite plans for bounded work and Full task-file plans for longer work;
-an AI agent drafts, refines, executes task-by-task,
-and resumes. All plan and draft outputs land in a gitignored `.dwp/` directory
-at the repo root (`.dwp/plans/`, `.dwp/drafts/`).
+an AI agent creates, refines, executes task-by-task,
+and resumes. All plan output lands in a gitignored `.dwp/` directory
+at the repo root (`.dwp/plans/`).
 
 Source of truth: <https://deepworkplan.com>. License: MIT.
 
@@ -111,7 +111,7 @@ full step-by-step flow.
 |------------------|----------|
 | "create a plan", "plan this small fix", "organize this work", "new deep work plan", "/dwp-create" | **Create** → read [`create/SKILL.md`](create/SKILL.md) |
 | "execute the plan", "run the plan", "/dwp-execute" | **Execute** → read [`execute/SKILL.md`](execute/SKILL.md) |
-| "refine the draft", "modify the plan", "/dwp-refine" | **Refine** → read [`refine/SKILL.md`](refine/SKILL.md) |
+| "modify the plan", "change the scope", "/dwp-refine" | **Refine** → read [`refine/SKILL.md`](refine/SKILL.md) |
 | "resume", "continue the interrupted plan", "/dwp-resume" | **Resume** → read [`resume/SKILL.md`](resume/SKILL.md) |
 | "plan status", "what's left", "/dwp-status" | **Status** → read [`status/SKILL.md`](status/SKILL.md) |
 | "verify", "is this repo AI-first?", "check conformance", "/dwp-verify" | **Verify** → read [`verify/SKILL.md`](verify/SKILL.md) |
@@ -135,7 +135,7 @@ rendered version lives at https://deepworkplan.com/spec.
 - [`shared/context.sh`](shared/context.sh) — detect repo root, branch, and agent
   tool; resolve the `.dwp/` output location.
 - [`shared/dwp-paths.md`](shared/dwp-paths.md) — the `.dwp/plans/` +
-  `.dwp/drafts/` output convention and how to override it.
+  `.dwp/plans/` output convention and how to override it.
 - [`shared/adaptation.md`](shared/adaptation.md) — the reasoning-over-copy-paste
   principle and the two repository archetypes (individual repo vs orchestrator
   hub).

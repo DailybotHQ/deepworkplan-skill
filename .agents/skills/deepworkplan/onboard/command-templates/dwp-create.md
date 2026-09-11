@@ -13,9 +13,9 @@ Route this invocation to the **create** sub-skill of the installed `deepworkplan
 skill and follow it: read `<skill-path>/deepworkplan/create/SKILL.md` and execute
 its flow. Ordinary requests — at any scale, including a single small fix —
 materialize an executable **Lite** plan under `.dwp/plans/PLAN_{name}/`; no
-draft file is written. `trust`/`auto` skips the review and `lite`/`full` override
-the recommendation, at either edge of the request. Legacy `refined-draft`
-commands still write to `.dwp/drafts/`. Plan output lands in this repo's
+draft file is written — the Lite plan is the reviewable artifact. `trust`/`auto`
+skips the review and `lite`/`full` override the recommendation, at either edge of
+the request. Plan output lands in this repo's
 gitignored `.dwp/` — never the legacy
 `.agent_commands/agent_deep_work_plans/results/` path.
 

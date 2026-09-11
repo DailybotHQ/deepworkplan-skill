@@ -54,6 +54,11 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 > promoting to Full. Both representations keep the same validation, recovery and
 > Final Review obligations. `LITE_PLANS.md` defines the representation and the
 > boundary-option grammar; v1 state remains valid for existing plans.
+> **Breaking in 2.4.0:** the refined draft, the `.dwp/drafts/` directory and the
+> `refined-draft` / `from-refined-draft` / `from` create parameters are
+> **removed**. The Lite plan is the reviewable artifact they used to be, and it
+> is already executable. Existing plan folders are unaffected; a leftover
+> `.dwp/drafts/` directory is inert and may be deleted by the developer.
 
 > **Divergence from v1 (overview).** Three breaking changes drive the major bump:
 > (1) the **create flow is single-step** — one refined draft, dropping the v1
@@ -80,7 +85,6 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 |------|-----------|
 | **Plan** | A directory of markdown files specifying an objective and its tasks. Named `PLAN_{snake_case_name}/`. |
 | **Task** | An atomic unit of work, defined in `{N}.task_{title}.md`. |
-| **Refined draft** | The single reviewable artifact produced by `create` in guided mode (or on explicit request), written to `.dwp/drafts/`. Trust mode materializes the plan directly (§3). |
 | **Lite plan** | An executable plan whose compact task records live in `README.md`; it carries the normal state, validation and Final Review contract. |
 | **Full plan** | An executable plan whose task records live in individual task files; a Lite plan may promote to this representation without losing history. |
 | **Plan README** | The `README.md` inside a plan; source of truth for "what is done". |
@@ -88,20 +92,23 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 | **Skills candidate** | A task-local record (stable ID, evidence, disposition) of a reusable pattern decided inside the owning task (§6.2). |
 | **Executive Report** | An optional, on-request stakeholder artifact generated after completion (§6.3). |
 | **Orchestrator plan** | A plan in an orchestrator hub that creates and coordinates **child DWPs** in sub-repos. |
-| **`.dwp/`** | The gitignored repo-root output directory: `.dwp/plans/`, `.dwp/drafts/`. |
+| **`.dwp/`** | The gitignored repo-root output directory: `.dwp/plans/`. |
 
 ---
 
 ## 2. The `.dwp/` Output Convention
 
-- A repository using the DWP workflow **MUST** locate all plans and drafts under a
+- A repository using the DWP workflow **MUST** locate all plans under a
   single repo-root directory named `.dwp/`:
 
   ```
   .dwp/
-  ├── plans/      ← PLAN_{name}/ directories (executed plans)
-  └── drafts/     ← PLAN_{name}_draft_refined.md (the create-flow artifact)
+  └── plans/      ← PLAN_{name}/ directories (Lite and Full alike)
   ```
+
+- Implementations **MUST NOT** write a `.dwp/drafts/` directory. It was removed
+  in 2.4.0; a leftover directory from an earlier version is inert and **MUST
+  NOT** be read, written or deleted by any DWP flow.
 
 - `.dwp/` **MUST** be git-ignored (added to the repo's `.gitignore`). Plan
   execution artifacts are working state, not tracked deliverables.
@@ -144,14 +151,14 @@ once, performs its **requirements analysis** (scope, dependency ordering between
 tasks, validation selection per §5, proportional-rigor tier per §11), and then
 materializes according to the mode the developer chose:
 
-- **Guided mode (default).** The flow **MUST** produce exactly **one** artifact
-  for user review: a **refined draft** written to
-  `.dwp/drafts/PLAN_{name}_draft_refined.md`, containing enough structure (goal,
-  context, variables, task outline, archetype, tier) for the user to approve or
-  request changes in one pass. The plan folder `.dwp/plans/PLAN_{name}/` is
-  materialized only after approval.
-- **Trust mode (`trust` / `auto`).** The flow **MAY** materialize
-  `.dwp/plans/PLAN_{name}/` **directly**, without writing a draft file, because
+- **Guided mode (default).** The flow **MUST** materialize the plan folder
+  `.dwp/plans/PLAN_{name}/` as a ready Lite plan and present **it** for review,
+  with the format recommendation and the signals behind it. It carries the goal,
+  context, variables, task records, archetype and tier, so the developer can
+  approve, promote, revise or stop in one pass. Approval stays `pending` until
+  they choose; a ready plan is not an approved one.
+- **Trust mode (`trust` / `auto`).** The flow **MUST** materialize
+  `.dwp/plans/PLAN_{name}/` directly and choose its representation, because
   the developer has waived the intermediate review. The requirements analysis,
   dependency ordering, and a **plan-quality check** (numbering, links, every task
   carrying acceptance criteria and a validation gate, the Final Review present)
@@ -159,9 +166,6 @@ materializes according to the mode the developer chose:
   objective, context, and task outline are captured in the plan README (§4), so
   nothing reviewable is lost. A plan materialized with `trust` is **pre-approved**
   for unattended execution (`AGENT_PROTOCOL.md` §7.2).
-- **Explicit draft modes.** `refined-draft {name}` (produce only the draft) and
-  `from-refined-draft {file}` (materialize from an existing draft) **MUST** remain
-  available in both modes; a developer who asks for a draft gets one.
 - **Materialization order (both modes) — resumable at any point.** The flow
   **MUST** write `manifest.json` first (identity, standard, intended task count),
   then a `README.md` skeleton carrying the full intended task list and the line
@@ -174,15 +178,17 @@ materializes according to the mode the developer chose:
   recorded shape and analysis or discard it; `execute` and `resume` **MUST NOT**
   run it.
 
-In every mode the flow **MUST NOT** produce an intermediate non-refined draft as
-a separate reviewable step. The legacy `[1/3] Creating draft → [2/3] Refining
-draft` sequence is removed.
+In every mode the flow **MUST NOT** write any draft artifact. The plan folder is
+the only output of `create`.
 
 > **Divergence from v1.** v1's `dwp-create` was explicitly two-step. v2 collapses
 > it to a single refined draft (`RECONCILIATION.md` divergence #3).
 > **Divergence from v2.2.** v2.2 required the refined draft in every mode; v2.3
 > makes the flow mode-aware — trust mode materializes directly while keeping the
 > analysis and quality check — so the plan's substance is composed once.
+> **Divergence from v2.3 (breaking).** 2.4.0 removes the refined draft entirely:
+> both modes materialize the plan folder, and the reviewable artifact is the Lite
+> plan itself. The explicit draft parameters are gone.
 
 ---
 
@@ -831,7 +837,7 @@ tier, declared in the manifest's `rigor` field when the state layer is present:
   plan sprouts sub-repos — the agent **MUST** stop and promote the work to the
   next tier rather than stretching the current one.
 - Tier selection is part of plan creation: the `create` flow **SHOULD** state
-  the chosen tier and why in the refined draft (guided mode) or in the plan
+  the chosen tier and why in the plan
   README (trust mode, §3).
 
 ---

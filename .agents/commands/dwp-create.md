@@ -1,5 +1,5 @@
 ---
-description: Create a deep work plan (single-step refined draft → final plan) (provided by the installed `deepworkplan` skill)
+description: Create a deep work plan for short or long work — materializes an executable Lite plan, promoted to Full task files only when needed (provided by the installed `deepworkplan` skill)
 ---
 
 # /dwp-create — provided by the `deepworkplan` skill
@@ -11,8 +11,8 @@ description: Create a deep work plan (single-step refined draft → final plan) 
 
 Route this invocation to the **create** sub-skill of the installed `deepworkplan`
 skill and follow it: read `.agents/skills/deepworkplan/create/SKILL.md` and execute
-its flow. Plan and draft outputs land in this repo's gitignored `.dwp/`
-(`.dwp/plans/`, `.dwp/drafts/`).
+its flow. Plan output lands in this repo's gitignored `.dwp/`
+(`.dwp/plans/`).
 
 > Other agents: invoke the skill's `deepworkplan-create` sub-skill directly
 > (`/deepworkplan-create` in Claude Code, `#deepworkplan-create` elsewhere). This

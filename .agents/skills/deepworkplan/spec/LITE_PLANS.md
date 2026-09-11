@@ -54,5 +54,7 @@ promotion live in `state.json`, which is the machine-readable authority; the
 README carries the same facts in human-readable form and wins on task-completion
 desync. `approval` is optional in the v2 state schema so that a plan written
 before it was recorded still validates: when it is absent, treat the README's
-`Approval` row as the value, and `pending` when neither is present. Existing draft commands are compatibility aliases; normal create
-writes no draft.
+`Approval` row as the value, and `pending` when neither is present. The refined
+draft, the `.dwp/drafts/` directory and the `refined-draft` /
+`from-refined-draft` / `from` parameters were removed in 2.4.0; `create` writes
+the plan folder and nothing else.

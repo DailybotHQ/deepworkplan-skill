@@ -48,11 +48,28 @@ PY
   [ "$status" -eq 0 ]
   run grep -q '"kind": "inline", "value": "#task-N"' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
   [ "$status" -eq 0 ]
-  # No shipped reader may still promise a refined draft as the default output.
-  run grep -q 'stage the refined draft for review' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  # 2.4.0 removed drafts outright. The remaining mentions in the pack are
+  # removal notices; no operative instruction may still offer a draft.
+  run grep -q '^| `refined-draft' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
   [ "$status" -ne 0 ]
-  run grep -q 'Creates the \*\*refined draft\*\*' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  run grep -q 'Refined Draft and Review' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
   [ "$status" -ne 0 ]
+  run grep -q '## Draft Workflow' "$REPO_ROOT/skills/deepworkplan/refine/SKILL.md"
+  [ "$status" -ne 0 ]
+  # The path convention and the tree that teaches it must list plans/ only.
+  run grep -q 'drafts/     ←' "$REPO_ROOT/skills/deepworkplan/shared/dwp-paths.md"
+  [ "$status" -ne 0 ]
+  run grep -q '├─ drafts/' "$REPO_ROOT/skills/deepworkplan/guide/structure.md"
+  [ "$status" -ne 0 ]
+}
+
+@test "conformance no longer requires a .dwp/drafts directory" {
+  WORK="$(mktemp -d)"
+  ( cd "$WORK" && git init -q . && mkdir -p .dwp/plans && printf '.dwp/\n' > .gitignore )
+  run bash "$REPO_ROOT/skills/deepworkplan/verify/conformance.sh" --repo-only "$WORK"
+  [[ "$output" == *"[x] .dwp/plans"* ]]
+  [[ "$output" != *"drafts"* ]]
+  rm -rf "$WORK"
 }
 
 @test "the generated dwp-create wrapper advertises the Lite-first flow" {

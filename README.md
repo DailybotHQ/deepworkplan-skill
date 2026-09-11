@@ -45,7 +45,7 @@ and report with all plan output living in a gitignored
 | **deepworkplan-onboard** | Make any repo AI-first. Reasons about the repo's stack and archetype (orchestrator hub vs individual repo), then generates an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and the `.claude → .agents` / `.cursor → .agents` symlinks. Offers opt-in addons. |
 | **deepworkplan-create** | Create a Deep Work Plan. Starts every request as an executable Lite plan, recommends Lite or Full from the work's risk and horizon, and promotes safely to Full only when needed. |
 | **deepworkplan-execute** | Execute an existing plan task-by-task, run each task's validation, and log progress. |
-| **deepworkplan-refine** | Refine a plan draft, or modify the scope/tasks of an existing final plan. |
+| **deepworkplan-refine** | Modify the scope or tasks of an existing plan, or promote a Lite plan to Full task files. |
 | **deepworkplan-resume** | Resume an interrupted plan from its recorded progress state. |
 | **deepworkplan-status** | Report the status of a plan — completed tasks, what's left, and blockers — without executing. |
 | **deepworkplan-author** | Author or update reusable skills, agents, and commands in the current repo — reasons about the repo's `.agents/` layout, follows the Open Agent Skills frontmatter contract, and keeps the `.agents/docs/` catalog in sync. Backs the `/skill-create` and `/agent-create` aliases. |
@@ -143,8 +143,12 @@ Or invoke directly: `/deepworkplan-create`, `/deepworkplan-onboard`, etc.
 All Deep Work Plan output lives in a gitignored `.dwp/` directory at the repo
 root:
 
-- `.dwp/plans/PLAN_<slug>/` — final plans (README + task files + progress log)
-- `.dwp/drafts/` — refined drafts staged before becoming a final plan
+- `.dwp/plans/PLAN_<slug>/` — the plans (README + state + progress log, plus
+  task files when the plan is Full)
+
+There is no draft directory: `create` materializes an executable Lite plan
+directly, and that plan is the reviewable artifact. `.dwp/drafts/` and the
+`refined-draft` commands were removed in DWP 2.4.0.
 
 `.dwp/` is resolved by `skills/deepworkplan/shared/context.sh` and overridable
 via the `DWP_DIR` environment variable. It is meant to be gitignored — plan
