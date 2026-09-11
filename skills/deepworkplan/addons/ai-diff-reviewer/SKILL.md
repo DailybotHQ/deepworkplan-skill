@@ -224,7 +224,7 @@ Run the pinned install unless the developer explicitly declined in Step 0
 
 - **Vendored coding-agent skill** (recommended — brings the five-sub-skill
   router and the byte-identical prompt parity guarantee; current **v2.0.0**):
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.1 --skill ai-diff-reviewer -y`
     (**pinned to a published tag**; vendors into
     `.agents/skills/ai-diff-reviewer/` and records source + content hash in
     `skills-lock.json`; both `--yes` and `-y` are required — `--yes` covers

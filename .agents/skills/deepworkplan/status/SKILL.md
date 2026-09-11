@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-status
 description: Report Lite or Full Deep Work Plan status — format, approval, readiness, progress, checkpoint, blockers and Markdown/state consistency — without modifying anything.
-version: "4.0.0"
+version: "4.0.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob

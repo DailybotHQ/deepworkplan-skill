@@ -101,3 +101,25 @@ setup() {
         grep -qE '^description:' "$skill"
     done
 }
+
+@test "the documented addon install pin matches the vendored addon version" {
+    # The release workflow refreshes `.agents/skills/ai-diff-reviewer/` to the
+    # latest upstream tag, but the install command the pack *teaches* is prose
+    # and is not rewritten with it. Those two drifted a patch apart once (the
+    # pack taught @v2.0.0 while the vendored copy was 2.0.1), which hands every
+    # adopter a stale reviewer. Make the invariant a CI gate instead of a habit.
+    #
+    # Only the exact pin is checked. `DailybotHQ/ai-diff-reviewer@v2` is the
+    # GitHub Action's floating major tag and is deliberately left floating so
+    # patch fixes flow automatically — it must NOT be pinned to a patch.
+    local vendored pins
+    vendored="$(grep -m1 '^version:' "$AGENTS_DIR/skills/ai-diff-reviewer/SKILL.md" \
+        | sed -E 's/.*"([^"]+)".*/\1/')"
+    [ -n "$vendored" ]
+
+    pins="$(grep -rhoE 'ai-diff-reviewer@v[0-9]+\.[0-9]+\.[0-9]+' "$REPO_ROOT/skills" \
+        | sed 's/.*@v//' | sort -u)"
+    [ -n "$pins" ]
+    # Every exact pin in the shipped pack names exactly the vendored version.
+    [ "$pins" = "$vendored" ]
+}

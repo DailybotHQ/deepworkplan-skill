@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-onboard
 description: Make any repository AI-first — reason (never template) an adapted AGENTS.md, docs/, per-module docs and .agents/ kit from the real repo, discover and verify its full and scoped validation commands and source-to-test mapping, install the DeepWorkPlan skill, and, for a repository onboarded under an earlier version, perform a targeted, non-destructive, idempotent harness upgrade. Use when the developer wants to onboard or upgrade a repository for AI agents.
-version: "4.0.0"
+version: "4.0.1"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -136,7 +136,7 @@ mutates the target repository — non-destructively and by explicit design:
 - On the plan-driven path, plan artifacts under `.dwp/` as `create` defines.
 
 **Writes include:** with Phase 0 consent, Phase 7a may run the tag-pinned
-`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer -y`
+`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.1 --skill ai-diff-reviewer -y`
 install into `.agents/skills/ai-diff-reviewer/` and bootstrap the repo-tailored
 `.review/extension.md`; decline or offline failure is recorded as a declared
 exception.
