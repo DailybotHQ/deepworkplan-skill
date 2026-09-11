@@ -633,6 +633,14 @@ check_plan() {
 
 check_lite_plan() {
   local plan_dir="$1" problems
+  if ! json_valid "$plan_dir/state.json"; then
+    fail "Lite state.json parses"
+    return 0
+  fi
+  if [ ! -f "$plan_dir/manifest.json" ] || ! json_valid "$plan_dir/manifest.json"; then
+    fail "Lite manifest.json present and parses"
+    return 0
+  fi
   if [ "$(json_str "$plan_dir/state.json" materialization)" != "ready" ]; then
     fail "Lite plan materialization is not ready — complete or recover it with create/refine before execution"
     return 0
@@ -652,6 +660,10 @@ if not tasks:
 ids = [t.get('id') for t in tasks]
 if sorted(ids) != list(range(1, len(tasks) + 1)):
     print('Lite task IDs are not contiguous')
+if state.get('task_count') != len(tasks):
+    print('Lite state task_count disagrees with task records')
+if state.get('completed_count') != sum(t.get('status') == 'completed' for t in tasks):
+    print('Lite completed_count disagrees with task statuses')
 for task in tasks:
     locator = task.get('locator', {})
     if locator.get('kind') != 'inline' or locator.get('value') != '#task-' + str(task.get('id')):
@@ -665,6 +677,30 @@ for task in tasks:
             print('Lite task lacks ' + heading + ': ' + str(task.get('id')))
 if 'Final Review' not in readme:
     print('Lite plan lacks Final Review')
+
+# The canonical task list is the checklist line that names Task N. Ignore fenced
+# examples and compare it to each state status rather than merely counting boxes.
+checks, fence = {}, None
+for line in readme.splitlines():
+    marker = re.match(r'^\s*(`{3,}|~{3,})', line)
+    if marker:
+        token = marker[1][0]
+        fence = None if fence == token else (fence or token)
+        continue
+    if fence:
+        continue
+    box = re.match(r'^\s*- \[([ xX])\]\s*.*?\bTask\s+(\d+)\b', line, re.I)
+    if box:
+        ident = int(box[2])
+        if ident in checks:
+            print('Lite README has duplicate task checkbox: ' + str(ident))
+        checks[ident] = box[1].lower() == 'x'
+if set(checks) != set(ids):
+    print('Lite README task checkboxes do not match task records')
+for task in tasks:
+    ident = task.get('id')
+    if ident in checks and (task.get('status') == 'completed') != checks[ident]:
+        print('Lite state status disagrees with README: Task ' + str(ident))
 PYEOF
 )"
   if [ -z "$problems" ]; then
