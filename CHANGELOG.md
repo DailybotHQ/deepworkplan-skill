@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [4.0.1] — 2026-09-11
+
+### Changes
+
+- Merge pull request #38 from DailybotHQ/fix/v4-lifecycle-contracts
+- fix(verify): one plan contract for both eras, with the legacy path restored
+- fix(state): preserve v2 task evidence and validated commits
+
+
 ## [4.0.0] — 2026-09-11
 
 ### Changes
