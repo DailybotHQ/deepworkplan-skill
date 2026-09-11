@@ -9,6 +9,24 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [4.0.0] — 2026-09-11
+
+### Changes
+
+- Merge pull request #37 from DailybotHQ/feat/lite-plan-lifecycle
+- fix(create): author each task contract once, and name the promotion recovery
+- feat(skill)!: remove the refined draft and .dwp/drafts entirely
+- fix(verify): repair Lite conformance defects and settle the approval axis
+- fix(create): make the Lite-first flow actually executable
+- fix(test): commit Lite fixtures and make lite-plans.bats CI-safe
+- fix(verify): validate Lite state correspondence
+- feat(lifecycle): ship Lite-first plan workflow
+- test(verify): cover Lite plan contracts
+- feat(execute): support Lite plan lifecycle
+- feat(create): add Lite-first creation and option grammar
+- feat(spec): define Lite and Full plan lifecycle
+
+
 ## [3.0.0] — 2026-09-10
 
 ### Changes
