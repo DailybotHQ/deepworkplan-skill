@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-execute
 description: Execute Lite or Full Deep Work Plans task-by-task — select validation from the actual surface, preserve state and evidence, recover safely, and finish with the Final Review.
-version: "3.0.0"
+version: "4.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -289,6 +289,13 @@ Rules (strict):
    state layer (`../spec/PLAN_STATE.md`), rewrite `state.json` atomically as the
    final completion step: task `completed`, gate records, a short outcome record
    (tried / failed / worked), and the commit hash.
+
+   A gate record is a closed object — `{"command", "passes": true|false,
+   "last_run": "<ISO-8601>", "exit_code": <int>, "evidence": "<= 500 chars"}`.
+   `passes` is a boolean, never the prose `"pass"` used in the status line
+   above, and no other field is accepted; the state schemas reject anything
+   else, so a plan whose gates carry an invented field fails verification even
+   though its work is done (`../spec/PLAN_STATE.md` §4.2).
 
 7. **Dailybot per-task report (only for individually significant tasks)** — after
    committing a task that is independently significant (feature, bug fix, major
