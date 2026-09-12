@@ -143,7 +143,10 @@ pointer**, never by replaying everything.
    | mid-implementation with no checkpoint note | dirty tree only | review the diff against the task; incorporate valid partial progress, finish the rest |
 
    Changed inputs since a recorded gate (a later edit, a `refine`, a new
-   revision) invalidate that gate → rerun it.
+   revision) invalidate that gate → rerun it. Where the table resumes the
+   tail of the update order, the `state.json` step may use the shipped
+   updater (`../shared/update-state.py`) as a targeted, atomic mutation;
+   only the reconcile-from-markdown row regenerates the whole file.
 6. **Takeover from another agent or model.** If the checkpoint, log or
    `PROGRESS.md` was written by a different agent/model (`state.json.updated_by`,
    the log's wording) or the session is a fresh context: read the checkpoint
