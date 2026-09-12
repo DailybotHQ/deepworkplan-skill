@@ -25,9 +25,28 @@ up_has() {
     grep -q 'documentation_url: https://deepworkplan.com' "$UP"
     run python3 "$REPO_ROOT/scripts/validate-frontmatter.py"
     [ "$status" -eq 0 ]
-    # The new file rides the pack version; the bot owns the number.
-    grep -q '^version: "4.0.3"$' "$UP"
-    grep -q '^version: "4.0.3"$' "$ROUTER"
+    # The sub-skill rides the pack version and the release bot owns the number,
+    # so the pin is DERIVED from the router's own frontmatter — never a literal.
+    # (F8-1: the released v5.0.0 tag shipped this test red because a hardcoded
+    # 4.0.3 literal survived the stamp.)
+    PACK_VERSION="$(grep -m1 '^version: ' "$ROUTER" | sed 's/^version: //')"
+    [ -n "$PACK_VERSION" ]
+    grep -qF "version: ${PACK_VERSION}" "$UP"
+}
+
+@test "pack version is identical across every SKILL.md (release stamps stay in sync)" {
+    first=""
+    for f in "$SK/SKILL.md" "$SK"/*/SKILL.md; do
+        v="$(grep -m1 '^version: ' "$f" | sed 's/^version: //')"
+        [ -n "$v" ]
+        if [ -z "$first" ]; then first="$v"; fi
+        [ "$v" = "$first" ]
+    done
+}
+
+@test "no test pins a literal pack version (the stamp owns the number)" {
+    run grep -rn 'version: "[0-9]' "$REPO_ROOT/tests"
+    [ "$status" -ne 0 ]
 }
 
 @test "the router routes to it and stays inside the pack boundary" {
