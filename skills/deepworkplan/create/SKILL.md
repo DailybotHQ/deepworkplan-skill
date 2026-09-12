@@ -215,8 +215,11 @@ capabilities. **If, and only if, 2+ tasks are parallelizable:** read
 [`team-agents.md`](team-agents.md) (this directory) and follow its steps (2.10
 configuration, and 2.11 parallel research if that step's own trigger — 2+ repos
 or several independent modules with context missing — also fires). If not
-parallelizable: add nothing, mention nothing, read nothing, even when the host
-supports team agents.
+parallelizable: write the **sequential declaration** into the plan README — one
+agent-neutral line, `Execution: sequential — {short rationale: shared surface /
+collision risk / single-session audit trail}` — and read nothing else for this
+detection, even when the host supports team agents. The decision is never
+silent in either direction; never fabricate parallel groups to fill the section.
 
 ### Step 3 — Requirements Analysis (both modes, before any file is written)
 

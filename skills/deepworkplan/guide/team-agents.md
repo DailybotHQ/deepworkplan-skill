@@ -38,6 +38,16 @@ Team agents allow multiple Claude Code instances to work on plan tasks **in para
 
 Plans can define **parallel task groups** — sets of tasks that can execute simultaneously by different teammates.
 
+**The parallelization decision is always declared — never silent.** Two shapes:
+
+- **Sequential plans** carry one agent-neutral line in the README:
+  `Execution: sequential — {short rationale: shared surface / collision risk / single-session audit trail}`.
+  Every agent reads it as the decision and executes sequentially; it is not a missing Team Agents Configuration.
+- **Parallel plans** carry the full section below, and ALSO list their sequential
+  tasks explicitly (Sequential rows in the groups table, corpus shape
+  "Sequential tasks: …"). The Final Review (legacy plans: their three closing
+  tasks) is **always sequential** — exempt from every parallel group.
+
 **In the plan README.md, add a "Team Agents Configuration" section AFTER all standard sections:**
 
 ```markdown
@@ -48,13 +58,13 @@ Plans can define **parallel task groups** — sets of tasks that can execute sim
 
 ### Parallel Task Groups
 
-| Group | Tasks | Teammates | Description |
-|-------|-------|-----------|-------------|
-| Sequential | 1-2 | Lead only | Setup and prerequisites |
-| Parallel A | 3, 4, 5 | 3 teammates | Independent module work |
-| Sequential | 6 | Lead only | Integration checkpoint |
-| Parallel B | 7, 8 | 2 teammates | Testing and documentation |
-| Sequential | 9-11 | Lead only | Final tasks (mandatory) |
+| Group | Tasks | Teammates | Starts after | Description |
+|-------|-------|-----------|--------------|-------------|
+| Sequential | 1-2 | Lead only | — | Setup and prerequisites |
+| Parallel A | 3, 4, 5 | 3 teammates | Task 2 | Independent module work |
+| Sequential | 6 | Lead only | Group A | Integration checkpoint |
+| Parallel B | 7, 8 | 2 teammates | Task 6 | Testing and documentation |
+| Sequential | 9-11 | Lead only | Group B | Final tasks (mandatory, always sequential) |
 
 ### Teammate Roles
 
@@ -67,7 +77,12 @@ Plans can define **parallel task groups** — sets of tasks that can execute sim
 
 **Key rules for parallel task groups:**
 - Tasks within a parallel group must have **no file dependencies** between them
-- Each teammate must own a distinct set of files (no overlap)
+- Each teammate must own a distinct set of files (no overlap) — two tasks in one
+  group owning the same file is a conflict even when their logical changes are
+  independent
+- The optional **Starts after** column names the task, group, or barrier a group
+  starts after; a group without one starts when the plan reaches it sequentially
+- Sequential tasks are listed explicitly (never implied by omission)
 - The mandatory Final Review is **always sequential** (legacy plans: their three closing tasks likewise)
 - Integration checkpoints between parallel groups are recommended
 

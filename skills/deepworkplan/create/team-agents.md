@@ -11,13 +11,23 @@ lives only in a team-agents section.
 **2.10 Team-agents detection (automatic — always runs, non-orchestrator plans).**
 Always analyze whether 2+ tasks touch different files/modules with no data
 dependencies and would benefit from parallel execution. This is NOT opt-in.
+The parallelization decision is **always declared in the plan README** — never
+silent, in either direction.
 - If parallelizable: in **guided** mode, inform the user (do not ask) and add the
   team-agents configuration; in **trust** mode, do it silently. Team-agents
   metadata is always additive and backward compatible (other agents ignore it).
 - Auto-assign parallel groups (tasks with no cross-dependencies), teammate roles
-  (derived from task content), and default model `sonnet`. Setup/integration and
-  the Final Review (the single mandatory final task) is always sequential.
-- If not parallelizable: add nothing, mention nothing.
+  (derived from task content), and default model `sonnet`. Each parallel group
+  may name what it **starts after** (a task, a prior group, or a barrier);
+  plans with parallel groups **also list their sequential tasks explicitly** in
+  the groups table (corpus shape: `Sequential tasks: …` rows). Setup/integration
+  and the Final Review (the single mandatory final task) are **always
+  sequential** — exempt from parallel groups in every plan.
+- If not parallelizable: write an explicit, agent-neutral **sequential
+  declaration** into the plan README — one line, corpus shape:
+  `Execution: sequential — {short rationale: shared surface / collision risk /
+  single-session audit trail}`. Never leave the decision silent, and never
+  fabricate parallel groups to fill the section.
 
 **Step 2.11 — Parallel Research Phase (Claude Code only, automatic).** Before
 materialization, if the plan spans 2+ repos or several independent modules and context
@@ -35,9 +45,21 @@ run silently.
 Task Groups + Teammate Roles tables) and a "Team Agents Metadata (Claude Code
 Only)" section to each parallel task file (Parallel Group / Teammate Role / Can
 Run With / Blocks / Files Owned). Use `../examples/TEAM_AGENTS_TASK_TEMPLATE.md`.
-Rules: never put required info inside team-agents sections; every task must work
+The Parallel Task Groups table carries an optional **Starts after** column (the
+task, group, or barrier a group starts after) and lists sequential tasks
+explicitly (Sequential rows naming their tasks). Rules: never put required info
+inside team-agents sections; every task must work
 sequentially; the Final Review is always sequential; file ownership between
-parallel tasks must not overlap.
+parallel tasks must not overlap — two tasks in one group owning the same file
+is a conflict even when their logical changes are independent.
+
+**Sequential declaration (when Step 2.10 found no parallelizable groups):** add
+one line to the plan README (near the task list, where a Team Agents
+Configuration section would sit): `Execution: sequential — {short rationale}`.
+The rationale is one clause naming the real cause (shared surface, collision
+risk, single-session audit trail). This line is agent-neutral — every agent
+reads it as the plan's parallelization decision; execute/SKILL.md Step 2.2
+treats it as a made decision, not a missing one.
 
 ## Accelerating generation with team agents
 

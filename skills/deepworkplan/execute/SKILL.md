@@ -153,7 +153,10 @@ availability, and child-DWP list. **If, and only if, this fires:** read
 completion rules.
 
 **Step 2.2 — Detect team-agents configuration.** If the README has a "Team Agents
-Configuration" section: team-agents mode is available. Verify
+Configuration" section: team-agents mode is available. If the README instead
+carries an explicit sequential declaration (`Execution: sequential — …`), the
+plan has already made its parallelization decision — execute sequentially and
+do not treat it as a missing or failed detection. Verify
 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`; if not set, inform the user and fall
 back to sequential. If available and enabled, offer to use team agents for
 parallel groups (in unattended mode: use them only if the plan's guidelines say
