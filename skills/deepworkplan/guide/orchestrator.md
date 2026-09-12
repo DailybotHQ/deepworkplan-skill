@@ -185,15 +185,21 @@ or set an explicitly recorded child-specific override.
 
 If the target repo does NOT have the DeepWorkPlan skill installed:
 
-1. Install the DeepWorkPlan skill in that repo (it ships its own `guide/GUIDE.md`
-   and `examples/`), then ensure the gitignored output root exists:
+1. Record the missing commands/context in the task log. Do NOT install a skill
+   or onboard the child on your own initiative — use the available local DWP
+   pack for plan authoring, and run onboarding only when the user authorizes
+   it (`../execute/orchestrator.md` — installation belongs to the child repo's
+   owner). When authorized, the child then ships its own `guide/GUIDE.md` and
+   `examples/`.
+2. Ensure the gitignored output root exists before writing the plan:
    ```
    .dwp/
    └── plans/
    ```
-2. Reason about the target repo's tech stack (validation commands, test patterns,
-   etc.) per `shared/adaptation.md` — never copy a fixed validation set.
-3. Add `.dwp/` to the repo's `.gitignore`.
+3. Reason about the target repo's tech stack (validation commands, test patterns,
+   etc.) per `shared/adaptation.md` — never copy a fixed validation set or
+   invent a generic gate to hide missing prerequisites.
+4. Add `.dwp/` to the repo's `.gitignore`.
 
 #### Step 4: Create the child DWP plan
 
@@ -541,10 +547,15 @@ The orchestrator's hand-off prompt should explicitly name which predecessor arti
 
 #### Fallback When Manifest Is Missing
 
-If no manifest exists (backward compatibility):
+If no manifest exists (backward compatibility — legacy plans only; new
+orchestrator plans REQUIRE one):
 - Check the parent plan README's "Child DWP Plans" table for status
 - Look for the declared output artifacts in predecessor child DWP plan folders
-- If no predecessor outputs are available, proceed with the information in the child DWP's own README (which includes the parent plan reference from section 13.5)
+- Proceed only when that evidence establishes the SAME readiness facts a
+  manifest would (predecessor executed/created state plus declared outputs on
+  disk); log the limitation in the task log. If it cannot establish them,
+  BLOCK — do not proceed on the child's own README alone, and never silently
+  migrate a legacy plan to add a manifest.
 
 #### Child DWP Dependency Blocking
 
