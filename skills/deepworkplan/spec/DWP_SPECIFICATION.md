@@ -641,7 +641,26 @@ authoring still open **MUST** be completed and validated before (b) is final. It
 **MUST NOT** re-read the whole plan to rediscover patterns and **MUST NOT**
 produce a second, separate discovery report; the ledger is the record.
 
-**(d) Completion.** After (a)–(c) pass, the agent reports completion (deliverables,
+**(d) Documentation reconciliation — the plan's touched surface only.** The
+Final Review **MUST** sweep every behavior-changing task's reconciled surface
+against the documentation that registers it — the tasks' Touched Surfaces and
+documentation decisions (§6.6) are the ledger; this is a bounded sweep, not a
+second discovery pass. In this order: the gate registry
+(`docs/TESTING_GUIDE.md`) first — every command, script, or gate the plan
+introduced or changed is registered — then the architecture, module, and
+feature docs for structural or behavioral change, then the `AGENTS.md` index
+when a new top-level surface appeared. Every miss **MUST** be fixed inside
+this review, and any validation affected by the fix **MUST** be rerun under
+(b): a plan does not close with an undocumented behavior-changing surface
+unless the user explicitly accepted the miss. The result **MUST** be recorded
+in `analysis_results/SECURITY_REVIEW.md` as a "Documentation reconciliation"
+subsection — each checked doc current, or the fixed list. A
+whole-repository documentation audit belongs to `/dwp-verify` and onboarding,
+never to the Final Review. The step exists because its absence has shipped
+real misses: a released feature whose new validation gate was never
+registered in the gate registry.
+
+**(e) Completion.** After (a)–(d) pass, the agent reports completion (deliverables,
 validation evidence, limitations, and any pull-request links), offers the
 Executive Report **once** (§6.3), and — where a reporting channel is configured
 (`AGENT_PROTOCOL.md` §5) — sends the completion report. The plan is complete at

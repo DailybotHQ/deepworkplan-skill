@@ -64,7 +64,8 @@ plan created with trust is `pre_approved` but still begins only on an explicit
 execute request, and `create` never calls execute itself. Read the first
 unchecked anchored task, perform its gate, update its compact log, then README,
 PROGRESS and state in the usual safe order. The inline Final Review remains last
-and performs the same security, final validation and skills reconciliation.
+and performs the same security, final validation, skills and documentation
+reconciliation.
 
 When scope exceeds the compact task record, stop for refine rather than silently
 expanding work. A v2 state locator is authoritative: `inline` resolves to a
@@ -451,7 +452,18 @@ this order and do not reorder:
   `analysis_results/SKILLS_CANDIDATES.md` entry has one; finish any open
   warranted authoring before (b) is final. No whole-plan rediscovery, no second
   report.
-- **(d) Closure and completion:** where the plan authorized pull requests, push
+- **(d) Documentation reconciliation:** sweep every behavior-changing task's
+  reconciled surface against the docs that register it — the Touched Surfaces
+  and §6.6 documentation decisions are the ledger. Gate registry
+  (`docs/TESTING_GUIDE.md`) first (new or changed commands and gates), then
+  architecture, module and feature docs, then the `AGENTS.md` index for new
+  top-level surface. Fix misses inside this review, rerun any validation the
+  fix affected (under (b)), and record the result in `SECURITY_REVIEW.md` as a
+  **Documentation reconciliation** subsection (checked → current, or the fixed
+  list). Bounded to the plan's touched surface — a whole-repo documentation
+  audit belongs to `/dwp-verify`. The plan does not close with an undocumented
+  behavior-changing surface unless the user explicitly accepted the miss.
+- **(e) Closure and completion:** where the plan authorized pull requests, push
   the final commits, update the PR bodies, verify the pushed heads equal the
   reviewed revisions and that required checks/reviews refer to those heads;
   never merge or publish unless the plan says so. Then report the **completion

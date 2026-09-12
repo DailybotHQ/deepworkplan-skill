@@ -382,9 +382,9 @@ developer break the tie.
      Phase 6), gated on "catalog matches disk";
    - one task to **install the skill + scaffold `.dwp/` and `tmp/`** (Phase 7);
    - the **Phase 8 self-check folded into the plan's single mandatory Final
-     Review** (security pass, final-state validation, skills reconciliation —
-     `../spec/DWP_SPECIFICATION.md` §6.1); skills decisions are task-local and
-     the Executive Report is optional.
+     Review** (security pass, final-state validation, skills reconciliation,
+     documentation reconciliation — `../spec/DWP_SPECIFICATION.md` §6.1);
+     skills decisions are task-local and the Executive Report is optional.
 
    Each task carries explicit **Acceptance Criteria** and a runnable
    **validation gate** (the repo's real lint / `md`-check / test).

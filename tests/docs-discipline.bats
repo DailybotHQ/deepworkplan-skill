@@ -91,6 +91,34 @@ setup() {
     doc_has "$auth" "substantial docs surface — its own task by design, not a catch-up"
 }
 
+@test "spec 6.1 defines the Final Review documentation reconciliation step" {
+    local spec="$REPO_ROOT/skills/deepworkplan/spec/DWP_SPECIFICATION.md"
+    doc_has "$spec" "(d) Documentation reconciliation — the plan's touched surface only."
+    doc_has "$spec" "MUST** sweep every behavior-changing task's reconciled surface"
+    doc_has "$spec" 'gate registry (`docs/TESTING_GUIDE.md`) first'
+    doc_has "$spec" "MUST** be fixed inside"
+    doc_has "$spec" 'recorded in `analysis_results/SECURITY_REVIEW.md` as a "Documentation reconciliation"'
+    doc_has "$spec" 'belongs to `/dwp-verify` and onboarding'
+    doc_has "$spec" "unless the user explicitly accepted the miss"
+    doc_has "$spec" "After (a)–(d) pass, the agent reports completion"
+    doc_has "$spec" "a released feature whose new validation gate was never"
+}
+
+@test "every Final Review definition surface names the documentation reconciliation" {
+    local spec="$REPO_ROOT/skills/deepworkplan/spec/DWP_SPECIFICATION.md"
+    local create="$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+    local exec="$REPO_ROOT/skills/deepworkplan/execute/SKILL.md"
+    local guide="$REPO_ROOT/skills/deepworkplan/guide/execution.md"
+    local lite="$REPO_ROOT/skills/deepworkplan/spec/LITE_PLANS.md"
+    doc_has "$spec"  "(d) Documentation reconciliation"
+    doc_has "$create" "**(d) Documentation reconciliation**"
+    doc_has "$create" "reconciliation, documentation reconciliation — kept concise and inline"
+    doc_has "$exec"   "(d) Documentation reconciliation:"
+    doc_has "$guide"  "(d) Documentation reconciliation**"
+    doc_has "$guide"  "Documentation is not a follow-up project"
+    doc_has "$lite"   "skills and documentation reconciliation — §6.1"
+}
+
 # Sentence-level assertion that tolerates the source file's own line wrapping:
 # normalize to one line, then match the phrase.
 doc_has() {

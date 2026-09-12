@@ -196,7 +196,7 @@ not discard work.
 
 > From here, the standard **Execute** rules apply
 > (`../execute/SKILL.md`): the per-task significance Dailybot report, the
-> plan-completion **milestone** golden rule, the Final Review (a)–(d) with the
+> plan-completion **milestone** golden rule, the Final Review (a)–(e) with the
 > one-time Executive Report offer, and — for orchestrator plans — orchestrator
 > task types (`create_child_dwp` / `integration_checkpoint` /
 > `execute_child_dwp`), manifest checks, and team-agents parallel groups (real

@@ -12,7 +12,8 @@ executable task records in the README; `full` stores detailed task files. Lite i
 not a partial Full plan: it has stable task IDs, anchors, touched surface,
 acceptance criteria, gates, completion evidence (skills disposition and
 documentation decision included — `DWP_SPECIFICATION.md` §6.2, §6.6) and a
-Final Review.
+Final Review (security pass, final-state validation, skills and documentation
+reconciliation — §6.1).
 
 Format, materialization, approval and execution are independent. Format is
 `lite` or `full`; materialization is `materializing`, `ready` or `promoting`;
