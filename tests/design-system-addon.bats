@@ -17,6 +17,7 @@ setup() {
     ADDON="$REPO_ROOT/skills/deepworkplan/addons/design-system"
     SPEC="$REPO_ROOT/skills/deepworkplan/spec/ADDONS.md"
     ONBOARD="$REPO_ROOT/skills/deepworkplan/onboard/addons.md"
+    MECH="$REPO_ROOT/skills/deepworkplan/addons/README.md"
 }
 
 # Sentence-level assertion that tolerates the source file's own line wrapping.
@@ -48,12 +49,17 @@ ds_doc_has() {
     ds_doc_has "$ONBOARD" "the evaluation and offer are **mandatory, not skippable**"
     ds_doc_has "$ONBOARD" "requires explicit acceptance even in trust mode"
     ds_doc_has "$ONBOARD" "Detection makes the evaluation and offer"
+    # The mechanism README mirror states it too.
+    ds_doc_has "$MECH" "the offer is mandatory, not skippable, with the detection rationale recorded"
+    ds_doc_has "$MECH" "installs only after explicit acceptance, never auto-applied"
 }
 
 @test "the default-on-in-trust exception does not return as a blanket rule" {
-    run grep -rn 'default-on' "$ADDON" "$ONBOARD" "$SPEC"
+    run grep -rn 'default-on' "$ADDON" "$ONBOARD" "$SPEC" "$MECH"
     [ "$status" -ne 0 ]
-    run grep -rn -F 'apply it automatically' "$ADDON" "$ONBOARD" "$SPEC"
+    run grep -rn -F 'apply it automatically' "$ADDON" "$ONBOARD" "$SPEC" "$MECH"
+    [ "$status" -ne 0 ]
+    run grep -rn -F 'default-on when detected' "$MECH"
     [ "$status" -ne 0 ]
 }
 

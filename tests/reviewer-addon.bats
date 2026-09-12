@@ -15,6 +15,7 @@
 setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
     ADDON="$REPO_ROOT/skills/deepworkplan/addons/ai-diff-reviewer"
+    MECH="$REPO_ROOT/skills/deepworkplan/addons/README.md"
 }
 
 # Sentence-level assertion that tolerates the source file's own line wrapping.
@@ -47,7 +48,9 @@ rev_doc_has() {
     rev_doc_has "$ADDON/SPEC.md" "pinned **v2.0.1**"
     # The only acceptable v2.0.0 references are the Action's historical tags
     # in frozen-pin EXAMPLES — there are none left; the example is v2.0.1.
-    run grep -rn 'v2\.0\.0' "$ADDON"
+    # The mechanism README mirror carries the same pin.
+    rev_doc_has "$MECH" "currently **v2.0.1**"
+    run grep -rn 'v2\.0\.0' "$ADDON" "$MECH"
     [ "$status" -ne 0 ]
     # Install commands are tag-pinned to the documented version.
     grep -qF 'ai-diff-reviewer@v2.0.1' "$ADDON/SKILL.md"
