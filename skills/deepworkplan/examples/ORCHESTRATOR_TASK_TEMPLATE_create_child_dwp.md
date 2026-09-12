@@ -84,8 +84,19 @@ Create a complete, executable DWP plan inside `repositories/{repo_name}/` that:
 
 **Navigate to target repository:**
 ```bash
+# Save the Core Hub root before entering the child — resolving the git root
+# while inside the child would return the child, not the hub.
+HUB_ROOT="$(git rev-parse --show-toplevel)"
+
+# Enter the child by its REGISTERED root (from ORCHESTRATOR_MANIFEST.md).
+# repositories/{repo_name}/ is the convention, not a hardcoded requirement.
 cd repositories/{repo_name}
 ```
+
+> [!NOTE]
+> Do not carry a hub `DWP_DIR` into the child: resolve the child's `.dwp/` in a
+> subshell with `unset DWP_DIR`, or set an explicitly recorded child-specific
+> override.
 
 Read the following files completely:
 - **`AGENTS.md`** — Extract and note:
@@ -184,8 +195,8 @@ Create all required files:
 
 ### Parent Plan Reference
 - **Parent Plan:** PLAN_{parent_plan_name}
-- **Parent Location:** /workspace/.dwp/plans/PLAN_{parent_plan_name}/
-- **Manifest:** /workspace/.dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md
+- **Parent Location:** `.dwp/plans/PLAN_{parent_plan_name}/` (in the Core Hub)
+- **Manifest:** `.dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md` (in the Core Hub)
 - **This repo's role:** {what this repo contributes}
 - **Dependencies:** {which child plans must complete first}
 
@@ -252,7 +263,7 @@ See [PROMPTS.md](./PROMPTS.md) for ready-to-use prompts.
 ### Step 4: Return to Core Hub and update orchestrator tracking
 
 ```bash
-cd /workspace  # Return to Core Hub root
+cd "$HUB_ROOT"  # Return to the SAVED Core Hub root (never a hardcoded path)
 ```
 
 Update the orchestrator plan's README.md:
@@ -309,7 +320,7 @@ grep -q "PLAN_{parent_plan_name}" repositories/{repo_name}/.dwp/plans/PLAN_{feat
 - [ ] 5. Design child DWP task breakdown.
 - [ ] 6. Create child DWP plan with all required files.
 - [ ] 7. Verify child DWP uses repo-specific conventions.
-- [ ] 8. Return to Core Hub (`cd /workspace`).
+- [ ] 8. Return to the saved Core Hub root (`cd "$HUB_ROOT"`).
 - [ ] 9. Update orchestrator README (Child DWP Plans table).
 - [ ] 10. Run validation commands.
 - [ ] 11. Update the plan README to mark this task as `[x]`.
