@@ -107,9 +107,9 @@ def unfenced(text):
 def field_content(body, name):
     # Both **Goal:** and **Goal**: are ordinary Markdown labels. Emphasis
     # inside a field is content, not another field (e.g. **Not applicable**).
-    labels = ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation',
-              'Instructions', 'Read Before Starting', 'Completion & Log',
-              'Completion log', 'Skills disposition')
+    labels = ('Context', 'Goal', 'Touched Surface', 'Acceptance Criteria',
+              'Validation', 'Instructions', 'Read Before Starting',
+              'Completion & Log', 'Completion log', 'Skills disposition')
     def label_pattern(label):
         return r'\*\*(?:'+label+r')\s*:?\*\*[ \t]*[:·-]?'
 
@@ -317,6 +317,12 @@ def current(plan, state, manifest, report):
     report.verdict(state.get('plan') == plan.name and manifest.get('name') == plan.name,
                    'plan identity matches its directory',
                    'plan identity disagrees with its directory')
+    # The v2 Goal+Context pair is required at plan level too (guide/authoring.md
+    # §4.1 items 1–2): Goal says what, Context says where the work lives.
+    report.verdict(bool(field_content(clean, 'Goal')) and bool(field_content(clean, 'Context')),
+                   'plan README carries the Goal+Context pair (v2 shape restored)',
+                   'plan README lacks a non-empty Context section alongside Goal — the v2 '
+                   'Goal+Context pair is required (guide/authoring.md §4.1)')
     tasks = state.get('tasks', [])
     if not isinstance(tasks, list):
         return report.bad('state tasks must be an array')
@@ -359,6 +365,14 @@ def current(plan, state, manifest, report):
                 for name in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
                     if not field_content(body, name):
                         report.bad(f'Task {task["id"]} lacks non-empty {name}')
+                # Context is a starting requirement, not a history requirement:
+                # a task still to be run must be startable from it, while a
+                # completed task's record stays as authored (DWP_SPECIFICATION
+                # §6.5 evidence history).
+                if task['status'] != 'completed' and not field_content(body, 'Context'):
+                    report.bad(f'Task {task["id"]} lacks non-empty Context — task-specific '
+                               f'background; the agent MUST be able to start from this section '
+                               f'alone (DWP_SPECIFICATION §5)')
                 if task['id'] == len(tasks):
                     if 'task_final_review' not in locator['value'] or not all(
                             term in body.lower() for term in ('security', 'final-state', 'skills')):
@@ -390,6 +404,12 @@ def current(plan, state, manifest, report):
                 for name in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
                     if not field_content(body[1], name):
                         report.bad('Lite task lacks '+name+': '+header[1])
+                status = next((t.get('status') for t in tasks
+                               if isinstance(t, dict) and t.get('id') == int(header[1])), None)
+                if status != 'completed' and not field_content(body[1], 'Context'):
+                    report.bad('Lite task lacks Context: '+header[1]+' — task-specific '
+                               'background; the agent MUST be able to start from this section '
+                               'alone (DWP_SPECIFICATION §5)')
                 if int(header[1]) == len(tasks) and not all(
                         term in body[1].lower() for term in ('security', 'final-state', 'skills')):
                     report.bad('Lite Final Review lacks its security, final-state validation or skills part')

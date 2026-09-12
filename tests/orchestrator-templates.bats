@@ -74,6 +74,9 @@ write_child_plan_files() {
 ## Goal
 Fixture child plan for template contract tests.
 
+## Context
+Fixture-only child repo under the skill repo's tests; no product surface.
+
 ## Tasks
 - [x] Task 1: [Build feature](./1.task_build_feature.md)
 - [x] Task 2: [Final Review](./2.task_final_review.md)
