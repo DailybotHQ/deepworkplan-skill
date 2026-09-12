@@ -77,6 +77,28 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 `AGENTS.md` **MUST** serve three roles: an **index**, a set of **mandatory rules**, and a **quick commands** reference.
 
+### 2.1.1. Budget enforcement — the lean index is a guarantee, not a hope
+
+The budget above is enforced on what the harness produces:
+
+- The `AGENTS.md` that onboarding — or any later harness-maintained update —
+  generates **MUST** stay within the budget. When the reasoned content would
+  exceed it, the agent **MUST** move the detail into the focused `docs/` guide
+  (or the module/feature doc, §4) that owns it and link it from the index.
+  The index **MUST** link every doc that received displaced content: nothing
+  silently disappears, and the file stays a lean index by construction (§2.4.1).
+- An existing handwritten `AGENTS.md` over the budget is **never silently
+  rewritten**: onboarding and upgrade report the overweight with a concrete
+  migration proposal — what moves where, which links get added — and apply it
+  only with consent (`AGENT_PROTOCOL.md` §6; §3.5's non-destructive
+  reconciliation). The proposal, not a forced edit, is the deliverable.
+- The two limits of §2.4.1 bind here too: no constraint an agent needs to act
+  safely is dropped to fit the budget, and the ceiling is never an excuse to
+  hide required context — detail moves, it is not deleted.
+- A conformance checker treats an over-budget `AGENTS.md` as an advisory
+  (SHOULD): the line count is objective, authorship is not, and the **MUST**
+  above binds the harness, not a checker's guess about who wrote the file.
+
 ### 2.2. Role 1 — Index (navigation)
 
 `AGENTS.md` **MUST** contain a documentation index: a table linking every
@@ -389,6 +411,37 @@ audited repos (e.g. `api-services/app/integrations/docs/` with `README.md`,
 
 Which modules qualify as "major" or "complex" is part of the **repo-specific 10%**
 (§7) and **MUST** be reasoned about per repo.
+
+### 4.1. The feature tier — per-feature `docs/` for major capability areas
+
+Above the per-module tier sits a **feature tier**: a **major feature or
+capability area** — bigger than one module — gets its own `docs/` folder next
+to its code, entered via its own `README.md`, holding the area's architecture
+decisions, contracts, and runbooks.
+
+- An area qualifies when **any** of these triggers fires (heuristics, not
+  bureaucracy — the judgment stays with the per-repo reasoning, §7):
+  - it **spans 2+ major modules** — a capability several modules cooperate to
+    provide (e.g. a domain model shared across services);
+  - it **owns a sub-app or subsystem directory** — a self-contained
+    application or subsystem folder inside the repo (observed shape:
+    `app/{domain}/`, or a top-level sub-app such as `mailtron/`);
+  - it **carries its own contracts** — an API surface, event or schema
+    contracts, protocol definitions — that multiple consumers depend on.
+- Once an area is recorded as major, its feature `docs/` **SHOULD** exist; the
+  most significant entries **SHOULD** be linked from the READMEs of the
+  modules the area spans and surfaced in the root `AGENTS.md` index, exactly
+  like per-module docs. An area deliberately left undocumented carries a
+  recorded reason — a decision, not an oversight.
+- The feature tier complements the per-module tier, never replaces it: a
+  module inside a feature area still carries its own `README.md` (§4).
+
+> **Observed input, adapted by reasoning.** This tier generalizes the audited
+> `api-services` shape — a flat root `docs/` hub plus nested per-area `docs/`
+> (e.g. `app/domain/docs/`, `app/mcp/docs/`, and the sub-app `mailtron/docs/`,
+> each entered via a `README.md`). Reason the structure from the target
+> repo's real feature areas (§7); never copy another repo's folder layout
+> verbatim.
 
 > **Divergence from v1.** v1 shipped only a per-module *`AGENTS.md`* template and
 > treated nested docs as an optional "Tier 3 / Platinum" extra. v2 makes a per-major-module

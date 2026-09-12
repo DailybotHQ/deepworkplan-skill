@@ -263,6 +263,14 @@ Detect, by reading actual files (not by habit):
 - **Folder layout & modules.** Find the source roots (`src/`, `app/`, `lib/`,
   `pkg/`, `cmd/`, `pages/`, `components/`) and the major sub-modules within them.
   These become the per-module docs in Phase 5.
+- **Feature areas (the feature tier).** Detect candidate **major feature or
+  capability areas** — bigger than one module — using the triggers of
+  `../spec/DOCUMENTATION_STANDARD.md` §4.1: a capability spanning 2+ major
+  modules; a sub-app or self-contained subsystem directory (e.g.
+  `app/{domain}/`, or a top-level sub-app); an area carrying its own contracts
+  (an API surface, events, schemas, protocols) that multiple consumers depend
+  on. Heuristics, not bureaucracy — judge per repo and record the trigger with
+  each candidate. These become the per-feature `docs/` of Phase 5.
 - **Test convention.** File naming (`*_test.py`, `*.spec.ts`, `*.test.ts`),
   framework (pytest / jest / vitest / playwright / go test), and where tests
   live (co-located vs `tests/`). If **no tests exist**, note that — Phase 4 will
@@ -288,8 +296,16 @@ validation commands (flagged CI/Docker-only where relevant) with their working
 directory, the **testing map** (layers, mapping rule, scoped patterns and the
 verified-run evidence or the unverified/proposed marking, affected-test tooling
 and blind spots, shared/core paths and full-run triggers, fallback), source
-roots + major modules, test convention, deployment shape, carried-forward
-conventions, and which preset you used.
+roots + major modules + feature areas (each candidate with its trigger),
+test convention, deployment shape, carried-forward conventions, and which
+preset you used.
+
+**Also record a machine-readable docs registry** at the end of RECON.md — one
+line per documented area (`module: <path>`, `feature-area: <path> (trigger: …)`)
+— so Phase 5 and the conformance checker (`../verify/conformance.sh`) read the
+same recorded judgment instead of re-guessing it. A feature area deliberately
+left without its `docs/` is recorded on the same line
+(`(no docs — <reason>)`) — a decision, not an oversight.
 
 **Also record a scale count** (the evidence the Phase 2b decision reads, so the
 inline-vs-plan choice is mechanical, not guessed):
@@ -449,6 +465,18 @@ Never duplicate `AGENTS.md` content into `CLAUDE.md`.
 > merge your index/commands/rules into it rather than overwriting; back up +
 > ask before any destructive change (Phase 0).
 
+**Budget — the lean index is enforced, not hoped for (§2.1.1).** The
+`AGENTS.md` you generate MUST stay within the 150–500-line budget. When the
+reasoned content would exceed it, move the detail into the focused `docs/`
+guide (or module/feature doc) that owns it and link it from the index — and
+the index MUST link every doc that received displaced content, so nothing
+silently disappears. Never drop an invariant an agent needs in order to act
+safely just to fit the budget; detail moves, it is not deleted. An existing
+handwritten `AGENTS.md` already over the budget is **never silently
+rewritten**: report the overweight with a concrete migration proposal (what
+moves where, which links get added) and apply it only with the developer's
+consent (Phase 0's non-destructive rule).
+
 ## Phase 4 — Generate `docs/`
 
 Produce the standard categories, **each adapted** from recon — an empty or
@@ -553,6 +581,16 @@ A trivial/stable module needs only its `README.md`. Link each module's docs from
 its own `README.md`; surface the most significant ones in the root `AGENTS.md`
 index. (Reference `../spec/DOCUMENTATION_STANDARD.md` §4 for the per-module rule; which
 modules count as "major"/"complex" is reasoned per repo.)
+
+**Feature tier (§4.1).** For each feature area the RECON registry recorded as
+major, create its own `docs/` folder next to the area's code — architecture
+decisions, contracts, runbooks — entered via the area's `README.md`. Link the
+most significant entries from the READMEs of the modules the area spans and
+surface them in the root `AGENTS.md` index, exactly like per-module docs. An
+area recorded as major but deliberately left undocumented carries the recorded
+reason from RECON. The feature tier sits above, never instead of, the
+per-module tier: a module inside a feature area still gets its own
+`README.md`.
 
 ## Phase 6 — Generate `.agents/` + agent directory symlinks
 
@@ -680,7 +718,12 @@ done.
 
 1. **`AGENTS.md` exists** and contains a Quick Commands block whose commands are
    **real and runnable** (not placeholders). Spot-check that referenced commands
-   exist in the manifest/Makefile/scripts.
+   exist in the manifest/Makefile/scripts. It is a **lean index within the
+   150–500-line budget** (`../spec/DOCUMENTATION_STANDARD.md` §2.1.1) — if it
+   ran past the budget, move the detail into the owning doc and link it, never
+   drop an invariant — and **every relative `.md` link in its index resolves**
+   to a file that exists (§2.2 links no file that does not exist); fix any
+   that do not.
 2. **`CLAUDE.md` resolves to `AGENTS.md`** — the symlink points at `AGENTS.md`,
    or `CLAUDE.md` contains exactly `@AGENTS.md`.
 3. **`docs/` has the standard categories**, each non-empty and repo-specific
@@ -696,7 +739,9 @@ done.
    kept apart. `AGENTS.md` carries the `DWP standard:` provenance line and
    labeled scoped variants in Quick Commands.
 4. **Every major source module has a `README.md`** (and complex modules have a
-   `docs/`).
+   `docs/`) — and **every feature area the RECON registry recorded as major has
+   its feature `docs/` entered via a `README.md`**, or its recorded no-docs
+   reason on the registry line (§4.1).
 5. **`.agents/`** has `agents/`, `commands/`, `skills/`, `docs/`, `settings.json`
    and `.claude → .agents` + `.cursor → .agents` symlinks (or documented fallback);
    `skills_agents_catalog.md` and `COMMANDS_REFERENCE.md` **match** what was
