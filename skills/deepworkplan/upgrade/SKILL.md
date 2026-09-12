@@ -61,8 +61,9 @@ versions relative to that directory.
    --repo DailybotHQ/deepworkplan-skill` is an equivalent alternative when the
    GitHub CLI is present.)
 3. **Report, then stop.** State, in a few lines: installed skill version,
-   latest published version, the standard each implements (the two series are
-   2.x historical and 4.x current — `../spec/DWP_SPECIFICATION.md` "Status"),
+   latest published version, the standard each implements (the series are
+   2.x and 4.x historical and 5.x current — `../spec/DWP_SPECIFICATION.md`
+   "Status"),
    and where the changelog lives
    (`https://github.com/DailybotHQ/deepworkplan-skill/blob/main/CHANGELOG.md`).
    If installed == latest, say the repository is current and **end here**.

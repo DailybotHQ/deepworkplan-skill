@@ -3,7 +3,8 @@
 
 Two eras share this one implementation (DWP_SPECIFICATION.md §6.5):
 
-  * current — state.json declares the v2 schema. The full v4 contract applies:
+  * current — state.json declares the v2 or v5 schema (the v5 URLs are
+    generation snapshots of the v2 shape). The full modern contract applies:
     typed locators, gate evidence, README/state correspondence, Lite or Full.
   * legacy  — a v1 state layer or none at all. Plans authored before 2.4.0 are
     ACCEPTED against the shape they were written under (single Final Review for
@@ -26,13 +27,18 @@ import sys
 
 # The newest DWP spec this checker implements; keep in sync with conformance.sh
 # SUPPORTED_SPEC and DWP_SPECIFICATION.md "Version".
-SUPPORTED_SPEC = '4.0.0'
-# The standard's released series: 2.x is historical (plans authored before the
-# 4.x jump stay valid, §6.5), 4.x is current. There is no 3.x standard — the
-# v3 launch was a product release, not a standard bump.
-SPEC_SERIES = (2, 4)
+SUPPORTED_SPEC = '5.0.0'
+# The standard's released series: 2.x and 4.x are historical (plans authored
+# before each jump stay valid, §6.5), 5.x is current. There is no 3.x standard
+# — the v3 launch was a product release, not a standard bump.
+SPEC_SERIES = (2, 4, 5)
 STATE_V2 = 'https://deepworkplan.com/schema/plan-state/v2.json'
 MANIFEST_V2 = 'https://deepworkplan.com/schema/plan-manifest/v2.json'
+# The v5 URLs are generation snapshots of the v2 shape (DWP standard 5.0.0):
+# no property differs — a v5 plan validates under the same closed rules, and
+# v2/v1 plans are never rewritten.
+STATE_V5 = 'https://deepworkplan.com/schema/plan-state/v5.json'
+MANIFEST_V5 = 'https://deepworkplan.com/schema/plan-manifest/v5.json'
 STATUSES = ('pending', 'in_progress', 'completed', 'blocked', 'skipped')
 
 
@@ -170,7 +176,7 @@ def security_findings(plan):
     return []
 
 
-def gate_findings(tasks, v2):
+def gate_findings(tasks, state_layer):
     """Execution evidence, identical in both eras (PLAN_STATE.md §7).
 
     A record missing the documented `passes` boolean is malformed, not failing:
@@ -198,9 +204,9 @@ def gate_findings(tasks, v2):
             if any(not g['passes'] or g.get('exit_code', 0) != 0 for g in latest.values()):
                 errors.append(f'completed task {task.get("id")} has a failing gate without a '
                               f'later passing run')
-            if v2 and (not task.get('completed_at') or not latest):
-                errors.append(f'completed v2 task {task.get("id")} requires completed_at '
-                              f'and gate evidence')
+            if state_layer and (not task.get('completed_at') or not latest):
+                errors.append(f'completed state-layer task {task.get("id")} requires '
+                              f'completed_at and gate evidence')
     if malformed:
         errors.append(f'{malformed} gate record(s) do not carry the documented `passes` boolean '
                       f'(PLAN_STATE.md §4.2) — their result cannot be read')
@@ -253,13 +259,13 @@ def check(plan, is_git=True):
         return report
     for label, doc in documents.items():
         url = doc.get('schema')
-        known = [f'https://deepworkplan.com/schema/plan-{label}/v{v}.json' for v in (1, 2)]
+        known = [f'https://deepworkplan.com/schema/plan-{label}/v{v}.json' for v in (1, 2, 5)]
         if url is not None and url not in known:
             report.bad(f'unknown {label} schema URL {url!r} — upgrade the installed skill')
     if report.failed:
         return report
     state, manifest = documents.get('state', {}), documents.get('manifest', {})
-    if state.get('schema') == STATE_V2:
+    if state.get('schema') in (STATE_V2, STATE_V5):
         current(plan, state, manifest, report)
     else:
         legacy(plan, state, manifest, is_git, report)
@@ -268,12 +274,15 @@ def check(plan, is_git=True):
 
 # ------------------------------------------------------------------- current
 def current(plan, state, manifest, report):
-    """The v4 contract: v2 state, typed locators, Lite or Full."""
-    if manifest.get('schema') != MANIFEST_V2:
-        return report.bad('v2 state requires its v2 creation manifest — recover with create/refine')
+    """The modern contract: v2/v5 state, typed locators, Lite or Full."""
+    # Era pairing: the manifest must come from the same schema generation as
+    # the state file (v5 with v5, v2 with v2) — a mixed pair is a torn write.
+    era = 'v5' if state.get('schema') == STATE_V5 else 'v2'
+    if manifest.get('schema') != (MANIFEST_V5 if era == 'v5' else MANIFEST_V2):
+        return report.bad(f'{era} state requires its {era} creation manifest — recover with create/refine')
     shape = []
     for label, doc in (('state', state), ('manifest', manifest)):
-        schema = json.loads((Path(__file__).parent.parent/'spec/schema'/f'plan-{label}-v2.schema.json').read_text())
+        schema = json.loads((Path(__file__).parent.parent/'spec/schema'/f'plan-{label}-{era}.schema.json').read_text())
         for problem, count in collapse(shape_errors(doc, schema, schema)):
             shape.append(f'{label}.json {problem}'
                          + (f' (and {count - 1} more record(s) alike)' if count > 1 else ''))
@@ -287,7 +296,7 @@ def current(plan, state, manifest, report):
     if report.failed and not all('.gates[' in problem for problem in shape):
         return None
     if not shape:
-        report.ok('state.json and manifest.json parse against the v2 schemas')
+        report.ok(f'state.json and manifest.json parse against the {era} schemas')
     if state.get('promotion') is not None or state.get('materialization') == 'promoting':
         return report.bad('plan has an unresolved promotion marker — finish it with '
                           '/dwp-refine promote before execution; execute and resume must not '
@@ -313,11 +322,11 @@ def current(plan, state, manifest, report):
                    f'({SUPPORTED_SPEC}) — upgrade the installed skill before executing it')
     elif version(standard)[0] not in SPEC_SERIES:
         report.bad(f'plan declares DWP spec {standard}, which is not a DWP standard (the series '
-                   f'are 2.x historical and 4.x current; there is no 3.x) — correct the '
+                   f'are 2.x and 4.x historical and 5.x current; there is no 3.x) — correct the '
                    f'Standard line (PLAN_STATE.md §6.1)')
     else:
         report.ok(f'plan standard: DWP spec {standard}'
-                  + (' (historical, accepted)' if version(standard)[0] != 4 else ''))
+                  + (' (historical, accepted)' if version(standard)[0] != 5 else ''))
     if 'Plan Status: materializing' in clean:
         report.bad('partial materialization — recover with create/refine')
     report.verdict(state.get('plan') == plan.name and manifest.get('name') == plan.name,
@@ -508,7 +517,7 @@ def legacy(plan, state, manifest, is_git, report):
                    f'({SUPPORTED_SPEC}) — upgrade the installed skill before executing it')
     elif version(standard)[0] not in SPEC_SERIES:
         report.bad(f'plan declares DWP spec {standard}, which is not a DWP standard (the series '
-                   f'are 2.x historical and 4.x current; there is no 3.x) — correct the '
+                   f'are 2.x and 4.x historical and 5.x current; there is no 3.x) — correct the '
                    f'Standard line (PLAN_STATE.md §6.1)')
     else:
         report.ok(f'plan standard: DWP spec {standard}'

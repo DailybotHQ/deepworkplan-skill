@@ -39,7 +39,7 @@ plan is handed off; create never modifies product source or calls execute.
 ## Lite-first lifecycle
 
 Write `manifest.json`, `README.md`, `PROGRESS.md`, `PROMPTS.md`, appropriate
-`analysis_results/` and `state.json` using the v2 schemas. A Lite README has
+`analysis_results/` and `state.json` using the v5 schemas. A Lite README has
 one shared rules section and compact anchored task records (`#task-N`) containing
 goal, touched surface, acceptance criteria, validation and completion evidence.
 It includes an inline Final Review. It does not create task files or boilerplate
@@ -328,13 +328,16 @@ inline and then again as a file:
 
 1. **`manifest.json` (first write)** — immutable creation identity, written once
    and never edited: `schema` =
-   `https://deepworkplan.com/schema/plan-manifest/v2.json`, `spec_version`
-   **"4.0.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
+   `https://deepworkplan.com/schema/plan-manifest/v5.json`, `spec_version`
+   **"5.0.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
    `created_by`, `task_count` (the creation count, Final Review included) and
    **`plan_format`** (`"lite"`, or `"full"` when an explicit `full` preference or
    the rubric already decided Full). Atomic (write-temp-then-rename); valid
-   against `../spec/schema/plan-manifest-v2.schema.json` — the schema is closed.
-   A later change of live task count **never** rewrites this file.
+   against `../spec/schema/plan-manifest-v5.schema.json` — the schema is closed.
+   A later change of live task count **never** rewrites this file. Plans
+   created under 4.0.0 keep their v2 schema URL, and plans created under 2.3.0
+   and earlier keep their v1 URL; all remain conformant and are never
+   rewritten.
 2. **`README.md` skeleton (second write)** — everything in *Lite README anatomy*
    below except the status line, which reads `Plan Status: materializing`.
 3. **`analysis_results/`** — the folder, plus `SKILLS_CANDIDATES.md` with the
@@ -345,7 +348,7 @@ inline and then again as a file:
    authoring scaffolding (see Step 4.4 item 4).
 5. **`PROGRESS.md`** — the bounded working index (`../spec/PLAN_STATE.md` §5.1).
 6. **`state.json`** — `schema` =
-   `https://deepworkplan.com/schema/plan-state/v2.json`, `plan`, `updated_at`,
+   `https://deepworkplan.com/schema/plan-state/v5.json`, `plan`, `updated_at`,
    `status: "pending"`, `completed_count: 0`, `task_count`, **`format`**
    (`"lite"` — this branch only writes Lite; a Full plan's state is written by
    Step 4.4), **`materialization`** (`"ready"` once every file above is on
@@ -354,7 +357,7 @@ inline and then again as a file:
    `tasks[]` entry per task:
    `{ "id": N, "locator": { "kind": "inline", "value": "#task-N" }, "title": …,
    "status": "pending", "gates": [] }`. Atomic; valid against
-   `../spec/schema/plan-state-v2.schema.json` — closed schema, so evidence rides
+   `../spec/schema/plan-state-v5.schema.json` — closed schema, so evidence rides
    in the gate `evidence` string, not in new fields.
 7. **Flip the README status (last write)** — replace `Plan Status: materializing`
    with `Plan Status: 0/N completed`. Only now is the plan materialized.
@@ -375,7 +378,7 @@ records. Do not paste the ten-section task template into the README.
 ## Plan Variables
 | Variable | Value |
 | --- | --- |
-| Standard | DWP spec 4.0.0 |
+| Standard | DWP spec 5.0.0 |
 | Plan Format | Lite |
 | Materialization | ready |
 | Approval | pending            ← guided; `pre-approved (trust)` in trust mode |
@@ -476,14 +479,15 @@ Create:
 
 1. **Folder + `manifest.json` (first write):** create `.dwp/plans/PLAN_{name}/`
    and immediately write `manifest.json` — plan identity: name, title, archetype,
-   rigor tier, `spec_version` **"4.0.0"**, `plan_format` **"full"**, `task_count`
+   rigor tier, `spec_version` **"5.0.0"**, `plan_format` **"full"**, `task_count`
    = the number of task files this materialization will write (Final Review
    included), creating agent — atomically (write-temp-then-rename), valid against
-   `../spec/schema/plan-manifest-v2.schema.json` (closed schema), written once,
+   `../spec/schema/plan-manifest-v5.schema.json` (closed schema), written once,
    never edited after. When Step 4.0 already wrote the manifest, keep it: only a
    manifest created with `plan_format: "lite"` that has **not** yet been
-   materialized may be written with `"full"` here. Plans created under 2.3.0 and
-   earlier keep their v1 schema URL and remain conformant.
+   materialized may be written with `"full"` here. Plans created under 4.0.0
+   keep their v2 schema URL, and plans created under 2.3.0 and earlier keep
+   their v1 schema URL; all remain conformant and are never rewritten.
 1b. **README skeleton (second write):** write `README.md` with everything in
    item 8 except the final status: the Task List names **every** intended task
    with its future filename and link, and the status line reads
@@ -582,11 +586,12 @@ Create:
    trust), `promotion: null`, and one `locator` per task —
    `{ "kind": "file", "value": "N.task_….md" }`. Atomically
    (write-temp-then-rename); valid against
-   `../spec/schema/plan-state-v2.schema.json` (no extra fields — the schema is
-   closed). Existing v1 plans keep `file` and their v1 schema URL. `manifest.json` was written in item 1
+   `../spec/schema/plan-state-v5.schema.json` (no extra fields — the schema is
+   closed). Existing v2 plans keep their v2 schema URL; existing v1 plans keep
+   `file` and their v1 schema URL — neither is ever rewritten. `manifest.json` was written in item 1
    and is not touched here.
 8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `**Standard:** DWP
-   spec 4.0.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
+   spec 5.0.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
    execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
    Report request if the user made one); Task List with `[ ]` checkboxes + links
    (the Final Review last); Execution Rules; Skills & Agents Used; Plan Status /
@@ -622,8 +627,8 @@ and the Final Review is always sequential.
 - Every task record has a Goal, a Context, a Touched Surface, Acceptance
   Criteria, a runnable Validation gate and a completion-log placeholder. No task was padded
   in to reach a count.
-- `manifest.json` validates against the v2 manifest schema with
-  `plan_format: "lite"`; `state.json` validates against the v2 state schema, its
+- `manifest.json` validates against the v5 manifest schema with
+  `plan_format: "lite"`; `state.json` validates against the v5 state schema, its
   `task_count` and `completed_count` agree with the records, every locator is
   `inline` pointing at that task's anchor, and its `approval` matches the README's
   `Approval` row.

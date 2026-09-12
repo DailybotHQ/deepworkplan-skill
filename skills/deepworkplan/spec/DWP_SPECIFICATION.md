@@ -27,18 +27,25 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 
 | Field | Value |
 |-------|-------|
-| **Version** | 4.0.0 |
+| **Version** | 5.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `DWP_SPECIFICATION.md` 2.4.0 (and 2.2.0); `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
+| **Supersedes** | `DWP_SPECIFICATION.md` 4.0.0, 2.4.0 (and 2.2.0); `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md`, `PLAN_STATE.md` |
 | **License** | MIT |
 
 Three version series coexist on purpose and never compare: the skill **package**
 `version:` (release-managed), the **DWP standard** this document versions
-(2.x historical, 4.x current — there is no 3.x standard; the v3 launch was a
-product release), and the **schema URLs** (`plan-state/v2.json` — a schema-shape
-series, not the standard's version). The 4.0.0 jump aligns the standard's number
-with the product line; it changes no requirement from 2.4.0.
+(2.x and 4.x historical, 5.x current — there is no 3.x standard; the v3 launch
+was a product release), and the **schema URLs** (`plan-state/v2.json`,
+`plan-state/v5.json` — a schema-shape series, not the standard's version; the
+v5 URLs are **generation snapshots** of the v2 shape, adding no property).
+The 4.0.0 jump aligned the standard's number with the product line without
+changing any requirement from 2.4.0; 5.0.0 repeats that documented move for
+the v5 generation. **Anti-lockstep rule:** skill minor/patch releases never
+move the standard; the standard's next major happens only with a genuinely
+breaking methodology change — the same moment the skill's own public-surface
+rules would force its major. The release bot owns the skill's `version:`; the
+standard never does.
 
 > **Additive in 2.2.0.** Four additive capabilities, no breaking changes:
 > (1) the **machine-readable plan state layer** (`manifest.json` + `state.json`,
@@ -66,6 +73,23 @@ with the product line; it changes no requirement from 2.4.0.
 > **removed**. The Lite plan is the reviewable artifact they used to be, and it
 > is already executable. Existing plan folders are unaffected; a leftover
 > `.dwp/drafts/` directory is inert and may be deleted by the developer.
+
+> **Divergence from 4.0.0 (overview).** 5.0.0 is an alignment renumber (the
+> same move 4.0.0 made before it — no existing requirement changes) **plus**
+> this generation's additive rules: (1) **documentation discipline** — every
+> task keeps a docs decision next to its skills decision, and substantial docs
+> work is its own task placed with implementation, never past the Final Review
+> (§5.5, §6.6); (2) the Final Review gains a **documentation reconciliation**
+> step (§6.1 d); (3) **feature-tier docs architecture** — AGENTS.md stays a
+> lean index, detail lives in `docs/`, large features carry their own internal
+> docs (`DOCUMENTATION_STANDARD.md` §2.1.1, §4.1); (4) **tiered read
+> contracts** — sub-skills declare
+> essential-now, trigger-conditional, and never-by-default reads; (5)
+> **install verification** at every skills-CLI install site; (6) **schema
+> publication** — the schema URLs referenced by plans are published artifacts
+> (`https://deepworkplan.com/schema/…`), and the v5 generation snapshots are
+> the shape new plans declare. Plans and repositories from 4.0.0 and earlier
+> remain conformant (§6.5).
 
 > **Divergence from v1 (overview).** Three breaking changes drive the major bump:
 > (1) the **create flow is single-step** — one refined draft, dropping the v1

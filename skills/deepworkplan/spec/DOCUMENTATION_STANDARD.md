@@ -26,11 +26,20 @@ requirements are called out inline.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.3.0 |
+| **Version** | 5.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `DOCUMENTATION_STANDARD.md` 2.1.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DOCUMENTATION_STANDARD.md` (v1.0.0) |
+| **Supersedes** | `DOCUMENTATION_STANDARD.md` 2.3.0, 2.1.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DOCUMENTATION_STANDARD.md` (v1.0.0) |
 | **Companions** | `DWP_SPECIFICATION.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md` |
 | **License** | MIT |
+
+> **Divergence from 2.3.0 (overview).** 5.0.0 aligns this document's version
+> with the DWP standard it accompanies (the same alignment move
+> `DWP_SPECIFICATION.md` 4.0.0 and 5.0.0 made — no existing requirement
+> changes) **plus** this generation's additive rules: the lean-index **budget
+> is enforced** (§2.1.1 — harness-generated AGENTS.md stays in the 150–500
+> line budget by moving detail into `docs/` and linking) and the **feature
+> tier** (§4.1 — major capability areas carry their own internal `docs/`,
+> with testable triggers for when it applies).
 
 > **Divergence from v1 (overview).** v1 framed the standard as a "3-tier hierarchy"
 > with Bronze/Silver/Gold/Platinum conformance badges and used `.agent_commands/`
@@ -355,7 +364,7 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 4.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 5.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
 
@@ -365,9 +374,10 @@ the onboarding flow **MUST** keep them distinct:
   advance independently, so recording one of those would compare unrelated
   scales: a conformance checker reads this line against the DWP standard it
   implements and rejects a repository declaring one it does not support. The
-  standard's series are 2.x (historical) and 4.x (current — there is no 3.x);
-  the skill package `version:` and the `/v2.json` schema URLs are two further,
-  separate series, never compared against this line.
+  standard's series are 2.x and 4.x (historical) and 5.x (current — there is
+  no 3.x); the skill package `version:` and the `/v2.json` and `/v5.json`
+  schema URLs are two further, separate series, never compared against this
+  line.
 - **Legacy versus declared.** A conformance checker **MUST** distinguish a
   repository onboarded under an earlier version (no §3.4 content, no declaration)
   from a repository that declares this version and lacks a **MUST**: the former
