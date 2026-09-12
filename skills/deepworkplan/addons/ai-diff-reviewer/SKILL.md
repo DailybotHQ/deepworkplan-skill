@@ -5,14 +5,14 @@ version: "4.0.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
-metadata: {"openclaw":{"emoji":"🔍","homepage":"https://deepworkplan.com","requires":{"anyBins":["git","gh"]}}}
+metadata: {"openclaw":{"emoji":"🔍","homepage":"https://deepworkplan.com","requires":{"anyBins":["git"]}}}
 ---
 
 # DeepWorkPlan — AI Diff Reviewer Addon
 
 Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)**
 (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff
-Reviewer"**, current **v2.0.0**) so DWP work — the mandatory security pass of
+Reviewer"**, pinned **v2.0.1**) so DWP work — the mandatory security pass of
 the mandatory **Final Review** — runs a structured local review (verdict +
 findings table + severity), and (in Flow B, optionally) every pull request is
 gated by the same review in CI. Since standard 2.3.0 the **local review is part
@@ -21,7 +21,7 @@ reconciles it, and every Final Review runs it. Only the CI surface is opt-in.
 
 > ## The rule that overrides everything: this addon DEFERS, it does not reinvent
 >
-> The upstream **`DailybotHQ/ai-diff-reviewer`** skill (currently **v2.0.0**)
+> The upstream **`DailybotHQ/ai-diff-reviewer`** skill (pinned **v2.0.1**)
 > already owns install, review methodology, the CI-workflow wizard, the
 > extension-file authoring flow, the PR-body drafting flow, and the post-CI
 > apply-review walkthrough — as five coordinated sub-skills (parent default
@@ -55,7 +55,7 @@ A repo with **zero optional addons** is fully conformant.
 
 ## Two officially-supported adoption flows
 
-The upstream skill (v2.0.0+) defines **two flows**. This addon applies Flow A
+The upstream skill (v2.0.1+, the documented pin) defines **two flows**. This addon applies Flow A
 as the baseline every onboarded repo gets and offers Flow B as an explicit
 opt-in; it MUST NOT install the CI surface unrequested.
 
@@ -67,10 +67,11 @@ opt-in; it MUST NOT install the CI surface unrequested.
 **Parity guarantee (Flow B).** The upstream skill's `prompt.md` is
 **byte-identical** to the Action's shipped `prompts/default.md` at the same
 release tag (enforced by the upstream `Skills — prompt-sync invariant` CI
-job). Pinning the same version on both surfaces guarantees identical reviews.
+job). Pinning the same version on both surfaces aligns the review methodology, not
+identical findings; model behavior and CI iteration deduplication can differ.
 When `setup` wires `prompt-extension-file: .review/extension.md`, the CI
 Action reads the same file your local agent uses → same base prompt + same
-extension = same review, locally and in CI.
+extension = the same methodology and severity model, locally and in CI.
 
 ## Read these first (all relative inside the skill)
 
@@ -158,10 +159,10 @@ explicitly rather than implied:
 
 | Artifact | Source | How it is verified |
 |----------|--------|--------------------|
-| Vendored skill (five sub-skills) | `DailybotHQ/ai-diff-reviewer` at a **published tag** (current `v2.0.0`) | `skills` CLI records source + content hash in the repo's `skills-lock.json`; a restore re-verifies the hash. Installs are consent-gated (Step 1) and always tag-pinned — never a moving branch. |
-| CI Action (Flow B only) | `DailybotHQ/ai-diff-reviewer` GitHub Action, referenced by its `@v2` major line (exact-tag pinning is not how the Actions marketplace references actions) | Each Action release in the `@v2` line ships a `prompt.md` **byte-identical** to the skill's at the matching skill tag — an upstream CI invariant. The skill side is pinned to an exact tag; the Action follows its major line, so reviews stay compatible while picking up patch fixes. |
+| Vendored skill (five sub-skills) | `DailybotHQ/ai-diff-reviewer` at a **published tag** (documented pin `v2.0.1`) | `skills` CLI records source + content hash in the repo's `skills-lock.json`; a restore re-verifies the hash. Installs are consent-gated (Step 1) and always tag-pinned — never a moving branch. |
+| CI Action (Flow B only) | `DailybotHQ/ai-diff-reviewer` GitHub Action, referenced by an explicitly chosen exact tag or its moving `@v2` major line | Each Action release in the `@v2` line ships a `prompt.md` **byte-identical** to the skill's at the matching skill tag — an upstream CI invariant. The skill side is pinned to an exact tag; the Action follows its major line, so reviews stay compatible while picking up patch fixes. |
 | Extension file | Generated **locally** by `generate-extension` from the repo's own diff | Never downloaded; reviewed by the developer like any other tracked file. |
-| Provider secret (Flow B only) | The maintainer's own `CURSOR_API_KEY`, set in GitHub Settings | This addon never reads, stores, echoes, or commits provider secrets. |
+| Provider secret (Flow B only) | The maintainer's selected provider credential, configured through upstream setup | This addon never reads, stores, echoes, or commits provider secrets. |
 
 Nothing else is fetched. There is no telemetry, no post-install script, and no
 runtime download by this addon itself; the only network action it can prompt
@@ -179,27 +180,11 @@ for is the consent-gated, tag-pinned `skills add`/`skills update` above.
    not make the repository conformant — `verify` reports the gap until the
    reviewer is installed. Never install unpinned.
 
-2. **Offer the CI surface — do NOT guess.** Flow A is the baseline; Flow B is
-   an explicit opt-in. Present both flows plainly:
-
-   > This addon supports two adoption modes:
-   >
-   > **Flow A — local-only.** Vendored skill + a repo-tailored extension
-   > file (via `generate-extension`); no GitHub Actions changes. Best for
-   > personal or experimental repos, or teams not (yet) ready for automated
-   > PR review. Once both are present, the DWP Final Review's security pass is augmented
-   > with a local review pass — skill alone is not enough.
-   >
-   > **Flow B — dual-surface.** Skill + CI Action, both reading the same
-   > `.review/extension.md` for byte-identical parity. Every PR to `main`
-   > gets an AI review in CI, gated on a label of your choice (typical:
-   > `ready`). Recommended for team repos.
-   >
-   > Which flow?
-
-   If the signal is unclear, stay on Flow A and say so; never default to
-   Flow B (installing the workflow unrequested is a much bigger footprint than
-   staying on the local review).
+2. **Local-only is automatic under onboarding authorization.** Continue with
+   the pinned local skill and extension without asking the developer to choose
+   Flow A. Offer the optional CI surface separately; run upstream `setup` only
+   after an explicit request or acceptance. An unanswered offer means Flow A,
+   not a blocker. Existing CI configuration is preserved, not installed again.
 
 3. **Detect existing setup (reconcile-don't-clobber).** Before installing
    anything, check what is already present (see `templates/INTEGRATION.md`):
@@ -223,7 +208,7 @@ Run the pinned install unless the developer explicitly declined in Step 0
 (declared exception). **Never run an unpinned installer.**
 
 - **Vendored coding-agent skill** (recommended — brings the five-sub-skill
-  router and the byte-identical prompt parity guarantee; current **v2.0.0**):
+  router and the byte-identical prompt parity guarantee; pinned **v2.0.1**):
   - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.1 --skill ai-diff-reviewer -y`
     (**pinned to a published tag**; vendors into
     `.agents/skills/ai-diff-reviewer/` and records source + content hash in
