@@ -112,6 +112,17 @@ class LifecycleContracts(unittest.TestCase):
         self.state['tasks'][0]['gates'].append(dict(gate, passes=True, exit_code=0))
         self.verify()
 
+    def test_standard_series(self):
+        # 2.x is historical (accepted with a marker), 4.x is current; 3.x
+        # never existed as a standard and 5.x+ is newer than the checker.
+        for spec, fragment, ok in [('4.0.0', 'plan standard: DWP spec 4.0.0', True),
+                                   ('2.4.0', '(historical, accepted)', True),
+                                   ('3.0.0', 'not a DWP standard', False),
+                                   ('5.0.0', 'newer than this checker supports', False)]:
+            self.manifest['spec_version'] = spec
+            self.assertIn(fragment, self.verify(ok))
+        self.manifest['spec_version'] = '2.4.0'
+
     def test_future_contracts(self):
         self.manifest['spec_version'] = '99.0.0'
         self.assertIn('newer than', self.verify(False))

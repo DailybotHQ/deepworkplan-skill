@@ -333,7 +333,7 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 2.4.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 4.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
 
@@ -342,7 +342,10 @@ the onboarding flow **MUST** keep them distinct:
   single spec document. Each spec document carries its own version and they
   advance independently, so recording one of those would compare unrelated
   scales: a conformance checker reads this line against the DWP standard it
-  implements and rejects a repository declaring one it does not support.
+  implements and rejects a repository declaring one it does not support. The
+  standard's series are 2.x (historical) and 4.x (current — there is no 3.x);
+  the skill package `version:` and the `/v2.json` schema URLs are two further,
+  separate series, never compared against this line.
 - **Legacy versus declared.** A conformance checker **MUST** distinguish a
   repository onboarded under an earlier version (no §3.4 content, no declaration)
   from a repository that declares this version and lacks a **MUST**: the former

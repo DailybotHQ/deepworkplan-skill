@@ -26,7 +26,11 @@ import sys
 
 # The newest DWP spec this checker implements; keep in sync with conformance.sh
 # SUPPORTED_SPEC and DWP_SPECIFICATION.md "Version".
-SUPPORTED_SPEC = '2.4.0'
+SUPPORTED_SPEC = '4.0.0'
+# The standard's released series: 2.x is historical (plans authored before the
+# 4.x jump stay valid, §6.5), 4.x is current. There is no 3.x standard — the
+# v3 launch was a product release, not a standard bump.
+SPEC_SERIES = (2, 4)
 STATE_V2 = 'https://deepworkplan.com/schema/plan-state/v2.json'
 MANIFEST_V2 = 'https://deepworkplan.com/schema/plan-manifest/v2.json'
 STATUSES = ('pending', 'in_progress', 'completed', 'blocked', 'skipped')
@@ -307,11 +311,13 @@ def current(plan, state, manifest, report):
     elif version(standard) > version(SUPPORTED_SPEC):
         report.bad(f'plan declares DWP spec {standard}, newer than this checker supports '
                    f'({SUPPORTED_SPEC}) — upgrade the installed skill before executing it')
-    elif version(standard) < version(SUPPORTED_SPEC):
-        report.note(f'plan uses the v2 state layer but declares DWP spec {standard} — record the '
-                    f'migration in the README Standard line (PLAN_STATE.md §6.1)')
+    elif version(standard)[0] not in SPEC_SERIES:
+        report.bad(f'plan declares DWP spec {standard}, which is not a DWP standard (the series '
+                   f'are 2.x historical and 4.x current; there is no 3.x) — correct the '
+                   f'Standard line (PLAN_STATE.md §6.1)')
     else:
-        report.ok(f'plan standard: DWP spec {standard}')
+        report.ok(f'plan standard: DWP spec {standard}'
+                  + (' (historical, accepted)' if version(standard)[0] != 4 else ''))
     if 'Plan Status: materializing' in clean:
         report.bad('partial materialization — recover with create/refine')
     report.verdict(state.get('plan') == plan.name and manifest.get('name') == plan.name,
@@ -500,6 +506,10 @@ def legacy(plan, state, manifest, is_git, report):
     elif version(standard) > version(SUPPORTED_SPEC):
         report.bad(f'plan declares DWP spec {standard}, newer than this checker supports '
                    f'({SUPPORTED_SPEC}) — upgrade the installed skill before executing it')
+    elif version(standard)[0] not in SPEC_SERIES:
+        report.bad(f'plan declares DWP spec {standard}, which is not a DWP standard (the series '
+                   f'are 2.x historical and 4.x current; there is no 3.x) — correct the '
+                   f'Standard line (PLAN_STATE.md §6.1)')
     else:
         report.ok(f'plan standard: DWP spec {standard}'
                   + (' (declared migration)' if migrated else ''))

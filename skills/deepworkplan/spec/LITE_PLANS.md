@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 2.4.0 |
+| Version | 4.0.0 |
 | Status | Stable |
 
 ## Representation and lifecycle

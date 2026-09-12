@@ -321,7 +321,7 @@ inline and then again as a file:
 1. **`manifest.json` (first write)** — immutable creation identity, written once
    and never edited: `schema` =
    `https://deepworkplan.com/schema/plan-manifest/v2.json`, `spec_version`
-   **"2.4.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
+   **"4.0.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
    `created_by`, `task_count` (the creation count, Final Review included) and
    **`plan_format`** (`"lite"`, or `"full"` when an explicit `full` preference or
    the rubric already decided Full). Atomic (write-temp-then-rename); valid
@@ -367,7 +367,7 @@ records. Do not paste the ten-section task template into the README.
 ## Plan Variables
 | Variable | Value |
 | --- | --- |
-| Standard | DWP spec 2.4.0 |
+| Standard | DWP spec 4.0.0 |
 | Plan Format | Lite |
 | Materialization | ready |
 | Approval | pending            ← guided; `pre-approved (trust)` in trust mode |
@@ -466,7 +466,7 @@ Create:
 
 1. **Folder + `manifest.json` (first write):** create `.dwp/plans/PLAN_{name}/`
    and immediately write `manifest.json` — plan identity: name, title, archetype,
-   rigor tier, `spec_version` **"2.4.0"**, `plan_format` **"full"**, `task_count`
+   rigor tier, `spec_version` **"4.0.0"**, `plan_format` **"full"**, `task_count`
    = the number of task files this materialization will write (Final Review
    included), creating agent — atomically (write-temp-then-rename), valid against
    `../spec/schema/plan-manifest-v2.schema.json` (closed schema), written once,
@@ -562,7 +562,7 @@ Create:
    closed). Existing v1 plans keep `file` and their v1 schema URL. `manifest.json` was written in item 1
    and is not touched here.
 8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `**Standard:** DWP
-   spec 2.4.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
+   spec 4.0.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
    execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
    Report request if the user made one); Task List with `[ ]` checkboxes + links
    (the Final Review last); Execution Rules; Skills & Agents Used; Plan Status /

@@ -27,11 +27,18 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.4.0 |
+| **Version** | 4.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `DWP_SPECIFICATION.md` 2.2.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
+| **Supersedes** | `DWP_SPECIFICATION.md` 2.4.0 (and 2.2.0); `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md`, `PLAN_STATE.md` |
 | **License** | MIT |
+
+Three version series coexist on purpose and never compare: the skill **package**
+`version:` (release-managed), the **DWP standard** this document versions
+(2.x historical, 4.x current — there is no 3.x standard; the v3 launch was a
+product release), and the **schema URLs** (`plan-state/v2.json` — a schema-shape
+series, not the standard's version). The 4.0.0 jump aligns the standard's number
+with the product line; it changes no requirement from 2.4.0.
 
 > **Additive in 2.2.0.** Four additive capabilities, no breaking changes:
 > (1) the **machine-readable plan state layer** (`manifest.json` + `state.json`,
@@ -128,7 +135,8 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 ### 3.0 Lite-first override (2.4.0)
 
-For plans created under 2.4.0, the following rules supersede the historical
+For plans created under 2.4.0 or later (2.x and 4.x alike), the following rules
+supersede the historical
 guided-draft wording in this section. `create` **MUST** materialize a ready,
 executable Lite plan first; it **MUST NOT** execute product work. The Lite README
 contains compact, anchored task records with goal, touched surface, acceptance
