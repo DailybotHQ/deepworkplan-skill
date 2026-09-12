@@ -78,8 +78,14 @@ up_has() {
 
 @test "upgrade phase uses the documented exact-tag install and verifies it" {
     up_has "$UP" "npx --yes skills add DailybotHQ/deepworkplan-skill@vX.Y.Z --skill deepworkplan --force -y"
-    up_has "$UP" "installed \`version:\` now equals the accepted tag"
-    up_has "$UP" "a mismatch aborts the phase"
+    # Task 8 of PLAN_v5_superiority_guarantee strengthened this pin with the
+    # install-verification contract (pre-create, tag + non-empty verify,
+    # retry-once, git-archive fallback) — the old sentence pinned only the
+    # tag equality half of it.
+    up_has "$UP" 'verify the installed `SKILL.md` frontmatter `version:` equals the'
+    up_has "$UP" "accepted tag"
+    up_has "$UP" "never continue on a wrong or empty install"
+    up_has "$UP" "A mismatch or an empty/false success aborts the phase"
     up_has "$UP" "openclaw skills update deepworkplan"
 }
 

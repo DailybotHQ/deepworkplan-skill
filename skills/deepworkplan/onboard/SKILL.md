@@ -660,6 +660,25 @@ and **stack-appropriate**, not generic boilerplate.
    `@latest`) — executing whatever a remote ref currently holds is an
    unverifiable dependency (no version, no checksum, no rollback; the shape
    Snyk W012 flags).
+
+   **Verify every skills-CLI install — mandatory.** Two CLI defects are
+   known from round-1 benchmark evidence (`../shared/troubleshooting.md` §2):
+   an `@tag` pin can be display-only (the requested tag printed while the
+   latest bytes are delivered), and a parallel-mkdir race can report
+   "Done!"/exit 0 while placing no content. Around every `skills add` call:
+   - **Pre-create the target** `.agents/skills/deepworkplan/` first, and
+     remove any empty earlier attempt (documented race workaround — the
+     upstream defect is cited in §2).
+   - **Verify what landed:** the installed `SKILL.md` frontmatter `version:`
+     equals the requested tag, and the installed directory is non-empty
+     (`SKILL.md` present — not just the CLI's exit 0).
+   - **On mismatch, empty, or false success:** retry the identical command
+     once after pre-creating the directory; if it still fails, fall back to
+     the byte-exact manual install
+     `git archive <tag> skills/deepworkplan | tar -x --strip-components=1 -C .agents/skills`
+     and byte-check with `diff -rq` against a `git archive` export of the
+     tag. Record the event and the fallback in the onboarding report —
+     never proceed silently on a mismatched or empty install.
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
    create `.dwp/plans/` with a `README.md` placeholder,
    and add `.dwp/` to the repo's `.gitignore` (append the rule
@@ -688,6 +707,13 @@ already exists. When the install cannot run here (sandbox, offline) or the
 developer declines, record the gap in the report and, for a decline, as a
 declared exception in `AGENTS.md` — never silently. A **harness upgrade**
 (Phase 0) reconciles the same two pieces when missing.
+
+The Phase 7 install-verification contract applies verbatim to the reviewer's
+pinned `skills add` call: pre-create `.agents/skills/ai-diff-reviewer/`,
+verify the installed `SKILL.md` frontmatter `version:` equals the pinned
+tag and the directory is non-empty, retry once after pre-creating, then fall
+back to the byte-exact `git archive` install of the tag — never proceed
+silently on a mismatched or empty install.
 
 ## Phase 7b — Offer optional addons (trigger only)
 
