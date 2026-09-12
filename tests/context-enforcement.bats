@@ -63,3 +63,13 @@ c_doc_has() {
     grep -qF '## 1. Context' "$SK/examples/TEAM_AGENTS_TASK_TEMPLATE.md"
     grep -qF '## 2. Context' "$SK/examples/ORCHESTRATOR_TASK_TEMPLATE_create_child_dwp.md"
 }
+
+@test "create teaches the per-task Context the verifier enforces (Lite anatomy + Step 4.5)" {
+    # F6-1: the verifier requires non-empty Context for every non-completed
+    # Lite task record, but the Lite README anatomy and the Step 4.5 quality
+    # checklist omitted the field — a plan authored exactly per the anatomy
+    # failed conformance until every task completed.
+    CREATE="$SK/create/SKILL.md"
+    c_doc_has "$CREATE" "**Goal** · **Context**"
+    c_doc_has "$CREATE" "has a Goal, a Context, a Touched Surface"
+}
