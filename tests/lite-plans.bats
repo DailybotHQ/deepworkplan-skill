@@ -328,7 +328,7 @@ PY
   mutant_teardown
 }
 
-@test "a healthy Lite plan degrades to advisories when python3 is unavailable" {
+@test "missing Python leaves plans UNVERIFIED with a nonzero CI exit" {
   FAKEBIN="$(mktemp -d)/bin"
   mkdir -p "$FAKEBIN"
   for t in bash sh grep sed awk cat ls find basename dirname sort uniq head tail tr wc mktemp rm cp mkdir git readlink stat cut expr; do
@@ -341,8 +341,9 @@ PY
     bash "$REPO_ROOT/skills/deepworkplan/verify/conformance.sh" --plan PLAN_lite_fixture
   # Format dispatch must not depend on python3: a Lite plan may never be
   # misread as a Full plan with zero task files.
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"python3 unavailable"* ]]
+  [[ "$output" == *"Verdict: UNVERIFIED"* ]]
   [[ "$output" != *"mandatory final task missing"* ]]
   rm -rf "$(dirname "$FAKEBIN")"
 }

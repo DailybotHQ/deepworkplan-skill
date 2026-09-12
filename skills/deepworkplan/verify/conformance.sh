@@ -15,7 +15,7 @@
 # authored before them. The plan contract itself lives in plan_contract.py.
 #
 # Bash 3.2 compatible (macOS default). Requires only git + coreutils; uses
-# python3 to validate plans when available, degrades gracefully when not.
+# Python 3.9+ to validate plans; exits 2 (UNVERIFIED) when unavailable.
 
 set -euo pipefail
 
@@ -68,6 +68,7 @@ fi
 PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
+UNVERIFIED_COUNT=0
 
 pass() {
   PASS_COUNT=$((PASS_COUNT + 1))
@@ -260,12 +261,16 @@ check_plan() {
   local plan_dir="$1" output="" line failures=0 rc=0
   echo ""
   echo "Plan: $(basename "$plan_dir")"
-  # Every other JSON-dependent check in this script degrades rather than blocks.
-  # Do the same here: without python3 the structural checks cannot run, but a
-  # healthy plan must not be reported as broken. Say plainly that no structural
-  # claim was made instead of implying the plan was verified.
+  # Missing tooling proves neither validity nor invalidity. A CI gate must not
+  # accept a plan merely because its structural checks could not run.
   if ! command -v python3 >/dev/null 2>&1; then
     warn "plan structure not verified (python3 unavailable) — no structural conformance claim is made for this plan"
+    UNVERIFIED_COUNT=$((UNVERIFIED_COUNT + 1))
+    return 0
+  fi
+  if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)'; then
+    warn "plan structure not verified — Python 3.9+ is required"
+    UNVERIFIED_COUNT=$((UNVERIFIED_COUNT + 1))
     return 0
   fi
   output="$(python3 "$SCRIPT_DIR/plan_contract.py" "$plan_dir" "$( [ "$IS_GIT" -eq 1 ] && printf git || printf nogit )" 2>&1)" || rc=$?
@@ -306,7 +311,10 @@ elif [ "$MODE" = "all" ] && [ -d "$PLAN_ROOT/plans" ]; then
 fi
 
 echo ""
-if [ "$FAIL_COUNT" -eq 0 ]; then
+if [ "$FAIL_COUNT" -eq 0 ] && [ "$UNVERIFIED_COUNT" -gt 0 ]; then
+  echo "Verdict: UNVERIFIED — $UNVERIFIED_COUNT plan(s) could not be checked ($PASS_COUNT passed, $WARN_COUNT advisory)"
+  exit 2
+elif [ "$FAIL_COUNT" -eq 0 ]; then
   echo "Verdict: CONFORMANT ($PASS_COUNT passed, $WARN_COUNT advisory)"
   exit 0
 else

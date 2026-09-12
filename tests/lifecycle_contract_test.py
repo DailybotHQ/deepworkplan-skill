@@ -63,6 +63,19 @@ class LifecycleContracts(unittest.TestCase):
         self.complete()
         self.verify()
 
+    def test_markdown_labels_preserve_semantic_fields(self):
+        import re
+        original = self.readme
+        for style in ('**{}:**', '**{}**:', '**{}** ·'):
+            self.readme = re.sub(r'^### (Goal|Touched Surface|Acceptance Criteria|Validation)$',
+                                 lambda m: style.format(m[1]), original, flags=re.M)
+            self.verify()
+        self.readme = original.replace('Fixture only.', '**Not applicable — fixture only.**')
+        self.verify()
+        # Formatting tolerance must never accept an actually empty gate.
+        self.readme = self.readme.replace('`true`', '')
+        self.verify(False)
+
     def test_completed_security_evidence(self):
         self.complete()
         (self.plan/'analysis_results/SECURITY_REVIEW.md').unlink()

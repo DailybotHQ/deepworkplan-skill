@@ -105,12 +105,20 @@ def unfenced(text):
 
 
 def field_content(body, name):
-    pattern = r'(?im)(?:^#{2,6}\s+(?:\d+[.]?\s*)?'+re.escape(name)+r'\s*$|\*\*'+re.escape(name)+r'\*\*\s*[:·-]?)'
+    # Both **Goal:** and **Goal**: are ordinary Markdown labels. Emphasis
+    # inside a field is content, not another field (e.g. **Not applicable**).
+    labels = ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation',
+              'Instructions', 'Read Before Starting', 'Completion & Log',
+              'Completion log', 'Skills disposition')
+    def label_pattern(label):
+        return r'\*\*(?:'+label+r')\s*:?\*\*[ \t]*[:·-]?'
+
+    pattern = r'(?im)(?:^#{2,6}[ \t]+(?:\d+[.]?[ \t]*)?'+re.escape(name)+r'[ \t]*$|'+label_pattern(re.escape(name))+')'
     match = re.search(pattern, body)
     if not match:
         return ''
     rest = body[match.end():]
-    boundary = re.search(r'(?m)^#{2,6}\s|\*\*[A-Za-z][^*\n]+\*\*', rest)
+    boundary = re.search(r'(?im)^#{2,6}[ \t]|'+label_pattern('|'.join(map(re.escape, labels))), rest)
     return (rest[:boundary.start()] if boundary else rest).strip(' \n\r`·:-')
 
 
