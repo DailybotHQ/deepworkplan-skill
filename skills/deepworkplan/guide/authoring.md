@@ -315,7 +315,7 @@ The agent must follow these steps sequentially:
 - [ ] 1. Read this task file fully and understand the goal and constraints.
 - [ ] 2. Inspect the current implementation / related files.
 - [ ] 3. Implement the required changes.
-- [ ] 4. Make the skills decision (§6.2) and the documentation decision (§5.5): record `none` / `update` / `create` / `defer` in the log; update the docs the Touched Surface registers for what this task changed, or record `not applicable — <reason>`.
+- [ ] 4. Make the skills decision (§6.2) and the documentation decision (§5.5) — record both dispositions in the log below.
 - [ ] 5. Run the validation commands listed above.
 - [ ] 6. Review the diff and ensure it matches acceptance criteria.
 - [ ] 7. Update the plan README to mark this task as `[x]` in the Task List.
@@ -458,44 +458,31 @@ gate messaging only.
 
 Documentation follows the same two-layer model as testing and security: kept
 current **inside the task that changes the surface**, plus a reconciliation
-sweep in the Final Review (`spec/DWP_SPECIFICATION.md` §6.1). The
-documentation a repository ships **is** the harness every future plan reads —
-a task that leaves stale docs behind taxes every subsequent session with
-re-derivation, misdirection, and false confidence. Round-1 evidence: a
-shipped feature whose new gate was never registered in
-`docs/TESTING_GUIDE.md`, so the next plan could not have selected it.
+sweep in the Final Review (`spec/DWP_SPECIFICATION.md` §6.1; the normative
+rules live in its §6.6). The documentation a repository ships **is** the
+harness every future plan reads — documentation debt is context debt, and
+every plan after this one pays interest on whatever this one leaves stale.
 
 - **Registered-surface task ⇒ doc currency, in the same task.** A task that
   changes behavior, structure, commands, configuration, or agent surface
   **MUST**, in that same task, update the documentation that registers what
-  it touched: the gate/command registry (`docs/TESTING_GUIDE.md`) for new
-  commands or gates; structure docs (`docs/ARCHITECTURE.md`-class) for
-  structural changes; module or feature docs for module internals
-  (`spec/DOCUMENTATION_STANDARD.md` §2); the `AGENTS.md` index only when a
-  new top-level surface appears. Put it in the task's **Acceptance Criteria**
-  so it is checkable.
-- **The Touched Surface names the docs.** The task's Touched Surface lists
-  the documentation files it will keep current — the *planned docs surface* —
-  and reconciles them with the actual diff like every other surface element
-  (`spec/DWP_SPECIFICATION.md` §5.0.2). A doc named in the plan but not
+  it touched: the gate/command registry (`docs/TESTING_GUIDE.md`), structure
+  docs, module or feature docs, the `AGENTS.md` index when a new top-level
+  surface appears. Put it in the task's **Acceptance Criteria** so it is
+  checkable.
+- **The Touched Surface names the docs** — the *planned docs surface*
+  (`spec/DWP_SPECIFICATION.md` §5.0.2): a doc named in the plan but not
   updated by the close of the task is a reconciliation miss, not a follow-up.
 - **Proportional, not bureaucratic.** Pure-prose, config-comment, or research
-  tasks record `not applicable — <reason>` and move on. A one-line fix
-  updates at most a one-line reference. The discipline exists to keep the
-  harness true, never to add ceremony.
+  tasks record `not applicable — <reason>`; a one-line fix updates at most a
+  one-line reference.
 - **Substantial doc work gets its own task — placed with the work, never
-  after it.** When the documentation a change obliges is itself substantial
-  (a new feature's full guide, a restructured section), prefer a dedicated
-  `N.task_document_{feature}.md` task adjacent to the implementation task —
-  ordered like the security discipline (§5.4): the docs that describe
-  behavior land before the tests that encode it, and neither is deferred
-  past the Final Review's sweep.
-- **The why, stated once:** documentation debt is context debt. Every plan
-  after this one pays interest on whatever this one left stale.
+  after it** (ordered like the security discipline §5.4: the docs that
+  describe behavior land before the tests that encode it; neither is
+  deferred past the Final Review's sweep).
 
 > A plan that changes registered surface but ships **zero** doc updates
-> across all its tasks is a smell: either nothing it touched was registered
-> (itself a harness gap to record), or the discipline was skipped. The Final
+> across all its tasks is a smell. The Final
 > Review's documentation sweep reports it — it does not silently absorb it.
 
 ---

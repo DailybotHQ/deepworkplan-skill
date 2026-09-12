@@ -51,8 +51,7 @@ work reliably without per-session human hand-holding.
   fallback and the orchestrator-hub note. See `presets/README.md` for the full
   index. Read the matching preset in Phase 1 and use it in Phases 3–6.
   **Presets are reasoning aids, not templates.**
-- **Guide (essential — read for this flow):** [`../guide/structure.md`](../guide/structure.md) (the `.dwp/` layout and naming you scaffold).
-- **Guide (conditional — read only when the trigger fires):** [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
+- **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2, §10 when Phase 7 scaffolds `.dwp/` beyond the paths `../shared/dwp-paths.md` names or Phase 3b authors the first plan; [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
 - [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins). No optional addon is required for a repository to use DWP.
 - [`templates/onboarding-plan.md`](templates/onboarding-plan.md) — the
@@ -662,23 +661,14 @@ and **stack-appropriate**, not generic boilerplate.
    Snyk W012 flags).
 
    **Verify every skills-CLI install — mandatory.** Two CLI defects are
-   known from round-1 benchmark evidence (`../shared/troubleshooting.md` §2):
-   an `@tag` pin can be display-only (the requested tag printed while the
-   latest bytes are delivered), and a parallel-mkdir race can report
-   "Done!"/exit 0 while placing no content. Around every `skills add` call:
-   - **Pre-create the target** `.agents/skills/deepworkplan/` first, and
-     remove any empty earlier attempt (documented race workaround — the
-     upstream defect is cited in §2).
-   - **Verify what landed:** the installed `SKILL.md` frontmatter `version:`
-     equals the requested tag, and the installed directory is non-empty
-     (`SKILL.md` present — not just the CLI's exit 0).
-   - **On mismatch, empty, or false success:** retry the identical command
-     once after pre-creating the directory; if it still fails, fall back to
-     the byte-exact manual install
-     `git archive <tag> skills/deepworkplan | tar -x --strip-components=1 -C .agents/skills`
-     and byte-check with `diff -rq` against a `git archive` export of the
-     tag. Record the event and the fallback in the onboarding report —
-     never proceed silently on a mismatched or empty install.
+   known from round-1 benchmark evidence: an `@tag` pin can be display-only,
+   and a parallel-mkdir race can report success while placing no content.
+   **Pre-create the target** `.agents/skills/deepworkplan/` before the call
+   (documented race workaround), then follow the install-verification
+   contract around every `skills add` call
+   (`../shared/install-verification.md`): verify what landed, retry once,
+   fall back to the byte-exact `git archive` install — never proceed
+   silently on a mismatched or empty install.
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
    create `.dwp/plans/` with a `README.md` placeholder,
    and add `.dwp/` to the repo's `.gitignore` (append the rule
@@ -709,11 +699,9 @@ declared exception in `AGENTS.md` — never silently. A **harness upgrade**
 (Phase 0) reconciles the same two pieces when missing.
 
 The Phase 7 install-verification contract applies verbatim to the reviewer's
-pinned `skills add` call: pre-create `.agents/skills/ai-diff-reviewer/`,
-verify the installed `SKILL.md` frontmatter `version:` equals the pinned
-tag and the directory is non-empty, retry once after pre-creating, then fall
-back to the byte-exact `git archive` install of the tag — never proceed
-silently on a mismatched or empty install.
+pinned `skills add` call (`.agents/skills/ai-diff-reviewer/`): pre-create,
+verify the installed `version:` equals the pinned tag, retry once, byte-exact
+fallback.
 
 ## Phase 7b — Offer optional addons (trigger only)
 

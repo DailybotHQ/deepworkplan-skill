@@ -22,20 +22,26 @@
 setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
     ONBOARD="$REPO_ROOT/skills/deepworkplan/onboard/SKILL.md"
+    IV="$REPO_ROOT/skills/deepworkplan/shared/install-verification.md"
     UPGRADE="$REPO_ROOT/skills/deepworkplan/upgrade/SKILL.md"
     TROUBLE="$REPO_ROOT/skills/deepworkplan/shared/troubleshooting.md"
 }
 
 @test "onboard Phase 7 carries the mandatory install-verification contract" {
+    # The mandate and the site-specific anchors stay at the install site; the
+    # step-by-step procedure lives in shared/install-verification.md (the
+    # phase-local contract, read at Phase 7/7a time — task 11's tiering).
     doc_has "$ONBOARD" "Verify every skills-CLI install — mandatory"
     doc_has "$ONBOARD" "an \`@tag\` pin can be display-only"
-    doc_has "$ONBOARD" 'frontmatter `version:`'
-    doc_has "$ONBOARD" "equals the requested tag"
-    doc_has "$ONBOARD" "directory is non-empty"
-    doc_has "$ONBOARD" "retry the identical command once"
-    doc_has "$ONBOARD" "git archive <tag> skills/deepworkplan"
-    doc_has "$ONBOARD" "diff -rq"
+    doc_has "$ONBOARD" "install-verification"
     doc_has "$ONBOARD" "never proceed silently on a mismatched or empty install"
+    doc_has "$IV" 'frontmatter `version:`'
+    doc_has "$IV" "equals the requested tag"
+    doc_has "$IV" "directory is non-empty"
+    doc_has "$IV" "retry the identical command once"
+    doc_has "$IV" "git archive <tag> skills/deepworkplan"
+    doc_has "$IV" "diff -rq"
+    doc_has "$IV" "never proceed silently on a mismatched or empty install"
 }
 
 @test "onboard Phase 7 pre-creates the target before every CLI call" {
