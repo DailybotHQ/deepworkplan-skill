@@ -1,13 +1,18 @@
 # DeepWorkPlan — Onboard: the required local review and the optional addons (read in Phase 7a and 7b)
 
 Verbatim from the main procedure. Five addons ship under `../addons/`. Four are
-**opt-in**: a repository is fully conformant with zero optional addons, and none
-of them is required to create or execute plans. The fifth — the **AI Diff
+**optional**: a repository is fully conformant with zero optional addons, and none
+of them is required to create or execute plans. One of the four — **dependency
+upgrade** — is **near-default**: offered for every repo with declared
+dependencies, and its **inert** `/lib-upgrade` delegator installs under the
+Phase 0 onboarding consent **unless explicitly declined** (an install runs no
+upgrade). The other three are signal-gated opt-ins. The fifth — the **AI Diff
 Reviewer local review** — is part of the baseline since standard 2.3.0
 (`../spec/ADDONS.md` §6.5) and is installed in Phase 7a; only its CI surface is
 optional. Read this file to run Phase 7a and to make the Phase 7b offer; never
-enable an optional addon without the developer's explicit acceptance of that
-addon's offer.
+enable a signal-gated addon without the developer's explicit acceptance of that
+addon's offer, and never let an install — near-default included — execute an
+upgrade.
 
 ## Phase 7a — Install the AI Diff Reviewer local review (required)
 
@@ -51,7 +56,7 @@ records its Phase 7a status). Offer the four optional ones independently:
 |-------|--------|-------------------------------|
 | **Devcontainer support** | [`../addons/devcontainer/`](../addons/devcontainer/SKILL.md) | the repo benefits from a reproducible isolated dev container (most repos with Docker/services). |
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
-| **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | the repo has a lockfile + a dependency-heavy stack and wants safe, batched, validated upgrades — recommend only when a lockfile is present; **never auto-install for everyone**. |
+| **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | **near-default** — the repo has **declared dependencies** (any manifest or lockfile): offer **always**, and install the **inert** `/lib-upgrade` delegator under the onboarding consent **unless explicitly declined**. Installing the delegator runs **no** upgrade — upgrades are always explicit, gated work. |
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: when any surface is detected — even an ambiguous one — the evaluation and offer are **mandatory, not skippable**, with the detection rationale recorded. **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **strongly recommended**; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended**. Every profile **requires explicit acceptance even in trust mode — none is auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
 | **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | **not offered here — installed in Phase 7a** (required local review, baseline since 2.3.0). In Phase 7b only confirm the Flow B (CI Action) opt-in decision if it was left open; never install the CI surface unrequested. |
 
@@ -103,16 +108,19 @@ and continue — the repo stays baseline-conformant.
 The third addon is **dependency upgrade**
 ([`../addons/dependency-upgrade/SKILL.md`](../addons/dependency-upgrade/SKILL.md) +
 [`SPEC.md`](../addons/dependency-upgrade/SPEC.md)). It is **package-manager
-agnostic** — offer it when the repo has a lockfile and a dependency-heavy stack;
-in trust mode recommend it **only** when a lockfile is present, and **never**
-auto-install it for everyone. If accepted: read that addon's `SKILL.md` and run
+agnostic** and **near-default**: offer it for **every repo with declared
+dependencies** — any manifest or lockfile, any ecosystem — in either mode. Under
+the Phase 0 onboarding consent, install the **inert** `/lib-upgrade` delegator
+into the repo's `.agents/commands/` **unless the developer explicitly
+declines**; a prior explicit acceptance is never re-asked, and a decline leaves
+a baseline-conformant repo with no command. Installing the delegator runs **no**
+upgrade — an upgrade always starts from an explicit request. When invoked: read
+that addon's `SKILL.md` and run
 its flow — detect the repo's real package manager (npm/pnpm/yarn + ncu,
 pip/poetry/uv, cargo, go mod, bundler, composer…), classify upgrades by semver,
 upgrade in safe batches, run the repo's **real** validation gate after each
-batch, revert a failing batch, and summarize. **Only when accepted**, the addon
-installs a `/lib-upgrade` delegator into the repo's `.agents/commands/`. After
-applying, run the addon's validation step (SPEC §9). If declined, skip it — the
-repo stays baseline-conformant and no command is installed.
+batch, revert a failing batch, and summarize. After
+applying, run the addon's validation step (SPEC §9).
 
 The fourth addon is **design system**
 ([`../addons/design-system/SKILL.md`](../addons/design-system/SKILL.md) +

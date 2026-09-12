@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-dependency-upgrade
-description: Optional DeepWorkPlan addon that safely upgrades a repo's dependencies — reasoning about the repo's ACTUAL package manager (npm/pnpm/yarn + ncu, pip/poetry/uv, cargo, go mod, bundler, composer, and more) rather than assuming npm — with a batched, validated, revertible workflow that detects the manager and manifests/lockfiles, classifies upgrades (patch/minor/major), upgrades in safe batches, runs the repo's real validation gate after each batch, reverts a failing batch, and summarizes. Opt-in, never required, reconciles with the repo's existing tooling. Use when the developer wants to bring dependencies up to date without breaking the build.
+description: DeepWorkPlan addon that safely upgrades a repo's dependencies — reasoning about the repo's ACTUAL package manager (npm/pnpm/yarn + ncu, pip/poetry/uv, cargo, go mod, bundler, composer, and more) rather than assuming npm — with a batched, validated, revertible workflow that detects the manager and manifests/lockfiles, classifies upgrades (patch/minor/major), upgrades in safe batches, runs the repo's real validation gate after each batch, reverts a failing batch, and summarizes. Near-default — offered for every repo with declared dependencies, and its delegator installs under the onboarding consent unless declined; upgrades themselves never run automatically, only as explicit, gated work. Never required for baseline conformance; reconciles with the repo's existing tooling. Use when the developer wants to bring dependencies up to date without breaking the build.
 version: "4.0.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -11,8 +11,12 @@ metadata: {"openclaw":{"emoji":"⬆️","homepage":"https://deepworkplan.com"}}
 # DeepWorkPlan — Dependency-Upgrade Addon
 
 Safely bring a repo's dependencies up to date with a **batched, validated,
-revertible** workflow. This is the methodology's **third opt-in addon** — it is
-**never** required for a repo to be AI-first.
+revertible** workflow. This is the methodology's **third addon** —
+**near-default**: offered for every repo with declared dependencies, and its
+`/lib-upgrade` delegator installs under the onboarding consent **unless
+explicitly declined**. Installing the delegator changes no dependencies — an
+upgrade itself always runs as explicit, gated work (a plan task or a direct
+invocation). It is **never** required for a repo to be AI-first.
 
 > ## The rule that overrides everything: REASON about the package manager, then upgrade
 >
@@ -41,7 +45,11 @@ revertible** workflow. This is the methodology's **third opt-in addon** — it i
 ## When this runs
 
 - From **`onboard` Phase 7b** — after the core AI-first scaffolding, `onboard`
-  offers this addon; if accepted it reads this SKILL and runs the flow below.
+  offers this addon for **every repo with declared dependencies** (any manifest
+  or lockfile) and installs the `/lib-upgrade` delegator under the onboarding
+  consent **unless explicitly declined**; a decline leaves a baseline-conformant
+  repo with no command. Installing the delegator runs **no** upgrade — the flow
+  below always starts from an explicit request.
 - **Directly** — `/deepworkplan-addon-dependency-upgrade` on an already-onboarded
   repo to upgrade dependencies, or via the installed `/lib-upgrade` delegator.
 
@@ -52,26 +60,27 @@ revertible** workflow. This is the methodology's **third opt-in addon** — it i
 **Writes:** manifests and lockfiles (`package.json` + `package-lock.json` /
 `pnpm-lock.yaml`, `pyproject.toml` + lock, `Cargo.toml` + `Cargo.lock`, and
 equivalents), a batch/upgrade report under the repo's working-state directory,
-and a git commit per completed upgrade batch. Remote registry access is limited
+and per-batch snapshots in that working-state directory. Commits require the
+developer's explicit instruction. Remote registry access is limited
 to the package manager's own resolution commands (`npm view`, `pip index`,
 `cargo update`…) — metadata queries and lockfile regeneration, never script
 execution. (Ecosystem post-install scripts run only if the developer opts in,
 stated per batch.)
 
 **It MUST NOT:** run a major-version jump that fails the repo's validation gate
-and still record the batch as upgraded, commit regenerated lockfiles without
-the matching manifest change, force-push or rewrite history, or leave the tree
-dirty when a batch is recorded as done. Everything is revertible: every batch
-is a self-contained commit.
+and still record the batch as upgraded, commit a lockfile inconsistent with its manifest (a lockfile-only update
+within an existing allowed range is valid), force-push or rewrite history, or discard prior successful batches while reverting a later one. Each batch
+is revertible from its own pre-batch snapshot, including before any commit.
 
 ## The flow
 
 ### Step 0 — Consent + clean tree
 1. Confirm the developer wants a dependency upgrade (skip silently if declined —
    the repo stays baseline-conformant).
-2. **Require a clean (or backed-up) working tree.** Run `git status`; if there
-   are uncommitted changes, ask the developer to commit or stash first. A clean
-   tree is what makes a batch revertible (Step 4).
+2. **Establish a recoverable baseline.** Inspect git status and ownership. Use
+   an isolated checkout or preserve relevant existing changes in a verified
+   snapshot; never stash, discard or commit unrelated work implicitly. Run the
+   real gate once to distinguish pre-existing failure from an upgrade failure.
 
 ### Step 1 — Detect the package manager (the part you MUST reason about)
 Detect the manager(s) from the **manifest + lockfile that actually exist**, never
@@ -107,10 +116,16 @@ companion packages) so a peer-dependency constraint is not split across batches.
 Apply upgrades in **small, coherent batches** — never all at once (that makes a
 failure impossible to isolate). A reasonable order: patch batch → minor batch →
 each approved major **on its own**. For each batch, run the detected manager's
-**update-manifest + install** commands (e.g. `ncu -u --target minor` then the
-manager's install; `cargo update -p <crate>`; `go get <module>@latest`;
-`poetry update <pkg>`; `bundle update <gem>`; `composer update <pkg>`). The
-lockfile is regenerated by the manager — never hand-edit it.
+approved package/version update commands, restricted to that batch. Resolve
+exact target versions before mutation; never use a broad latest/all-packages
+command that can pull in an unapproved major or unrelated package. A lockfile-only
+update is valid when existing manifest constraints already admit the target.
+Before each batch, snapshot every file it may change (including file absence),
+record the manager/environment and previous gate, and verify the snapshot is
+recoverable. Suppress dependency lifecycle scripts using the manager's supported
+controls unless already explicitly authorized; if safe suppression is unavailable,
+stop before running them. Validation that executes dependency build hooks needs
+that same authorization. The manager owns lockfile regeneration.
 
 ### Step 4 — Validate after EACH batch (the gate)
 After every batch, run the **repo's real validation gate** — the commands the
@@ -124,10 +139,14 @@ real one.
 
 ### Step 5 — Revert a failing batch
 If the gate fails for a batch, **revert just that batch** and continue:
-restore the manifest **and** lockfile (`git checkout -- <manifest> <lockfile>`),
-re-run install to resync, confirm the gate passes again, then record the batch as
-**skipped/failed** with the reason. Optionally retry the batch one package at a
-time to isolate the culprit. A failing major is set aside, not forced.
+restore the exact **pre-batch snapshot** of the manifest, lockfile and other
+owned files, preserving earlier successful batches and pre-existing changes.
+Never restore from `HEAD` unless it is proven identical to that snapshot.
+Re-sync the environment without advancing resolution or enabling unapproved
+scripts; confirm the previous gate again, then record the batch as
+**skipped/failed** with the reason. Retry only with a new hypothesis or narrower selection; after two attempts
+without progress, stop blind retries. If restore or its gate fails, stop with
+the snapshot and blocker recorded instead of proceeding to another batch. A failing major is set aside, not forced.
 
 ### Step 6 — Summarize
 Produce the report from `templates/upgrade-report.md`: upgraded (by tier),
