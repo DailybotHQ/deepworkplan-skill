@@ -24,31 +24,42 @@
 
 [Concise description of what this task must achieve]
 
-## 4. Instructions
+## 4. Touched Surface
+
+Required for any task that changes behavior (code, configuration, schemas,
+templates, fixtures, migrations, generated inputs, agent instructions). Pure
+prose or research tasks write `not applicable — <reason>`. Full field list
+(planned surface, actual surface, affected consumers, risk class, test
+mapping, selected gate): `guide/authoring.md` §5.1.
+
+- **Planned surface:** {paths / modules this task intends to change}
+- **Affected consumers:** {what imports/loads/renders the surface}
+
+## 5. Instructions
 
 > **Before starting:** Re-read the plan README section 1 (Goal) to ensure this task's work aligns with the overall objective.
 
 [Detailed, actionable instructions for this single task]
 
-## 5. Acceptance Criteria
+## 6. Acceptance Criteria
 
 [Explicit conditions for task completion]
 
-## 6. Outputs (optional)
+## 7. Outputs (optional)
 
 - `analysis_results/{FILE_NAME}.md` — {description}
 
-## 7. Validation
+## 8. Validation
 
 ```bash
 [Validation commands that must pass]
 ```
 
-## 8. Rollback (optional)
+## 9. Rollback (optional)
 
 [Instructions if task fails]
 
-## 9. Execution Checklist
+## 10. Execution Checklist
 
 - [ ] 1. Read this task file fully
 - [ ] 2. [Task-specific steps]
@@ -57,7 +68,7 @@
 - [ ] N+2. Commit changes
 - [ ] N+3. Update Log below
 
-## 10. Completion & Log
+## 11. Completion & Log
 
 **Status:** Not started
 ````

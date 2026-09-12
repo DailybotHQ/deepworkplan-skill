@@ -17,6 +17,12 @@ All plans live under a single gitignored repo-root directory, `.dwp/`:
   and no `.dwp/drafts/` directory: the Lite plan **is** the reviewable artifact
   (`../spec/LITE_PLANS.md`). Both were removed in 2.4.0. A `.dwp/drafts/` folder
   left over from an earlier version is inert — DWP neither reads nor writes it.
+- Every artifact a plan produces — analysis outputs, gate logs, generated
+  reports — lives inside **that plan's own folder**, under
+  `.dwp/plans/PLAN_{name}/analysis_results/`. Temporary or analysis results
+  **MUST NOT** be written to the repository root or to ad-hoc folders elsewhere
+  in the repo: the plan folder is the single home for a plan's working
+  artifacts, so a plan can be inspected, archived, or deleted as one unit.
 
 ## Default location & override
 

@@ -13,7 +13,7 @@
 > **An orchestrator agent must NEVER execute a child DWP itself.** Child DWPs must always be executed by a **separate agent session running inside the target repository**. The orchestrator's job is to *create* child DWPs, *verify readiness*, *emit hand-off prompts (one at a time or combined when children can run concurrently — see §13.6)*, and *register outputs after the user confirms execution* — not to run the children's tasks inline.
 
 > [!TIP]
-> **Parallelize whenever the dependency shape allows it.** Most multi-repo features with a frozen design contract (envelope spec, API contract, prompt architecture, …) qualify for **Contract-Parallel** mode (§13.6.2): children run concurrently against the shared spec, cutting wall-clock time ~50% without loss of safety. The hand-off rule applies to every child equally; what changes is whether hand-offs fire in batch (parallel) or one-at-a-time (runtime-dependent).
+> **Parallelize whenever the dependency shape allows it.** Most multi-repo features with a frozen design contract (envelope spec, API contract, prompt architecture, …) qualify for **Contract-Parallel** mode (§13.6.2): children run concurrently against the shared spec, allowing independent work to overlap; the actual duration depends on the tasks and host. The hand-off rule applies to every child equally; what changes is whether hand-offs fire in batch (parallel) or one-at-a-time (runtime-dependent).
 
 **Why hand-off (not inline execution):**
 
@@ -24,7 +24,7 @@
 
 **What the orchestrator agent MUST do for every `execute_child_dwp` task:**
 
-1. Verify predecessors are `[x] Executed` and their declared output artifacts exist on disk.
+1. Verify readiness for the recorded mode (§13.10): runtime-dependent predecessors must be executed with outputs present; contract-parallel work requires the frozen shared contract and sibling plans.
 2. Emit a **ready-to-use hand-off prompt** to the user (or to a separate automated agent session running inside `repositories/{repo_name}/`). The prompt is a single copy-pasteable block that tells the target agent what plan to execute and what predecessor reports to read.
 3. **Stop.** Do not `cd` into the target repo with write or execution intent. Do not edit target-repo files. Do not run the child DWP's tasks inline. Do not commit in the target repo.
 4. **Wait** for the user to confirm the child DWP is complete (`DONE: ...` naming the declared artifact paths).
@@ -37,7 +37,7 @@
 - Write the child DWP's analysis reports from the orchestrator session.
 - Commit child DWP task work into the target repo's git history.
 
-> **Exception (very narrow).** The `create_child_dwp` tasks DO require the orchestrator to navigate into the target repo to author the plan files. This is read-AGENTS.md-and-write-plan-files only — NOT executing the child plan's own tasks. Once the plan files are in place, the orchestrator returns to `/workspace` and never re-enters the target repo except to *verify* that the child completed and its declared artifacts exist. Integration checkpoint tasks (read-only cross-references across plan READMEs) are also fine from Core Hub.
+> **Exception (very narrow).** The `create_child_dwp` tasks DO require the orchestrator to navigate into the target repo to author the plan files. This is read-AGENTS.md-and-write-plan-files only — NOT executing the child plan's own tasks. Once the plan files are in place, the orchestrator returns to the saved absolute hub root and never re-enters the target repo except to *verify* that the child completed and its declared artifacts exist. Integration checkpoint tasks (read-only cross-references across plan READMEs) are also fine from Core Hub.
 
 See also the hand-off task template: `example_prompts/ORCHESTRATOR_TASK_TEMPLATE_execute_child_dwp.md`.
 
@@ -149,13 +149,21 @@ An orchestrator plan can mix task types:
 
 When the agent executes a `create_child_dwp` task, it must follow this protocol:
 
-#### Step 1: Navigate to target repository
+#### Step 1: Save the hub root, then navigate to the registered target repository
 
 ```bash
+# Save the Core Hub root BEFORE entering any child — resolving the git root
+# while inside a child returns the child, not the hub.
+HUB_ROOT="$(git rev-parse --show-toplevel)"
+
+# Enter the child by its REGISTERED root (recorded in ORCHESTRATOR_MANIFEST.md).
+# repositories/{repo_name}/ is the convention, not a hardcoded requirement.
 cd repositories/{repo_name}
 ```
 
-Verify the repository exists and is accessible.
+Verify the repository exists and is accessible. Do not carry a hub `DWP_DIR`
+into the child: resolve the child's `.dwp/` in a subshell with `unset DWP_DIR`,
+or set an explicitly recorded child-specific override.
 
 #### Step 2: Read the target repo's documentation
 
@@ -177,15 +185,21 @@ Verify the repository exists and is accessible.
 
 If the target repo does NOT have the DeepWorkPlan skill installed:
 
-1. Install the DeepWorkPlan skill in that repo (it ships its own `guide/GUIDE.md`
-   and `examples/`), then ensure the gitignored output root exists:
+1. Record the missing commands/context in the task log. Do NOT install a skill
+   or onboard the child on your own initiative — use the available local DWP
+   pack for plan authoring, and run onboarding only when the user authorizes
+   it (`../execute/orchestrator.md` — installation belongs to the child repo's
+   owner). When authorized, the child then ships its own `guide/GUIDE.md` and
+   `examples/`.
+2. Ensure the gitignored output root exists before writing the plan:
    ```
    .dwp/
    └── plans/
    ```
-2. Reason about the target repo's tech stack (validation commands, test patterns,
-   etc.) per `shared/adaptation.md` — never copy a fixed validation set.
-3. Add `.dwp/` to the repo's `.gitignore`.
+3. Reason about the target repo's tech stack (validation commands, test patterns,
+   etc.) per `shared/adaptation.md` — never copy a fixed validation set or
+   invent a generic gate to hide missing prerequisites.
+4. Add `.dwp/` to the repo's `.gitignore`.
 
 #### Step 4: Create the child DWP plan
 
@@ -220,7 +234,7 @@ Create all required files:
 #### Step 5: Return to Core Hub and update tracking
 
 ```bash
-cd /workspace  # Return to Core Hub root
+cd "$HUB_ROOT"  # Return to the SAVED Core Hub root (never a hardcoded path)
 ```
 
 Update the orchestrator plan's README:
@@ -229,14 +243,14 @@ Update the orchestrator plan's README:
 
 #### Step 6: Commit
 
-Commit in the Core Hub repository (orchestrator tracking files only — the child DWP plan files are in the sub-repo's git-ignored `results/` folder).
+Commit in the Core Hub repository (orchestrator tracking files only — the child DWP plan files live in the sub-repo's git-ignored `.dwp/plans/` folder).
 
 ### 13.6. Execution Modes
 
 > **All modes obey §13.0 — the orchestrator agent NEVER runs a child DWP's own tasks.** What changes between modes is the **dependency shape** between children, which determines whether children can execute concurrently or must wait on each other.
 
 > [!IMPORTANT]
-> **Default to the most parallel mode that your dependency analysis supports.** Up-front contract design (Tasks 1–2 of the orchestrator: envelope spec, API contract, prompt architecture, etc.) is cheap and unlocks parallel child execution. An orchestrator agent that creates good design docs BEFORE the `create_child_dwp` tasks almost always unlocks Contract-Parallel mode below — saving ~50% wall-clock time without losing safety.
+> **Default to the most parallel mode that your dependency analysis supports.** Up-front contract design (Tasks 1–2 of the orchestrator: envelope spec, API contract, prompt architecture, etc.) is cheap and unlocks parallel child execution. An orchestrator agent that creates good design docs BEFORE the `create_child_dwp` tasks almost always unlocks Contract-Parallel mode below — running children concurrently instead of one-at-a-time, without losing safety.
 
 #### Mode selection algorithm (apply during plan creation)
 
@@ -290,7 +304,7 @@ Flow:
 - Emitter ↔ receiver (after the envelope schema is frozen).
 - Multiple repos implementing to a shared design.
 
-**Cost:** wall-clock time ≈ max(child durations) — roughly half of Sequential.
+**Cost model:** independent work may overlap; coordination and integration remain. This is not a measured latency or savings claim.
 
 **Prerequisites:**
 - Design docs MUST be frozen before children start.
@@ -533,10 +547,15 @@ The orchestrator's hand-off prompt should explicitly name which predecessor arti
 
 #### Fallback When Manifest Is Missing
 
-If no manifest exists (backward compatibility):
+If no manifest exists (backward compatibility — legacy plans only; new
+orchestrator plans REQUIRE one):
 - Check the parent plan README's "Child DWP Plans" table for status
 - Look for the declared output artifacts in predecessor child DWP plan folders
-- If no predecessor outputs are available, proceed with the information in the child DWP's own README (which includes the parent plan reference from section 13.5)
+- Proceed only when that evidence establishes the SAME readiness facts a
+  manifest would (predecessor executed/created state plus declared outputs on
+  disk); log the limitation in the task log. If it cannot establish them,
+  BLOCK — do not proceed on the child's own README alone, and never silently
+  migrate a legacy plan to add a manifest.
 
 #### Child DWP Dependency Blocking
 
@@ -585,7 +604,7 @@ This is the recommended mode when child DWPs have data dependencies. **Remember 
    → separate agent session executes it
    → User confirms DONE → orchestrator registers outputs in manifest
 4. Continue until all children are executed
-5. Orchestrator runs synthesis / skills / executive tasks in Core Hub
+5. Orchestrator runs its applicable closing lifecycle (Final Review for new plans; the recorded ending for legacy plans)
 ```
 
 **Orchestrator plan uses `execute_child_dwp` hand-off tasks** in addition to `create_child_dwp` tasks:
@@ -665,6 +684,6 @@ Session B — inside `repositories/{repo2}/`:
 When each child reports DONE, paste its DONE reply here. I will continue once BOTH are complete.
 ```
 
-This cuts wall-clock time ~50% vs sequential without sacrificing correctness, assuming the design contract (Task 1–2 output) is frozen and the integration checkpoint passed.
+This runs the children's execution time concurrently instead of sequentially without sacrificing correctness, assuming the design contract (Task 1–2 output) is frozen and the integration checkpoint passed.
 
 ---

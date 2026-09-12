@@ -1,6 +1,7 @@
 ---
 name: <agent-name>
 description: <one line — what this agent specializes in>
+# model/tools are per-harness keys — match the host repo's existing agent files:
 model: <tier: light | standard | heavy>
 tools: [Read, Grep, Glob, Edit, Write, Bash]
 ---

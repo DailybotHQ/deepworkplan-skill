@@ -174,7 +174,7 @@ This is the integration value. Reasoning guidance is in
   `state.json`: `completed` from completed tasks (phrased as outcomes),
   `in_progress` from the current task, `blockers` from `state.json.blocked`.
 - Every event MUST be **best-effort and conditional**: it fires only if the
-  Dailybot skill/CLI is present and authenticated, and it **MUST NOT block**
+  Dailybot skill/CLI is present, authenticated and reporting is authorized, and it **MUST NOT block**
   `create` or `execute` if Dailybot is absent, unauthenticated, or unreachable —
   warn once and continue (see SPEC §Never-block).
 - Optionally commit a repo identity so every contributor/agent signs reports the

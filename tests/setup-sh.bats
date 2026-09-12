@@ -37,6 +37,9 @@ teardown() {
     [ -L "$FAKE_HOME/.claude/skills/deepworkplan-resume" ]
     [ -L "$FAKE_HOME/.claude/skills/deepworkplan-status" ]
     [ -L "$FAKE_HOME/.claude/skills/deepworkplan-onboard" ]
+    [ -L "$FAKE_HOME/.claude/skills/deepworkplan-verify" ]
+    [ -L "$FAKE_HOME/.claude/skills/deepworkplan-author" ]
+    [ -L "$FAKE_HOME/.claude/skills/deepworkplan-upgrade" ]
 }
 
 @test "is idempotent: running twice produces same symlinks without error" {

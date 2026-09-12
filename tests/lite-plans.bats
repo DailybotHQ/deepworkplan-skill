@@ -328,7 +328,7 @@ PY
   mutant_teardown
 }
 
-@test "a healthy Lite plan degrades to advisories when python3 is unavailable" {
+@test "missing Python leaves plans UNVERIFIED with a nonzero CI exit" {
   FAKEBIN="$(mktemp -d)/bin"
   mkdir -p "$FAKEBIN"
   for t in bash sh grep sed awk cat ls find basename dirname sort uniq head tail tr wc mktemp rm cp mkdir git readlink stat cut expr; do
@@ -341,8 +341,54 @@ PY
     bash "$REPO_ROOT/skills/deepworkplan/verify/conformance.sh" --plan PLAN_lite_fixture
   # Format dispatch must not depend on python3: a Lite plan may never be
   # misread as a Full plan with zero task files.
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   [[ "$output" == *"python3 unavailable"* ]]
+  [[ "$output" == *"Verdict: UNVERIFIED"* ]]
   [[ "$output" != *"mandatory final task missing"* ]]
   rm -rf "$(dirname "$FAKEBIN")"
+}
+
+# ------------------------- reconciled lifecycle wording (one rule, five surfaces)
+
+# Sentence-level assertion that tolerates the source file's own line wrapping:
+# normalize to one line, then match the phrase.
+lite_doc_has() {
+    tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"
+}
+
+@test "one approval rule across spec, execute and resume" {
+    local spec="$REPO_ROOT/skills/deepworkplan/spec/LITE_PLANS.md"
+    local exe="$REPO_ROOT/skills/deepworkplan/execute/SKILL.md"
+    local res="$REPO_ROOT/skills/deepworkplan/resume/SKILL.md"
+    lite_doc_has "$spec" "An explicit execute or resume request approves the ready plan's current scope"
+    lite_doc_has "$spec" "Without that request, a pending proposal is not executable"
+    lite_doc_has "$exe" "an explicit execute request for it approves its current scope"
+    lite_doc_has "$exe" "proposal (Lite or Full)"
+    lite_doc_has "$res" "approve a ready plan's current scope (Lite or Full)"
+}
+
+@test "promotion recovery resumes the recorded transaction before any new one" {
+    local ref="$REPO_ROOT/skills/deepworkplan/refine/SKILL.md"
+    lite_doc_has "$ref" "Recovery comes before starting a new transaction"
+    lite_doc_has "$ref" "including after the format switched to Full"
+    lite_doc_has "$ref" "never overwrite conflicting evidence"
+    lite_doc_has "$ref" "do not create a second promotion transaction"
+    lite_doc_has "$ref" "An explicit promotion request approves the current proposal's representation change"
+    lite_doc_has "$ref" "does not authorize product execution"
+    lite_doc_has "$ref" "Promotion never splits tasks or grants invented evidence"
+}
+
+@test "trust mode never implies authoring Lite then Full" {
+    local create="$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+    lite_doc_has "$create" "never author both representations"
+    # The old double-authoring phrasing must be gone from the shipped pack.
+    run grep -rF 'Lite then' "$REPO_ROOT/skills/deepworkplan"
+    [ "$status" -ne 0 ]
+}
+
+@test "execute records a durable review baseline per repository before the first task" {
+    local exe="$REPO_ROOT/skills/deepworkplan/execute/SKILL.md"
+    lite_doc_has "$exe" "record each repository's starting revision and pre-existing working-tree changes"
+    lite_doc_has "$exe" "Preserve that review baseline through compaction and resume"
+    lite_doc_has "$exe" "do not replace it with the latest upstream head"
 }

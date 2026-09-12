@@ -47,7 +47,7 @@ and ask the user to choose. A folder **without** `README.md`, whose README says
 `Plan Status: materializing`, or whose README **links a task file that does not
 exist**, is a partial materialization — point to `refine` and stop.
 
-## Lite plan execution
+## Ready-plan approval and Lite execution
 
 Read `spec/LITE_PLANS.md` when the plan declares v2 state or `Plan Format: Lite`.
 A Lite plan is valid without task files. Its canonical README task index and
@@ -57,7 +57,7 @@ are evidence, not competing task status. Ignore fenced example checkboxes.
 Before execution, read `Materialization` and `Approval`. Refuse `materializing`
 and `promoting` plans — those are recovery boundaries, not proposals. Approval is
 a separate axis: a `ready` plan whose approval is still `pending` is a valid
-proposal, and **an explicit execute request for it approves its current scope** —
+proposal (Lite or Full), and **an explicit execute request for it approves its current scope** —
 record `Approval: approved` in the README and state before the first task, then
 proceed. What is never allowed is starting a proposal that nobody asked for: a
 plan created with trust is `pre_approved` but still begins only on an explicit
@@ -153,7 +153,10 @@ availability, and child-DWP list. **If, and only if, this fires:** read
 completion rules.
 
 **Step 2.2 — Detect team-agents configuration.** If the README has a "Team Agents
-Configuration" section: team-agents mode is available. Verify
+Configuration" section: team-agents mode is available. If the README instead
+carries an explicit sequential declaration (`Execution: sequential — …`), the
+plan has already made its parallelization decision — execute sequentially and
+do not treat it as a missing or failed detection. Verify
 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`; if not set, inform the user and fall
 back to sequential. If available and enabled, offer to use team agents for
 parallel groups (in unattended mode: use them only if the plan's guidelines say
@@ -161,6 +164,11 @@ so; otherwise sequential). **If selected:** read [`team-agents.md`](team-agents.
 (this directory). Store the decision for Step 5.
 
 ### Step 3 — Check Current Status
+Before the first task, record each repository's starting revision and pre-existing
+working-tree changes in the plan's durable log. Preserve that review baseline
+through compaction and resume; do not replace it with the latest upstream head.
+An orchestrator records a separate baseline per child, in that child's session.
+
 Read the README task list; run `git status` and `git log --oneline -10`; identify
 the first `[ ]` task. Report completed/pending tasks, the starting task, git
 state, and recent commits. The location is `.dwp/plans/PLAN_{name}/`. A README

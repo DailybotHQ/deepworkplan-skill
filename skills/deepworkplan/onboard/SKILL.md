@@ -54,7 +54,7 @@ work reliably without per-session human hand-holding.
 - **Guide (essential — read for this flow):** [`../guide/structure.md`](../guide/structure.md) (the `.dwp/` layout and naming you scaffold).
 - **Guide (conditional — read only when the trigger fires):** [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
-- [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four opt-in addons. No optional addon is required for a repository to use DWP.
+- [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins). No optional addon is required for a repository to use DWP.
 - [`templates/onboarding-plan.md`](templates/onboarding-plan.md) — the
   **reasoning aid** for the plan-driven path (Phase 2b): the shape of a "finish
   onboarding myself" Deep Work Plan a **large** repo emits instead of generating
@@ -96,14 +96,17 @@ When this flow finishes, the target repo contains:
    escalation paths and fallback, plus the unit-first posture — so every future
    plan can select its gates instead of guessing (`../spec/DOCUMENTATION_STANDARD.md` §3.4).
 7. **A recorded standard and a first usable outcome** — the provenance line
-   `DWP standard: 2.4.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
+   `DWP standard: 4.0.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
    a `.dwp/onboard/REPORT.md` that names the verified command and mapping, the
    installed skill identity and version, the active capability limits (what
    could not be verified and why), and the next useful action.
 
 Plus the required **AI Diff Reviewer local review** (Phase 7a: vendored skill +
-`.review/extension.md`) and, opt-in (Phase 7b), any accepted **optional addons**
-(the first is devcontainer).
+`.review/extension.md`) and, from Phase 7b, the **optional addons** the
+developer accepted or did not decline (the near-default dependency-upgrade
+delegator installs under the onboarding consent unless explicitly declined;
+the signal-gated opt-ins install only when accepted — the first is
+devcontainer).
 
 ---
 
@@ -162,7 +165,7 @@ Phase 0 consent; a decline is recorded as a declared exception).
    - **Existing and previously onboarded → harness upgrade.** `AGENTS.md`
      and/or `.agents/` already exist **and** the repository's guidance predates
      the installed skill's requirements: no `DWP standard:` provenance line, a
-     provenance line older than the standard this skill implements (2.4.0), or a
+     provenance line from a non-current series (older than the 4.x this skill implements, or a 2.x line while upgrading), or a
      `docs/TESTING_GUIDE.md` without the scoped-invocation / mapping / posture
      content of `../spec/DOCUMENTATION_STANDARD.md` §3.4. In this case run the
      **targeted upgrade** (§3.5) instead of a full re-onboarding: recon only what
@@ -426,7 +429,7 @@ context. It MUST serve three roles:
    (`full` / `scoped`). **Mark** any command that
    runs only in CI or only inside a container (e.g. "must run **inside** the
    Docker container"), and any scoped pattern that is proposed/unverified.
-4. **Provenance** — one line, `DWP standard: 2.4.0 (onboarded YYYY-MM-DD;
+4. **Provenance** — one line, `DWP standard: 4.0.0 (onboarded YYYY-MM-DD;
    skill x.y.z)` (on upgrade: `…; upgraded YYYY-MM-DD; skill x.y.z`), so a
    checker and a future agent can tell which standard the repository declares
    (`../spec/DOCUMENTATION_STANDARD.md` §3.5).
@@ -644,11 +647,16 @@ developer declines, record the gap in the report and, for a decline, as a
 declared exception in `AGENTS.md` — never silently. A **harness upgrade**
 (Phase 0) reconciles the same two pieces when missing.
 
-## Phase 7b — Offer optional addons (opt-in, trigger only)
+## Phase 7b — Offer optional addons (trigger only)
 
 The remaining addons are optional; **no optional addon is required for a
 repository to use DWP**. After Phase 7a, read [`addons.md`](addons.md) (this
-directory) Phase 7b and make the opt-in offer it describes. On a **harness
+directory) Phase 7b and make the offer it describes: three addons are
+signal-gated opt-ins that install only on explicit acceptance; the fourth —
+dependency upgrade — is **near-default** for every repo with declared
+dependencies: its **inert** `/lib-upgrade` delegator installs under the
+Phase 0 onboarding consent **unless explicitly declined**, and no upgrade ever
+runs from an install. On a **harness
 upgrade** (Phase 0) do not re-offer addons the repository already declined or
 already has; mention only new ones, briefly.
 

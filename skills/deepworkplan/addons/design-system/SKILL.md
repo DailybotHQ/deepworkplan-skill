@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-design-system
-description: Optional DeepWorkPlan addon that gives a repo with a user-facing interface surface a DESIGN.md (under docs/, indexed from AGENTS.md) — a Markdown design-system file any coding agent reads to generate interface output consistent with the repo's OWN conventions. Covers three profiles detected independently from real files — visual-ui (rendered web/mobile/desktop UI), cli-output (styled terminal output — semantic colors, panels, spinners, prompts, TTY/NO_COLOR degradation), and conversational (chat/email messaging — voice and register, message anatomy, per-platform rendering). Reasons about the repo's ACTUAL design source (CSS custom properties, Tailwind config, token files, component styles, a CLI display/theme module, or message-composition helpers) rather than copying a brand file; checks contrast (WCAG AA), color-is-not-the-only-carrier, plain-text fallbacks, and token integrity. The visual-ui profile is default-on when detected (applied in trust mode, strongly recommended in guided mode); cli-output and conversational are recommended when detected and always asked about, never auto-applied. Never offered for a repo with no interface surface (pure library, headless service, infra-only); never required for baseline conformance; reconciles an existing DESIGN.md instead of clobbering it. Use when the developer wants agents to produce on-brand, consistent interface output — visual UI, terminal output, or outbound messages.
+description: Optional DeepWorkPlan addon that gives a repo with a user-facing interface surface a DESIGN.md (under docs/, indexed from AGENTS.md) — a Markdown design-system file any coding agent reads to generate interface output consistent with the repo's OWN conventions. Covers three profiles detected independently from real files — visual-ui (rendered web/mobile/desktop UI), cli-output (styled terminal output — semantic colors, panels, spinners, prompts, TTY/NO_COLOR degradation), and conversational (chat/email messaging — voice and register, message anatomy, per-platform rendering). Reasons about the repo's ACTUAL design source (CSS custom properties, Tailwind config, token files, component styles, a CLI display/theme module, or message-composition helpers) rather than copying a brand file; checks contrast (WCAG AA), color-is-not-the-only-carrier, plain-text fallbacks, and token integrity. A detected interface surface makes the evaluation and offer mandatory (with a clear recommendation), while installation always requires explicit acceptance — no profile is auto-applied, even in trust mode. Never offered for a repo with no interface surface (pure library, headless service, infra-only); never required for baseline conformance; reconciles an existing DESIGN.md instead of clobbering it. Use when the developer wants agents to produce on-brand, consistent interface output — visual UI, terminal output, or outbound messages.
 version: "4.0.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -56,12 +56,13 @@ independent **profiles** that stack into the same single `DESIGN.md`. This is an
 
 ## When this runs
 
-- From **`onboard` Phase 7b** — after the core AI-first scaffolding. Profiles
-  carry different strengths (`SPEC.md` §3.5): when a **visual UI** surface is
-  detected the profile is **default-on** (`onboard` applies it in trust mode and
-  strongly recommends it in guided mode); when a **CLI output** or
-  **conversational** surface is detected the profile is **recommended and always
-  asked about** — never auto-applied. When no interface surface is detected the
+- From **`onboard` Phase 7b** — after the core AI-first scaffolding. Detection
+  makes the offer mandatory (`SPEC.md` §3.5): when any interface surface is
+  detected — even an ambiguous one — onboarding evaluates it, records the
+  detection rationale, and presents the addon with a clear recommendation;
+  the evaluation and offer are not skippable in either mode. **Every profile
+  still requires explicit acceptance**, including visual UI in trust mode; no
+  profile is auto-applied. When no interface surface is detected the
   addon is **not** offered. Either way the developer may decline and the repo
   stays baseline-conformant.
 - **Directly** — `/deepworkplan-addon-design-system` on an already-onboarded repo
@@ -101,9 +102,13 @@ invent tokens no real component uses, or apply a profile the developer declined.
    - `conversational` — a chat-platform SDK (Slack, Discord, Teams, …), a
      message-composition layer, or documented outbound-message voice rules.
 3. If **no** profile is detected, **stop** and tell the developer this addon
-   does not apply. Otherwise, offer each detected profile per its strength
-   (§3.5): apply/strongly-recommend `visual-ui`; **ask** before `cli-output` and
-   `conversational`, even in trust mode.
+   does not apply. Otherwise, the offer is mandatory (§3.5): evaluate the
+   detected signal, record the detection rationale, and offer each detected
+   profile per its strength — strongly recommend `visual-ui`, recommend
+   `cli-output` and `conversational`; an ambiguous signal still gets the
+   offer, with the ambiguity named. Apply only profiles explicitly accepted
+   by the developer. Existing acceptance need not be asked again; an explicit
+   decline is respected for that run. Trust alone accepts none.
 
 ### Step 1 — Locate the design source (the part you MUST reason about)
 Find where each accepted profile's design values actually live, using
@@ -193,8 +198,12 @@ a declined command leaves a baseline-conformant repo.
 - **Never required, never blocking.** If the developer declines, stop cleanly.
 - **Interface surfaces only.** Skip for repos with no interface surface of any
   kind (pure library, headless service, infra-only) — applying it there is a defect.
-- **Ask before new profiles.** `cli-output` and `conversational` are never
-  auto-applied, even in trust mode; only `visual-ui` is default-on when detected.
+- **Offer mandatorily, accept explicitly.** A detected interface surface makes
+  the evaluation and offer mandatory in both modes; installation still needs
+  explicit acceptance — no profile is auto-applied, even in trust mode. (The
+  required local AI Diff Reviewer installs as baseline; the near-default
+  dependency-upgrade delegator installs inert under the onboarding consent
+  unless declined — neither applies a design profile.)
 - **Reason about the source.** Document the repo's real values; never paste a
   brand file or another product's conventions.
 - **One file.** Profiles stack inside `DESIGN.md`; never create per-surface siblings.

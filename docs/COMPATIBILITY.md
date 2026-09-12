@@ -66,6 +66,12 @@ Guarantees also covered by fixtures:
 
 ## Runtime self-containment
 
+Plan verification requires **Python 3.9+**, using only its standard library.
+The shell entry point returns `2` with `UNVERIFIED` when Python is missing or
+too old, so a CI gate cannot accept an unchecked plan. Structural failures
+return `1`; fully checked structural success returns `0`. Repository-only
+checks and the installer do not require Python. No dependency is auto-installed.
+
 The installed directory must work without this repository's `tests/`,
 `scripts/`, `docs/` or `.github/`, and without the website.
 

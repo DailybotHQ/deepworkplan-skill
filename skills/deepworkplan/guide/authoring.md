@@ -13,7 +13,7 @@ A plan README must contain:
 
 1. **Plan Title and Goal**
 2. **Context**
-3. **Plan Variables** (optional — branch, target env, custom variables)
+3. **Plan Variables** (optional — branch, target env, custom variables; high-signal example rows in §4.2)
 4. **Global Constraints / Guidelines**
 5. **Task List (with links to task files)**
 6. **Execution Rules for the Agent**
@@ -47,10 +47,18 @@ Provide relevant context:
 
 ## Plan Variables (optional)
 
+Custom rows are always allowed. High-signal rows proven by long-horizon plans
+— add only the rows this plan needs, never as a ritual:
+
 | Variable | Value |
 |----------|-------|
 | Branch | {branch_name} |
 | Target environment | {env} |
+| Rigor | {standard / deep} — the tier and why |
+| Primary scope | {the one surface this plan must not miss} |
+| Evidence bar | {what counts as done — named artifacts, mirrors, verified states} |
+| Quality commands | {the repo's lint / type-check / test invocations} |
+| Forbidden | {hard exclusions — files never touched, patterns never introduced} |
 | {custom_variable} | {value} |
 
 ## 3. Global Guidelines
@@ -135,10 +143,47 @@ Reports and artifacts generated during plan execution are stored in `analysis_re
 
 ---
 
+### 4.3. Stage Gates (optional — long Full plans only)
+
+A **Stage Gate** is a named mid-plan checkpoint: one row of an optional README
+table saying what must be true — with evidence — at a task boundary. Long
+plans used them to stay steerable (the executed corpus ran 35–103-task plans
+this way); small plans do not need them.
+
+**When to author:** only for a **Full plan with 20 or more task files** (well
+past the executed-plan median of ~13). A **Lite plan never carries Stage
+Gates**, and a shorter Full plan **omits them by default** — a shorter plan
+may still add one or two deliberately when a phase boundary genuinely needs
+named evidence; that is judgment, not ritual.
+
+**Shape (from executed long-horizon plans):**
+
+| Gate | After task | Evidence required |
+|------|------------|-------------------|
+| {Stage name} | {N} | {named artifact or observation proving the stage's outcome} |
+
+Author **one gate per coherent phase** of the plan (a direction gate after the
+foundational tasks, a baseline gate, a release-readiness gate …), never one
+per task. Each row names evidence the plan's own task outputs already produce
+(an `analysis_results/` artifact, a passing gate log, a mirrored surface) —
+never evidence invented for the checkpoint.
+
+**Execution semantics.** A Stage Gate is an **always-sequential barrier**: when
+execution reaches the row's task boundary, every task up to that row — across
+all parallel groups in a parallel plan — is complete and the row's named
+evidence is recorded before the next stage starts. Place the table adjacent to
+the Execution Rules section, so the executing agent reads it with the rules it
+already follows. Stage Gates are intermediate checkpoints only: the **Final
+Review remains the single terminal task**, is never listed as a stage-gate
+row, and the last stage gate lands before it.
+
+---
+
 ## 5. Task File Structure (`N.task_{task_title}.md`)
 
 Each task file is a **self-contained deep-work prompt** for a single task.
 The agent must be able to read **only this file**, understand exactly what to do, and execute it to completion.
+Every task carries **one objective** (`spec/DWP_SPECIFICATION.md` §6.4): it may perform several steps that serve that objective, and must never bundle several objectives — prefer N one-objective tasks over fewer multi-objective ones.
 
 ### 5.1. Required and optional sections
 

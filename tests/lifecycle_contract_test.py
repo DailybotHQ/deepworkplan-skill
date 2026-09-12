@@ -56,12 +56,46 @@ class LifecycleContracts(unittest.TestCase):
             (self.plan/filename).write_text(body)
             task['locator'] = {'kind':'file', 'value':filename}
         self.state['format'] = 'full'
-        self.readme = '# Full fixture\n\n**Standard:** DWP spec 2.4.0\n\nPlan Status: 0/2 completed\n\n'+'\n'.join(f'- [ ] Task {t["id"]}: [{t["title"]}](./{t["locator"]["value"]})' for t in self.state['tasks'])
+        self.readme = ('# Full fixture\n\n**Standard:** DWP spec 2.4.0\n\n## Goal\n\n'
+                       'Keep the fixture contract valid.\n\n## Context\n\nFixture-only plan '
+                       "under the skill repo's tests; no product surface.\n\n"
+                       'Plan Status: 0/2 completed\n\n'
+                       +'\n'.join(f'- [ ] Task {t["id"]}: [{t["title"]}](./{t["locator"]["value"]})' for t in self.state['tasks']))
 
     def test_ready_and_completed_lite(self):
         self.verify()
         self.complete()
         self.verify()
+
+    def test_markdown_labels_preserve_semantic_fields(self):
+        import re
+        original = self.readme
+        for style in ('**{}:**', '**{}**:', '**{}** ·'):
+            self.readme = re.sub(r'^### (Goal|Touched Surface|Acceptance Criteria|Validation)$',
+                                 lambda m: style.format(m[1]), original, flags=re.M)
+            self.verify()
+        self.readme = original.replace('Fixture only.', '**Not applicable — fixture only.**')
+        self.verify()
+        # Formatting tolerance must never accept an actually empty gate.
+        self.readme = self.readme.replace('`true`', '')
+        self.verify(False)
+
+    def test_context_required_where_it_matters(self):
+        import re
+        original = self.readme
+        strip_task = re.compile(r'(?ms)^### Context\n+.*?(?=^### )')
+        strip_plan = re.compile(r'(?ms)^## Context\n+.*?(?=^## )')
+        # A pending task without Context fails, quoting the spec sentence.
+        self.readme = strip_task.sub('', original, count=1)
+        self.assertIn('start from this section alone', self.verify(False))
+        # A completed task is never retroactively failed — its record stays as
+        # authored (DWP_SPECIFICATION §6.5 evidence history).
+        self.readme = strip_task.sub('', original, count=1)
+        self.complete()
+        self.verify()
+        # The plan-level v2 pair: a README without a Context section fails.
+        self.readme = strip_plan.sub('', original)
+        self.assertIn('Goal+Context', self.verify(False))
 
     def test_completed_security_evidence(self):
         self.complete()
@@ -77,6 +111,17 @@ class LifecycleContracts(unittest.TestCase):
         self.assertIn('failing gate', self.verify(False))
         self.state['tasks'][0]['gates'].append(dict(gate, passes=True, exit_code=0))
         self.verify()
+
+    def test_standard_series(self):
+        # 2.x is historical (accepted with a marker), 4.x is current; 3.x
+        # never existed as a standard and 5.x+ is newer than the checker.
+        for spec, fragment, ok in [('4.0.0', 'plan standard: DWP spec 4.0.0', True),
+                                   ('2.4.0', '(historical, accepted)', True),
+                                   ('3.0.0', 'not a DWP standard', False),
+                                   ('5.0.0', 'newer than this checker supports', False)]:
+            self.manifest['spec_version'] = spec
+            self.assertIn(fragment, self.verify(ok))
+        self.manifest['spec_version'] = '2.4.0'
 
     def test_future_contracts(self):
         self.manifest['spec_version'] = '99.0.0'

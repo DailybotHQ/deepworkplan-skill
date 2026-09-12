@@ -175,8 +175,8 @@ Create a checkpoint report with:
 
 ```bash
 # Verify all child DWP plans exist
-test -f repositories/{repo1}/.dwp/plans/PLAN_{feature}_{repo1_short}/README.md && echo "PASS: {repo1} child DWP exists" || echo "FAIL"
-test -f repositories/{repo2}/.dwp/plans/PLAN_{feature}_{repo2_short}/README.md && echo "PASS: {repo2} child DWP exists" || echo "FAIL"
+test -f repositories/{repo1}/.dwp/plans/PLAN_{feature}_{repo1_short}/README.md && echo "PASS: {repo1} child DWP exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo2}/.dwp/plans/PLAN_{feature}_{repo2_short}/README.md && echo "PASS: {repo2} child DWP exists" || { echo "FAIL" >&2; exit 1; }
 
 # No code validation needed — this is a review task
 echo "Integration checkpoint is a manual verification task"

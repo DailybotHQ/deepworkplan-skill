@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-resume
 description: Resume interrupted Lite or Full Deep Work Plans from durable Markdown and state, including safe recovery of promotions without duplicating completed work or gates.
-version: "4.0.2"
+version: "4.0.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -56,9 +56,9 @@ hard recovery boundary: inspect its phase, preserve existing files and route to
 `/dwp-refine promote` to complete the missing transaction step. Never execute
 product work in a mixed representation.
 
-An explicit execute/resume request can approve a ready current Lite scope. If a
-new requirement changes scope, criteria or gate, record the checkpoint and use
-refine; do not promote or alter approvals implicitly.
+An explicit execute/resume request can approve a ready plan's current scope
+(Lite or Full). If a new requirement changes scope, criteria or gate, record
+the checkpoint and use refine; do not promote or alter approvals implicitly.
 
 ## Trust boundary (write scope)
 

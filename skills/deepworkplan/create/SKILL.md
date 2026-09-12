@@ -118,8 +118,8 @@ materializes a **Lite plan folder** — no draft file is written.
 ### Trust Mode (`trust` or `auto`)
 - Collects information from the user; runs the **same** requirements analysis
   (Step 3) and the **same** plan-quality check (Step 4.5).
-- **Materializes the chosen representation directly** — Lite, or Lite then
-  expanded to Full when the rubric or an explicit `full` says so. Trust waives the intermediate *review*, never the *analysis*, the
+- **Materializes the chosen representation directly** — Lite, or Full when the
+  rubric or an explicit `full` says so; never author both representations. Trust waives the intermediate *review*, never the *analysis*, the
   *quality check*, or the *execution handoff*.
 - Records the plan as **pre-approved for unattended execution**
   (`../spec/AGENT_PROTOCOL.md` §7.2): the developer's `trust` instruction is
@@ -215,8 +215,11 @@ capabilities. **If, and only if, 2+ tasks are parallelizable:** read
 [`team-agents.md`](team-agents.md) (this directory) and follow its steps (2.10
 configuration, and 2.11 parallel research if that step's own trigger — 2+ repos
 or several independent modules with context missing — also fires). If not
-parallelizable: add nothing, mention nothing, read nothing, even when the host
-supports team agents.
+parallelizable: write the **sequential declaration** into the plan README — one
+agent-neutral line, `Execution: sequential — {short rationale: shared surface /
+collision risk / single-session audit trail}` — and read nothing else for this
+detection, even when the host supports team agents. The decision is never
+silent in either direction; never fabricate parallel groups to fill the section.
 
 ### Step 3 — Requirements Analysis (both modes, before any file is written)
 
@@ -238,14 +241,18 @@ reviewed before execution (guided) or handed off directly (trust).
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
   task** and an **observable acceptance criterion**.
-- **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** Each task is
-  one coherent outcome with a bounded write surface, concrete inputs and outputs,
-  and resumable sub-steps. Split when distinct outcomes carry different failure
-  modes or independent evidence that would otherwise hide behind one checkbox;
-  keep tightly coupled edits together; keep resumable sub-steps inside a larger
-  cohesive task rather than exploding it. There is **no** task-count quota and
-  no ritual of a separate task per minor edit. Preserve full detail — this
-  analysis never shortens a requirement to save space.
+- **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** One task,
+  one objective: a task may perform several steps that serve its single
+  granular objective, and must never bundle several objectives — prefer N
+  tasks with one objective each over fewer tasks carrying several. Each task
+  is one coherent outcome with a bounded write surface, concrete inputs and
+  outputs, and resumable sub-steps. Split when a task serves several
+  objectives with different failure modes, evidence or authorization that
+  would otherwise hide behind one checkbox; keep tightly coupled edits that
+  serve the same objective together. There is **no** task-count quota, no
+  ritual of a separate task per minor edit, and no padding to inflate the
+  count. Preserve full detail — this analysis never shortens a requirement
+  to save space.
 - **3.4 Dependency order and prerequisites.** Order tasks so every prerequisite
   artifact (a decision, a file, a contract) exists before the task that consumes
   it; record, per task, its owned surface, prerequisite artifacts, and expected
@@ -314,7 +321,7 @@ inline and then again as a file:
 1. **`manifest.json` (first write)** — immutable creation identity, written once
    and never edited: `schema` =
    `https://deepworkplan.com/schema/plan-manifest/v2.json`, `spec_version`
-   **"2.4.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
+   **"4.0.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
    `created_by`, `task_count` (the creation count, Final Review included) and
    **`plan_format`** (`"lite"`, or `"full"` when an explicit `full` preference or
    the rubric already decided Full). Atomic (write-temp-then-rename); valid
@@ -360,7 +367,7 @@ records. Do not paste the ten-section task template into the README.
 ## Plan Variables
 | Variable | Value |
 | --- | --- |
-| Standard | DWP spec 2.4.0 |
+| Standard | DWP spec 4.0.0 |
 | Plan Format | Lite |
 | Materialization | ready |
 | Approval | pending            ← guided; `pre-approved (trust)` in trust mode |
@@ -459,7 +466,7 @@ Create:
 
 1. **Folder + `manifest.json` (first write):** create `.dwp/plans/PLAN_{name}/`
    and immediately write `manifest.json` — plan identity: name, title, archetype,
-   rigor tier, `spec_version` **"2.4.0"**, `plan_format` **"full"**, `task_count`
+   rigor tier, `spec_version` **"4.0.0"**, `plan_format` **"full"**, `task_count`
    = the number of task files this materialization will write (Final Review
    included), creating agent — atomically (write-temp-then-rename), valid against
    `../spec/schema/plan-manifest-v2.schema.json` (closed schema), written once,
@@ -555,7 +562,7 @@ Create:
    closed). Existing v1 plans keep `file` and their v1 schema URL. `manifest.json` was written in item 1
    and is not touched here.
 8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `**Standard:** DWP
-   spec 2.4.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
+   spec 4.0.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
    execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
    Report request if the user made one); Task List with `[ ]` checkboxes + links
    (the Final Review last); Execution Rules; Skills & Agents Used; Plan Status /
@@ -565,7 +572,11 @@ Create:
    with a single Final Review (security pass, final-state validation, skills
    reconciliation). Skills decisions are made inside each task; the Executive
    Report is optional and offered at completion. Auto-generated by
-   `/dwp-create`."*
+   `/dwp-create`."* For a **long Full plan** (20 or more task files), the
+   README also carries the optional **Stage Gates** table
+   (`../guide/authoring.md` §4.3) — one named checkpoint per coherent phase,
+   placed adjacent to Execution Rules. Lite plans never carry it, and shorter
+   Full plans omit it by default.
 9. **Flip the README status (last write):** replace `Plan Status: materializing`
    with `Plan Status: 0/N completed` where N equals `manifest.task_count` and
    the number of task files on disk. Only now is the plan complete.

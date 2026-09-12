@@ -64,41 +64,17 @@ Decision notes:
 
 ---
 
-## 2. Ask the flow question — do NOT guess
+## 2. Offer the CI surface separately — do NOT guess
 
-Matching upstream v2.0.0's own ambiguity tie-break policy: when the signal is
-unclear, **ask**. Never default to Flow B (installing the workflow
-unrequested is a much bigger footprint than declining Flow B).
+On the CI offer, mirror upstream v2.0.1's own ambiguity tie-break policy:
+when the signal is unclear, **ask**. Never default to Flow B (installing the
+workflow unrequested is a much bigger footprint than declining Flow B).
 
-Present both flows plainly:
-
-> This addon supports two adoption modes:
->
-> **Flow A — local-only.** Vendored skill + a repo-tailored extension
-> file (via `generate-extension`); no GitHub Actions changes. Best for
-> personal or experimental repos, or teams not (yet) ready for automated
-> PR review. Once both are present, the Final Review's security pass gains a local review
-> pass — skill alone is not enough.
->
-> **Flow B — dual-surface.** Skill + CI Action, both reading the same
-> `.review/extension.md` for byte-identical parity. Every PR to your default
-> branch gets an AI review in CI, gated on a label of your choice (typical:
-> `ready`). Recommended for team repos. Adds an optional `apply-review`
-> companion for walking through CI findings after push.
->
-> Which flow?
-
-Signals that clarify the answer without asking:
-
-- Explicit "local-only", "no CI Action", "just want the skill" → Flow A.
-- Explicit "full setup", "install the workflow", "gate my PRs" → Flow B.
-- Personal repo, experimental repo, or maintainer says "not ready to
-  automate" → default suggestion Flow A (still ask).
-- Team repo with existing review culture, `.github/CODEOWNERS`, and other
-  automated PR quality checks → default suggestion Flow B (still ask).
-- **Ambiguous → ASK.** Do NOT interpret the presence of unrelated workflows
-  (CI tests, deploy pipelines, dependency bots) as evidence of Flow B —
-  only an existing ai-diff-reviewer workflow is.
+Install Flow A (local skill plus extension) under the existing onboarding
+request, without a second flow-choice confirmation. CI is a separate offer:
+only an explicit request or accepted offer authorizes Flow B. A production repo,
+CODEOWNERS, unrelated CI or an unanswered offer is not CI authorization.
+Preserve existing reviewer configuration and previously accepted choices.
 
 Record the chosen flow in `AGENTS.md` (or equivalent docs) so future
 maintainers and future agent runs see it — mirrors upstream's own recommended
@@ -236,7 +212,7 @@ Reasoning notes:
   bypass — when that label is on the PR the Action short-circuits with a
   successful check and a ⏭️ skipped tracking comment (no LLM). Distinct
   from `full-review-please` (IAR escape: full review once, not skip).
-- **Pin `@v2`** (moving major) or `@v2.0.0` (frozen). Do not pin `@v1` on
+- **Pin `@v2`** (moving major) or `@v2.0.1` (frozen). Do not pin `@v1` on
   new installs — v2 is the current pin surface (IAR + skip-review).
 - **`AI review gate`** is stable-named so branch protection can be
   configured against it once and continue to work when the review-job name

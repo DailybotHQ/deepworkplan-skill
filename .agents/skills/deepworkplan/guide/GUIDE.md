@@ -31,6 +31,7 @@ the single-file guide exists verbatim in exactly one file below.
 | **Refine** a plan | [`authoring.md`](./authoring.md), [`structure.md`](./structure.md) | as for Create |
 | **Onboard** a repository | [`structure.md`](./structure.md) | [`large-repo-onboarding.md`](./large-repo-onboarding.md) when the repository is large enough to onboard as its own plan |
 | **Verify** / **status** | [`structure.md`](./structure.md) §1–§2 | — |
+| **Upgrade** the installed skill | [`structure.md`](./structure.md) §1–§2 (what lives where) | the `upgrade` sub-skill itself (`../upgrade/SKILL.md`) — check is read-only, download needs explicit acceptance, `.dwp/` is never migrated |
 | **Author** skills/agents | [`skills-integration.md`](./skills-integration.md) | — |
 
 Do not read every file by default. Each sub-skill's "Shared resources" section

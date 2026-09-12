@@ -6,11 +6,12 @@ This document is the **normative specification** of the DeepWorkPlan **AI Diff
 Reviewer addon**: a capability — **required in its local form since standard
 2.3.0, optional in its CI form** — that connects an AI-first repository to
 the **AI Diff Reviewer** (`DailybotHQ/ai-diff-reviewer`, marketplace listing
-"AI Diff Reviewer", current **v2.0.0**) so DWP work — the mandatory
+"AI Diff Reviewer", pinned **v2.0.1**) so DWP work — the mandatory
 security pass of the mandatory **Final Review** — is augmented with a structured local review
 (verdict + findings table + severity), and (in **Flow B — dual-surface**,
 optionally) every pull request to the target repo is gated by a CI-side
-review Action with byte-identical parity to the local review. It defines the
+review Action fed by the same prompt bytes as the local pass — methodology
+and severity parity, not identical findings. It defines the
 **two officially-supported adoption flows** (§3), **what the addon
 installs/configures** (local review required, CI surface opt-in, §4), how it **defers authentication and
 wizard orchestration** to the upstream skill's own consent flows (§5), how
@@ -32,7 +33,7 @@ CI surface is never required.
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/authoring.md` §5.4 |
 | **License** | MIT |
-| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.0.0 (marketplace: "AI Diff Reviewer") |
+| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.0.1 (marketplace: "AI Diff Reviewer") |
 
 ## 1. Conventions
 
@@ -87,7 +88,7 @@ upstream CI's `Skills — prompt-sync invariant` job).
 
 ## 3. Two Supported Adoption Flows
 
-The upstream skill v2.0.0 defines two flows explicitly. This addon applies
+The upstream skill (pinned v2.0.1) defines two flows explicitly. This addon applies
 Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
 
 ### 3.1 Flow A — local-only
@@ -121,7 +122,7 @@ Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
   unrequested.
 - When the developer's signal about Flow B is ambiguous, the addon **MUST**
   ask or stay on Flow A; it **MUST NOT** infer Flow B. The ambiguity
-  resolution mirrors upstream v2.0.0's own policy: unrelated
+  resolution mirrors upstream v2.0.1's own policy: unrelated
   workflows (CI tests, deploy pipelines, dependency bots) are **NOT**
   evidence of Flow B — only an existing ai-diff-reviewer workflow is.
 - The addon **SHOULD** surface the concrete Flow-A-vs-B tradeoff at consent
@@ -197,7 +198,7 @@ acceptance — each reconciled if already present (§8):
   external-contributor policy / PR-description mode / complexity labels).
 - The workflow **MUST** pin the upstream Action to the **v2** major-line tag
   (`DailybotHQ/ai-diff-reviewer@v2`) so patch-level fixes flow automatically.
-  Pinning to a frozen tag (`@v2.0.0`) is also acceptable — parity with the
+  Pinning to a frozen tag (`@v2.0.1`) is also acceptable — parity with the
   vendored skill's version is what makes local ≡ CI worth it. New installs
   **MUST NOT** pin `@v1`.
 - The workflow **SHOULD** enable the v2 emergency-bypass input
@@ -451,7 +452,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Upstream skill: [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer)
-  — `skills/ai-diff-reviewer/SKILL.md` (currently **v2.0.0**), sub-skills:
+  — `skills/ai-diff-reviewer/SKILL.md` (documented pin **v2.0.1**), sub-skills:
   `generate-extension/SKILL.md`, `setup/SKILL.md` +
   [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md),
   `open-pr/SKILL.md`, `apply-review/SKILL.md`.

@@ -1,8 +1,9 @@
 # Template — `/lib-upgrade` delegator command (reasoning aid)
 
 This is the **delegator command** the dependency-upgrade addon installs into the
-target repo's `.agents/commands/lib-upgrade.md` **only when the addon is
-accepted** during `onboard` Phase 7b (or when the addon is run directly). It is a
+target repo's `.agents/commands/lib-upgrade.md` under the Phase 0 onboarding
+consent during `onboard` Phase 7b **unless the addon is explicitly declined**
+(or when the addon is run directly). It is a
 **thin delegator**: it carries no upgrade logic of its own — it routes to the
 `deepworkplan-addon-dependency-upgrade` addon, which holds the real flow.
 

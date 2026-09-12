@@ -23,7 +23,8 @@ For each tool's real config location, the entrypoint does — idempotently:
    `~/.config/cursor`) is **not already a symlink**:
    - **Seed only if the volume copy is empty** (`cp` real → data dir), so existing
      persisted auth is never clobbered.
-   - Remove the real path.
+   - Remove the real path only after seeding succeeded or a persisted copy exists.
+   - Preserve file/directory type; a missing `.claude.json` starts as `{}`, not a directory.
    - Symlink it into the persistent data dir.
 3. `chown` the data dirs to the dev user.
 
@@ -67,32 +68,49 @@ degrades cleanly.
 
 ```bash
 #!/bin/bash
+set -euo pipefail
 # AI-CLI persistence: seed-on-first-run, preserve-on-rebuild.
 
 # Generic helper: link a real path into a persistent volume dir, seeding once.
-# $1 = real path, $2 = persistent target (inside the *_data volume)
+# $1 = real path, $2 = persistent target, $3 = directory (default) or json.
 link_persist() {
-  local real="$1" target="$2"
-  if [ ! -L "$real" ]; then
-    if [ -e "$real" ]; then
-      # seed only if the volume target is empty/missing
-      if [ ! -e "$target" ] || [ -z "$(ls -A "$target" 2>/dev/null)" ]; then
-        mkdir -p "$(dirname "$target")"; cp -r "$real" "$target"
+  local real="$1" target="$2" kind="${3:-directory}"
+  if [ -L "$real" ]; then return 0; fi
+  mkdir -p "$(dirname "$target")" || return
+  if [ -e "$real" ]; then
+    if [ -d "$real" ]; then
+      if [ -e "$target" ] && [ ! -d "$target" ]; then
+        echo "Persistence target has the wrong type: $target" >&2; return 1
       fi
-      rm -rf "$real"
+      if [ ! -d "$target" ] || [ -z "$(ls -A "$target")" ]; then
+        mkdir -p "$target" || return
+        cp -a "$real/." "$target/" || return
+      fi
     else
-      mkdir -p "$target"
+      if [ -d "$target" ]; then
+        echo "Persistence target must be a file: $target" >&2; return 1
+      fi
+      if [ ! -e "$target" ]; then cp -p "$real" "$target" || return; fi
     fi
-    mkdir -p "$(dirname "$real")"
-    ln -sf "$target" "$real"
+    # Never delete the original until a successful seed or an existing volume
+    # copy has been established. Directory contents must not acquire a new level.
+    rm -rf "$real" || return
+  elif [ ! -e "$target" ]; then
+    if [ "$kind" = "json" ]; then
+      printf '{}\n' > "$target" || return
+    else
+      mkdir -p "$target" || return
+    fi
   fi
+  mkdir -p "$(dirname "$real")" || return
+  ln -s "$target" "$real"
 }
 
 setup_ai_cli_persistence() {
   local H="$1"   # {user-home}, e.g. /home/dev-user
   mkdir -p "$H/.config"
   # Claude Code: .claude.json + .claude dir + .config/claude-code (+ .json.backup)
-  link_persist "$H/.claude.json"               "$H/.claude_data/claude.json"
+  link_persist "$H/.claude.json"               "$H/.claude_data/claude.json" json
   link_persist "$H/.claude"                    "$H/.claude_data/claude_dir"
   link_persist "$H/.config/claude-code"        "$H/.claude_data/config_claude_code"
   # Codex

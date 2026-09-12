@@ -254,8 +254,9 @@ breaking change that requires a MAJOR version bump and a migration note in
 `CHANGELOG.md`:
 
 - Skill `name` fields in frontmatter (skills.sh registry references them).
-- The six `/deepworkplan-*` slash commands (`create`, `execute`, `refine`,
-  `resume`, `status`, `onboard`).
+- The `/deepworkplan-*` slash commands (`create`, `execute`, `refine`,
+  `resume`, `status`, `onboard`, `verify`, `author`, `upgrade`) — the same set
+  `setup.sh` links as `deepworkplan-<name>` symlinks.
 - The `.dwp/` output convention (`.dwp/plans/`) and the
   `DWP_DIR` / `DWP_AGENT_TOOL` env-var overrides read by `shared/context.sh`.
 - `setup.sh` flags (`--host`, `--help`) and the resulting symlink names.

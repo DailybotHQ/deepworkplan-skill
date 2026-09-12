@@ -15,7 +15,7 @@
 # authored before them. The plan contract itself lives in plan_contract.py.
 #
 # Bash 3.2 compatible (macOS default). Requires only git + coreutils; uses
-# python3 to validate plans when available, degrades gracefully when not.
+# Python 3.9+ to validate plans; exits 2 (UNVERIFIED) when unavailable.
 
 set -euo pipefail
 
@@ -68,6 +68,7 @@ fi
 PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
+UNVERIFIED_COUNT=0
 
 pass() {
   PASS_COUNT=$((PASS_COUNT + 1))
@@ -85,7 +86,15 @@ warn() {
 }
 
 # The newest DWP spec this checker implements (DWP_SPECIFICATION.md "Version").
-SUPPORTED_SPEC="2.4.0"
+SUPPORTED_SPEC="4.0.0"
+
+# The standard's released series: 2.x is historical (repositories and plans
+# onboarded before the 4.x jump stay valid, DWP_SPECIFICATION.md §6.5), 4.x is
+# current. There is no 3.x standard — the v3 launch was a product release, not
+# a standard bump (the three series are mapped in DWP_SPECIFICATION.md "Status").
+standard_series_ok() {  # $1 = declared version; bash 3.2 safe
+  case "${1%%.*}" in 2|4) return 0 ;; *) return 1 ;; esac
+}
 
 version_le() {
   # $1 <= $2 for dotted numeric versions (bash 3.2 safe; no arrays).
@@ -201,6 +210,10 @@ check_repo_standard() {
       fail "AGENTS.md declares DWP standard $declared, newer than this checker supports ($SUPPORTED_SPEC) — upgrade the installed skill"
       return 0
     fi
+    if ! standard_series_ok "$declared"; then
+      fail "AGENTS.md declares DWP standard $declared, which is not a DWP standard (the series are 2.x historical and 4.x current; there is no 3.x) — correct the provenance line"
+      return 0
+    fi
     pass "AGENTS.md declares DWP standard $declared"
     if version_le "2.3.0" "$declared"; then
       if [ "$scoped" -eq 1 ]; then
@@ -260,12 +273,16 @@ check_plan() {
   local plan_dir="$1" output="" line failures=0 rc=0
   echo ""
   echo "Plan: $(basename "$plan_dir")"
-  # Every other JSON-dependent check in this script degrades rather than blocks.
-  # Do the same here: without python3 the structural checks cannot run, but a
-  # healthy plan must not be reported as broken. Say plainly that no structural
-  # claim was made instead of implying the plan was verified.
+  # Missing tooling proves neither validity nor invalidity. A CI gate must not
+  # accept a plan merely because its structural checks could not run.
   if ! command -v python3 >/dev/null 2>&1; then
     warn "plan structure not verified (python3 unavailable) — no structural conformance claim is made for this plan"
+    UNVERIFIED_COUNT=$((UNVERIFIED_COUNT + 1))
+    return 0
+  fi
+  if ! python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)'; then
+    warn "plan structure not verified — Python 3.9+ is required"
+    UNVERIFIED_COUNT=$((UNVERIFIED_COUNT + 1))
     return 0
   fi
   output="$(python3 "$SCRIPT_DIR/plan_contract.py" "$plan_dir" "$( [ "$IS_GIT" -eq 1 ] && printf git || printf nogit )" 2>&1)" || rc=$?
@@ -306,7 +323,10 @@ elif [ "$MODE" = "all" ] && [ -d "$PLAN_ROOT/plans" ]; then
 fi
 
 echo ""
-if [ "$FAIL_COUNT" -eq 0 ]; then
+if [ "$FAIL_COUNT" -eq 0 ] && [ "$UNVERIFIED_COUNT" -gt 0 ]; then
+  echo "Verdict: UNVERIFIED — $UNVERIFIED_COUNT plan(s) could not be checked ($PASS_COUNT passed, $WARN_COUNT advisory)"
+  exit 2
+elif [ "$FAIL_COUNT" -eq 0 ]; then
   echo "Verdict: CONFORMANT ($PASS_COUNT passed, $WARN_COUNT advisory)"
   exit 0
 else

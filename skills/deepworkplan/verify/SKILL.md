@@ -27,7 +27,9 @@ normative criteria are defined in the specification's Conformance document
 ## Run the mechanical layer first
 
 Start every verification by running the automated checker — it covers the
-structural checks below objectively, exits `0`/`1`, and detects
+structural checks below objectively, exits `0` (conformant) / `1` (findings) /
+`2` (`UNVERIFIED` — plan structure could not be checked because Python 3.9+ is
+missing; a CI gate must not treat that as success), and detects
 markdown-vs-`state.json` desync:
 
 ```bash
@@ -41,7 +43,11 @@ honors the absolute `DWP_DIR` override for repository, all-plan and named-plan
 checks. An in-repository output directory must be gitignored; an external one
 is already outside the checkout.
 
-Its exit code is CI-friendly: a repo can run it as a pipeline gate. It accepts both plan lifecycle shapes (the 2.3.0 single Final Review and the pre-2.3.0 three-final-task ending) and reports harness-version findings for repositories onboarded under an earlier standard. Then layer
+Exit codes are CI-friendly: `0` means the requested structural checks passed,
+`1` means a conformance failure, and `2` means verification could not complete
+(for example Python 3.9+ is unavailable for plan checks). Report `UNVERIFIED`,
+never `CONFORMANT`, for missing tooling; do not install it inside this read-only
+flow. Repository-only checks still run without Python. The checker accepts both plan lifecycle shapes (the 2.3.0 single Final Review and the pre-2.3.0 three-final-task ending) and reports harness-version findings for repositories onboarded under an earlier standard. Then layer
 the judgment checks (real commands, real toolchain, catalog-matches-disk) on
 top — the script verifies *structure*; you verify *substance*.
 

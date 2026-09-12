@@ -73,7 +73,7 @@ resolve_skills_dir() {
 }
 
 # ─── Sub-skills to link (verb → deepworkplan-<verb>) ─────────
-SKILLS=("create" "execute" "refine" "resume" "status" "onboard")
+SKILLS=("create" "execute" "refine" "resume" "status" "onboard" "verify" "author" "upgrade")
 
 # ─── Link one agent ──────────────────────────────────────────
 link_agent() {
