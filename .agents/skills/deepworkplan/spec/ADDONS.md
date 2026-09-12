@@ -80,7 +80,13 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 - The onboarding flow **MUST** discover available addons by enumerating
   `skills/deepworkplan/addons/`.
 - For each discovered addon, the flow **MUST** present it to the user as an
-  **opt-in** step and **MUST NOT** apply it without explicit acceptance.
+  **opt-in** step and **MUST NOT** apply it without explicit acceptance — with
+  two declared exceptions: the **AI Diff Reviewer local review** (§6.5, a
+  required baseline component installed under the Phase 0 onboarding consent)
+  and the **dependency-upgrade addon's near-default tier** (§6.3), whose
+  **inert** `/lib-upgrade` delegator installs under that same onboarding
+  consent **unless explicitly declined** while every upgrade stays explicit,
+  gated work.
 - If the user declines an addon, the flow **MUST** skip it and **MUST** still
   produce a baseline-conformant repository.
 - When an addon is accepted, the flow **MUST** run the addon's onboarding hook and,
@@ -105,8 +111,12 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Five addons ship today. Four are **opt-in** and **never required** — a repository
-is fully conformant with **zero optional addons** installed. The fifth, the
+Five addons ship today. Four are **optional** and **never required** — a repository
+is fully conformant with **zero optional addons** installed. Of those four, the
+**dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
+with declared dependencies, with its **inert** `/lib-upgrade` delegator
+installed under the onboarding consent **unless explicitly declined** (an
+install runs no upgrade). The fifth, the
 **AI Diff Reviewer** (§6.5), is a **required baseline component in its local
 form**; only its CI surface is optional.
 
@@ -181,13 +191,18 @@ form**; only its CI surface is optional.
   skills/deepworkplan/addons/dependency-upgrade/
   ```
 
-- Scope: **package-manager agnostic**, **opt-in** dependency upgrades. When
-  accepted, it detects the repo's **real** package manager (npm/pnpm/yarn + ncu,
-  pip/poetry/uv, cargo, go mod, bundler, composer, …), classifies upgrades by
-  semver, upgrades in **safe batches**, runs the repo's **real** validation gate
-  after each batch, **reverts** a failing batch, and summarizes — and **only when
-  accepted** installs a `/lib-upgrade` delegator into the repo's
-  `.agents/commands/`.
+- Scope: **package-manager agnostic**, **near-default** dependency upgrades.
+  `onboard` **MUST** offer the addon for every repo with **declared
+  dependencies** (any manifest or lockfile), and the `/lib-upgrade` delegator
+  installs into the repo's `.agents/commands/` under the onboarding consent
+  **unless explicitly declined** — the delegator is **inert**: installing it
+  runs no upgrade, and an upgrade always runs as explicit, gated work. When
+  invoked, the addon detects the repo's **real** package manager (npm/pnpm/yarn
+  + ncu, pip/poetry/uv, cargo, go mod, bundler, composer, …), classifies
+  upgrades by semver, upgrades in **safe batches**, runs the repo's **real**
+  validation gate after each batch, **reverts** a failing batch, and
+  summarizes. A declined offer installs **no** command and leaves a
+  baseline-conformant repo.
 - The full implementation lives at
   `skills/deepworkplan/addons/dependency-upgrade/` — see its
   [`SKILL.md`](../addons/dependency-upgrade/SKILL.md) (onboarding hook),
@@ -219,11 +234,13 @@ form**; only its CI surface is optional.
   copying a brand file — documents each accepted profile's canonical sections,
   checks per-profile integrity (**WCAG AA** contrast; color never the sole carrier
   of meaning; plain-text fallbacks; token references resolve), and reconciles an
-  existing `DESIGN.md` instead of clobbering it. Profile strength differs (addon
-  SPEC §3.5): **visual-ui** is **default-on when detected** — the `onboard` flow
-  **applies** it in trust mode and **strongly recommends** it in guided mode —
-  while **cli-output** and **conversational** are **recommended when detected and
-  always asked about, never auto-applied**. When no interface surface of any kind
+  existing `DESIGN.md` instead of clobbering it. A detected interface surface
+  makes the evaluation and offer **mandatory** — never skipped, with a clear
+  recommendation and the recorded detection rationale (even for an ambiguous
+  signal) — while every detected profile still requires **explicit acceptance
+  in both guided and trust modes** (addon SPEC §3.5). Visual UI is strongly
+  recommended; CLI and conversational profiles are recommended. No
+  design-system profile is auto-applied. When no interface surface of any kind
   is present (pure library, headless service, infra-only) the addon is **not**
   offered. It remains **never required** — a repo with zero optional addons is fully conformant.
 - **Distinct from per-feature design docs:** this addon provides a **repo-level,

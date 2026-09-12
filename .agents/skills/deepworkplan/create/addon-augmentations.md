@@ -43,6 +43,17 @@ yes, never commits or pushes. This is surfaced as an available option during
 `execute`; the addon MUST NOT insert an `apply-review` task file into any
 plan (would violate the single-Final-Review rule).
 
+## Review scope is the plan's scope
+
+Before invoking the upstream review, supply the plan's recorded starting revision
+and the full accumulated diff for each affected repository, including staged,
+unstaged and intended untracked files. Do not rely on a branch's tracking ref:
+a pushed branch can have an empty upstream diff while still containing the plan's
+changes. An empty default diff is not evidence of a completed review. Use the
+upstream prompt and extension against the explicit plan diff; record the range,
+working-tree fingerprint and any unavailable baseline. Reconcile source edits
+made during review and rerun their affected gates before closure.
+
 ## Legacy plans
 
 For a pre-2.3.0 plan, apply this same required local-review step to the

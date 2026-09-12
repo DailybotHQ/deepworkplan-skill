@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 2.4.0 |
+| Version | 4.0.0 |
 | Status | Stable |
 
 ## Representation and lifecycle
@@ -17,8 +17,10 @@ Format, materialization, approval and execution are independent. Format is
 approval is `pending`, `approved` or `pre_approved`; execution is `pending`,
 `in_progress`, `blocked` or `completed`. Guided create writes a reviewable
 pending proposal. Trust materializes a ready pre-approved format and returns
-control. Create and promotion never execute product work. Execute rejects pending
-proposals and unresolved promotions.
+control. Create and promotion never execute product work. An explicit execute or
+resume request approves the ready plan's current scope; record that approval
+before starting work. Without that request, a pending proposal is not executable.
+Unresolved promotions always require recovery before product work.
 
 ## Creation and selection
 

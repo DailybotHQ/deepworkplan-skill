@@ -27,11 +27,18 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.4.0 |
+| **Version** | 4.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `DWP_SPECIFICATION.md` 2.2.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
+| **Supersedes** | `DWP_SPECIFICATION.md` 2.4.0 (and 2.2.0); `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md`, `PLAN_STATE.md` |
 | **License** | MIT |
+
+Three version series coexist on purpose and never compare: the skill **package**
+`version:` (release-managed), the **DWP standard** this document versions
+(2.x historical, 4.x current — there is no 3.x standard; the v3 launch was a
+product release), and the **schema URLs** (`plan-state/v2.json` — a schema-shape
+series, not the standard's version). The 4.0.0 jump aligns the standard's number
+with the product line; it changes no requirement from 2.4.0.
 
 > **Additive in 2.2.0.** Four additive capabilities, no breaking changes:
 > (1) the **machine-readable plan state layer** (`manifest.json` + `state.json`,
@@ -128,7 +135,8 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 ### 3.0 Lite-first override (2.4.0)
 
-For plans created under 2.4.0, the following rules supersede the historical
+For plans created under 2.4.0 or later (2.x and 4.x alike), the following rules
+supersede the historical
 guided-draft wording in this section. `create` **MUST** materialize a ready,
 executable Lite plan first; it **MUST NOT** execute product work. The Lite README
 contains compact, anchored task records with goal, touched surface, acceptance
@@ -688,15 +696,19 @@ security findings), and next steps.
 
 ### 6.4. Task Size and Adaptive Execution
 
-- **Granularity.** A task is one coherent outcome with a bounded write surface,
-  concrete inputs and outputs, validation relevant to what it changes (§5.0.2),
-  and partial steps that can be checkpointed and resumed. The `create` flow
-  **SHOULD** split work when distinct outcomes carry different failure modes or
-  independent evidence that would otherwise hide behind one checkbox, and
-  **SHOULD** keep tightly coupled edits together; a larger cohesive task **MAY**
-  keep resumable sub-steps. There is **no** task-count quota, and the flow
-  **MUST NOT** multiply approvals, commits, or reports by splitting minor edits
-  into separate tasks.
+- **Granularity.** One task, one objective. A task may perform several steps
+  that serve its single granular objective; it **MUST NOT** bundle several
+  objectives — prefer N tasks with one objective each over fewer tasks carrying
+  several. A task keeps a bounded write surface, concrete inputs and outputs,
+  validation relevant to what it changes (§5.0.2), and partial steps that can
+  be checkpointed and resumed. The `create` flow **SHOULD** split when a task
+  serves several objectives with different failure modes, evidence or
+  authorization that would otherwise hide behind one checkbox, and **SHOULD**
+  keep tightly coupled edits that serve the same objective together; a larger
+  cohesive task **MAY** keep resumable sub-steps. There is **no** task-count
+  quota and no quota of single actions — the unit is the objective, not the
+  edit — and the flow **MUST NOT** multiply approvals, commits, or reports by
+  padding: never split to inflate the count, never merge to shrink it.
 - **Adaptive execution within authorization.** Once a plan is approved, the agent
   **SHOULD** proceed from a passing gate to the next task without asking for
   confirmation, **SHOULD** attempt repairs within the task's authorized scope

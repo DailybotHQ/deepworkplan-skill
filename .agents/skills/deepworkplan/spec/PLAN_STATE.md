@@ -26,9 +26,9 @@ JSON Schemas for both artifacts ship with this specification in
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.4.0 |
+| **Version** | 4.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `PLAN_STATE.md` 2.2.0 (net-new in 2.2.0; no prior equivalent) |
+| **Supersedes** | `PLAN_STATE.md` 2.4.0 (and 2.2.0; net-new in 2.2.0) |
 | **Companions** | `DWP_SPECIFICATION.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `DOCUMENTATION_STANDARD.md`, `ADDONS.md` |
 | **License** | MIT |
 
@@ -320,7 +320,11 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
   existing strings (§4.2, §4.3), so a 2.3.0 state file validates against the v1
   schema as shipped in 2.2.0, and a 2.2.0 state file validates unchanged under
   2.3.0. Package SemVer (the skill), the spec document version, and the schema
-  URL version are three separate things and are never conflated.
+  URL version are three separate things and are never conflated. The standard's
+  own series are 2.x (historical — those plans stay valid, §6.5) and 4.x
+  (current, aligned with the product line); there is no 3.x standard, and the
+  `/v2.json` schema URLs stay v2 across both (a schema-shape series, not the
+  standard's version).
 - `spec_version` in the manifest pins the DWP spec version the plan was created
   under and is never rewritten (§2); an agent encountering a newer plan than its
   installed spec **MUST** say so rather than guess (`DWP_SPECIFICATION.md` §6.5).
@@ -387,4 +391,4 @@ task correspondence and the meaning of validation results.
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.4.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v4.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

@@ -26,7 +26,11 @@ import sys
 
 # The newest DWP spec this checker implements; keep in sync with conformance.sh
 # SUPPORTED_SPEC and DWP_SPECIFICATION.md "Version".
-SUPPORTED_SPEC = '2.4.0'
+SUPPORTED_SPEC = '4.0.0'
+# The standard's released series: 2.x is historical (plans authored before the
+# 4.x jump stay valid, §6.5), 4.x is current. There is no 3.x standard — the
+# v3 launch was a product release, not a standard bump.
+SPEC_SERIES = (2, 4)
 STATE_V2 = 'https://deepworkplan.com/schema/plan-state/v2.json'
 MANIFEST_V2 = 'https://deepworkplan.com/schema/plan-manifest/v2.json'
 STATUSES = ('pending', 'in_progress', 'completed', 'blocked', 'skipped')
@@ -105,12 +109,20 @@ def unfenced(text):
 
 
 def field_content(body, name):
-    pattern = r'(?im)(?:^#{2,6}\s+(?:\d+[.]?\s*)?'+re.escape(name)+r'\s*$|\*\*'+re.escape(name)+r'\*\*\s*[:·-]?)'
+    # Both **Goal:** and **Goal**: are ordinary Markdown labels. Emphasis
+    # inside a field is content, not another field (e.g. **Not applicable**).
+    labels = ('Context', 'Goal', 'Touched Surface', 'Acceptance Criteria',
+              'Validation', 'Instructions', 'Read Before Starting',
+              'Completion & Log', 'Completion log', 'Skills disposition')
+    def label_pattern(label):
+        return r'\*\*(?:'+label+r')\s*:?\*\*[ \t]*[:·-]?'
+
+    pattern = r'(?im)(?:^#{2,6}[ \t]+(?:\d+[.]?[ \t]*)?'+re.escape(name)+r'[ \t]*$|'+label_pattern(re.escape(name))+')'
     match = re.search(pattern, body)
     if not match:
         return ''
     rest = body[match.end():]
-    boundary = re.search(r'(?m)^#{2,6}\s|\*\*[A-Za-z][^*\n]+\*\*', rest)
+    boundary = re.search(r'(?im)^#{2,6}[ \t]|'+label_pattern('|'.join(map(re.escape, labels))), rest)
     return (rest[:boundary.start()] if boundary else rest).strip(' \n\r`·:-')
 
 
@@ -299,16 +311,24 @@ def current(plan, state, manifest, report):
     elif version(standard) > version(SUPPORTED_SPEC):
         report.bad(f'plan declares DWP spec {standard}, newer than this checker supports '
                    f'({SUPPORTED_SPEC}) — upgrade the installed skill before executing it')
-    elif version(standard) < version(SUPPORTED_SPEC):
-        report.note(f'plan uses the v2 state layer but declares DWP spec {standard} — record the '
-                    f'migration in the README Standard line (PLAN_STATE.md §6.1)')
+    elif version(standard)[0] not in SPEC_SERIES:
+        report.bad(f'plan declares DWP spec {standard}, which is not a DWP standard (the series '
+                   f'are 2.x historical and 4.x current; there is no 3.x) — correct the '
+                   f'Standard line (PLAN_STATE.md §6.1)')
     else:
-        report.ok(f'plan standard: DWP spec {standard}')
+        report.ok(f'plan standard: DWP spec {standard}'
+                  + (' (historical, accepted)' if version(standard)[0] != 4 else ''))
     if 'Plan Status: materializing' in clean:
         report.bad('partial materialization — recover with create/refine')
     report.verdict(state.get('plan') == plan.name and manifest.get('name') == plan.name,
                    'plan identity matches its directory',
                    'plan identity disagrees with its directory')
+    # The v2 Goal+Context pair is required at plan level too (guide/authoring.md
+    # §4.1 items 1–2): Goal says what, Context says where the work lives.
+    report.verdict(bool(field_content(clean, 'Goal')) and bool(field_content(clean, 'Context')),
+                   'plan README carries the Goal+Context pair (v2 shape restored)',
+                   'plan README lacks a non-empty Context section alongside Goal — the v2 '
+                   'Goal+Context pair is required (guide/authoring.md §4.1)')
     tasks = state.get('tasks', [])
     if not isinstance(tasks, list):
         return report.bad('state tasks must be an array')
@@ -351,6 +371,14 @@ def current(plan, state, manifest, report):
                 for name in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
                     if not field_content(body, name):
                         report.bad(f'Task {task["id"]} lacks non-empty {name}')
+                # Context is a starting requirement, not a history requirement:
+                # a task still to be run must be startable from it, while a
+                # completed task's record stays as authored (DWP_SPECIFICATION
+                # §6.5 evidence history).
+                if task['status'] != 'completed' and not field_content(body, 'Context'):
+                    report.bad(f'Task {task["id"]} lacks non-empty Context — task-specific '
+                               f'background; the agent MUST be able to start from this section '
+                               f'alone (DWP_SPECIFICATION §5)')
                 if task['id'] == len(tasks):
                     if 'task_final_review' not in locator['value'] or not all(
                             term in body.lower() for term in ('security', 'final-state', 'skills')):
@@ -382,6 +410,12 @@ def current(plan, state, manifest, report):
                 for name in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
                     if not field_content(body[1], name):
                         report.bad('Lite task lacks '+name+': '+header[1])
+                status = next((t.get('status') for t in tasks
+                               if isinstance(t, dict) and t.get('id') == int(header[1])), None)
+                if status != 'completed' and not field_content(body[1], 'Context'):
+                    report.bad('Lite task lacks Context: '+header[1]+' — task-specific '
+                               'background; the agent MUST be able to start from this section '
+                               'alone (DWP_SPECIFICATION §5)')
                 if int(header[1]) == len(tasks) and not all(
                         term in body[1].lower() for term in ('security', 'final-state', 'skills')):
                     report.bad('Lite Final Review lacks its security, final-state validation or skills part')
@@ -472,6 +506,10 @@ def legacy(plan, state, manifest, is_git, report):
     elif version(standard) > version(SUPPORTED_SPEC):
         report.bad(f'plan declares DWP spec {standard}, newer than this checker supports '
                    f'({SUPPORTED_SPEC}) — upgrade the installed skill before executing it')
+    elif version(standard)[0] not in SPEC_SERIES:
+        report.bad(f'plan declares DWP spec {standard}, which is not a DWP standard (the series '
+                   f'are 2.x historical and 4.x current; there is no 3.x) — correct the '
+                   f'Standard line (PLAN_STATE.md §6.1)')
     else:
         report.ok(f'plan standard: DWP spec {standard}'
                   + (' (declared migration)' if migrated else ''))
