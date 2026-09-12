@@ -221,15 +221,25 @@ when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
 ### Step 5 — Lite Promotion
 
 Promotion changes only task representation. Read `spec/LITE_PLANS.md`, the Lite
-README decision record and v2 state first. Refuse a pending proposal, an active
-task, an unresolved blocker, unknown format or existing promotion marker. A
+README decision record and v2 state first. An explicit promotion request approves
+the current proposal's representation change; record `Approval: approved` before
+starting. It does not authorize product execution or a scope change. Refuse an
+active task, an unresolved product-work blocker, or an unknown format. A
 scope/requirement change is refine, not promotion.
+
+**Recovery comes before starting a new transaction.** If a promotion marker
+already exists (including after the format switched to Full), resume that same
+transaction from its recorded phase. Verify the existing destination files
+against the source records and evidence; write only missing files, preserve user
+edits, and never overwrite conflicting evidence. A conflict becomes an actionable
+blocker. Do not reject the marker that execute/resume sent here to recover, and
+do not create a second promotion transaction.
 
 1. Record `promotion: lite → full` intent atomically in state and README.
 2. Generate Full task files for unchanged logical task IDs, preserving criteria,
-   gates, logs, completion status and lineage. Completed Lite work is never split
-   or granted invented evidence; unstarted work may split only with new IDs and a
-   recorded lineage.
+   gates, logs, completion status and lineage. Promotion never splits tasks or
+   grants invented evidence. Split or add work separately through refine, with
+   the affected approval and evidence invalidated before promotion resumes.
 3. Validate contiguous IDs, links, gates, final review and Markdown/state
    correspondence before switching the README's authoritative task representation.
 4. Rewrite the state projection atomically with `format: full`, then clear the

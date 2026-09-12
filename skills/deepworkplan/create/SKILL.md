@@ -118,8 +118,8 @@ materializes a **Lite plan folder** — no draft file is written.
 ### Trust Mode (`trust` or `auto`)
 - Collects information from the user; runs the **same** requirements analysis
   (Step 3) and the **same** plan-quality check (Step 4.5).
-- **Materializes the chosen representation directly** — Lite, or Lite then
-  expanded to Full when the rubric or an explicit `full` says so. Trust waives the intermediate *review*, never the *analysis*, the
+- **Materializes the chosen representation directly** — Lite, or Full when the
+  rubric or an explicit `full` says so; never author both representations. Trust waives the intermediate *review*, never the *analysis*, the
   *quality check*, or the *execution handoff*.
 - Records the plan as **pre-approved for unattended execution**
   (`../spec/AGENT_PROTOCOL.md` §7.2): the developer's `trust` instruction is
