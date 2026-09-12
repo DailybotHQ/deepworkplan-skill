@@ -46,6 +46,12 @@ idempotently; conflicting formats are an error. `--` ends option parsing.
 Selection records observed scope, dependencies, required instruction detail,
 unknowns and rationale; it is an auditable judgment, not a cross-model guarantee.
 
+Lite carries the parallelization decision the same way Full does
+(`DWP_SPECIFICATION.md` §9; `guide/team-agents.md` §14.2): the
+`Execution: sequential — {rationale}` line, or the Team Agents Configuration
+section — with per-task Team Agents Metadata attached to the anchored task
+records instead of task files. The decision is never silent in Lite either.
+
 ## Promotion and compatibility
 
 Promotion is representation-only: it writes intent, destination tasks, validates
