@@ -14,24 +14,71 @@ time**, validating and committing after each, and reporting progress — fluentl
 inside the plan's authorization, without asking whether to continue after every
 successful task.
 
-## Shared resources (read these)
+## Shared resources (read at their moment, not upfront)
 
-- [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch,
-  agent tool, and `dwp_dir` (the `.dwp/` output location).
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans live at
-  `.dwp/plans/PLAN_{name}/`.
-- [`../shared/adaptation.md`](../shared/adaptation.md) — the two repository
-  archetypes (individual repo vs orchestrator hub) that govern how navigation
-  and validation commands resolve.
-- [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — **conditional:**
-  read only when something is already wrong (discovery failure, stale
-  installation, missing test command, unsupported host capability,
-  inconsistent plan state).
-- **Guide (essential — read for this flow):** [`../guide/execution.md`](../guide/execution.md) (agent execution rules §6, Final Review and task-local lifecycle §6.1, per-task commit workflow, completion tracking).
-- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 when Step 2.1 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) §14 when Step 2.2 finds a Team Agents Configuration and team mode is selected; [`../guide/authoring.md`](../guide/authoring.md) §5.3–§5.4 when judging a task's test or security discipline; [`../guide/prompts.md`](../guide/prompts.md) §9 for resume scenarios; [`../create/addon-augmentations.md`](../create/addon-augmentations.md) when the Final Review runs (required local-review pass on every 2.3.0 plan — load even if the reviewer is not yet installed, so the missing-install finding path is available); the repository's `docs/TESTING_GUIDE.md` when a task's gate must be widened or derived. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
-- [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) — the machine-readable state
-  layer (`manifest.json` + `state.json`); update it at every completion when the
-  plan carries it.
+The compulsory set for this flow is the router SKILL plus this file: every
+rule the loop runs on — strict order, gate selection from the actual surface,
+STOP-on-fail, task-local closure, commit format, the state-update command,
+the Final Review — is stated inline in the steps below. A default session
+reads **no** guide, spec or shared companion before Task 1; companions load
+when their moment arrives. (This ordering is deliberate: reading companions
+"to be safe" is the failure mode this tiering removed.)
+
+- **Essential now (before the first task):**
+  [`../shared/context.sh`](../shared/context.sh) — **run** it
+  (`bash ../shared/context.sh`) to resolve repo root, branch, agent tool and
+  `dwp_dir`; its source is not part of this flow's reads. That is the whole
+  t0 set — the operative rules the loop needs are inline below.
+- **Conditional — read only when the trigger fires:**
+  - [`../spec/LITE_PLANS.md`](../spec/LITE_PLANS.md) — read only when the
+    plan README declares `Plan Format: Lite` or a v2 state line (anchored
+    task records, approval axis, promotion recovery).
+  - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §4–§5 — read only when
+    `state.json` and the README disagree (markdown wins — regenerate), when a
+    takeover needs the checkpoint contract, or when `update-state.py` cannot
+    run and a whole-file rewrite is unavoidable. The everyday needs are
+    inline: bookkeeping order and the closed gate-record shape in Step 5
+    rules 5–6.
+  - [`../guide/execution.md`](../guide/execution.md) — read §6.1 only when
+    the Final Review task begins (the prose behind its five parts (a)–(e));
+    read the Multi-Project Commit Workflow only when the plan spans multiple
+    repositories; read rule 6 only when a Dailybot report moment arrives with
+    the addon installed. The loop rules (§6 rules 1–5) and completion
+    tracking are already inline in Step 5 and Important Notes.
+  - [`../guide/authoring.md`](../guide/authoring.md) §5.3–§5.4 — read only
+    when judging a task's test or security discipline.
+  - [`../guide/prompts.md`](../guide/prompts.md) §9 — read only when a
+    resume scenario arises mid-execution (the resume sub-skill owns them).
+  - [`../shared/adaptation.md`](../shared/adaptation.md) — read only when
+    adapting a pack example or template command into repo-specific form; the
+    operative rule — select from the actual surface, never a fixed command
+    set — is inline in Step 5 rule 3.
+  - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
+    plan folder cannot be located or the `DWP_DIR` override is in play
+    (Steps 0–3 already inline `.dwp/plans/PLAN_{name}/`).
+  - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
+    only when something is already wrong (discovery failure, stale
+    installation, missing test command, unsupported host capability,
+    inconsistent plan state).
+  - [`orchestrator.md`](orchestrator.md) (this directory) plus
+    [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 — read only
+    when Step 2.1 detects an orchestrator plan.
+  - [`team-agents.md`](team-agents.md) (this directory) plus
+    [`../guide/team-agents.md`](../guide/team-agents.md) §14 — read only
+    when Step 2.2 finds a Team Agents Configuration and team mode is
+    selected.
+  - [`../create/addon-augmentations.md`](../create/addon-augmentations.md) —
+    read only when the Final Review runs its required local-review pass
+    (load it even if the reviewer is not yet installed, so the
+    missing-install finding path is available); the reviewer's own files
+    load at that same moment, never before.
+  - The repository's `docs/TESTING_GUIDE.md` — read only when a task's gate
+    must be widened or derived.
+  - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the routing index; consult
+    only when a need is not covered by a section named above.
+- **Never by default:** no other guide, spec, preset or addon file is read
+  for this flow — not defensively, not "to be safe". Speculative reading is
+  exactly what the tier above replaces: name the moment, then read.
 
 ## Parameter Support
 
