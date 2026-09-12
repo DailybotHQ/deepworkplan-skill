@@ -85,3 +85,9 @@ rev_doc_has() {
     [ "$status" -ne 0 ]
     grep -qF '"anyBins":["git"]' "$ADDON/SKILL.md"
 }
+
+@test "the reviewer augmentation reviews the plan's explicit diff, not the tracking ref" {
+    local aug="$REPO_ROOT/skills/deepworkplan/create/addon-augmentations.md"
+    rev_doc_has "$aug" "supply the plan's recorded starting revision"
+    rev_doc_has "$aug" "An empty default diff is not evidence of a completed review."
+}
