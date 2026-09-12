@@ -229,7 +229,7 @@ Create all required files:
 - **analysis_results/** — Empty folder
 - **Mandatory final task** — the single **Final Review**, last
   (`{N}.task_final_review.md`). It covers the security pass, final-state
-  validation and skills reconciliation in one task.
+  validation, skills and documentation reconciliation in one task.
 
 #### Step 5: Return to Core Hub and update tracking
 

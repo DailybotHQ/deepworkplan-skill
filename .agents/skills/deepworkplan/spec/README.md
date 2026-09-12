@@ -1,9 +1,13 @@
-# DeepWorkPlan Methodology Specification — v2.2.0
+# DeepWorkPlan Methodology Specification — v5.0.0
 
 > The canonical normative standard for an **AI-first autopilot repository** and the
-> **Deep Work Plan (DWP)** workflow. Version **2.2.0**. This v2 spec **supersedes**
-> the v1 baseline specs in `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/`
-> (and the upstream `repo-ready/` and `opensource` drafts). Reconciled from that
+> **Deep Work Plan (DWP)** workflow. Version **5.0.0** (the series are 2.x and 4.x
+> historical and 5.x current — see `DWP_SPECIFICATION.md` "Status"; the v5 schema
+> URLs are generation snapshots of the v2 shape, published at
+> `https://deepworkplan.com/schema/`). This v5 spec **supersedes** the v2 spec
+> (4.0.0, 2.4.0, 2.2.0), which superseded the v1 baseline specs in
+> `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/` (and the upstream
+> `repo-ready/` and `opensource` drafts). Reconciled from that
 > baseline plus the 6 (+1) new ideas per `../RECONCILIATION.md`.
 
 All documents use RFC-2119 normative language (MUST / SHOULD / MAY / MUST NOT) and
@@ -73,4 +77,4 @@ orchestrator hub, and agent workspace — are addressed throughout.
 
 ---
 
-*DeepWorkPlan methodology v2.2.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

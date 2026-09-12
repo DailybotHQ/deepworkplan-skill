@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-manifest/v5.json",
+  "description": "Deep Work Plan manifest, v5 line. Generation snapshot of the v2 shape for the v5 methodology line (DWP standard 5.0.0): no property was added, removed, or re-typed relative to plan-manifest/v2.json. Plans referencing v2.json (and v1.json) remain valid and are never rewritten.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "spec_version", "name", "archetype", "rigor", "created_at", "task_count", "plan_format"],
+  "properties": {
+    "schema": {"const": "https://deepworkplan.com/schema/plan-manifest/v5.json"},
+    "spec_version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"},
+    "name": {"type": "string", "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$"},
+    "title": {"type": "string", "maxLength": 200},
+    "archetype": {"enum": ["individual", "orchestrator-hub", "agent-workspace"]},
+    "rigor": {"enum": ["micro", "standard", "deep"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "created_by": {"type": "object"},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "task_count": {"type": "integer", "minimum": 1},
+    "plan_format": {"enum": ["lite", "full"]},
+    "parent_plan": {"type": ["string", "null"]}
+  }
+}
