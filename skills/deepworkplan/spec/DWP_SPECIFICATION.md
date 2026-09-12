@@ -27,18 +27,25 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 
 | Field | Value |
 |-------|-------|
-| **Version** | 4.0.0 |
+| **Version** | 5.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `DWP_SPECIFICATION.md` 2.4.0 (and 2.2.0); `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
+| **Supersedes** | `DWP_SPECIFICATION.md` 4.0.0, 2.4.0 (and 2.2.0); `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DWP_SPECIFICATION.md` (v1.0.0) |
 | **Companions** | `DOCUMENTATION_STANDARD.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md`, `PLAN_STATE.md` |
 | **License** | MIT |
 
 Three version series coexist on purpose and never compare: the skill **package**
 `version:` (release-managed), the **DWP standard** this document versions
-(2.x historical, 4.x current — there is no 3.x standard; the v3 launch was a
-product release), and the **schema URLs** (`plan-state/v2.json` — a schema-shape
-series, not the standard's version). The 4.0.0 jump aligns the standard's number
-with the product line; it changes no requirement from 2.4.0.
+(2.x and 4.x historical, 5.x current — there is no 3.x standard; the v3 launch
+was a product release), and the **schema URLs** (`plan-state/v2.json`,
+`plan-state/v5.json` — a schema-shape series, not the standard's version; the
+v5 URLs are **generation snapshots** of the v2 shape, adding no property).
+The 4.0.0 jump aligned the standard's number with the product line without
+changing any requirement from 2.4.0; 5.0.0 repeats that documented move for
+the v5 generation. **Anti-lockstep rule:** skill minor/patch releases never
+move the standard; the standard's next major happens only with a genuinely
+breaking methodology change — the same moment the skill's own public-surface
+rules would force its major. The release bot owns the skill's `version:`; the
+standard never does.
 
 > **Additive in 2.2.0.** Four additive capabilities, no breaking changes:
 > (1) the **machine-readable plan state layer** (`manifest.json` + `state.json`,
@@ -66,6 +73,23 @@ with the product line; it changes no requirement from 2.4.0.
 > **removed**. The Lite plan is the reviewable artifact they used to be, and it
 > is already executable. Existing plan folders are unaffected; a leftover
 > `.dwp/drafts/` directory is inert and may be deleted by the developer.
+
+> **Divergence from 4.0.0 (overview).** 5.0.0 is an alignment renumber (the
+> same move 4.0.0 made before it — no existing requirement changes) **plus**
+> this generation's additive rules: (1) **documentation discipline** — every
+> task keeps a docs decision next to its skills decision, and substantial docs
+> work is its own task placed with implementation, never past the Final Review
+> (§5.5, §6.6); (2) the Final Review gains a **documentation reconciliation**
+> step (§6.1 d); (3) **feature-tier docs architecture** — AGENTS.md stays a
+> lean index, detail lives in `docs/`, large features carry their own internal
+> docs (`DOCUMENTATION_STANDARD.md` §2.1.1, §4.1); (4) **tiered read
+> contracts** — sub-skills declare
+> essential-now, trigger-conditional, and never-by-default reads; (5)
+> **install verification** at every skills-CLI install site; (6) **schema
+> publication** — the schema URLs referenced by plans are published artifacts
+> (`https://deepworkplan.com/schema/…`), and the v5 generation snapshots are
+> the shape new plans declare. Plans and repositories from 4.0.0 and earlier
+> remain conformant (§6.5).
 
 > **Divergence from v1 (overview).** Three breaking changes drive the major bump:
 > (1) the **create flow is single-step** — one refined draft, dropping the v1
@@ -252,7 +276,7 @@ text **MAY** vary; the semantic content **MUST** be present and in this order.
 | 4 | **Goal** — 1–2 sentences, unambiguous and testable. | **MUST** |
 | 5 | **Touched Surface** — the change's footprint and the validation it implies (§5.0.2): planned paths/modules; after editing, the reconciled actual paths; affected consumers; risk class; the test mapping used; the selected gate and its reason. | **MUST** for any task that changes behavior (code, configuration, schemas, templates, fixtures, migrations, generated inputs, or agent instructions that alter behavior); **MAY** state `not applicable` with a reason for pure prose or research tasks |
 | 6 | **Instructions** — numbered, concrete steps, including an explicit **re-anchor** step (re-read the plan README §Goal at task start). Vague steps **MUST NOT** appear. | **MUST** |
-| 7 | **Acceptance Criteria** — a verifiable checkbox list; the task **MUST NOT** be marked complete until every box can honestly be checked. | **MUST** |
+| 7 | **Acceptance Criteria** — a verifiable checkbox list; the task **MUST NOT** be marked complete until every box can honestly be checked. A task that changes behavior, structure, commands, configuration, or agent surface **MUST** include the currency of the documentation that registers that surface among its criteria (§6.6). | **MUST** |
 | 8 | **Outputs** — table of files the task produces with paths (under `analysis_results/` or source). | **MUST** when the task produces artifacts |
 | 9 | **Validation** — the stack-specific commands that **MUST** pass before completion, selected per §5.1 from the Touched Surface; a task with no automated command **MUST** carry a specific manual checklist. | **MUST** |
 | 10 | **Execution Checklist** + **Completion & Log** — the procedural walk-through plus the post-task log the agent fills (status, timestamp, summary, outputs, validation results, notes). The log **MUST NOT** retain placeholder values after completion. | **MUST** |
@@ -641,7 +665,26 @@ authoring still open **MUST** be completed and validated before (b) is final. It
 **MUST NOT** re-read the whole plan to rediscover patterns and **MUST NOT**
 produce a second, separate discovery report; the ledger is the record.
 
-**(d) Completion.** After (a)–(c) pass, the agent reports completion (deliverables,
+**(d) Documentation reconciliation — the plan's touched surface only.** The
+Final Review **MUST** sweep every behavior-changing task's reconciled surface
+against the documentation that registers it — the tasks' Touched Surfaces and
+documentation decisions (§6.6) are the ledger; this is a bounded sweep, not a
+second discovery pass. In this order: the gate registry
+(`docs/TESTING_GUIDE.md`) first — every command, script, or gate the plan
+introduced or changed is registered — then the architecture, module, and
+feature docs for structural or behavioral change, then the `AGENTS.md` index
+when a new top-level surface appeared. Every miss **MUST** be fixed inside
+this review, and any validation affected by the fix **MUST** be rerun under
+(b): a plan does not close with an undocumented behavior-changing surface
+unless the user explicitly accepted the miss. The result **MUST** be recorded
+in `analysis_results/SECURITY_REVIEW.md` as a "Documentation reconciliation"
+subsection — each checked doc current, or the fixed list. A
+whole-repository documentation audit belongs to `/dwp-verify` and onboarding,
+never to the Final Review. The step exists because its absence has shipped
+real misses: a released feature whose new validation gate was never
+registered in the gate registry.
+
+**(e) Completion.** After (a)–(d) pass, the agent reports completion (deliverables,
 validation evidence, limitations, and any pull-request links), offers the
 Executive Report **once** (§6.3), and — where a reporting channel is configured
 (`AGENT_PROTOCOL.md` §5) — sends the completion report. The plan is complete at
@@ -742,6 +785,31 @@ invalid under it (rejected); legacy acceptance does not make this version's
 > optional and on-request with its content unchanged (§6.3); states task-size and
 > adaptive-execution rules (§6.4); and codifies compatibility (§6.5). Plans and
 > repositories from earlier versions remain conformant.
+
+### 6.6. Task-Local Documentation Decisions (boy-scout)
+
+The question "is the documentation that registers what this task touched
+still true?" **MUST** be answered inside the task that did the touching, while
+its diff is in context — documentation currency is decided task-locally,
+exactly like skills decisions (§6.2), and is **not** deferred to a final
+catch-up task.
+
+- Every task's Completion & Log **MUST** carry a **documentation decision**:
+  the list of doc files updated for the touched surface, or
+  `not applicable — <reason>` (pure-prose, research, or non-registered
+  surface tasks). `not applicable` in the log is sufficient; a task **MUST
+  NOT** be required to add a no-op entry anywhere else.
+- A task that changes behavior, structure, commands, configuration, or agent
+  surface **MUST** update, in that same task, the documentation that
+  registers the changed surface — the gate/command registry, structure docs,
+  module or feature docs, or the `AGENTS.md` index when a new top-level
+  surface appears (`DOCUMENTATION_STANDARD.md` §2;
+  `guide/authoring.md` §5.5) — and **MUST** name those files in its Touched
+  Surface (planned docs surface, §5.0.2).
+- Substantial documentation work **MAY** be its own task, placed with the
+  implementation it documents; it **MUST NOT** be deferred past the Final
+  Review, whose documentation reconciliation sweep (§6.1) audits — and
+  reports — what the per-task decisions left behind.
 
 ---
 

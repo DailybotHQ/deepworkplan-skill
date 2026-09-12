@@ -45,6 +45,9 @@ run silently.
 Task Groups + Teammate Roles tables) and a "Team Agents Metadata (Claude Code
 Only)" section to each parallel task file (Parallel Group / Teammate Role / Can
 Run With / Blocks / Files Owned). Use `../examples/TEAM_AGENTS_TASK_TEMPLATE.md`.
+Both formats carry the decision: in a Lite plan the per-task metadata attaches
+to the anchored task records instead of task files (`../spec/LITE_PLANS.md`) —
+never silent in either shape.
 The Parallel Task Groups table carries an optional **Starts after** column (the
 task, group, or barrier a group starts after) and lists sequential tasks
 explicitly (Sequential rows naming their tasks). Rules: never put required info

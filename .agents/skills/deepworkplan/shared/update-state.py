@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Apply a targeted mutation to a Deep Work Plan state.json (v2 schema).
+"""Apply a targeted mutation to a Deep Work Plan state.json (state layer).
 
 The state layer stays JSON (ADR 0002); this helper exists so an executing
 agent applies a task-close or status change as a bounded delta — set one
 task's status, attach its gate records and outcome, recompute counts and the
 checkpoint — instead of re-emitting the whole file from context. It writes
-atomically (temp file + rename) and only ever assigns fields the closed v2
-schema knows, so its output validates where the input did.
+atomically (temp file + rename) and only ever assigns fields the closed v2/v5
+schema shape knows (the v5 schema is a generation snapshot of v2), and never
+touches the declared `schema` URL, so its output validates where the input
+did.
 
 Stdlib only (Python 3.9+). It mutates exactly one file: the state.json given
 as the first argument. Whole-file regeneration (create, refine recount,
@@ -32,7 +34,7 @@ import tempfile
 TASK_STATUSES = ("pending", "in_progress", "completed", "blocked", "skipped")
 PLAN_STATUSES = ("pending", "in_progress", "completed", "blocked")
 COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
-# Closed-schema field budgets (plan-state-v2.schema.json) enforced on write.
+# Closed-schema field budgets (plan-state-v2/v5 schema shape) enforced on write.
 LIMITS = {
     "gate.command": 500, "gate.evidence": 500,
     "outcome.worked": 500, "outcome.notes": 1000,

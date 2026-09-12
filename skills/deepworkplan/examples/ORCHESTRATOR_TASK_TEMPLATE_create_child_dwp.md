@@ -41,7 +41,7 @@ The child DWP should cover approximately {N} tasks, including:
 - {high-level task 4 — e.g., "Security hardening pass over the new endpoints"}
 - {high-level task 5 — e.g., "Write comprehensive tests"}
 - {high-level task 6 — e.g., "Update documentation"}
-- Plus the single mandatory Final Review (security pass + final-state validation + skills reconciliation)
+- Plus the single mandatory Final Review (security pass + final-state validation + skills reconciliation + documentation reconciliation)
 
 ## 2. Read Before Starting
 

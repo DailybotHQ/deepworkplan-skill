@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-refine
 description: Refine a Deep Work Plan — safely edit scope, add, split or reorder tasks, promote a Lite plan to Full task files, recover a partial promotion, or explicitly migrate a legacy plan, always preserving completed evidence.
-version: "5.0.0"
+version: "5.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -26,8 +26,7 @@ on explicit request — migrate a legacy plan to the current standard).
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README §4, task-file anatomy §5 incl. the Touched Surface, mandatory elements) and [`../guide/structure.md`](../guide/structure.md) (§1–§2 naming and folders).
 - **Guide (conditional — read only when the trigger fires):** [`../guide/orchestrator.md`](../guide/orchestrator.md) / [`../guide/team-agents.md`](../guide/team-agents.md) only for plans that use them; [`../guide/execution.md`](../guide/execution.md) §6.1 when editing the Final Review (or a legacy plan's final tasks). Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Shared contract (conditional — read the named steps only when the trigger fires):** [`../create/SKILL.md`](../create/SKILL.md) Steps 3.5–3.7 and 4.4–4.5 when promoting a Lite plan, adding or splitting a task, completing a partial materialization, or migrating — the **one** contract for task anatomy, gate selection, the Final Review, the ledger, the write order and the plan-quality check (refine never has a second template); [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §5–§6 when the plan carries `state.json` (regeneration, evidence invalidation) or on `migrate` (the declared-migration line).
-- [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns for
-  professional rewriting.
+- **Conditional — read only when the trigger fires:** [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns for professional rewriting; read it when rewriting plan-level structure or authoring new plan sections — task-level edits and promotions need only the contracts named above.
 
 ## Parameter Support
 
@@ -200,9 +199,10 @@ when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
 3. **Reshape the ending.** If none of the three legacy final tasks has started,
    replace them with a single `{N}.task_final_review.md` (content per
    `../create/SKILL.md` Step 4.4 item 3, incl. the security pass, final-state
-   validation, skills reconciliation, completion and report offer). If the
+   validation, skills reconciliation, documentation reconciliation, completion
+   and report offer). If the
    Security Review already ran, keep it and replace only the two unstarted
-   closing tasks with the Final Review's remaining parts (b)–(d); the Final
+   closing tasks with the Final Review's remaining parts (b)–(e); the Final
    Review security pass (a) still runs the required local review over the
    accumulated change set. Record the decision in `PROGRESS.md`.
 4. **Add the new-shape elements** to unstarted tasks and to the plan: a Touched

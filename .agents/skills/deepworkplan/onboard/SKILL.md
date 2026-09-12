@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-onboard
 description: Make any repository AI-first — reason (never template) an adapted AGENTS.md, docs/, per-module docs and .agents/ kit from the real repo, discover and verify its full and scoped validation commands and source-to-test mapping, install the DeepWorkPlan skill, and, for a repository onboarded under an earlier version, perform a targeted, non-destructive, idempotent harness upgrade. Use when the developer wants to onboard or upgrade a repository for AI agents.
-version: "5.0.0"
+version: "5.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -51,8 +51,7 @@ work reliably without per-session human hand-holding.
   fallback and the orchestrator-hub note. See `presets/README.md` for the full
   index. Read the matching preset in Phase 1 and use it in Phases 3–6.
   **Presets are reasoning aids, not templates.**
-- **Guide (essential — read for this flow):** [`../guide/structure.md`](../guide/structure.md) (the `.dwp/` layout and naming you scaffold).
-- **Guide (conditional — read only when the trigger fires):** [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
+- **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2, §10 when Phase 7 scaffolds `.dwp/` beyond the paths `../shared/dwp-paths.md` names or Phase 3b authors the first plan; [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
 - [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins). No optional addon is required for a repository to use DWP.
 - [`templates/onboarding-plan.md`](templates/onboarding-plan.md) — the
@@ -96,7 +95,7 @@ When this flow finishes, the target repo contains:
    escalation paths and fallback, plus the unit-first posture — so every future
    plan can select its gates instead of guessing (`../spec/DOCUMENTATION_STANDARD.md` §3.4).
 7. **A recorded standard and a first usable outcome** — the provenance line
-   `DWP standard: 4.0.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
+   `DWP standard: 5.0.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
    a `.dwp/onboard/REPORT.md` that names the verified command and mapping, the
    installed skill identity and version, the active capability limits (what
    could not be verified and why), and the next useful action.
@@ -263,6 +262,14 @@ Detect, by reading actual files (not by habit):
 - **Folder layout & modules.** Find the source roots (`src/`, `app/`, `lib/`,
   `pkg/`, `cmd/`, `pages/`, `components/`) and the major sub-modules within them.
   These become the per-module docs in Phase 5.
+- **Feature areas (the feature tier).** Detect candidate **major feature or
+  capability areas** — bigger than one module — using the triggers of
+  `../spec/DOCUMENTATION_STANDARD.md` §4.1: a capability spanning 2+ major
+  modules; a sub-app or self-contained subsystem directory (e.g.
+  `app/{domain}/`, or a top-level sub-app); an area carrying its own contracts
+  (an API surface, events, schemas, protocols) that multiple consumers depend
+  on. Heuristics, not bureaucracy — judge per repo and record the trigger with
+  each candidate. These become the per-feature `docs/` of Phase 5.
 - **Test convention.** File naming (`*_test.py`, `*.spec.ts`, `*.test.ts`),
   framework (pytest / jest / vitest / playwright / go test), and where tests
   live (co-located vs `tests/`). If **no tests exist**, note that — Phase 4 will
@@ -288,8 +295,16 @@ validation commands (flagged CI/Docker-only where relevant) with their working
 directory, the **testing map** (layers, mapping rule, scoped patterns and the
 verified-run evidence or the unverified/proposed marking, affected-test tooling
 and blind spots, shared/core paths and full-run triggers, fallback), source
-roots + major modules, test convention, deployment shape, carried-forward
-conventions, and which preset you used.
+roots + major modules + feature areas (each candidate with its trigger),
+test convention, deployment shape, carried-forward conventions, and which
+preset you used.
+
+**Also record a machine-readable docs registry** at the end of RECON.md — one
+line per documented area (`module: <path>`, `feature-area: <path> (trigger: …)`)
+— so Phase 5 and the conformance checker (`../verify/conformance.sh`) read the
+same recorded judgment instead of re-guessing it. A feature area deliberately
+left without its `docs/` is recorded on the same line
+(`(no docs — <reason>)`) — a decision, not an oversight.
 
 **Also record a scale count** (the evidence the Phase 2b decision reads, so the
 inline-vs-plan choice is mechanical, not guessed):
@@ -382,9 +397,9 @@ developer break the tie.
      Phase 6), gated on "catalog matches disk";
    - one task to **install the skill + scaffold `.dwp/` and `tmp/`** (Phase 7);
    - the **Phase 8 self-check folded into the plan's single mandatory Final
-     Review** (security pass, final-state validation, skills reconciliation —
-     `../spec/DWP_SPECIFICATION.md` §6.1); skills decisions are task-local and
-     the Executive Report is optional.
+     Review** (security pass, final-state validation, skills reconciliation,
+     documentation reconciliation — `../spec/DWP_SPECIFICATION.md` §6.1);
+     skills decisions are task-local and the Executive Report is optional.
 
    Each task carries explicit **Acceptance Criteria** and a runnable
    **validation gate** (the repo's real lint / `md`-check / test).
@@ -429,7 +444,7 @@ context. It MUST serve three roles:
    (`full` / `scoped`). **Mark** any command that
    runs only in CI or only inside a container (e.g. "must run **inside** the
    Docker container"), and any scoped pattern that is proposed/unverified.
-4. **Provenance** — one line, `DWP standard: 4.0.0 (onboarded YYYY-MM-DD;
+4. **Provenance** — one line, `DWP standard: 5.0.0 (onboarded YYYY-MM-DD;
    skill x.y.z)` (on upgrade: `…; upgraded YYYY-MM-DD; skill x.y.z`), so a
    checker and a future agent can tell which standard the repository declares
    (`../spec/DOCUMENTATION_STANDARD.md` §3.5).
@@ -448,6 +463,18 @@ Never duplicate `AGENTS.md` content into `CLAUDE.md`.
 > **Existing-repo note:** if `AGENTS.md` already exists and is hand-written,
 > merge your index/commands/rules into it rather than overwriting; back up +
 > ask before any destructive change (Phase 0).
+
+**Budget — the lean index is enforced, not hoped for (§2.1.1).** The
+`AGENTS.md` you generate MUST stay within the 150–500-line budget. When the
+reasoned content would exceed it, move the detail into the focused `docs/`
+guide (or module/feature doc) that owns it and link it from the index — and
+the index MUST link every doc that received displaced content, so nothing
+silently disappears. Never drop an invariant an agent needs in order to act
+safely just to fit the budget; detail moves, it is not deleted. An existing
+handwritten `AGENTS.md` already over the budget is **never silently
+rewritten**: report the overweight with a concrete migration proposal (what
+moves where, which links get added) and apply it only with the developer's
+consent (Phase 0's non-destructive rule).
 
 ## Phase 4 — Generate `docs/`
 
@@ -554,6 +581,16 @@ its own `README.md`; surface the most significant ones in the root `AGENTS.md`
 index. (Reference `../spec/DOCUMENTATION_STANDARD.md` §4 for the per-module rule; which
 modules count as "major"/"complex" is reasoned per repo.)
 
+**Feature tier (§4.1).** For each feature area the RECON registry recorded as
+major, create its own `docs/` folder next to the area's code — architecture
+decisions, contracts, runbooks — entered via the area's `README.md`. Link the
+most significant entries from the READMEs of the modules the area spans and
+surface them in the root `AGENTS.md` index, exactly like per-module docs. An
+area recorded as major but deliberately left undocumented carries the recorded
+reason from RECON. The feature tier sits above, never instead of, the
+per-module tier: a module inside a feature area still gets its own
+`README.md`.
+
 ## Phase 6 — Generate `.agents/` + agent directory symlinks
 
 Create the canonical cross-agent config directory. **All content must be
@@ -622,6 +659,16 @@ and **stack-appropriate**, not generic boilerplate.
    `@latest`) — executing whatever a remote ref currently holds is an
    unverifiable dependency (no version, no checksum, no rollback; the shape
    Snyk W012 flags).
+
+   **Verify every skills-CLI install — mandatory.** Two CLI defects are
+   known from round-1 benchmark evidence: an `@tag` pin can be display-only,
+   and a parallel-mkdir race can report success while placing no content.
+   **Pre-create the target** `.agents/skills/deepworkplan/` before the call
+   (documented race workaround), then follow the install-verification
+   contract around every `skills add` call
+   (`../shared/install-verification.md`): verify what landed, retry once,
+   fall back to the byte-exact `git archive` install — never proceed
+   silently on a mismatched or empty install.
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
    create `.dwp/plans/` with a `README.md` placeholder,
    and add `.dwp/` to the repo's `.gitignore` (append the rule
@@ -650,6 +697,11 @@ already exists. When the install cannot run here (sandbox, offline) or the
 developer declines, record the gap in the report and, for a decline, as a
 declared exception in `AGENTS.md` — never silently. A **harness upgrade**
 (Phase 0) reconciles the same two pieces when missing.
+
+The Phase 7 install-verification contract applies verbatim to the reviewer's
+pinned `skills add` call (`.agents/skills/ai-diff-reviewer/`): pre-create,
+verify the installed `version:` equals the pinned tag, retry once, byte-exact
+fallback.
 
 ## Phase 7b — Offer optional addons (trigger only)
 
@@ -680,7 +732,12 @@ done.
 
 1. **`AGENTS.md` exists** and contains a Quick Commands block whose commands are
    **real and runnable** (not placeholders). Spot-check that referenced commands
-   exist in the manifest/Makefile/scripts.
+   exist in the manifest/Makefile/scripts. It is a **lean index within the
+   150–500-line budget** (`../spec/DOCUMENTATION_STANDARD.md` §2.1.1) — if it
+   ran past the budget, move the detail into the owning doc and link it, never
+   drop an invariant — and **every relative `.md` link in its index resolves**
+   to a file that exists (§2.2 links no file that does not exist); fix any
+   that do not.
 2. **`CLAUDE.md` resolves to `AGENTS.md`** — the symlink points at `AGENTS.md`,
    or `CLAUDE.md` contains exactly `@AGENTS.md`.
 3. **`docs/` has the standard categories**, each non-empty and repo-specific
@@ -696,7 +753,9 @@ done.
    kept apart. `AGENTS.md` carries the `DWP standard:` provenance line and
    labeled scoped variants in Quick Commands.
 4. **Every major source module has a `README.md`** (and complex modules have a
-   `docs/`).
+   `docs/`) — and **every feature area the RECON registry recorded as major has
+   its feature `docs/` entered via a `README.md`**, or its recorded no-docs
+   reason on the registry line (§4.1).
 5. **`.agents/`** has `agents/`, `commands/`, `skills/`, `docs/`, `settings.json`
    and `.claude → .agents` + `.cursor → .agents` symlinks (or documented fallback);
    `skills_agents_catalog.md` and `COMMANDS_REFERENCE.md` **match** what was
