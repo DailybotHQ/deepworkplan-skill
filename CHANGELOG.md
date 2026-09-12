@@ -9,6 +9,19 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.1.0] — 2026-09-12
+
+### Changes
+
+- Merge pull request #42 from DailybotHQ/feat/v5-phase2
+- chore(dogfood): sync the vendored deepworkplan mirror to feat/v5-phase2
+- feat(skill): keep plan state JSON, ship the targeted update-state helper
+- docs(evaluation): record the released v5.0.0 tree measurement
+- fix(create): Lite anatomy and Step 4.5 checklist require per-task Context
+- feat(onboard): ship dwp-verify and dwp-upgrade delegators, seven-command kit
+- fix(tests): derive the pack-version pin from the router frontmatter
+
+
 ## [5.0.0] — 2026-09-12
 
 ### Changes

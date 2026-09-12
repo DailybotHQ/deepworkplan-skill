@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-refine
 description: Refine a Deep Work Plan — safely edit scope, add, split or reorder tasks, promote a Lite plan to Full task files, recover a partial promotion, or explicitly migrate a legacy plan, always preserving completed evidence.
-version: "5.0.0"
+version: "5.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
