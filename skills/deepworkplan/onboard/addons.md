@@ -42,10 +42,15 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
    the gap until the reviewer is installed. Run the addon's validation step
    (SPEC §9).
 
-## Phase 7b — Offer optional addons (opt-in)
+## Phase 7b — Offer optional addons (trigger only)
 
 After Phase 7a, **enumerate** the remaining addons under `../addons/` and offer
-each as an **explicit opt-in** step. Optional addons are **never required** — a
+each one. Three are **explicit opt-ins** — signal-gated, installed only on the
+developer's explicit acceptance. The fourth, **dependency upgrade**, is
+**near-default**: offered for every repo with declared dependencies, with its
+inert `/lib-upgrade` delegator installed under the Phase 0 onboarding consent
+**unless explicitly declined** (an install runs no upgrade). Optional addons
+are **never required** — a
 repo is fully conformant with zero optional addons. In **trust mode**, you MAY
 recommend the obviously-applicable ones, but still surface them.
 

@@ -200,8 +200,10 @@ a declined command leaves a baseline-conformant repo.
   kind (pure library, headless service, infra-only) — applying it there is a defect.
 - **Offer mandatorily, accept explicitly.** A detected interface surface makes
   the evaluation and offer mandatory in both modes; installation still needs
-  explicit acceptance — no profile is auto-applied, even in trust mode. The
-  local AI Diff Reviewer is the only automatically installed baseline addon.
+  explicit acceptance — no profile is auto-applied, even in trust mode. (The
+  required local AI Diff Reviewer installs as baseline; the near-default
+  dependency-upgrade delegator installs inert under the onboarding consent
+  unless declined — neither applies a design profile.)
 - **Reason about the source.** Document the repo's real values; never paste a
   brand file or another product's conventions.
 - **One file.** Profiles stack inside `DESIGN.md`; never create per-surface siblings.
