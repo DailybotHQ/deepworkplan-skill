@@ -20,6 +20,7 @@ route, so there is a single source of truth.
 | `/dwp-resume` | [commands/dwp-resume.md](../commands/dwp-resume.md) | `resume` sub-skill |
 | `/dwp-status` | [commands/dwp-status.md](../commands/dwp-status.md) | `status` sub-skill |
 | `/dwp-verify` | [commands/dwp-verify.md](../commands/dwp-verify.md) | `verify` sub-skill |
+| `/dwp-upgrade` | [commands/dwp-upgrade.md](../commands/dwp-upgrade.md) | `upgrade` sub-skill (check for a newer skill; install + re-onboard only on explicit acceptance) |
 | `/skill-create` | [commands/skill-create.md](../commands/skill-create.md) | `author` sub-skill (create a skill) |
 | `/agent-create` | [commands/agent-create.md](../commands/agent-create.md) | `author` sub-skill (create an agent) |
 

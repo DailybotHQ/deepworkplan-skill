@@ -37,6 +37,27 @@ under an earlier lifecycle, of that plan's separate "Skills & Agents Discovery" 
 | A persistent role with its own model tier / tools | Agent |
 | A shortcut to invoke a skill or agent | Command |
 
+## Frontmatter fields (cross-agent)
+
+The tool-agnostic core every harness reads: **`name`** (kebab-case, English, unique) and
+**`description`** (one line, starts with a verb — harnesses use it for relevance scoring).
+Everything else is a **per-harness opt-in**: keep only the keys the host repo's neighboring
+files already use, and never require a key the repo does not use.
+
+| Field | Applies to | Meaning |
+|-------|-----------|---------|
+| `name` | skill / agent | kebab-case identifier; the registry/harness address |
+| `description` | skill / agent | one line, starts with a verb; used for relevance scoring |
+| `version` | skill | quoted SemVer (`"1.0.0"`) — quote it so YAML keeps it a string |
+| `documentation_url` | skill | canonical docs URL; replaces the legacy `homepage` (some harnesses treat `homepage` as a re-fetch source — never use it) |
+| `user-invocable` | skill | `true` makes `/<name>` a slash command where the harness supports it |
+| `allowed-tools` | skill | tool allowlist (e.g. `Bash, Read, Grep, Glob, Edit, Write`) where the harness enforces one |
+| `model` | agent | abstract tier (`light` / `standard` / `heavy`) — never a vendor model ID (see "Model tiers") |
+| `tools` | agent | the agent's tool list; keep it as narrow as the role allows |
+
+Do not invent harness features: if a field is not already used in this repo (or documented by the
+target harness), leave it out rather than guessing a key name.
+
 ---
 
 ## Step 0 — Detect the repo layout (do NOT assume)
@@ -70,8 +91,9 @@ family, restructuring the kit) are proposed to the developer before creation.
 
 **It MUST NOT:** edit files outside `.agents/` (a skill's *content* may
 document anything; this sub-skill writes only kit files), weaken the frontmatter
-conventions (`name`, quoted `version:`, `documentation_url`, kebab-case), delete
-an existing skill/agent/command without explicit approval, or commit/push.
+conventions (`name`, quoted `version:`, `documentation_url`, `user-invocable`,
+`allowed-tools`, kebab-case), delete an existing skill/agent/command without
+explicit approval, or commit/push.
 
 ---
 
@@ -106,8 +128,9 @@ Pick the flow that matches the developer's intent.
 ### C. Create a command (thin delegator)
 
 1. Confirm the target skill or agent exists.
-2. Add `<commands-dir>/<cmd>.md` as a ~20-line delegator: read the target skill/agent fresh and follow
-   it, passing along args. Do NOT embed logic — logic lives in the skill/agent so updates propagate.
+2. Scaffold from `templates/COMMAND_TEMPLATE.md` into `<commands-dir>/<cmd>.md` — a ~20-line
+   delegator: read the target skill/agent fresh and follow it, passing along args. Do NOT embed
+   logic — logic lives in the skill/agent so updates propagate.
 3. Reference the new command in the catalog / commands reference.
 
 ### D. Update an existing skill / agent / command
@@ -176,9 +199,11 @@ always match what is on disk.
 
 - `templates/SKILL_TEMPLATE.md` — skill scaffold.
 - `templates/AGENT_TEMPLATE.md` — agent scaffold.
+- `templates/COMMAND_TEMPLATE.md` — thin-delegator command scaffold.
 
 Reference them by these relative paths. Adapt the frontmatter to the host repo's local convention
-(some repos add `version`, `documentation_url`, or `user-invocable`; match what neighboring files use).
+(keep only the per-harness opt-in keys neighboring files already use — `version`,
+`documentation_url`, `user-invocable`, `allowed-tools`; see "Frontmatter fields").
 
 ---
 

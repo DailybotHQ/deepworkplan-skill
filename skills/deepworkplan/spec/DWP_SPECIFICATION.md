@@ -209,7 +209,7 @@ A conformant plan directory **MUST** contain:
 ├── README.md                              ← overview, task list, rules, status (source of truth)
 ├── PROMPTS.md                             ← copy-paste execute / resume / status prompts
 ├── PROGRESS.md                            ← running narrative, one entry per completed task
-├── analysis_results/                      ← task-produced artifacts (MAY start empty)
+├── analysis_results/                      ← task-produced artifacts (MAY start empty; always inside the plan's own folder — never the repository root)
 │   ├── SKILLS_CANDIDATES.md               ← task-local skills decisions ledger (§6.2)
 │   ├── SECURITY_REVIEW.md                 ← written by the Final Review (§6.1)
 │   └── EXECUTIVE_REPORT.md                ← OPTIONAL, on request after completion (§6.3)

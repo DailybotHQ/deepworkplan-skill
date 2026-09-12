@@ -29,7 +29,8 @@ Plus the **installed DeepWorkPlan pack**, symlinked at
 [`.agents/skills/deepworkplan`](../skills/deepworkplan) →
 `../../skills/deepworkplan` (the repo's own shipped artifact, dogfooded). It
 provides the router and sub-skills `create`, `execute`, `refine`, `resume`,
-`status`, `verify`, `onboard`, `author`, plus addons under `addons/`. The
+`status`, `verify`, `onboard`, `author`, `upgrade`, plus addons under
+`addons/`. The
 `/dwp-*`, `/skill-create`, and `/agent-create` commands route here.
 
 ### Vendored third-party skills (dogfood, not repo-dev)
@@ -41,12 +42,12 @@ the catalog has no orphans; they are **not** repo-development skills.
 | Skill | Upstream | Purpose |
 |-------|----------|---------|
 | [dailybot](../skills/dailybot/SKILL.md) | [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill) | Team standup reporting for plan lifecycle events (Dailybot addon) |
-| [ai-diff-reviewer](../skills/ai-diff-reviewer/SKILL.md) | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | Local + CI PR review (AI Diff Reviewer addon); byte-identical `prompt.md` with the Action |
+| [ai-diff-reviewer](../skills/ai-diff-reviewer/SKILL.md) | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | Required local review (AI Diff Reviewer addon) inside every DWP Final Review's security pass, via `.review/extension.md`; auto-refreshed on release. The CI surface (Flow B, `pr-review.yml`) is an explicit opt-in this repository does not ship |
 
 ## Commands (`.agents/commands/`)
 
 See [COMMANDS_REFERENCE.md](COMMANDS_REFERENCE.md) for the full list and
-procedure links: the eight `deepworkplan` delegators (`dwp-create`,
+procedure links: the nine `deepworkplan` delegators (`dwp-create`,
 `dwp-execute`, `dwp-refine`, `dwp-resume`, `dwp-status`, `dwp-verify`,
-`skill-create`, `agent-create`) and the three repo-dev commands
+`dwp-upgrade`, `skill-create`, `agent-create`) and the three repo-dev commands
 (`validate-frontmatter`, `run-tests`, `commit`).

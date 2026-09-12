@@ -1,6 +1,11 @@
 ---
 name: <skill-name>
 description: <one line — when to use this skill; start with a verb>
+# Per-harness opt-ins — keep only the keys the host repo's skills already use:
+# version: "1.0.0"
+# documentation_url: <canonical docs URL for this skill>
+# user-invocable: true
+# allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 ---
 
 # <Skill Title>

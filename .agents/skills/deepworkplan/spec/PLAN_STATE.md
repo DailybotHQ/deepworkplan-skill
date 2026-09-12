@@ -221,7 +221,8 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
 - Each run of a validation command (`DWP_SPECIFICATION.md` §5.1) **SHOULD** be
   recorded as a gate record: `command`, `passes` (boolean), `exit_code`,
   `last_run`, and a short human-readable `evidence` string (≤ 500 characters:
-  a summary line or a path under `analysis_results/`, **never** full command
+  a summary line or a path under the plan's own `analysis_results/` — inside
+  the plan folder, never the repository root — **never** full command
   output). `passes` is a boolean: a check that could not run is recorded with
   `passes: false` and an `evidence` string that says why (missing tool,
   unavailable environment) — never as a pass and never as `null`.
