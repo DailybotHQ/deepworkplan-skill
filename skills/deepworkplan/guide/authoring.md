@@ -139,6 +139,7 @@ Reports and artifacts generated during plan execution are stored in `analysis_re
 
 Each task file is a **self-contained deep-work prompt** for a single task.
 The agent must be able to read **only this file**, understand exactly what to do, and execute it to completion.
+Every task carries **one objective** (`spec/DWP_SPECIFICATION.md` §6.4): it may perform several steps that serve that objective, and must never bundle several objectives — prefer N one-objective tasks over fewer multi-objective ones.
 
 ### 5.1. Required and optional sections
 

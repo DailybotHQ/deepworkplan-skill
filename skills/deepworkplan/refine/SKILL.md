@@ -130,7 +130,8 @@ Update README / View task details / Done.
   acceptance criteria / Touched Surface / validation / everything. Final tasks are
   editable. Then run **3.7 Invalidate affected evidence** and **3.6 Synchronize**.
 - **Split task (unfinished, oversized):** split task `k` into two or more tasks
-  `k, k+1, …` such that **every requirement, acceptance criterion, constraint and
+  `k, k+1, …` — one objective per child (`../spec/DWP_SPECIFICATION.md` §6.4) —
+  such that **every requirement, acceptance criterion, constraint and
   reference of the original lands in exactly one child** — nothing is dropped or
   summarized. Distribute the original's Touched Surface, Read Before Starting
   pointers and Outputs to the child that owns them; a child that consumes another

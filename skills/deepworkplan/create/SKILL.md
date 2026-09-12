@@ -238,14 +238,18 @@ reviewed before execution (guided) or handed off directly (trust).
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
   task** and an **observable acceptance criterion**.
-- **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** Each task is
-  one coherent outcome with a bounded write surface, concrete inputs and outputs,
-  and resumable sub-steps. Split when distinct outcomes carry different failure
-  modes or independent evidence that would otherwise hide behind one checkbox;
-  keep tightly coupled edits together; keep resumable sub-steps inside a larger
-  cohesive task rather than exploding it. There is **no** task-count quota and
-  no ritual of a separate task per minor edit. Preserve full detail — this
-  analysis never shortens a requirement to save space.
+- **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** One task,
+  one objective: a task may perform several steps that serve its single
+  granular objective, and must never bundle several objectives — prefer N
+  tasks with one objective each over fewer tasks carrying several. Each task
+  is one coherent outcome with a bounded write surface, concrete inputs and
+  outputs, and resumable sub-steps. Split when a task serves several
+  objectives with different failure modes, evidence or authorization that
+  would otherwise hide behind one checkbox; keep tightly coupled edits that
+  serve the same objective together. There is **no** task-count quota, no
+  ritual of a separate task per minor edit, and no padding to inflate the
+  count. Preserve full detail — this analysis never shortens a requirement
+  to save space.
 - **3.4 Dependency order and prerequisites.** Order tasks so every prerequisite
   artifact (a decision, a file, a contract) exists before the task that consumes
   it; record, per task, its owned surface, prerequisite artifacts, and expected

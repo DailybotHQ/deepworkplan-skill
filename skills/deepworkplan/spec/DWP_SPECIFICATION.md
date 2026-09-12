@@ -688,15 +688,19 @@ security findings), and next steps.
 
 ### 6.4. Task Size and Adaptive Execution
 
-- **Granularity.** A task is one coherent outcome with a bounded write surface,
-  concrete inputs and outputs, validation relevant to what it changes (§5.0.2),
-  and partial steps that can be checkpointed and resumed. The `create` flow
-  **SHOULD** split work when distinct outcomes carry different failure modes or
-  independent evidence that would otherwise hide behind one checkbox, and
-  **SHOULD** keep tightly coupled edits together; a larger cohesive task **MAY**
-  keep resumable sub-steps. There is **no** task-count quota, and the flow
-  **MUST NOT** multiply approvals, commits, or reports by splitting minor edits
-  into separate tasks.
+- **Granularity.** One task, one objective. A task may perform several steps
+  that serve its single granular objective; it **MUST NOT** bundle several
+  objectives — prefer N tasks with one objective each over fewer tasks carrying
+  several. A task keeps a bounded write surface, concrete inputs and outputs,
+  validation relevant to what it changes (§5.0.2), and partial steps that can
+  be checkpointed and resumed. The `create` flow **SHOULD** split when a task
+  serves several objectives with different failure modes, evidence or
+  authorization that would otherwise hide behind one checkbox, and **SHOULD**
+  keep tightly coupled edits that serve the same objective together; a larger
+  cohesive task **MAY** keep resumable sub-steps. There is **no** task-count
+  quota and no quota of single actions — the unit is the objective, not the
+  edit — and the flow **MUST NOT** multiply approvals, commits, or reports by
+  padding: never split to inflate the count, never merge to shrink it.
 - **Adaptive execution within authorization.** Once a plan is approved, the agent
   **SHOULD** proceed from a passing gate to the next task without asking for
   confirmation, **SHOULD** attempt repairs within the task's authorized scope
