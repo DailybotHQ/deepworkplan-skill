@@ -52,7 +52,7 @@ records its Phase 7a status). Offer the four optional ones independently:
 | **Devcontainer support** | [`../addons/devcontainer/`](../addons/devcontainer/SKILL.md) | the repo benefits from a reproducible isolated dev container (most repos with Docker/services). |
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | the repo has a lockfile + a dependency-heavy stack and wants safe, batched, validated upgrades — recommend only when a lockfile is present; **never auto-install for everyone**. |
-| **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **default-on when detected** — in trust mode **apply** it (generate `DESIGN.md`), in guided mode **strongly recommend** and ask; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended when detected, always asked, never auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
+| **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: when any surface is detected — even an ambiguous one — the evaluation and offer are **mandatory, not skippable**, with the detection rationale recorded. **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **strongly recommended**; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended**. Every profile **requires explicit acceptance even in trust mode — none is auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
 | **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | **not offered here — installed in Phase 7a** (required local review, baseline since 2.3.0). In Phase 7b only confirm the Flow B (CI Action) opt-in decision if it was left open; never install the CI surface unrequested. |
 
 The first addon is **devcontainer support**
@@ -126,14 +126,14 @@ ink, lipgloss, ratatui — **plus** a deliberate rendering layer such as a
 `display.*`/`ui.*` helper module with semantic print helpers; a bare argument
 parser with raw prints does NOT qualify); and **conversational** (a chat-platform
 SDK — Slack, Discord, Teams, … — a message-composition layer, or documented
-outbound-message voice rules). When **visual-ui** is detected, do not merely list
-the addon: in **trust mode apply it automatically** (generate `DESIGN.md`,
-developer may still decline), and in **guided mode present it as a strong
-recommendation** and ask. When **cli-output** or **conversational** is detected,
-**recommend it and ask in both modes — never auto-apply** those profiles. When
-**no** profile is detected, **do not offer the addon** (a repo with no interface
-surface must never get a `DESIGN.md`). Declining always leaves a
-baseline-conformant repo. If accepted (or auto-applied): read that addon's
+outbound-message voice rules). Detection makes the evaluation and offer
+**mandatory** — recommend detected profiles, strongly for visual UI, and
+record the detection rationale with the offer — but apply only after
+**explicit acceptance in either mode**. Prior acceptance counts; an explicit
+decline is respected for that run; trust mode alone does not authorize
+optional addons. When **no** profile
+is detected, **do not offer the addon**. Declining leaves a baseline-conformant
+repo. If accepted: read that addon's
 `SKILL.md` and run its flow — locate the repo's **real** design source per
 accepted profile, **reason out** that profile's canonical sections of `DESIGN.md`
 (visual-ui: colors & roles incl. dark mode, typography, layout & spacing,

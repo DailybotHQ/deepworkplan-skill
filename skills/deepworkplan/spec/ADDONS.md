@@ -219,11 +219,13 @@ form**; only its CI surface is optional.
   copying a brand file — documents each accepted profile's canonical sections,
   checks per-profile integrity (**WCAG AA** contrast; color never the sole carrier
   of meaning; plain-text fallbacks; token references resolve), and reconciles an
-  existing `DESIGN.md` instead of clobbering it. Profile strength differs (addon
-  SPEC §3.5): **visual-ui** is **default-on when detected** — the `onboard` flow
-  **applies** it in trust mode and **strongly recommends** it in guided mode —
-  while **cli-output** and **conversational** are **recommended when detected and
-  always asked about, never auto-applied**. When no interface surface of any kind
+  existing `DESIGN.md` instead of clobbering it. A detected interface surface
+  makes the evaluation and offer **mandatory** — never skipped, with a clear
+  recommendation and the recorded detection rationale (even for an ambiguous
+  signal) — while every detected profile still requires **explicit acceptance
+  in both guided and trust modes** (addon SPEC §3.5). Visual UI is strongly
+  recommended; CLI and conversational profiles are recommended. No
+  design-system profile is auto-applied. When no interface surface of any kind
   is present (pure library, headless service, infra-only) the addon is **not**
   offered. It remains **never required** — a repo with zero optional addons is fully conformant.
 - **Distinct from per-feature design docs:** this addon provides a **repo-level,
