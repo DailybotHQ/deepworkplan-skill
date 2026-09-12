@@ -45,7 +45,10 @@ up_has() {
 }
 
 @test "no test pins a literal pack version (the stamp owns the number)" {
-    run grep -rn 'version: "[0-9]' "$REPO_ROOT/tests"
+    # The pattern is assembled at runtime so this test file itself cannot
+    # contain (and therefore cannot match) the forbidden literal.
+    pat="$(printf 'version: %s[0-9' '"')"
+    run grep -rn -- "$pat" "$REPO_ROOT/tests"
     [ "$status" -ne 0 ]
 }
 
