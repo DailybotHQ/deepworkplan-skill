@@ -10,7 +10,7 @@ description: Check for a newer DeepWorkPlan skill and upgrade only with explicit
 ## What to do
 
 Route this invocation to the **upgrade** sub-skill of the installed `deepworkplan`
-skill and follow it: read `.agents/skills/deepworkplan/upgrade/SKILL.md` and execute
+skill and follow it: read `<skill-path>/deepworkplan/upgrade/SKILL.md` and execute
 its flow. The check phase is **read-only**; nothing installs without your explicit
 acceptance, and `.dwp/` plan history is never migrated by an upgrade.
 

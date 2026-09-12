@@ -45,8 +45,8 @@ setup() {
     [ -f "$AGENTS_DIR/README.md" ]
 }
 
-@test "the six dwp-* delegators plus skill-create/agent-create exist" {
-    for c in dwp-create dwp-execute dwp-refine dwp-resume dwp-status dwp-verify skill-create agent-create; do
+@test "the seven dwp-* delegators plus skill-create/agent-create exist" {
+    for c in dwp-create dwp-execute dwp-refine dwp-resume dwp-status dwp-verify dwp-upgrade skill-create agent-create; do
         [ -f "$AGENTS_DIR/commands/$c.md" ]
     done
 }
