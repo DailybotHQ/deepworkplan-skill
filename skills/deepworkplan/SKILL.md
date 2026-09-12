@@ -1,6 +1,6 @@
 ---
 name: deepworkplan
-description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
+description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, upgrade, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
 version: "4.0.3"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -52,17 +52,21 @@ plain install). Before routing anywhere else:
 
 **If the repository is already AI-first but its harness predates this skill** —
 `AGENTS.md` / `.agents/` exist, yet there is no `DWP standard:` provenance line,
-the provenance line is older than the standard shipped here, or
+the provenance line is from a non-current series (older than the 4.x this skill
+implements, or a 2.x line while upgrading), or
 `docs/TESTING_GUIDE.md` lacks the scoped-invocation and mapping content the
-standard requires — **offer the targeted harness upgrade** before routing:
-reinstalling the skill is the whole upgrade path, so no separate installer
-exists. Say in one line what is out of date, then run
+standard requires — **offer the targeted harness upgrade** before routing.
+Say in one line what is out of date, then run
 [`onboard/SKILL.md`](onboard/SKILL.md) in `upgrade` mode (Phase 0), which
 reconciles **only** the missing or outdated pieces, leaves every handwritten
 section, custom skill and in-flight plan untouched, and changes nothing on a
-second run. An in-flight plan keeps its recorded lifecycle; migrating one is a
-separate, explicit `refine migrate`. If the developer declines, route by intent
-as normal.
+second run. When the developer instead wants the **skill itself** current
+(newer published version, or a fresh init pass end-to-end), route to
+[`upgrade/SKILL.md`](upgrade/SKILL.md): it checks the latest published tag,
+downloads only on explicit acceptance, and re-runs onboarding as a fresh init —
+`.dwp/` plans are never migrated. An in-flight plan keeps its recorded
+lifecycle; migrating one is a separate, explicit `refine migrate`. If the
+developer declines, route by intent as normal.
 
 **If the repository is already AI-first and current**, skip onboarding and route
 by intent **silently** — do not announce the detection or the routing decision
@@ -116,6 +120,7 @@ full step-by-step flow.
 | "plan status", "what's left", "/dwp-status" | **Status** → read [`status/SKILL.md`](status/SKILL.md) |
 | "verify", "is this repo AI-first?", "check conformance", "/dwp-verify" | **Verify** → read [`verify/SKILL.md`](verify/SKILL.md) |
 | "make this repo AI-first", "onboard this repo", "set up AGENTS.md + docs + .agents" | **Onboard** → read [`onboard/SKILL.md`](onboard/SKILL.md) |
+| "upgrade DWP", "update the skill", "is there a newer version?", "/dwp-upgrade" | **Upgrade** → read [`upgrade/SKILL.md`](upgrade/SKILL.md) |
 | "create/update a skill or agent", "evolve the kit", "/skill-create", "/agent-create" | **Author** → read [`author/SKILL.md`](author/SKILL.md) |
 
 If the intent is ambiguous between planning and managing existing work, ask the
