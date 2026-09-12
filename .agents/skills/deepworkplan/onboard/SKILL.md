@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-onboard
 description: Make any repository AI-first — reason (never template) an adapted AGENTS.md, docs/, per-module docs and .agents/ kit from the real repo, discover and verify its full and scoped validation commands and source-to-test mapping, install the DeepWorkPlan skill, and, for a repository onboarded under an earlier version, perform a targeted, non-destructive, idempotent harness upgrade. Use when the developer wants to onboard or upgrade a repository for AI agents.
-version: "4.0.3"
+version: "5.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -565,8 +565,9 @@ and **stack-appropriate**, not generic boilerplate.
   `security-auditor`, plus any **stack-specific** role the preset suggests
   (e.g. a Django `migration-author`, a Vue `component-author`). Each persona
   must be described well enough that a non-Claude agent can read it.
-- **`.agents/commands/`** — the six short DWP commands (`dwp-create`,
-  `dwp-execute`, `dwp-refine`, `dwp-resume`, `dwp-status`, `dwp-verify`) plus stack-relevant
+- **`.agents/commands/`** — the seven short DWP commands (`dwp-create`,
+  `dwp-execute`, `dwp-refine`, `dwp-resume`, `dwp-status`, `dwp-verify`,
+  `dwp-upgrade`) plus stack-relevant
   ones (`code-review`, `pr`, `commit`, `branch`). **The `dwp-*` commands MUST be
   thin delegators, NOT copies of the flow.** Each is a short file (frontmatter
   `description:` + a body) that routes the invocation to the matching sub-skill
@@ -598,6 +599,9 @@ and **stack-appropriate**, not generic boilerplate.
 > **Existing-repo note:** if `.agents/` (or per-tool `.claude/` / `.cursor/`)
 > config already exists, reconcile into `.agents/` and add the `.claude` and
 > `.cursor` symlinks only if absent; never delete existing personas/commands without asking.
+> A tool-created `.claude/` / `.cursor/` directory whose only content is symlinks
+> into `.agents/` may be converted to the canonical root symlink outright — that
+> is a zero-loss reconciliation, not a deletion.
 > On a **harness upgrade** (Phase 0), refresh the `dwp-*`, `skill-create` and
 > `agent-create` delegators from `command-templates/` (they are thin and owned
 > by the skill), leave every other command, agent and skill as-is, and update
@@ -696,9 +700,9 @@ done.
 5. **`.agents/`** has `agents/`, `commands/`, `skills/`, `docs/`, `settings.json`
    and `.claude → .agents` + `.cursor → .agents` symlinks (or documented fallback);
    `skills_agents_catalog.md` and `COMMANDS_REFERENCE.md` **match** what was
-   actually created (no phantom entries). **The six `dwp-*` commands exist** in
+   actually created (no phantom entries). **The seven `dwp-*` commands exist** in
    `.agents/commands/` (`dwp-create`, `dwp-execute`, `dwp-refine`, `dwp-resume`,
-   `dwp-status`, `dwp-verify`) and are thin delegators (no leftover `<skill-path>`
+   `dwp-status`, `dwp-verify`, `dwp-upgrade`) and are thin delegators (no leftover `<skill-path>`
    placeholder, no copied flow body).
 6. **DeepWorkPlan skill is discoverable** and `.dwp/` exists, is gitignored
    (`git check-ignore .dwp` confirms), and has `plans/`. **`tmp/`

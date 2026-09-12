@@ -115,7 +115,7 @@ deepworkplan-skill/
 └── skills/deepworkplan/                        ← THE INSTALLED ARTIFACT — only this ships
     ├── SKILL.md                                ← router (version source of truth)
     ├── spec/                                   ← the 5 RFC-2119 normative docs (the standard; ships)
-    ├── shared/                                 ← context.sh, dwp-paths.md, adaptation.md
+    ├── shared/                                 ← context.sh, dwp-paths.md, adaptation.md, troubleshooting.md, update-state.py
     ├── create/SKILL.md                         ← create a Deep Work Plan
     ├── execute/SKILL.md                        ← execute a plan task-by-task
     ├── refine/SKILL.md                         ← modify a plan / promote Lite to Full
@@ -292,7 +292,7 @@ Co-Authored-By: <agent name + version> <noreply@anthropic.com>
 
 **Scopes:** `skill` (general pack/router), `create` / `execute` / `refine` /
 `resume` / `status` / `onboard` (specific sub-skill), `addon` (an addon under
-`addons/`), `shared` (context.sh, dwp-paths.md, adaptation.md), `setup`
+`addons/`), `shared` (context.sh, dwp-paths.md, adaptation.md, update-state.py), `setup`
 (setup.sh), `ci` (.github/), `docs` (docs/, README, guide), `release`
 (versioning, CHANGELOG).
 

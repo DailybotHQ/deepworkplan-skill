@@ -305,6 +305,14 @@ Rules (strict):
    else, so a plan whose gates carry an invented field fails verification even
    though its work is done (`../spec/PLAN_STATE.md` §4.2).
 
+   Prefer the shipped updater for this close step — it applies exactly the
+   delta above (status, gates, outcome, commit, counts, checkpoint) atomically
+   and its output is closed-schema-valid where the input was:
+   `python3 ../shared/update-state.py <plan>/state.json --task N --status completed --commit <hash> --gate '<command>|<exit>|<evidence>' --worked '<one line>'`.
+   A whole-file rewrite of `state.json` remains the documented fallback when
+   scripting is genuinely unavailable; reconciliation from markdown (§5) is
+   always a whole-file regeneration.
+
 7. **Dailybot per-task report (only for individually significant tasks)** — after
    committing a task that is independently significant (feature, bug fix, major
    refactor), trigger the `dailybot` skill (e.g. "report this to Dailybot" or

@@ -154,3 +154,40 @@ python3 scripts/check-schema-contract.py
 
 Numbers may legitimately differ only if `skills/deepworkplan/` changed since
 `6847ea1`; the digest comparison above detects exactly that.
+
+## Released tree (v5.0.0 — `ab1337d`)
+
+The "final" baseline above is `6847ea1`, the hardening branch after its last
+`skills/deepworkplan/` change. The release then landed one more pack commit
+(`199ec1b`: author-sub-skill hardening, plan-local `analysis_results` contract —
+the latter edited `shared/dwp-paths.md`, which is in every flow's compulsory
+read set) plus the version stamp. For the released tag the numbers are:
+
+| Flow | final (`6847ea1`) | **released v5.0.0 (`ab1337d`)** | delta |
+|---|---:|---:|---:|
+| create | 99,573 | 100,012 | +439 |
+| execute | 83,615 | 84,128 | +513 |
+| resume | 78,315 | 78,754 | +439 |
+| onboard | 69,903 | 70,342 | +439 |
+
+Measured with the same method (git-archive export, committed script — md5
+`da7709ce…` unchanged at `ab1337d`); read-set composition is unchanged —
+growth is byte growth in already-read files. Digest of the released pack:
+
+```text
+git archive --format=tar ab1337d -- skills/deepworkplan | sha256sum
+ae8c1577cc6bb08c638464af06a8ea768b216618894a4fc45c22585239819f2b
+```
+
+Contract suite at the released tag: **258 tests, 257 passing** — the release
+stamp rewrote every `version:` frontmatter to `5.0.0` but no test literals,
+leaving one hardcoded `4.0.3` pin red (`tests/upgrade-subskill.bats` test 1;
+the stamp commit is `[skip ci]`, so CI did not surface it). Fixed on branch
+`feat/v5-phase2` by deriving the pin from the router's own frontmatter. That
+branch also adds the two missing command-kit templates and Lite-Context
+authoring fixes, touching `onboard/SKILL.md` and `create/SKILL.md` — the next
+release should cut a fresh row here rather than extrapolate.
+
+Recorded 2026-09-12 during the v5 phase-2 field validation (finding F1-1:
+the record previously stopped at `6847ea1` and called it "final" while the
+shipped tree differed).

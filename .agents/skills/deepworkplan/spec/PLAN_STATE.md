@@ -288,7 +288,12 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
   order: the task file's Completion & Log → the plan README checkboxes and status
   → `PROGRESS.md` → `state.json` (atomic replace). The markdown is therefore
   never behind the projection; a crash between steps leaves a state file that is
-  at worst *stale*, never *ahead* of the truth.
+  at worst *stale*, never *ahead* of the truth. For the `state.json` step a
+  targeted mutation **SHOULD** use the shipped updater
+  (`shared/update-state.py`, stdlib-only, atomic, idempotent modulo
+  timestamps) rather than re-emitting the whole file; whole-file regeneration
+  remains the path for creation, `refine` recounts, and markdown-wins
+  reconciliation.
 - **Interruption before or after the commit.** On resume the agent **MUST**
   inspect actual evidence before replaying anything: `git status` and `git log`
   (where git exists), the task log, the README checkbox, and `state.json`. Work
