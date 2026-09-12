@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
 description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
-version: "4.0.3"
+version: "5.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -387,7 +387,8 @@ One concise record here; machine state is derived from it, never duplicated.
 ## 7. Plan Status / Notes    → `Plan Status: 0/N completed`
 
 ## Task 1 {#task-1}
-**Goal** · **Touched Surface** (planned surface, risk class, test mapping,
+**Goal** · **Context** (what a fresh session needs to start this task alone) ·
+**Touched Surface** (planned surface, risk class, test mapping,
 selected gate and why) · **Acceptance Criteria** · **Validation** (a runnable
 command) · **Completion log** (status, skills disposition, gate record).
 
@@ -595,8 +596,8 @@ and the Final Review is always sequential.
 - Task IDs are contiguous `1..N`; each `{#task-N}` anchor occurs exactly once;
   every Task List link resolves to its anchor; the Final Review is task `N` and
   the only final task.
-- Every task record has a Goal, a Touched Surface, Acceptance Criteria, a
-  runnable Validation gate and a completion-log placeholder. No task was padded
+- Every task record has a Goal, a Context, a Touched Surface, Acceptance
+  Criteria, a runnable Validation gate and a completion-log placeholder. No task was padded
   in to reach a count.
 - `manifest.json` validates against the v2 manifest schema with
   `plan_format: "lite"`; `state.json` validates against the v2 state schema, its
