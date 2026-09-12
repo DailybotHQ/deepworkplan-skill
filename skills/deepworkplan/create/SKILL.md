@@ -270,20 +270,28 @@ reviewed before execution (guided) or handed off directly (trust).
   upgraded (`../spec/DOCUMENTATION_STANDARD.md` §3.5). Do **not** paste a generic
   full-suite command into every task: full validation of the **final state** is
   the Final Review's job (§5.1.3).
-- **3.6 Test and security discipline.** Bake the **test discipline**
-  (`../guide/authoring.md` §5.3) into every behavior-changing task: its
-  Acceptance Criteria require unit-first automated coverage for the new/changed
-  behavior (fast, isolated, observable behavior; integration at real seams; no
-  ratio or count quota), and its Validation runs the selected tests plus
-  lint/type-check/format. Where related work is substantial, prefer a dedicated
-  `N.task_add_tests_for_{feature}.md` task right after the implementation task.
-  Likewise, for any task that touches auth, input handling, secrets/config,
-  network surface, or dependencies, bake the **security discipline** into it
-  (`../guide/authoring.md` §5.4); where the security-sensitive work is
-  substantial, prefer a dedicated `N.task_security_hardening_{feature}.md` task
-  placed after the implementation tasks and **before** the comprehensive-tests
-  task, so findings are fixed before tests encode the behavior and become
-  regression test cases rather than rework.
+- **3.6 Test, security, and documentation discipline.** Bake the **test
+  discipline** (`../guide/authoring.md` §5.3) into every behavior-changing
+  task: its Acceptance Criteria require unit-first automated coverage for the
+  new/changed behavior (fast, isolated, observable behavior; integration at
+  real seams; no ratio or count quota), and its Validation runs the selected
+  tests plus lint/type-check/format. Where related work is substantial, prefer
+  a dedicated `N.task_add_tests_for_{feature}.md` task right after the
+  implementation task. Likewise, for any task that touches auth, input
+  handling, secrets/config, network surface, or dependencies, bake the
+  **security discipline** into it (`../guide/authoring.md` §5.4); where the
+  security-sensitive work is substantial, prefer a dedicated
+  `N.task_security_hardening_{feature}.md` task placed after the
+  implementation tasks and **before** the comprehensive-tests task, so
+  findings are fixed before tests encode the behavior and become regression
+  test cases rather than rework. Finally, bake the **documentation discipline
+  (boy-scout)** into every task that changes behavior, structure, commands,
+  configuration, or agent surface (`../guide/authoring.md` §5.5;
+  `../spec/DWP_SPECIFICATION.md` §6.6): its Touched Surface names the doc
+  files it keeps current and its Acceptance Criteria include their currency;
+  where the obliged documentation is itself substantial, prefer a dedicated
+  `N.task_document_{feature}.md` task placed with the implementation it
+  documents — never deferred past the Final Review's documentation sweep.
 - **3.7 Requirements → tasks → gates check.** Before leaving this step, confirm:
   every requirement from 3.2 has an owning task and an observable acceptance
   criterion; prerequisites are available in order; every task is cohesive,
@@ -388,9 +396,10 @@ One concise record here; machine state is derived from it, never duplicated.
 
 ## Task 1 {#task-1}
 **Goal** · **Context** (what a fresh session needs to start this task alone) ·
-**Touched Surface** (planned surface, risk class, test mapping,
-selected gate and why) · **Acceptance Criteria** · **Validation** (a runnable
-command) · **Completion log** (status, skills disposition, gate record).
+**Touched Surface** (planned surface, planned docs surface, risk class, test
+mapping, selected gate and why) · **Acceptance Criteria** · **Validation** (a
+runnable command) · **Completion log** (status, skills disposition,
+documentation decision, gate record).
 
 ## Task N: Final Review {#task-N}
 The same mandatory Final Review — security pass, final-state validation, skills
@@ -500,10 +509,13 @@ Create:
    validation step: *"Skills decision: record `none` / `update` / `create` /
    `defer` in the log; append any real candidate to
    `analysis_results/SKILLS_CANDIDATES.md` by stable ID `T{N}-{seq}`; do any
-   warranted in-scope authoring now"* (`../spec/DWP_SPECIFICATION.md` §6.2). The
-   Completion & Log template **MUST** carry a `Skills disposition:` line and a
-   `Gate record:` line (command, cwd, scope/reason, revision or fingerprint,
-   result, evidence path).
+   warranted in-scope authoring now"* (`../spec/DWP_SPECIFICATION.md` §6.2)
+   **and** *"Documentation decision: docs updated for the touched surface —
+   list, or `not applicable — <reason>`"*
+   (`../spec/DWP_SPECIFICATION.md` §6.6). The Completion & Log template
+   **MUST** carry a `Skills disposition:` line, a `Documentation decision:`
+   line, and a `Gate record:` line (command, cwd, scope/reason, revision or
+   fingerprint, result, evidence path).
 3. **The Final Review task** — `{N}.task_final_review.md`, **last**, the single
    mandatory final task (`../spec/DWP_SPECIFICATION.md` §6.1;
    `../guide/execution.md` §6.1). Its instructions, in order: **(a) security

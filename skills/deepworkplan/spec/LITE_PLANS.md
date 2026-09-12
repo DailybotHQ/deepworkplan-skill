@@ -10,7 +10,9 @@
 Each plan has one folder and immutable creation manifest. `lite` stores compact,
 executable task records in the README; `full` stores detailed task files. Lite is
 not a partial Full plan: it has stable task IDs, anchors, touched surface,
-acceptance criteria, gates, completion evidence and a Final Review.
+acceptance criteria, gates, completion evidence (skills disposition and
+documentation decision included — `DWP_SPECIFICATION.md` §6.2, §6.6) and a
+Final Review.
 
 Format, materialization, approval and execution are independent. Format is
 `lite` or `full`; materialization is `materializing`, `ready` or `promoting`;

@@ -190,7 +190,8 @@ Rules (strict):
 
 2. **For each task** — open `N.task_{title}.md`, read it fully, follow its
    instructions and Execution Checklist. Read its `Read Before Starting`
-   pointers and its Touched Surface (planned surface, risk class, selected gate).
+   pointers and its Touched Surface (planned surface, planned docs surface,
+   risk class, selected gate).
    Then implement. Before selecting or running gates, make the **skills decision**
    (`../spec/DWP_SPECIFICATION.md` §6.2): record `none` / `update <existing>` /
    `create <name>` / `defer — <reason, owner>`, checking the existing `.agents/`
@@ -198,6 +199,11 @@ Rules (strict):
    and catalog updates now, so the actual surface and its validation include
    them. Append real candidates to `analysis_results/SKILLS_CANDIDATES.md` by
    stable ID `T{N}-{seq}`; update an existing ID on resume (`none` needs no row).
+   In the same step, make the **documentation decision**
+   (`../spec/DWP_SPECIFICATION.md` §6.6): update, inside this task, the docs
+   the Touched Surface registers for what the task changes — or record
+   `not applicable — <reason>`; a doc named in the plan but left stale by
+   close is a reconciliation miss, never a follow-up.
 
 3. **Select and run the validation gate — from the actual surface.** After
    implementing, and before running anything:
@@ -284,10 +290,16 @@ Rules (strict):
      reveals additional warranted authoring, return to implementation and Step 3:
      reconcile the changed surface and rerun affected gates before closing.
      A gate from before that edit does not validate the new artifact.
+   - **Reconcile the documentation decision** the same way: every doc the
+     Touched Surface names is current with the actual diff — including files
+     the implementation touched that the plan did not name — or the log
+     records why not (`../spec/DWP_SPECIFICATION.md` §6.6). Stale docs do not
+     invalidate the code gate; they are recorded and swept by the Final
+     Review's documentation reconciliation.
    - **Complete the log**, then the projections, in this order
      (`../spec/PLAN_STATE.md` §5.1): the task's Completion & Log (status,
      timestamp, summary, files changed, gate records, skills disposition,
-     notes) → the README `[ ] → [x]` and `Plan Status` count → the `PROGRESS.md`
+     documentation decision, notes) → the README `[ ] → [x]` and `Plan Status` count → the `PROGRESS.md`
      entry (a short summary: outcome, decisions, values/paths — the full
      narrative stays in the task log).
 

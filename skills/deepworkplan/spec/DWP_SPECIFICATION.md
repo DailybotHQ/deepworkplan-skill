@@ -252,7 +252,7 @@ text **MAY** vary; the semantic content **MUST** be present and in this order.
 | 4 | **Goal** — 1–2 sentences, unambiguous and testable. | **MUST** |
 | 5 | **Touched Surface** — the change's footprint and the validation it implies (§5.0.2): planned paths/modules; after editing, the reconciled actual paths; affected consumers; risk class; the test mapping used; the selected gate and its reason. | **MUST** for any task that changes behavior (code, configuration, schemas, templates, fixtures, migrations, generated inputs, or agent instructions that alter behavior); **MAY** state `not applicable` with a reason for pure prose or research tasks |
 | 6 | **Instructions** — numbered, concrete steps, including an explicit **re-anchor** step (re-read the plan README §Goal at task start). Vague steps **MUST NOT** appear. | **MUST** |
-| 7 | **Acceptance Criteria** — a verifiable checkbox list; the task **MUST NOT** be marked complete until every box can honestly be checked. | **MUST** |
+| 7 | **Acceptance Criteria** — a verifiable checkbox list; the task **MUST NOT** be marked complete until every box can honestly be checked. A task that changes behavior, structure, commands, configuration, or agent surface **MUST** include the currency of the documentation that registers that surface among its criteria (§6.6). | **MUST** |
 | 8 | **Outputs** — table of files the task produces with paths (under `analysis_results/` or source). | **MUST** when the task produces artifacts |
 | 9 | **Validation** — the stack-specific commands that **MUST** pass before completion, selected per §5.1 from the Touched Surface; a task with no automated command **MUST** carry a specific manual checklist. | **MUST** |
 | 10 | **Execution Checklist** + **Completion & Log** — the procedural walk-through plus the post-task log the agent fills (status, timestamp, summary, outputs, validation results, notes). The log **MUST NOT** retain placeholder values after completion. | **MUST** |
@@ -742,6 +742,31 @@ invalid under it (rejected); legacy acceptance does not make this version's
 > optional and on-request with its content unchanged (§6.3); states task-size and
 > adaptive-execution rules (§6.4); and codifies compatibility (§6.5). Plans and
 > repositories from earlier versions remain conformant.
+
+### 6.6. Task-Local Documentation Decisions (boy-scout)
+
+The question "is the documentation that registers what this task touched
+still true?" **MUST** be answered inside the task that did the touching, while
+its diff is in context — documentation currency is decided task-locally,
+exactly like skills decisions (§6.2), and is **not** deferred to a final
+catch-up task.
+
+- Every task's Completion & Log **MUST** carry a **documentation decision**:
+  the list of doc files updated for the touched surface, or
+  `not applicable — <reason>` (pure-prose, research, or non-registered
+  surface tasks). `not applicable` in the log is sufficient; a task **MUST
+  NOT** be required to add a no-op entry anywhere else.
+- A task that changes behavior, structure, commands, configuration, or agent
+  surface **MUST** update, in that same task, the documentation that
+  registers the changed surface — the gate/command registry, structure docs,
+  module or feature docs, or the `AGENTS.md` index when a new top-level
+  surface appears (`DOCUMENTATION_STANDARD.md` §2;
+  `guide/authoring.md` §5.5) — and **MUST** name those files in its Touched
+  Surface (planned docs surface, §5.0.2).
+- Substantial documentation work **MAY** be its own task, placed with the
+  implementation it documents; it **MUST NOT** be deferred past the Final
+  Review, whose documentation reconciliation sweep (§6.1) audits — and
+  reports — what the per-task decisions left behind.
 
 ---
 
