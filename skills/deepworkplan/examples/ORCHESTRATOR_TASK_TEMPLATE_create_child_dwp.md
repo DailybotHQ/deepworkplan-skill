@@ -285,19 +285,19 @@ Update the orchestrator plan's README.md:
 
 ```bash
 # Verify child plan structure
-test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: README exists" || echo "FAIL"
-test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/PROMPTS.md && echo "PASS: PROMPTS exists" || echo "FAIL"
-test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/PROGRESS.md && echo "PASS: PROGRESS exists" || echo "FAIL"
-test -d repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/analysis_results && echo "PASS: analysis_results exists" || echo "FAIL"
+test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: README exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/PROMPTS.md && echo "PASS: PROMPTS exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/PROGRESS.md && echo "PASS: PROGRESS exists" || { echo "FAIL" >&2; exit 1; }
+test -d repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/analysis_results && echo "PASS: analysis_results exists" || { echo "FAIL" >&2; exit 1; }
 
 # Verify child plan uses target repo's conventions
-grep -q "{validation_command}" repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: Uses repo validation" || echo "FAIL"
+grep -q "{validation_command}" repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: Uses repo validation" || { echo "FAIL" >&2; exit 1; }
 
 # Verify parent plan updated
-grep -q "PLAN_{feature}_{repo_short}" .dwp/plans/PLAN_{parent_plan_name}/README.md && echo "PASS: Parent updated" || echo "FAIL"
+grep -q "PLAN_{feature}_{repo_short}" .dwp/plans/PLAN_{parent_plan_name}/README.md && echo "PASS: Parent updated" || { echo "FAIL" >&2; exit 1; }
 
 # Verify parent reference in child
-grep -q "PLAN_{parent_plan_name}" repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: Parent referenced" || echo "FAIL"
+grep -q "PLAN_{parent_plan_name}" repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: Parent referenced" || { echo "FAIL" >&2; exit 1; }
 ```
 
 ## 8. Execution Checklist
