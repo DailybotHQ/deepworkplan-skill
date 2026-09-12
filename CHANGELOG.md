@@ -9,6 +9,34 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.0.0] — 2026-09-12
+
+### Changes
+
+- Merge pull request #41 from DailybotHQ/fix/methodology-final-hardening
+- feat(skill): harden author sub-skill, plan-local analysis_results contract, setup.sh parity
+- chore(skill): refresh the dogfood copy to the hardened pack
+- docs(evaluation): add the final-hardening evaluation record
+- feat(upgrade): add the deepworkplan-upgrade sub-skill (/dwp-upgrade)
+- feat(skill)!: align the DWP standard with the product line (2.4.0 -> 4.0.0)
+- feat(verify): enforce the Context section the v4 spec already mandates
+- feat(guide): absorb corpus-proven long-plan machinery — optional Stage Gates and enriched Plan Variables
+- feat(create): every plan declares its execution-parallelism decision explicitly
+- fix(addon): one cross-addon consent matrix — no contradicting surface left
+- fix(addon): devcontainer entrypoint link_persist seeds volumes correctly — now regression-tested
+- fix(addon): close the stale addons/README.md mirror rows left by the design-system and reviewer policy tasks
+- feat(addon): dependency upgrade becomes near-default — offered for every repo with declared dependencies
+- feat(addon): design-system smart install - mandatory offer, acceptance-gated install
+- fix(addon): reviewer augmentation reviews the plan's explicit diff, not the tracking ref
+- fix(addon): finish the ai-diff-reviewer mirror audit across SKILL, SPEC and INTEGRATION
+- feat(skill): one-purpose-per-task decomposition rule across the methodology
+- fix(skill): one approval rule and promotion recovery across the lifecycle
+- fix(skill): pin mode-aware hub readiness and block insufficient legacy fallbacks
+- fix(skill): hub returns to its saved root and keeps child DWP_DIR isolated
+- fix(skill): orchestrator hand-off templates can no longer false-pass
+- fix(verify): stop false conformance without Python and accept bold-label fields
+
+
 ## [4.0.3] — 2026-09-11
 
 ### Changes

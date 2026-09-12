@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-dependency-upgrade
 description: DeepWorkPlan addon that safely upgrades a repo's dependencies — reasoning about the repo's ACTUAL package manager (npm/pnpm/yarn + ncu, pip/poetry/uv, cargo, go mod, bundler, composer, and more) rather than assuming npm — with a batched, validated, revertible workflow that detects the manager and manifests/lockfiles, classifies upgrades (patch/minor/major), upgrades in safe batches, runs the repo's real validation gate after each batch, reverts a failing batch, and summarizes. Near-default — offered for every repo with declared dependencies, and its delegator installs under the onboarding consent unless declined; upgrades themselves never run automatically, only as explicit, gated work. Never required for baseline conformance; reconciles with the repo's existing tooling. Use when the developer wants to bring dependencies up to date without breaking the build.
-version: "4.0.3"
+version: "5.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
