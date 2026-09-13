@@ -952,3 +952,22 @@ checking that no writer is active before removal. No helper commits, pushes,
 executes stored gate commands or silently repairs Markdown. Missing Python means
 UNVERIFIED, never completed. These checks enforce records and structure; manually
 judge acceptance, consumer coverage and the truth of the underlying evidence.
+
+### Evidence truth and amendments
+
+When scope or acceptance criteria change mid-plan, the change is recorded as an
+appended amendment — original criterion verbatim, observed fact, disposition,
+reason, authority, affected tasks, evidence invalidated and evidence preserved
+— never as a silent edit of history (`PLAN_STATE.md` "Evidence truth and
+amendments"). Work is named honestly: a **Completed investigation** is not the
+execution of the original criterion, an **Unexecuted scenario** contributes no
+passing evidence, a **Deferred requirement** moves with recorded authority, a
+**Failed gate** stays failing until the same acceptance intent passes, and only
+an **Achieved product outcome** completes a task as authored. Substituting an easier
+check is a revised criterion, not a repair. Machine-readable contradictions —
+passing records whose evidence admits non-execution, invalidated evidence
+relied on for closure, a completed task whose log says pending — are enforced
+by the writer and the read-only checker; contradictions of meaning between
+prose documents remain a human review obligation. A user may accept a bounded
+exception explicitly; unattended approval never abandards a core objective,
+and an unmeetable mandatory criterion is a blocker, not completed work.

@@ -67,3 +67,13 @@ exit code, counts and recoverable evidence. Reuse only equivalent inputs.
 `bats tests/completion-transaction.bats` runs independent Lite/Full publication
 fixtures and before/after-publication fault injection. Run full Bats for changes
 to the shared validator, writer or finalizer. Required tests must not be skipped.
+
+## Scope and evidence truth
+
+`bats tests/scope-evidence.bats` runs the checker and the guarded writer
+against sanitized contradictions derived from the historical false-completion
+case: passing evidence that admits non-execution, a completed task whose log
+says pending, and refine-invalidated evidence that must be rerun before
+closure. Its last case is a labeled contract-presence check on the docs. Widen
+to full Bats for any change to `shared/state_contract.py`, `update-state.py`
+or `verify/plan_contract.py`.

@@ -183,6 +183,45 @@ the task's Completion & Log. Completed logs, commits and outcome records are
 task (`../spec/PLAN_STATE.md` §5.1). Without confirmation, record the concern in
 `PROGRESS.md` and change nothing.
 
+**Amendment record (append to the affected task's Completion & Log, and mirror
+the entry in `PROGRESS.md`):** every scope, criterion or deferral change leaves
+one durable record with these fields — no field is optional padding, and an
+amendment is never backdated:
+
+```
+### Amendment {n} — YYYY-MM-DD
+Original criterion: <verbatim quote of the criterion as authored>
+Observed: <investigation finding, blocker, failed gate or changed input>
+Disposition: revised criterion | deferred requirement | unexecuted scenario | failed gate
+Revised criterion: <verbatim new criterion — only for "revised criterion">
+Reason: <why the original cannot or should not stand>
+Authority: user (explicit acceptance) | developer (refine request) | evidence (machine-detected mismatch)
+Affected tasks: <ids>
+Evidence invalidated: <gate commands per task, prefixed by refine>
+Evidence preserved: <gate commands whose inputs are unchanged>
+```
+
+**What an amendment may close and what it may not.** Name the state honestly
+(the five evidence states, `../spec/PLAN_STATE.md` "Evidence truth and
+amendments"): a **completed
+investigation** is real work but is never the execution of the original
+criterion; an **unexecuted scenario** is recorded as not performed and
+contributes no passing evidence; a **deferred requirement** moves the criterion
+to a named destination task and needs `Authority: user` or `developer`; a
+**failed gate** stays failing until the same acceptance intent is re-run and
+passes; only an **achieved product outcome** — the criterion as written,
+verified by its gate — completes the task unchanged. Correcting a broken
+command preserves the same acceptance intent; substituting an easier check is
+not repair, it is a revised criterion and needs its own amendment.
+
+**Bounded exceptions.** The user may explicitly accept a bounded exception to a
+criterion; record `Authority: user` with the acceptance (quote or reference)
+and the boundary of what it covers. Pre-approval and trust authorize unattended
+execution — they are never blanket permission to abandon a core objective. A
+mandatory criterion that cannot be met is recorded as a blocker
+(`state.json` `blocked`), never as completed work; the guarded writer refuses
+that closure and read-only verification reports it.
+
 ## Explicit Migration
 
 ### Step 4 — Migrate a Legacy Plan (only on `migrate {name}`)

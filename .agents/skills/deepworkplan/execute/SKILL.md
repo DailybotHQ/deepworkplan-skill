@@ -221,7 +221,13 @@ Read the README task list; run `git status` and `git log --oneline -10`; identif
 the first `[ ]` task. Report completed/pending tasks, the starting task, git
 state, and recent commits. The location is `.dwp/plans/PLAN_{name}/`. A README
 `[ ]` marked `(re-validate: …)` is a task whose evidence `refine` invalidated:
-re-run its gates and re-mark it rather than re-implementing it.
+re-run its gates and re-mark it rather than re-implementing it. Gate evidence
+prefixed `invalidated by refine` is retained history, never passing evidence —
+the guarded writer refuses to close the task until each invalidated command has
+a fresh later record, and read-only verification reports the reliance. Re-run
+the **same acceptance intent**: substituting an easier check is not repair but
+a revised criterion, which belongs in an appended amendment record
+(`../refine/SKILL.md` 3.7) with its reason and authority.
 
 ### Step 4 — Ask for Execution Preferences (optional)
 In **interactive** mode, ask for any specific requirements (press Enter for

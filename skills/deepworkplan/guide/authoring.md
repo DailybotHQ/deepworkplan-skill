@@ -493,3 +493,16 @@ Every completion log includes its status, `Skills disposition:` and
 `Documentation decision:`. Final Review uses the installed guarded finalization
 helper; source/acceptance gates already ran before a terminal candidate is
 validated. Its own receipt is not a prerequisite for its own check.
+
+### Amendments in authored task records
+
+Author every task's Completion & Log so a later amendment has somewhere honest
+to land: `Status:`, `Skills disposition:`, `Documentation decision:` and the
+`Gate record:` lines exist from creation, and nothing completed is ever
+rewritten — changes append. When scope or a criterion changes, the record is
+the structured amendment from the refine contract (original criterion,
+observed, disposition, reason, authority, affected tasks, evidence invalidated
+and preserved); name the five evidence states exactly — a completed
+investigation is not an executed criterion, an unexecuted scenario carries no
+passing evidence, and a failed gate only closes when the same acceptance
+intent passes.

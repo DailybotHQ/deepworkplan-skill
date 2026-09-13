@@ -3,6 +3,28 @@ import json
 from pathlib import Path
 import re
 
+# The prefix refine 3.7 stamps on gate evidence it invalidates. A record
+# carrying it is retained history, never passing evidence.
+INVALIDATED_PREFIX = 'invalidated by refine'
+
+# A passing record whose own evidence admits the check never ran cannot
+# certify the criterion it is attached to — the historical failure mode this
+# plan exists to close: a checklist ticked over phases the report itself
+# called structurally impossible. Deliberately narrow phrases, evidence-side
+# only; "skip"/"deferred" alone are legitimate words in honest records.
+NON_EXECUTION = re.compile(
+    r'(?:never|not)\s+(?:ran|run|entered|executed|performed)'
+    r'|did\s+not\s+(?:run|enter|execute|perform)'
+    r'|structurally\s+impossible'
+    r'|cannot\s+be\s+(?:run|executed|measured|verified)'
+    r'|\bunexecuted\b', re.I)
+
+
+def invalidated(gate):
+    """True when refine stamped this record as invalidated evidence."""
+    return str(gate.get('evidence', '')).strip().lower().startswith(INVALIDATED_PREFIX)
+
+
 def shape_errors(value, rule, schema, path='$'):
     if '$ref' in rule:
         target = schema
@@ -56,6 +78,8 @@ def gate_findings(tasks, state_layer):
 
     A record missing the documented `passes` boolean is malformed, not failing:
     report the shape once rather than accusing every task of a failed gate.
+    Retries supersede only the same command (PLAN_STATE.md §5.1), so truth
+    rules read the latest record per command, exactly like the writer.
     """
     errors, malformed = [], 0
     for task in tasks:
@@ -71,14 +95,22 @@ def gate_findings(tasks, state_layer):
                 malformed += 1
                 continue
             latest[gate.get('command')] = gate
-            if gate['passes'] and re.search(
-                    r'(ran|selected|executed)\s*=\s*0(?:\b|/)|no tests? (ran|found|collected)',
-                    str(gate.get('evidence', '')), re.I):
+        for gate in latest.values():
+            if not gate['passes'] or invalidated(gate):
+                continue
+            if re.search(r'(ran|selected|executed)\s*=\s*0(?:\b|/)|no tests? (ran|found|collected)',
+                         str(gate.get('evidence', '')), re.I):
                 errors.append('passing gate has zero-selection evidence')
+            elif NON_EXECUTION.search(str(gate.get('evidence', ''))):
+                errors.append(f'passing gate {gate.get("command")!r} has evidence that '
+                              f'admits the check never ran — record an amendment instead')
         if task.get('status') == 'completed':
             if any(not g['passes'] or g.get('exit_code', 0) != 0 for g in latest.values()):
                 errors.append(f'completed task {task.get("id")} has a failing gate without a '
                               f'later passing run')
+            elif any(invalidated(g) for g in latest.values()):
+                errors.append(f'completed task {task.get("id")} relies on evidence '
+                              f'invalidated by refine — rerun its gate and append the fresh record')
             if state_layer and (not task.get('completed_at') or not latest):
                 errors.append(f'completed state-layer task {task.get("id")} requires '
                               f'completed_at and gate evidence')

@@ -34,7 +34,7 @@ from pathlib import Path
 import hashlib
 
 sys.dont_write_bytecode = True
-from state_contract import derive_status, state_errors
+from state_contract import derive_status, invalidated, state_errors
 
 TASK_STATUSES = ("pending", "in_progress", "completed", "blocked", "skipped")
 PLAN_STATUSES = ("pending", "in_progress", "completed", "blocked")
@@ -212,6 +212,9 @@ def main():
         if not latest or any(not str(g.get('command', '')).strip() or not str(g.get('evidence', '')).strip()
                              or g.get('passes') is not True or g.get('exit_code') != 0 for g in latest.values()):
             die("completion requires successful gates with command, exit code and evidence")
+        stale = [c for c, g in latest.items() if invalidated(g)]
+        if stale:
+            die("completion requires rerunning evidence invalidated by refine: " + ", ".join(map(str, stale)))
 
     state["completed_count"] = sum(1 for t in tasks if t["status"] == "completed")
     # Plan-level `blocked` carries its own record (reason/since) authored by

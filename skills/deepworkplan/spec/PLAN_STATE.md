@@ -444,3 +444,42 @@ checking that no writer is active before removal. No helper commits, pushes,
 executes stored gate commands or silently repairs Markdown. Missing Python means
 UNVERIFIED, never completed. These checks enforce records and structure; manually
 judge acceptance, consumer coverage and the truth of the underlying evidence.
+
+### Evidence truth and amendments
+
+Every scope, criterion or deferral change carries one durable amendment record
+(`refine/SKILL.md` 3.7): original criterion verbatim, what was observed, the
+disposition, the reason, the authority (user / developer / evidence), affected
+tasks, and which evidence was invalidated or preserved. Amendments are
+appended, never backdated; `manifest.json` keeps creation provenance and is
+never rewritten to match a changed live scope.
+
+The five evidence states, and what each may close:
+
+- **Completed investigation** — real recorded work; never the execution of the
+  original criterion. Closes the task only against a revised criterion that
+  names it.
+- **Unexecuted scenario** — recorded as not performed; contributes no passing
+  gate evidence in any era.
+- **Deferred requirement** — the criterion moves to a named destination task
+  with recorded authority; the source closes only with that amendment.
+- **Failed gate** — remains failing until the same acceptance intent is re-run
+  and passes; a retry supersedes only its own command.
+- **Achieved product outcome** — the criterion as written, verified by its
+  gate; the only state that completes a task unchanged.
+
+Enforcement is mechanical where the records allow it and manual where they do
+not. Gate evidence prefixed `invalidated by refine` is retained history, never
+passing evidence — the guarded writer refuses closure without a fresh later
+record for each invalidated command, and read-only verification reports a
+completed task that relies on it. A passing record whose own evidence admits
+the check never ran (`never entered`, `did not run`, `structurally impossible`,
+`unexecuted`, `cannot be measured`) is a contradiction, reported the same way;
+an honest non-execution belongs in an amendment, not behind a passing boolean.
+A completed state task whose record still reads `Status: pending` is likewise a
+reported mismatch. Narrative contradictions beyond these — a report whose
+conclusions disagree with a checklist's claims — require a human reviewer; the
+checker reports what records say, not what prose means. The user may explicitly
+accept a bounded exception with recorded authority; unattended pre-approval is
+never blanket permission to abandon a core objective, and an unmeetable
+mandatory criterion is a blocker, never completed work.

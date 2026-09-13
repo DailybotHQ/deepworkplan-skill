@@ -106,6 +106,20 @@ def declared_standard(clean, manifest):
     return found[1] if found else manifest.get('spec_version')
 
 
+def log_status_mismatch(task, body):
+    """A completed task whose own record still says `Status: pending`.
+
+    The machine-readable core of the historical false-completion mode: state
+    and README agree it is done while the task's log contradicts them. Free
+    prose is not judged here — only the explicit status line.
+    """
+    log = field_content(unfenced(body), 'Completion & Log') or field_content(unfenced(body), 'Completion log')
+    if log and re.search(r'(?im)^status:\s*pending\b', log):
+        return (f'Task {task["id"]} is completed in state but its Completion & Log '
+                f'still says "Status: pending" — close the log or reopen the task')
+    return None
+
+
 def security_findings(plan):
     """Completed-plan security artifact gate (DWP_SPECIFICATION §6.1).
 
@@ -303,6 +317,10 @@ def current(plan, state, manifest, report):
                 for name in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
                     if not field_content(body, name):
                         report.bad(f'Task {task["id"]} lacks non-empty {name}')
+                if task['status'] == 'completed':
+                    mismatch = log_status_mismatch(task, body)
+                    if mismatch:
+                        report.bad(mismatch)
                 # Context is a starting requirement, not a history requirement:
                 # a task still to be run must be startable from it, while a
                 # completed task's record stays as authored (DWP_SPECIFICATION
@@ -344,6 +362,10 @@ def current(plan, state, manifest, report):
                         report.bad('Lite task lacks '+name+': '+header[1])
                 status = next((t.get('status') for t in tasks
                                if isinstance(t, dict) and t.get('id') == int(header[1])), None)
+                if status == 'completed':
+                    mismatch = log_status_mismatch({'id': int(header[1])}, body[1])
+                    if mismatch:
+                        report.bad(mismatch)
                 if status != 'completed' and not field_content(body[1], 'Context'):
                     report.bad('Lite task lacks Context: '+header[1]+' — task-specific '
                                'background; the agent MUST be able to start from this section '
