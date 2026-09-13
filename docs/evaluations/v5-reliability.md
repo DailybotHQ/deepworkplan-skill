@@ -305,3 +305,53 @@ which would have *hidden* the shadowed-import crash rather than surfacing it.
   lifecycle is now proven correct — it is that **fresh-context runs are a
   productive detection channel that static suites do not replace**. Not one of
   these thirteen defects was visible to a suite that was passing 380 cases.
+
+## Reproducing all of this
+
+Everything in this record reproduces from a clean checkout with no secret, no
+credential and no network access. Contributor tools only: Bats, ShellCheck, and
+two test-only Python packages.
+
+```bash
+pip install jsonschema pyyaml          # test-only; the shipped helpers use the stdlib
+bats tests/                            # the whole suite, including every contract below
+```
+
+Per guarantee, if you want to check one at a time:
+
+| Guarantee | Command |
+|---|---|
+| State transitions, evidence truth, scope amendments | `bats tests/state-transitions.bats tests/state-evidence.bats tests/scope-evidence.bats` |
+| Completion is a recoverable transaction | `bats tests/completion-transaction.bats` |
+| Interruption recovery and workspace transfer | `bats tests/resume-integrity.bats` |
+| Flow activation and portability | `bats tests/activation-contract.bats` |
+| Instruction accounting (entry bundle vs end-to-end paths) | `bash tests/efficiency/measure-instruction-load.sh` + `bats tests/context-accounting.bats` |
+| Claims match the shipped tree | `bats tests/claims-consistency.bats` |
+| The lifecycle end to end, with injected faults | `bats tests/reliability-acceptance.bats` |
+| CI runs what it claims to run | `bats tests/ci-guarantees.bats` |
+| The pack works installed alone | `bats tests/packaging-reliability.bats` |
+
+The **live** acceptance runs are the one part that does not reproduce from a
+command: they need fresh agent contexts and an isolated workspace, per
+[`../../tests/reliability/PROTOCOL.md`](../../tests/reliability/PROTOCOL.md).
+Their scored results ship in
+[`../../tests/reliability/evidence/`](../../tests/reliability/evidence/) — five
+files, four PASS and one FAIL, each recording the round it belongs to and the
+real state of the tree it ran against. Re-score any of them with:
+
+```bash
+python3 tests/reliability/oracles/score-acceptance.py <run-dir>
+```
+
+### Distribution
+
+Only `skills/deepworkplan/` reaches a user's disk. `bats
+tests/packaging-reliability.bats` proves that is enough: it exports the pack to
+a scratch directory with no `tests/`, `scripts/`, contributor docs or repository
+checkout in sight, and runs the read-only checker, the guarded writer and the
+completion transaction from there. It also asserts the pack carries no
+contributor file, that no runtime helper references one, that nothing in the
+runtime opens a network connection, that a missing Python interpreter produces
+**UNVERIFIED** rather than a pass, that the published schema snapshots are
+byte-unchanged, and that the contributor dogfood mirror is byte-identical to the
+shipped pack.

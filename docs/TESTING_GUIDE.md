@@ -35,6 +35,7 @@ The runtime validator must still work without third-party Python packages.
 | Claims / version stamps / helper inventory | `bats tests/claims-consistency.bats` | TRUST.md, spec footers, contributor docs, the published claim table |
 | Lifecycle end to end (writer + finalizer + checker) | `bats tests/reliability-acceptance.bats` | every flow that closes a task or publishes a plan; widen to full Bats |
 | CI workflow | `bats tests/ci-guarantees.bats` | every suite CI runs; the installer's sub-skill list; the documented Python floor |
+| Packaging / ship boundary | `bats tests/packaging-reliability.bats` | everything a downstream user installs; the dogfood mirror; the published schemas |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 
 Repository example: a change to `shared/update-state.py` starts with the
@@ -198,3 +199,17 @@ read-only checker over a real fixture plan, and fails if any `__pycache__`
 survives inside the hash-pinned pack. Before it existed, the "Python 3.9+
 stdlib" claim in this guide was never exercised: every other job runs 3.11 with
 both optional packages present.
+
+## Packaging integrity
+
+`bats tests/packaging-reliability.bats` runs the shipped helpers from an
+**exported** copy of `skills/deepworkplan/` in a scratch directory, with no
+`tests/`, `scripts/`, contributor docs or repository checkout anywhere near it
+— the shape a downstream user actually installs. A helper that quietly reaches
+back into this repository passes every other suite and fails for everyone else,
+so this one checks the boundary from the outside: no contributor file inside the
+pack, no runtime reference to one, no network call, a missing interpreter
+producing **UNVERIFIED** rather than a pass, byte-unchanged published schema
+snapshots, a byte-identical dogfood mirror, and sanitized evidence files that
+each record their round and real tree state. Widen to full Bats for any change
+to the ship boundary, the schemas or `scripts/refresh-dogfood-skill.sh`.
