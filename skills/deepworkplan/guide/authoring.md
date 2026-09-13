@@ -204,6 +204,17 @@ Each `N.task_{task_title}.md` must have the following sections. The spec's canon
 
 ### 5.2. Example template
 
+> **Section headings and field labels are load-bearing, not styling.** The
+> conformance checker finds each field by parsing them
+> (`verify/plan_contract.py`), and this applies to **Full task files exactly as
+> it does to Lite inline records**. A heading is `## Goal` or `## 1. Goal`,
+> optionally with a parenthetical suffix (`## 11. Completion & Log (filled by
+> the agent)`), and nothing else on the line. An inline label is `**Goal:**` or
+> `**Goal**` — those two forms. A decorative variant such as `**Goal.**`, or a
+> heading that continues past the section name, makes the field invisible to
+> the checker: the plan then fails conformance with one "lacks Goal" issue per
+> task for zero content reasons.
+
 ````markdown
 # Task {N}: {Task Title}
 
@@ -486,3 +497,23 @@ every plan after this one pays interest on whatever this one leaves stale.
 > Review's documentation sweep reports it — it does not silently absorb it.
 
 ---
+
+### Completion evidence in generated tasks
+
+Every completion log includes its status, `Skills disposition:` and
+`Documentation decision:`. Final Review uses the installed guarded finalization
+helper; source/acceptance gates already ran before a terminal candidate is
+validated. Its own receipt is not a prerequisite for its own check.
+
+### Amendments in authored task records
+
+Author every task's Completion & Log so a later amendment has somewhere honest
+to land: `Status:`, `Skills disposition:`, `Documentation decision:` and the
+`Gate record:` lines exist from creation, and nothing completed is ever
+rewritten — changes append. When scope or a criterion changes, the record is
+the structured amendment from the refine contract (original criterion,
+observed, disposition, reason, authority, affected tasks, evidence invalidated
+and preserved); name the five evidence states exactly — a completed
+investigation is not an executed criterion, an unexecuted scenario carries no
+passing evidence, and a failed gate only closes when the same acceptance
+intent passes.

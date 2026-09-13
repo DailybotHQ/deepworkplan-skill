@@ -60,7 +60,7 @@ On every merge to `main`, `auto-release.yml`:
 1. Reads the current version from the router `skills/deepworkplan/SKILL.md`.
 2. Inspects conventional commits since the last `vX.Y.Z` tag and picks the bump:
    `feat(...)!:` / `BREAKING CHANGE:` → MAJOR, `feat(...):` → MINOR, else PATCH.
-3. Syncs the new version into **all** SKILL.md files (router + six sub-skills +
+3. Syncs the new version into **all** SKILL.md files (router + nine sub-skills +
    addon).
 4. Prepends a dated section to `CHANGELOG.md`.
 5. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, pushes, and

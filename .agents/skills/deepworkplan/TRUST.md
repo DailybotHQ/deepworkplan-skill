@@ -11,10 +11,20 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 ## What this skill is
 
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
-agent reads at runtime, plus three small Bash helpers: `setup.sh` (symlinking,
-at the repository root, not inside the pack), and two inside the pack —
-`shared/context.sh` for repo/branch/`.dwp/` detection and
-`verify/conformance.sh` for the read-only conformance check. The **core
+agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
+(symlinking, at the repository root, not inside the pack) and, inside the pack,
+`shared/context.sh` for repo/branch/`.dwp/` detection. Four Python (stdlib
+only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
+`verify/plan_contract.py` for the read-only conformance check, and
+`shared/update-state.py`, `shared/state_contract.py` and
+`shared/finalize_plan.py` for the guarded state, evidence and completion
+transactions. They read and write only your repository and its `.dwp/`
+directory — with one honest exception that is CPython's behavior rather than
+ours: importing a Python helper can leave a `__pycache__/` bytecode cache
+beside it inside the installed pack. The shipped flows set
+`sys.dont_write_bytecode` to avoid it, but a direct `python3 -c 'import …'`
+against a helper (a diagnosis step, say) will still create one. It is a cache
+of our own files, contains nothing of yours, and is safe to delete. The **core
 methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
 network calls**, and emits **no telemetry** of any kind.
 
@@ -26,7 +36,7 @@ network calls**, and emits **no telemetry** of any kind.
 > package-manager version), and always through a verifiable path: a package
 > manager, the checksummed `skills` CLI, or a documented download → verify
 > SHA-256 → execute flow. The fifth, the **AI Diff Reviewer local review**, is
-> part of the 2.3.0 baseline: `onboard` installs one MIT-licensed, tag-pinned
+> part of the baseline since standard 2.3.0: `onboard` installs one MIT-licensed, tag-pinned
 > skill (`DailybotHQ/ai-diff-reviewer`) through the checksummed `skills` CLI,
 > and the Final Review's security pass runs it through your own coding agent —
 > no service, no provider secret, no telemetry; its CI Action stays opt-in and

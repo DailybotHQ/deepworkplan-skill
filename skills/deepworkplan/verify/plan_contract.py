@@ -25,6 +25,10 @@ from pathlib import Path
 import re
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
+sys.dont_write_bytecode = True
+from state_contract import gate_findings, shape_errors, derive_status
+
 # The newest DWP spec this checker implements; keep in sync with conformance.sh
 # SUPPORTED_SPEC and DWP_SPECIFICATION.md "Version".
 SUPPORTED_SPEC = '5.0.0'
@@ -46,54 +50,6 @@ def version(text):
     """Dotted numeric version as a comparable tuple; () when unparseable."""
     match = re.match(r'^(\d+)\.(\d+)\.(\d+)$', str(text or ''))
     return tuple(int(g) for g in match.groups()) if match else ()
-
-
-def shape_errors(value, rule, schema, path='$'):
-    if '$ref' in rule:
-        target = schema
-        for key in rule['$ref'].removeprefix('#/').split('/'):
-            target = target[key]
-        return shape_errors(value, target, schema, path)
-    errors = []
-    types = {'object': dict, 'array': list, 'string': str, 'integer': int,
-             'boolean': bool, 'null': type(None)}
-    expected = rule.get('type')
-    if expected:
-        expected = expected if isinstance(expected, list) else [expected]
-        if not any(type(value) is types[t] for t in expected):
-            return [f'{path}: expected {expected}']
-    if 'const' in rule and value != rule['const']:
-        errors.append(f'{path}: expected {rule["const"]!r}')
-    if 'enum' in rule and value not in rule['enum']:
-        errors.append(f'{path}: unknown value {value!r}')
-    if isinstance(value, dict):
-        for key in rule.get('required', []):
-            if key not in value:
-                errors.append(f'{path}: missing {key}')
-        properties = rule.get('properties', {})
-        for key, item in value.items():
-            if key in properties:
-                errors.extend(shape_errors(item, properties[key], schema, path+'.'+key))
-            elif rule.get('additionalProperties') is False:
-                errors.append(f'{path}: unexpected field {key}')
-    if isinstance(value, list):
-        if len(value) < rule.get('minItems', 0):
-            errors.append(f'{path}: too few entries')
-        for i, item in enumerate(value):
-            errors.extend(shape_errors(item, rule.get('items', {}), schema, f'{path}[{i}]'))
-    if isinstance(value, str):
-        if 'pattern' in rule and not re.search(rule['pattern'], value):
-            errors.append(f'{path}: invalid value {value!r}')
-        if len(value) > rule.get('maxLength', len(value)):
-            errors.append(f'{path}: exceeds maximum length')
-    if type(value) is int and value < rule.get('minimum', value):
-        errors.append(f'{path}: below minimum')
-    for item in rule.get('allOf', []):
-        errors.extend(shape_errors(value, item, schema, path))
-    if 'if' in rule:
-        branch = 'else' if shape_errors(value, rule['if'], schema) else 'then'
-        errors.extend(shape_errors(value, rule.get(branch, {}), schema, path))
-    return errors
 
 
 def unfenced(text):
@@ -123,7 +79,16 @@ def field_content(body, name):
     def label_pattern(label):
         return r'\*\*(?:'+label+r')\s*:?\*\*[ \t]*[:·-]?'
 
-    pattern = r'(?im)(?:^#{2,6}[ \t]+(?:\d+[.]?[ \t]*)?'+re.escape(name)+r'[ \t]*$|'+label_pattern(re.escape(name))+')'
+    # A section heading may carry a descriptive suffix in parentheses: the
+    # canonical task-file template in guide/authoring.md prescribes
+    # "## 11. Completion & Log (filled by the agent)", and three of the four
+    # example templates do the same. Requiring the heading to end at the name
+    # made every plan authored exactly as documented unparseable — the field
+    # read as empty and finalization failed, blaming the task's log instead of
+    # the heading. Tolerate one trailing parenthetical; it is decoration, not
+    # a different section.
+    pattern = (r'(?im)(?:^#{2,6}[ \t]+(?:\d+[.]?[ \t]*)?'+re.escape(name)
+               +r'[ \t]*(?:\([^)\n]*\))?[ \t]*$|'+label_pattern(re.escape(name))+')')
     match = re.search(pattern, body)
     if not match:
         return ''
@@ -150,6 +115,20 @@ def declared_standard(clean, manifest):
     return found[1] if found else manifest.get('spec_version')
 
 
+def log_status_mismatch(task, body):
+    """A completed task whose own record still says `Status: pending`.
+
+    The machine-readable core of the historical false-completion mode: state
+    and README agree it is done while the task's log contradicts them. Free
+    prose is not judged here — only the explicit status line.
+    """
+    log = field_content(unfenced(body), 'Completion & Log') or field_content(unfenced(body), 'Completion log')
+    if log and re.search(r'(?im)^status:\s*pending\b', log):
+        return (f'Task {task["id"]} is completed in state but its Completion & Log '
+                f'still says "Status: pending" — close the log or reopen the task')
+    return None
+
+
 def security_findings(plan):
     """Completed-plan security artifact gate (DWP_SPECIFICATION §6.1).
 
@@ -174,43 +153,6 @@ def security_findings(plan):
         return ['completed plan SECURITY_REVIEW.md mentions critical findings without a clear '
                 'resolution/acceptance (DWP_SPECIFICATION §6.1)']
     return []
-
-
-def gate_findings(tasks, state_layer):
-    """Execution evidence, identical in both eras (PLAN_STATE.md §7).
-
-    A record missing the documented `passes` boolean is malformed, not failing:
-    report the shape once rather than accusing every task of a failed gate.
-    """
-    errors, malformed = [], 0
-    for task in tasks:
-        if not isinstance(task, dict):
-            errors.append('state task must be an object')
-            continue
-        latest = {}
-        for gate in task.get('gates', []):
-            if not isinstance(gate, dict):
-                malformed += 1
-                continue
-            if not isinstance(gate.get('passes'), bool):
-                malformed += 1
-                continue
-            latest[gate.get('command')] = gate
-            if gate['passes'] and re.search(
-                    r'(ran|selected|executed)\s*=\s*0(?:\b|/)|no tests? (ran|found|collected)',
-                    str(gate.get('evidence', '')), re.I):
-                errors.append('passing gate has zero-selection evidence')
-        if task.get('status') == 'completed':
-            if any(not g['passes'] or g.get('exit_code', 0) != 0 for g in latest.values()):
-                errors.append(f'completed task {task.get("id")} has a failing gate without a '
-                              f'later passing run')
-            if state_layer and (not task.get('completed_at') or not latest):
-                errors.append(f'completed state-layer task {task.get("id")} requires '
-                              f'completed_at and gate evidence')
-    if malformed:
-        errors.append(f'{malformed} gate record(s) do not carry the documented `passes` boolean '
-                      f'(PLAN_STATE.md §4.2) — their result cannot be read')
-    return errors
 
 
 class Report:
@@ -243,8 +185,10 @@ class Report:
         return not messages
 
 
-def check(plan, is_git=True):
+def check(plan, is_git=True, state_override=None, allow_finalizing=False):
     report = Report()
+    if (plan/'.finalizing.json').exists() and not allow_finalizing:
+        report.bad('interrupted finalization — inspect artifacts and recover before claiming completion')
     documents = {}
     for label in ('state', 'manifest'):
         path = plan / (label+'.json')
@@ -264,6 +208,8 @@ def check(plan, is_git=True):
             report.bad(f'unknown {label} schema URL {url!r} — upgrade the installed skill')
     if report.failed:
         return report
+    if state_override is not None:
+        documents['state'] = state_override
     state, manifest = documents.get('state', {}), documents.get('manifest', {})
     if state.get('schema') in (STATE_V2, STATE_V5):
         current(plan, state, manifest, report)
@@ -380,6 +326,10 @@ def current(plan, state, manifest, report):
                 for name in ('Goal', 'Touched Surface', 'Acceptance Criteria', 'Validation'):
                     if not field_content(body, name):
                         report.bad(f'Task {task["id"]} lacks non-empty {name}')
+                if task['status'] == 'completed':
+                    mismatch = log_status_mismatch(task, body)
+                    if mismatch:
+                        report.bad(mismatch)
                 # Context is a starting requirement, not a history requirement:
                 # a task still to be run must be startable from it, while a
                 # completed task's record stays as authored (DWP_SPECIFICATION
@@ -421,6 +371,10 @@ def current(plan, state, manifest, report):
                         report.bad('Lite task lacks '+name+': '+header[1])
                 status = next((t.get('status') for t in tasks
                                if isinstance(t, dict) and t.get('id') == int(header[1])), None)
+                if status == 'completed':
+                    mismatch = log_status_mismatch({'id': int(header[1])}, body[1])
+                    if mismatch:
+                        report.bad(mismatch)
                 if status != 'completed' and not field_content(body[1], 'Context'):
                     report.bad('Lite task lacks Context: '+header[1]+' — task-specific '
                                'background; the agent MUST be able to start from this section '
@@ -435,7 +389,10 @@ def current(plan, state, manifest, report):
     if report.failed == before:
         report.ok('Lite task anchors, records and Final Review are valid' if lite else
                   'Full task files, records and Final Review are valid')
-    report.extend(gate_findings(tasks, True), 'task gate evidence supports every completed task')
+    report.extend(gate_findings(tasks, True, plan), 'task gate evidence supports every completed task')
+    report.verdict(state['status'] == derive_status(state), 'task/blocker status is coherent', 'task/blocker status is incoherent')
+    if state.get('blocked') and (state['blocked']['task'] not in ids or tasks[state['blocked']['task']-1]['status'] != 'blocked'):
+        report.bad('active blocker does not identify a blocked task')
     complete = bool(tasks) and all(isinstance(t, dict) and t.get('status') == 'completed' for t in tasks)
     report.verdict(complete == (state.get('status') == 'completed'),
                    'plan execution status agrees with task completion',
@@ -599,6 +556,17 @@ def legacy(plan, state, manifest, is_git, report):
         else:
             report.bad('completed plan missing analysis_results/SECURITY_REVIEW.md '
                        '(DWP_SPECIFICATION §6.1) — Final Review must write it even when clean')
+        # The publication receipt. A completed plan that never went through the
+        # guarded transaction has no evidence that its terminal projection was
+        # ever validated against its artifacts — the checker used to accept
+        # that silently, so a plan could read CONFORMANT while missing the one
+        # output that proves its completion was verified.
+        if any(plan.rglob('FINALIZATION.json')):
+            report.ok('completed plan has its publication receipt (FINALIZATION.json)')
+        else:
+            report.note('completed plan has no FINALIZATION.json receipt — it was '
+                        'closed without the guarded publication (shared/finalize_plan.py); '
+                        'its terminal projection was never validated against its artifacts')
 
     # ---- README <-> files correspondence
     report.verdict(bool(summary), 'README has a Plan Status count')
@@ -735,7 +703,7 @@ def legacy_state(plan, state, clean, files, ids, report):
     summary = re.search(r'Plan Status: *(\d+)\s*/\s*(\d+)', clean)
     if summary and (int(summary[1]), int(summary[2])) != (sum(checks.values()), len(files)):
         report.bad('README Plan Status count disagrees with task checkboxes/files' + stale)
-    for problem in gate_findings(tasks, False):
+    for problem in gate_findings(tasks, False, plan):
         report.bad(problem)
     if report.failed == before:
         report.ok('state.json task entries and statuses match README and task files')

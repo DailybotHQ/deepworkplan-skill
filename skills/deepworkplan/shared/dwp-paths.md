@@ -40,6 +40,44 @@ working artifacts, not tracked source. (Orchestrator hubs follow the same rule:
 child plans live at `repositories/{repo}/.dwp/plans/PLAN_{child}/`, also
 gitignored.)
 
+## Workspace persistence and transfer
+
+Because `.dwp/` is gitignored, **a fresh `git clone` carries no plan data**.
+That is by design — plans are working state, not source — and it has one
+consequence a resuming agent MUST state plainly: a checkout without `.dwp/`
+has nothing to resume, and progress is never fabricated from commits alone.
+
+**Same workspace.** The plan folder on disk is the whole recovery surface;
+`resume/SKILL.md` Step 2 (assess, reconcile, classify the interruption
+boundary) needs nothing else.
+
+**Transfer to a new machine (explicit, manual).** The minimum handoff
+manifest — everything a resumed session needs, nothing it can reconstruct:
+
+1. **The complete plan folder** `.dwp/plans/PLAN_{name}/`: README, task
+   files, `PROGRESS.md`, `manifest.json`, `state.json`, and
+   `analysis_results/` **including every gate log cited by a `log=` evidence
+   pointer** (a dangling pointer is a conformance finding, not reusable
+   evidence).
+2. **Repository revision(s)** the state cites — `git rev-parse HEAD` per
+   repository, checked out on arrival.
+3. **Required dirty work**: any uncommitted changes the checkpoint names,
+   re-created or carried over (patch, stash bundle, or copy).
+4. **Evidence pointers** to external-action receipts (report ids, PR URLs)
+   recorded in the task logs — the receipts themselves live in their
+   services and are investigated there when absent.
+
+On arrival: restore the folder at the same relative path, check out the
+recorded revision, re-create the dirty work, then run the read-only checker
+(`verify/plan_contract.py`) before resuming. **Missing-artifact behavior:**
+report what is missing and stop at that boundary — never reconstruct history
+from memory or guess at absent evidence.
+
+**No infrastructure.** There is no daemon, no auto-upload, and no automatic
+unignoring of `.dwp/`, and none may be implied: preservation is a deliberate
+copy (archive the plan folder, or move it with the workspace) performed by a
+human or an agent acting on explicit instruction.
+
 ## Contrast with the legacy path
 
 `.dwp/` **replaces** the legacy DWP output tree:

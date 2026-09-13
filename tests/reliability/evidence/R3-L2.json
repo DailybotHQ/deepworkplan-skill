@@ -1,0 +1,105 @@
+{
+  "run_id": "R3-L2",
+  "flow": "Full lifecycle with controlled interruption (create -> execute interrupted -> fresh-context resume -> completion -> verify)",
+  "pack_revision": "7662ec969d8be85596d243632b3cb879418f69b8",
+  "host": "claude-code subagent, fresh context, no conversation carryover",
+  "entry_path": "by-name invocation (read SKILL.md and route) — the documented fallback for hosts without slash commands",
+  "cross_vendor": false,
+  "interrupted": true,
+  "round": 3,
+  "tree_state": "NOT frozen — pack edits landed mid-run (see round_note)",
+  "pack_sha256": "b7f9de91f6a02a09171b2bc671821fe0e15d68aa79559bf93e4e26cbf48db1aa",
+  "round_note": "round 3 re-runs ONLY the Full lifecycle, the scenario round 2 failed (A6: no finalization receipt). Cause was a function-local import shadowing a module-level one in finalize_plan.validate(), introduced by this plan's own Task 9 fix and reaching only Full plans. R2-L1 (Lite) evidence remains valid: the defect could not affect the inline-locator path, and its receipt exists. Honesty amendment: this round was ALSO not run against a frozen tree. Fixes from R2-L1/R2-L2a/R3-L2a findings were still landing while session 2 ran. No round of this evaluation achieved a fully frozen candidate; that is a limitation of the protocol as executed, recorded rather than smoothed over.",
+  "plan_name": "PLAN_transfer_overdraw_guard",
+  "verdict": "PASS",
+  "oracles": [
+    {
+      "id": "A1",
+      "name": "flow entry",
+      "verdict": "PASS",
+      "detail": "created shape present; 6 pack file(s) read"
+    },
+    {
+      "id": "A2",
+      "name": "terminal plan conformance",
+      "verdict": "PASS",
+      "detail": "conformance checker exit 0"
+    },
+    {
+      "id": "A3",
+      "name": "defect actually fixed",
+      "verdict": "PASS",
+      "detail": "overdraw raises ValueError and records nothing"
+    },
+    {
+      "id": "A4",
+      "name": "a test encodes the fixed behavior",
+      "verdict": "PASS",
+      "detail": "suite fails with the fix reverted and passes with it restored"
+    },
+    {
+      "id": "A5",
+      "name": "terminal state coherent",
+      "verdict": "PASS",
+      "detail": "3 task(s) completed with passing gate records"
+    },
+    {
+      "id": "A6",
+      "name": "completion was a transaction",
+      "verdict": "PASS",
+      "detail": "receipt present, no failure marker left behind"
+    },
+    {
+      "id": "A7",
+      "name": "resume repeated nothing",
+      "verdict": "PASS",
+      "detail": "3 commit(s), none repeated"
+    },
+    {
+      "id": "A8",
+      "name": "run was unattended",
+      "verdict": "PASS",
+      "detail": "no question asked"
+    }
+  ],
+  "commits": [
+    "57b6f99 fix(ledger): refuse negative transfer amounts - Task 2 of PLAN_transfer_overdraw_guard",
+    "ff74a41 fix(ledger): refuse overdrawing transfers - Task 1 of PLAN_transfer_overdraw_guard",
+    "df72bc5 chore: workload baseline"
+  ],
+  "pack_files_read": [
+    {
+      "path": "skills/deepworkplan/SKILL.md",
+      "bytes": 11758
+    },
+    {
+      "path": "skills/deepworkplan/resume/SKILL.md",
+      "bytes": 18570
+    },
+    {
+      "path": "skills/deepworkplan/execute/SKILL.md",
+      "bytes": 40152
+    },
+    {
+      "path": "skills/deepworkplan/create/addon-augmentations.md",
+      "bytes": 4376
+    },
+    {
+      "path": "skills/deepworkplan/guide/execution.md",
+      "bytes": 19810,
+      "note": "partial read: only the Final Review section 6.1 onward, reached via awk when Task 3 began (execute/SKILL.md conditional tier)"
+    },
+    {
+      "path": "skills/deepworkplan/verify/SKILL.md",
+      "bytes": 15253,
+      "note": "partial read: first 90 lines, before running conformance.sh"
+    }
+  ],
+  "pack_bytes_read": 109919,
+  "commands_run": 52,
+  "questions_asked": [],
+  "stopped_early": false,
+  "notes": "Procedure gaps and anything that did not go as documented, recorded verbatim:\n\n1. GAP (helper contract not stated in the flow docs): the guarded terminal transition rejected my first invocation with 'update-state: invalid candidate: completed state requires terminal checkpoint: {\"task\": <last task id>, \"step\": \"done\", \"at\": ..., \"note\": ...} (PLAN_STATE.md 4.4)'. I had passed --checkpoint-step 'task-3:closed', mirroring the 'task-1:closed' / 'task-2:closed' convention that session 1 used and that I had continued for Task 2. Neither execute/SKILL.md's documented invocation ('python3 ../shared/update-state.py <plan>/state.json --task N --status completed --commit <hash> --gate ... --worked ...') nor its 'Verified plan publication' section nor resume/SKILL.md mentions that the FINAL task's checkpoint step must be the literal string 'done' -- and the documented example omits --checkpoint-step entirely. The requirement is only in spec/PLAN_STATE.md 4.4, which the execute flow's conditional tier does NOT list as a trigger for closing the last task. The error message itself is excellent (it states the exact required shape), the rejection was atomic (state.json was untouched, no .finalizing.json was left behind, no partial publication), and re-running with --checkpoint-step 'done' succeeded: 'task 3 -> completed - plan completed and verified'. So the guard worked exactly as designed; the gap is documentation, not behavior. An agent that interpreted the first exit 1 as 'the transaction cannot run' would have hand-closed the plan and left no receipt -- which is the precise failure mode this round exists to re-test.\n\n2. CONTRADICTION between the task file and the skill contract (resolved in favor of the contract): 3.task_final_review.md's Execution Checklist step 12 is an unconditional 'Commit: git commit -m \"chore(plan): final review - Task 3 of PLAN_transfer_overdraw_guard\"'. But .gitignore contains '.dwp/', so every artifact the Final Review produced (SECURITY_REVIEW.md, the final-suite gate log, the task log, README and PROGRESS updates) is untracked by design, and git status --porcelain was empty. execute/SKILL.md states: 'A review-only Final Review may close with no commit ... Record the closure step as not applicable -- the review changed no tracked file ... Never manufacture an empty or cosmetic commit to satisfy the step, and never treat its absence as an incomplete closure.' Per the stated precedence (this skill's contracts > the current task's steps) I closed with no commit and recorded the substitution in both the checklist line and the task log Notes. Worth noting that the create flow emitted a task file whose checklist hard-codes a step its own execute contract forbids for this exact task shape -- the Final Review checklist would be more accurate as 'Commit any fix this review made; if the review changed no tracked file, record the closure step as not applicable.' Consequence: the plan has 2 commits for 3 tasks, which is correct but looks like a missing commit to a naive reader.\n\n3. OBSERVATION (not a gap, but it contradicts META.json's 'tree_state: frozen candidate'): two files inside the pack were modified DURING my run. stat shows skills/deepworkplan/create/SKILL.md and skills/deepworkplan/guide/GUIDE.md both at 2026-09-13 17:52:09, i.e. after my session started (17:51) and while I was executing Task 2. I did not write them -- I never issued a write of any kind under <repo>, and I read neither file. The wider skill repository also carries pre-existing uncommitted modifications to 20+ files including skills/deepworkplan/execute/SKILL.md and verify/plan_contract.py. I read execute/SKILL.md at 17:5x and its mtime is 17:48:22, so my read predates nothing suspicious, but a concurrent editor of the candidate pack means the pack revision I executed against is not provably identical to META.json's pinned pack_sha256. Recording it rather than assuming it is benign.\n\n4. NOTE on __pycache__: I set PYTHONDONTWRITEBYTECODE=1 on every pack script invocation (plan_contract.py, update-state.py, conformance.sh), so no __pycache__ was created under the pack -- verified with find, zero hits. There IS a <repo>/tests/__pycache__ containing reliability_acceptance_test.cpython-313.pyc, but it is dated 17:46, before my session began, and lies outside the pack directory; it is not mine and I did not touch it (the skill tree is read-only for me).\n\n5. NOTE on commit attribution: my harness carries a standing instruction to append Co-Authored-By / Claude-Session trailers to git commit messages. I did not apply it to 57b6f99, because the plan's Global Guidelines fix the commit format ('type(scope): description - Task {N} of PLAN_transfer_overdraw_guard'), the task file's checklist step 11 gives the exact one-line message, and session 1's ff74a41 carries no trailer -- adding them would have made the two task commits of one plan inconsistent inside a frozen acceptance fixture. Flagging the deviation explicitly rather than silently.\n\n6. NOTE on the resume flow's read tiering: it held up. Steps 1-4 needed only the router SKILL.md, resume/SKILL.md and a run of shared/context.sh; execute/SKILL.md loaded exactly at Step 5 (the documented trigger), create/addon-augmentations.md and guide/execution.md 6.1 loaded exactly when the Final Review began, and verify/SKILL.md only before running conformance.sh. spec/PLAN_STATE.md, guide/prompts.md, shared/troubleshooting.md, shared/dwp-paths.md and shared/adaptation.md were never needed and were never read -- except that gap 1 above is arguably a case where PLAN_STATE.md 4.4 SHOULD have been a named trigger.\n\n7. Final results: plan status 'completed', 3/3 tasks, terminal checkpoint {task: 3, step: 'done'}; analysis_results/FINALIZATION.json exists with result 'verified' (state_sha256 c4e82be3..., artifacts_sha256 dc83a24f...); final-state suite python3 -m unittest discover -s tests -t . -v -> 10 passed, 0 failed, exit 0; conformance.sh --plan PLAN_transfer_overdraw_guard -> 'Verdict: CONFORMANT (11 passed, 1 advisory)', exit 0. The single advisory is the standing SHOULD: 'semantic review required: acceptance satisfaction, affected-test coverage and actual security review'. No question was raised at any point and nothing was left unfinished.",
+  "interruption_boundary": "Classified as 'at a clean task boundary' -- the first and commonest row of the resume Step 2.5 table. Evidence: Task 1's whole closure order was present and mutually consistent (Completion & Log filled with status/gate record/skills+documentation dispositions; README '[x] Task 1' with 'Plan Status: 1/3 completed'; PROGRESS.md Recent outcomes entry; commit ff74a41 present in git log; state.json task 1 completed with its gate record and commit hash), the working tree was clean (git status --porcelain empty at ff74a41), and state.json.checkpoint read {task: 2, step: 'task-1:closed'} -- i.e. it pointed at un-started work, not at a half-finished step. There was no .finalizing.json marker and no promotion/materializing marker. plan_contract.py exited 0 with no finding, so no markdown-vs-JSON reconciliation was owed either. The table's verdict for that row is explicit: 'no repair step is owed'. The single step I therefore did about it was the takeover procedure (Step 2.6) plus the Step 2.7 smoke test -- I verified the checkpoint pointer against the files it named (guard present in src/ledger.py, three tests present in tests/test_ledger.py, both cited gate logs on disk), wrote a one-line takeover entry into PROGRESS.md recording who/what, the revision and what was verified, ran the repository's cheapest standing check (python3 -m unittest tests.test_ledger -v -> pass 7/7, exit 0) to confirm the world still worked before building on it, and then started Task 2 at its Execution Checklist step 1. I deliberately did NOT hunt for a missing closure step, since the table says a clean boundary owes none.",
+  "work_not_repeated": "Task 1 (Refuse overdrawing transfers in Ledger.transfer) was already complete and was not re-implemented, re-gated, re-committed or re-logged in any way. How I verified it rather than trusting the summary alone, per resume Step 2.3: (1) its commit ff74a41 exists in git log with the plan's commit-message convention; (2) the implementation it claims is actually in the tree -- src/ledger.py reads self.balance(source) and raises ValueError before either self.add(...) call; (3) its three regression tests (test_transfer_larger_than_balance_raises, test_refused_transfer_records_nothing, test_transfer_of_exact_balance_succeeds) are present in tests/test_ledger.py; (4) both gate logs its record cites exist on disk (analysis_results/gates/t1-red.log and t1-green.log) -- no dangling log= pointer; (5) plan_contract.py's 'task gate evidence supports every completed task' and 'plan execution status agrees with task completion' checks both passed, exit 0; (6) the smoke test re-confirmed the 7 tests Task 1 left green. Its gate was NOT rerun: the resume protocol reruns a recorded gate only when the interruption landed between gate and commit or when inputs changed, and neither applied -- the tree was clean at exactly the revision the record names. I also did not repeat any external action (none was ever performed: this plan authorized no push, PR, report or message) and did not re-derive Task 2's 'discarded framing' analysis, which PLAN_ANALYSIS.md records precisely so it is not re-derived. Nothing from session 1 was rewritten except where the procedure requires it: PROGRESS.md's Active context block, which is a living working index."
+}

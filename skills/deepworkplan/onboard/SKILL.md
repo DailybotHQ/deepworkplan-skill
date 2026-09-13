@@ -21,10 +21,12 @@ work reliably without per-session human hand-holding.
 > value is that you **inspect the actual target repo** — its real languages,
 > frameworks, package manager, build/test/lint commands, folder layout, test
 > convention, deployment shape — and then **generate artifacts adapted to that
-> repo**. The *shape* of the output is fixed (the ~90%: `AGENTS.md`, the `docs/`
+> repo**. The *shape* of the output is fixed (`AGENTS.md`, the `docs/`
 > categories, per-module docs, `.agents/`, the symlinks, `.dwp/`); the *content*
-> is reasoned per repo (the ~10%: validation commands, paths, stack-specific
-> skills, example plans).
+> is reasoned per repo (validation commands, paths, stack-specific skills,
+> example plans). Most of a generated artifact is the fixed shape and the
+> remainder is reasoned — a direction, not a ratio to quote
+> (`../shared/adaptation.md`).
 >
 > **An empty doc, a generic stub, a placeholder command, or a doc copied
 > verbatim from this skill or another repo is a FAILURE.** Never write
@@ -98,7 +100,8 @@ When this flow finishes, the target repo contains:
    `DWP standard: 5.0.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
    a `.dwp/onboard/REPORT.md` that names the verified command and mapping, the
    installed skill identity and version, the active capability limits (what
-   could not be verified and why), and the next useful action.
+   could not be verified and why), and the exact post-onboarding next command
+   (see Phase 8 item 10).
 
 Plus the required **AI Diff Reviewer local review** (Phase 7a: vendored skill +
 `.review/extension.md`) and, from Phase 7b, the **optional addons** the
@@ -164,14 +167,18 @@ Phase 0 consent; a decline is recorded as a declared exception).
    - **Existing and previously onboarded → harness upgrade.** `AGENTS.md`
      and/or `.agents/` already exist **and** the repository's guidance predates
      the installed skill's requirements: no `DWP standard:` provenance line, a
-     provenance line from a non-current series (older than the 4.x this skill implements, or a 2.x line while upgrading), or a
+     provenance line from a non-current series (older than the 5.x this skill
+     implements — 2.x and 4.x are historical series,
+     `../spec/DWP_SPECIFICATION.md` §6.5), or a
      `docs/TESTING_GUIDE.md` without the scoped-invocation / mapping / posture
      content of `../spec/DOCUMENTATION_STANDARD.md` §3.4. In this case run the
      **targeted upgrade** (§3.5) instead of a full re-onboarding: recon only what
      the upgrade needs (Phase 1's testing discovery), then reconcile **only** the
      missing or outdated pieces — the §3.4 sections of `TESTING_GUIDE.md`, the
      testing rule and labeled scoped variants in `AGENTS.md` (Phase 3), the
-     scoped variants in `DEVELOPMENT_COMMANDS.md`, the `.agents/commands/dwp-*`
+     DWP flow routing block in `AGENTS.md` (Phase 3, role 5 — added when
+     missing, reconciled when present), the scoped variants in
+     `DEVELOPMENT_COMMANDS.md`, the `.agents/commands/dwp-*`
      delegators and `skill-create`/`agent-create` (Phase 6, refreshed from
      `command-templates/`), the required AI Diff Reviewer local review (Phase 7a —
      vendored skill + extension file, when missing), the catalog pointers, and
@@ -331,7 +338,7 @@ Classify the repo using `../spec/ARCHETYPES.md` signals (summarized in
 | Cross-project standards, a repo navigation index, or orchestrator manifests | moderate |
 | Root `AGENTS.md` indexes *other repos'* `AGENTS.md` | moderate |
 
-- **Default to `individual repo`** (the 99% case) unless a clear majority of
+- **Default to `individual repo`** (the common case) unless a clear majority of
   signals say hub.
 - A monorepo with **one** build/stack is an **individual repo with modules**
   (handled by per-module docs), **not** a hub.
@@ -448,6 +455,41 @@ context. It MUST serve three roles:
    skill x.y.z)` (on upgrade: `…; upgraded YYYY-MM-DD; skill x.y.z`), so a
    checker and a future agent can tell which standard the repository declares
    (`../spec/DOCUMENTATION_STANDARD.md` §3.5).
+5. **DWP flow routing** — a concise intent-to-flow block so any agent that
+   reads `AGENTS.md` knows how structured work is invoked **in this repo**,
+   without a network or a prior session. Keep it small (it lives inside the
+   lean-index budget); reconcile it with any routing/preferences text the
+   repository already has — merge, never replace, and never widen it into an
+   interception policy. The block MUST state, in this structure:
+
+   ```markdown
+   ## Deep Work Plans — invocation
+
+   Structured work runs through the local DWP flows (`.agents/commands/dwp-*`
+   delegators; the flows live in `.agents/skills/deepworkplan/` — discovery is
+   local, no network service is consulted):
+
+   | Intent | Route |
+   |---|---|
+   | "plan this work", "create a plan" | `/dwp-create` |
+   | "execute / run the plan" | `/dwp-execute` |
+   | "continue / resume the interrupted plan" | `/dwp-resume` |
+   | "plan status", "what's left" | `/dwp-status` (read-only) |
+   | "verify the repo / the plan" | `/dwp-verify` (read-only) |
+   | ordinary direct edit ("fix this", "rename that") | done directly — never silently becomes a plan |
+
+   Hosts without slash commands invoke the same flows by name
+   (`#deepworkplan-create` or plain text). `trust`/`auto` authorizes
+   unattended continuation within the requested flow; it is not a flow
+   selector, and read-only routes stay read-only.
+   ```
+
+   Reason the wording to the repo (an existing command kit with different
+   names keeps its names, with the DWP routes listed alongside), but every
+   property in the block must survive: explicit planning requests create;
+   execute/resume requests invoke those flows; status/verify remain
+   read-only; ordinary direct edits do not secretly become plans; trust is
+   not a flow selector; discovery is local.
 
 **Orchestrator-hub additions** (only if Phase 2 said hub): add the sub-project
 navigation index link (e.g. `repositories/README.md`) and each sub-project's
@@ -628,6 +670,10 @@ and **stack-appropriate**, not generic boilerplate.
   (Phase 7).
 - **`.agents/docs/`** — `skills_agents_catalog.md` and `COMMANDS_REFERENCE.md`,
   generated to **match what you actually created** (no phantom entries).
+  `COMMANDS_REFERENCE.md` opens by stating the three invocation forms — `/`
+  in Claude Code, `#<name>` in agents that intercept slash syntax, and plain
+  text ("run `<name>`") on hosts without slash commands — so flow discovery
+  stays local and host-portable from the index alone.
 - **`.agents/settings.json`** — a sane harness-config baseline (sensible
   permissions; no secrets). `.agents/README.md` — a short entry point.
 - **`.claude → .agents` and `.cursor → .agents` symlinks** — `ln -s .agents .claude` and
@@ -737,7 +783,11 @@ done.
    ran past the budget, move the detail into the owning doc and link it, never
    drop an invariant — and **every relative `.md` link in its index resolves**
    to a file that exists (§2.2 links no file that does not exist); fix any
-   that do not.
+   that do not. It carries the **DWP flow routing block** (Phase 3, role 5)
+   with every property intact: explicit planning requests create;
+   execute/resume requests invoke those flows; status/verify stay read-only;
+   ordinary direct edits never silently become plans; trust is not a flow
+   selector; discovery is local.
 2. **`CLAUDE.md` resolves to `AGENTS.md`** — the symlink points at `AGENTS.md`,
    or `CLAUDE.md` contains exactly `@AGENTS.md`.
 3. **`docs/` has the standard categories**, each non-empty and repo-specific
@@ -796,8 +846,12 @@ done.
    fallback used, and **any items deferred to the developer** (e.g. ambiguous
    modules, a command that couldn't be smoke-tested) — plus the **first usable
    outcome**: the verified scoped command and mapping (or the honest gap), the
-   installed skill identity and version, the active capability limits, and the
-   next useful action (`/dwp-create …`, or what to fix first).
+   installed skill identity and version, the active capability limits, and
+   the **exact post-onboarding next command** — `/dwp-create "<one-line
+   goal>"` on hosts with slash commands, `#deepworkplan-create "<one-line
+   goal>"` or plain text ("run deepworkplan-create …") where slash syntax is
+   unavailable — or, when something must be fixed first, that fix stated as
+   the next command instead of a vague pointer.
 11. **Upgrade idempotency (harness upgrade only):** run the upgrade reconciliation
    a second time; it MUST report no changes. If it does not, fix the cause
    before reporting done.

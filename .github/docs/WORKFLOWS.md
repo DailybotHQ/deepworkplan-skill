@@ -78,10 +78,11 @@ npx --yes skills add <owner/repo>@<tag> --skill <name> --force -y
 | Job | Runs on | Purpose |
 |-----|---------|---------|
 | `frontmatter-validation` | ubuntu-latest | `python3 scripts/validate-frontmatter.py` — every `SKILL.md` has `name:` (kebab-case, starts with `deepworkplan`), `version:` (quoted SemVer), no legacy `homepage:` field |
-| `shellcheck` | ubuntu-latest | Lints `setup.sh`, `skills/deepworkplan/shared/context.sh`, `skills/deepworkplan/verify/conformance.sh`, and any `scripts/*.sh` |
+| `shellcheck` | ubuntu-latest | Lints `setup.sh`, `skills/deepworkplan/shared/context.sh`, `skills/deepworkplan/verify/conformance.sh`, any `scripts/*.sh`, and `tests/efficiency/*.sh` (they gate the published instruction-accounting numbers) |
 | `context-sh-smoke` | ubuntu-latest | Runs `shared/context.sh` and asserts (1) single-line JSON output; (2) `DWP_AGENT_TOOL=<x>` override honored; (3) `DWP_DIR=<path>` override honored |
-| `bats-tests` | ubuntu-latest | `apt-get install bats` + `bats tests/` — the bats-core unit tests for `context.sh` and `setup.sh` |
-| `setup-smoke` | ubuntu-latest AND macos-latest | Matrix run of `setup.sh --host claude` and `setup.sh --host cursor` in a throwaway `HOME` — asserts the pack symlink and every sub-skill symlink land in the expected place. macOS row guards bash 3.2 compatibility |
+| `bats-tests` | ubuntu-latest | **Installs `jsonschema` + `pyyaml` first**, then `bats tests/`, then enforces the skip policy. The Python packages are not optional: without them the schema, lifecycle and Lite-plan cases call `skip "jsonschema not installed"` and the job goes **green having verified none of them** — the exact "missing dependencies are unavailable validation, never a pass" rule in [`docs/TESTING_GUIDE.md`](../../docs/TESTING_GUIDE.md). The gate then (1) reads the TAP plan and fails if fewer than 300 tests were planned, because Bats exits 0 on an empty or fully filtered selection, and (2) fails on **any** `# skip` other than the one allowed environment-dependent case (the installer's no-agents auto-detect branch, unreachable when an agent binary is on PATH) |
+| `setup-smoke` | ubuntu-latest AND macos-latest | Matrix run of `setup.sh --host claude` and `setup.sh --host cursor` in a throwaway `HOME` — asserts the pack symlink and **all nine** sub-skill symlinks (`create`, `execute`, `refine`, `resume`, `status`, `verify`, `onboard`, `author`, `upgrade`) land in the expected place. macOS row guards bash 3.2 compatibility |
+| `python-floor` | ubuntu-latest | Runs the shipped helpers on **Python 3.9**, the documented floor, with **no** third-party package installed — and asserts `jsonschema` is absent so the stdlib-only path is the one under test. Compiles each helper, then runs the read-only checker over a real fixture plan end to end, then fails if any `__pycache__` remains inside the hash-pinned pack. Nothing verified this claim before: every other job runs 3.11 with `jsonschema` and `pyyaml` present |
 | `markdown-links` | ubuntu-latest | `gaurav-nelson/github-action-markdown-link-check@v1` with `.github/markdown-link-check.json` config |
 
 - **`contract-checks`** — installs `jsonschema`, validates every plan fixture's `manifest.json`/`state.json` against the shipped v1 schemas in both directions (a 2.2.0 legacy fixture and a 2.3.0 fixture), runs negative probes (extra top-level or gate field rejected — the schemas are closed; v2 URL rejected; unknown future `spec_version` flagged, never legacy; zero-selection gate evidence rejected; stale/ahead projection rejected; partial materialization reported), then runs `scripts/check-guide-migration.py` (split-guide links, section map, pointer headers) and smoke-runs the instruction-load measurement. Dev-only scripts; the installed pack never depends on them.
@@ -89,9 +90,17 @@ npx --yes skills add <owner/repo>@<tag> --skill <name> --force -y
 ### Failure semantics
 
 Any job failure fails the run and blocks merge (`main` branch protection
-should require all six jobs). The `setup-smoke` macOS row is the only
-place bash 3.2 compat is enforced — losing it means `mapfile` / `${var^^}`
-regressions could slip through.
+should require every job). The `setup-smoke` macOS row is the only place
+bash 3.2 compat is enforced — losing it means `mapfile` / `${var^^}`
+regressions could slip through, and `python-floor` is the only place the
+Python 3.9 stdlib-only claim is enforced.
+
+**A green job is not automatically a verified one.** Two failure modes this
+workflow now guards against explicitly, because both produced a green run
+while verifying nothing: a suite whose required cases all *skipped* for want
+of a dependency, and a selection that matched no tests at all. Neither shows
+up as a failure — they show up as success. If you add a job that runs a test
+suite, give it the same two guards.
 
 ---
 

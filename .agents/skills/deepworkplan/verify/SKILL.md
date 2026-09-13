@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-verify
 description: Verify that a repository is DeepWorkPlan-conformant (AI-first) and that its plans are well-formed, producing an objective pass/fail report. Use when the developer asks to verify, audit, or check conformance of a repo or a plan.
-version: "5.1.0"
+version: "5.2.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
@@ -180,3 +180,10 @@ End with one of: **CONFORMANT** (all MUST criteria pass) or **NOT CONFORMANT —
 > find a `PLAN_onboard_*` under `.dwp/plans/`, report conformance gaps as
 > **in progress, not failures**, and point the developer at `/dwp-status` and
 > `/dwp-resume` to finish that plan rather than starting a new remediation plan.
+
+### Interrupted finalization
+
+A `.finalizing.json` marker is a failure, not an ignorable scratch file.
+Verification remains read-only, including no Python bytecode output. Recover
+through the execution finalization protocol after inspecting the marker and
+workspace; never repair inside verify.

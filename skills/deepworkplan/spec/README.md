@@ -11,8 +11,9 @@
 > baseline plus the 6 (+1) new ideas per `../RECONCILIATION.md`.
 
 All documents use RFC-2119 normative language (MUST / SHOULD / MAY / MUST NOT) and
-are grounded in an audit of 6 Dailybot repositories (~90% common structure, ~10%
-reason-per-repo). All three archetypes — individual repo (the default case),
+are grounded in an audit of 6 Dailybot repositories, in which most of the
+AI-first structure was common and a small remainder was reason-per-repo (a
+finding about those six repositories, not a measured constant). All three archetypes — individual repo (the default case),
 orchestrator hub, and agent workspace — are addressed throughout.
 
 ## Documents

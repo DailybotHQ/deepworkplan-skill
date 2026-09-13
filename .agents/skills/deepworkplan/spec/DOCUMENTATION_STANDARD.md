@@ -17,7 +17,7 @@ paths, stack-specific skills, example plans). This document specifies the common
 onboarding agent MUST **reason about per repo**, never copy verbatim.
 
 The standard applies to **both archetypes** defined in `ARCHETYPES.md`: the
-**individual repo** (the 99% case) and the **orchestrator hub**. Archetype-specific
+**individual repo** (the common case) and the **orchestrator hub**. Archetype-specific
 requirements are called out inline.
 
 ---
@@ -560,7 +560,7 @@ resolved values for the target repo — never the placeholder or another repo's 
 
 ## 8. Archetype Notes (cross-reference)
 
-Both archetypes from `ARCHETYPES.md` follow §§2–7. The **individual repo** (99%
+Both archetypes from `ARCHETYPES.md` follow §§2–7. The **individual repo** (common
 case) is the default; an onboarding agent **MUST** assume it unless the repo is
 clearly a hub. The **orchestrator hub** **MUST** additionally provide: the
 sub-project navigation index (§2.2), `ECOSYSTEM_CONTEXT.md` and a cross-project
@@ -596,4 +596,4 @@ for all complex modules (§4).
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

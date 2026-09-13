@@ -70,8 +70,9 @@ when their moment arrives. (This ordering is deliberate: reading companions
   - [`../create/addon-augmentations.md`](../create/addon-augmentations.md) —
     read only when the Final Review runs its required local-review pass
     (load it even if the reviewer is not yet installed, so the
-    missing-install finding path is available); the reviewer's own files
-    load at that same moment, never before.
+    missing-install finding path is available); the reviewer's own
+    [`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md)
+    loads at that same moment, never before.
   - The repository's `docs/TESTING_GUIDE.md` — read only when a task's gate
     must be widened or derived.
   - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the routing index; consult
@@ -221,7 +222,13 @@ Read the README task list; run `git status` and `git log --oneline -10`; identif
 the first `[ ]` task. Report completed/pending tasks, the starting task, git
 state, and recent commits. The location is `.dwp/plans/PLAN_{name}/`. A README
 `[ ]` marked `(re-validate: …)` is a task whose evidence `refine` invalidated:
-re-run its gates and re-mark it rather than re-implementing it.
+re-run its gates and re-mark it rather than re-implementing it. Gate evidence
+prefixed `invalidated by refine` is retained history, never passing evidence —
+the guarded writer refuses to close the task until each invalidated command has
+a fresh later record, and read-only verification reports the reliance. Re-run
+the **same acceptance intent**: substituting an easier check is not repair but
+a revised criterion, which belongs in an appended amendment record
+(`../refine/SKILL.md` 3.7) with its reason and authority.
 
 ### Step 4 — Ask for Execution Preferences (optional)
 In **interactive** mode, ask for any specific requirements (press Enter for
@@ -341,9 +348,16 @@ Rules (strict):
    - **Reconcile the documentation decision** the same way: every doc the
      Touched Surface names is current with the actual diff — including files
      the implementation touched that the plan did not name — or the log
-     records why not (`../spec/DWP_SPECIFICATION.md` §6.6). Stale docs do not
-     invalidate the code gate; they are recorded and swept by the Final
-     Review's documentation reconciliation.
+     records why not (`../spec/DWP_SPECIFICATION.md` §6.6). One policy, two
+     halves: a stale doc does not **invalidate a passing code gate** — a doc
+     fix needs no rerun unless it changes an input the gate validated — but it
+     does **block this task's closure**, because §6.6 decides documentation
+     currency inside the task that touched the surface and forbids deferring
+     it to a final catch-up. The only exception is a miss the task genuinely
+     cannot resolve in its own scope: record it in the log as an explicit
+     miss, with the reason and the owning doc, so the Final Review's
+     documentation reconciliation fixes it — never as a silent carry-forward,
+     and never as a reason to close with the docs stale.
    - **Complete the log**, then the projections, in this order
      (`../spec/PLAN_STATE.md` §5.1): the task's Completion & Log (status,
      timestamp, summary, files changed, gate records, skills disposition,
@@ -369,6 +383,15 @@ Rules (strict):
    delta above (status, gates, outcome, commit, counts, checkpoint) atomically
    and its output is closed-schema-valid where the input was:
    `python3 ../shared/update-state.py <plan>/state.json --task N --status completed --commit <hash> --gate '<command>|<exit>|<evidence>' --worked '<one line>'`.
+   **Closing the LAST task additionally requires `--checkpoint-step done`** —
+   that literal, not a variation on the convention earlier tasks used. The
+   terminal transition validates the completed projection and publishes the
+   plan, and it refuses a terminal state without that checkpoint
+   (`../spec/PLAN_STATE.md` §4.4). A refusal here is a **correctable input
+   error, not a broken transaction**: it is atomic, `state.json` is untouched
+   and no marker is left, so fix the argument and re-run. Never read it as
+   permission to close the plan by hand — a hand-closed plan has no
+   publication receipt and no validated projection.
    A whole-file rewrite of `state.json` remains the documented fallback when
    scripting is genuinely unavailable; reconciliation from markdown (§5) is
    always a whole-file regeneration.
@@ -522,6 +545,33 @@ this order and do not reorder:
   answer, a decline, or an unattended run → no report; the plan is nonetheless
   **complete**.
 
+**A review-only Final Review may close with no commit.** Its whole output —
+`SECURITY_REVIEW.md`, the task log, the README and state updates — lands under
+the gitignored `.dwp/`, so when the review finds nothing to fix there is
+genuinely nothing to commit. Record the closure step as *not applicable — the
+review changed no tracked file* and move on. Never manufacture an empty or
+cosmetic commit to satisfy the step, and never treat its absence as an
+incomplete closure. A review that **did** fix something commits that fix
+normally, and reruns the validations the fix affected.
+
+**Publication receipt — completion is a transaction, not a status flip.**
+Closing the last task through `shared/update-state.py` validates the terminal
+projection against the plan's real artifacts and writes
+`analysis_results/FINALIZATION.json`. A plan without that receipt was never
+verified.
+
+So a refusal from that transaction is **never** permission to close by hand.
+Read the message first: most refusals are correctable input errors (a missing
+`--checkpoint-step done`, a log whose status line still says pending, a task
+without its skills or documentation decision), and they are atomic — nothing is
+written, no marker is left — so fix the input and re-run. If it genuinely
+cannot complete, the plan is **blocked, not complete**: record the verbatim
+failure in the task log, leave the receipt absent (writing one by hand asserts a
+verification that never happened), and stop. Report it the way an open critical
+security finding is reported — fixed, or explicitly accepted by the user before
+completion is claimed. `/dwp-verify` reports the absence as an advisory on the
+resulting plan, which is a detector, not an authorization.
+
 **Security gate:** a plan is complete only when the Final Review's (or, for a
 legacy plan, the Security Review's) `analysis_results/SECURITY_REVIEW.md` exists
 and reports no unresolved critical finding (`../spec/DWP_SPECIFICATION.md`
@@ -586,3 +636,23 @@ For orchestrator plans, the completion rules in [`orchestrator.md`](orchestrator
   a folder without `README.md`, or whose README says `Plan Status: materializing`, is never executed.
 - Plan declares a newer standard than this skill → report and stop (§7.3).
 - Orchestrator-specific errors → [`orchestrator.md`](orchestrator.md).
+
+### Verified plan publication
+
+Before announcing completion, author the finished task logs (including
+`Skills disposition:` and `Documentation decision:`), README index and PROGRESS
+from earned source/acceptance results. Then close the final task through
+`shared/update-state.py`: its terminal transition validates the completed
+candidate against all plan artifacts before writing state, verifies the actual
+files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
+an invented passing gate for this invocation to the candidate it is validating.
+The receipt is external evidence, not its own prerequisite. Run
+`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+
+An interrupted publication leaves `.finalizing.json`; normal verification fails
+until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR
+--candidate CANDIDATE.json --recover` succeeds. A stale cooperative lock requires
+checking that no writer is active before removal. No helper commits, pushes,
+executes stored gate commands or silently repairs Markdown. Missing Python means
+UNVERIFIED, never completed. These checks enforce records and structure; manually
+judge acceptance, consumer coverage and the truth of the underlying evidence.

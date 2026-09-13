@@ -58,25 +58,99 @@ inline non-DWP alternative merely because it is small.
 ## Philosophy
 
 The goal is a delightful, smooth experience. The user provides information once;
-the system handles all intermediate steps (analysis, materialization
-materialization, quality check) automatically — and never generates an artifact
-nobody asked for.
+the system handles all intermediate steps (analysis, materialization, quality
+check) automatically — and never generates an artifact nobody asked for.
 
-## Shared resources (read these)
+## Shared resources (read at their moment, not upfront)
 
-- [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch,
-  agent tool, and the `.dwp/` output location (`dwp_dir`).
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — the `.dwp/plans/` +
-  `.dwp/plans/` output convention.
-- [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
-  and the two repository archetypes (individual repo vs orchestrator hub).
-- **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.5).
-- **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10) when the Format Decision is Full or the plan references promotion/tree anatomy — the Lite-first path writes its three-file shape inline (Step 4.0); [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) **always when composing the Final Review** (required local-review step on every 2.3.0 plan — do not gate this read on whether the target already has the reviewer installed); [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
-- [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns.
-- [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
-  `PROMPTS.md` template for each plan.
-- The target repository's `docs/TESTING_GUIDE.md` (`../spec/DOCUMENTATION_STANDARD.md` §3.4) — the documented full and scoped validation commands and the source-to-test mapping that every generated gate is selected from.
-- **Spec (conditional — read the named sections only when the trigger fires):** [`../spec/DWP_SPECIFICATION.md`](../spec/DWP_SPECIFICATION.md) §11 when the rigor tier is borderline and §5.0.2 when a Touched Surface is genuinely ambiguous; [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §3–§4 **and** [`../spec/schema/`](../spec/schema/) when writing the state layer in Step 4.4 item 7. The step text below is self-sufficient for the ordinary case — read these only when it is not.
+The compulsory set for this flow is the router SKILL plus this file, the
+`PROMPTS.md` template every plan writes, and the adaptation rule every
+generated gate obeys: the operative rules the composition runs on — the
+Lite-first shape, the analysis steps, the test/security/documentation
+discipline, the resumable write order and the quality checks — are stated
+inline in the steps below. A Lite creation, the normal path, reads **no**
+guide file at all; the Full expansion loads the authoring and structure
+companions at Step 4.4, when it starts. (This ordering is deliberate:
+reading companions "to be safe" is the failure mode this tiering removed.)
+
+- **Essential now (before composing anything):**
+  [`../shared/context.sh`](../shared/context.sh) — **run** it
+  (`bash ../shared/context.sh`) to resolve repo root, branch, agent tool and
+  `dwp_dir`; its source is not part of this flow's reads.
+  [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
+  `PROMPTS.md` template Step 4.0 item 4 writes for **every** plan, Lite or
+  Full; it is inevitable, so it is declared here rather than hidden behind a
+  trigger that always fires.
+  [`../shared/adaptation.md`](../shared/adaptation.md) —
+  reasoning-over-copy-paste and the two repository archetypes (individual
+  repo vs orchestrator hub); Step 2.6's archetype decision and every
+  generated gate depend on it.
+  The target repository's `docs/TESTING_GUIDE.md`
+  (`../spec/DOCUMENTATION_STANDARD.md` §3.4) — the documented full and scoped
+  validation commands and the source-to-test mapping every generated gate is
+  selected from. It is a repository file, not a pack file: it is compulsory
+  but carries no pack bytes (see `tests/efficiency/paths.tsv` exclusions).
+  **When the target has no `docs/TESTING_GUIDE.md`**, this read resolves
+  against whatever the repository *actually* documents — usually `AGENTS.md`'s
+  quick-commands section — and the gate is derived from the real commands
+  found there, scoped ones included. Only when the repository documents no
+  runnable validation at all does the full-suite fallback apply (Step 3.5).
+  Either way the missing registry is recorded as a harness finding in the
+  plan's notes; it is never a reason to stop, and never a reason to invent a
+  command the repository does not have.
+  That is the whole t0 set — no guide or spec file is compulsory.
+- **Conditional — read only when the trigger fires:**
+  - [`../guide/authoring.md`](../guide/authoring.md) — read §4–§5 (plan
+    README structure, task-file anatomy incl. the Touched Surface) only when
+    Step 4.4 expands the plan into Full task files; read §5.3–§5.5 only when
+    a task's test, security or documentation discipline is genuinely
+    ambiguous and Step 3.6's inline rules do not settle it; read §4.3 only
+    when a Full plan reaches 20 or more task files and needs the Stage Gates
+    table. The Lite-first path never reaches any of these triggers.
+  - [`../guide/structure.md`](../guide/structure.md) §1–§2 and §10 — read
+    only when the Format Decision is Full, or the plan references promotion
+    or tree anatomy; the Lite-first path writes its shape inline (Step 4.0).
+  - [`orchestrator.md`](orchestrator.md) (this directory) plus
+    [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 — read only
+    when Step 2.6 detects an orchestrator plan.
+  - [`team-agents.md`](team-agents.md) (this directory) plus
+    [`../guide/team-agents.md`](../guide/team-agents.md) §14 — read only
+    when Step 2.10 finds parallelizable tasks; the host merely *having* team
+    agents is not a trigger.
+  - [`addon-augmentations.md`](addon-augmentations.md) (this directory) —
+    read only when composing the Final Review, which **every** plan carries:
+    this trigger always fires, so the end-to-end path measurement counts it
+    on both the Lite and the Full path. Do not gate this read on whether the
+    target already has the reviewer installed.
+  - [`../guide/execution.md`](../guide/execution.md) §6.1 — read only when
+    writing the Final Review task's prose; like the bullet above, this
+    trigger always fires and is counted in both measured create paths.
+  - [`../guide/prompts.md`](../guide/prompts.md) §7 — read only when
+    composing prompt text beyond the template.
+  - [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 —
+    read only when a task references skills or agents.
+  - [`../spec/DWP_SPECIFICATION.md`](../spec/DWP_SPECIFICATION.md) — read §11
+    only when the rigor tier is borderline, and §5.0.2 only when a Touched
+    Surface is genuinely ambiguous.
+  - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §3–§4 **and**
+    [`../spec/schema/`](../spec/schema/) — read only when writing the state
+    layer in Step 4.4 item 7; the step text is self-sufficient otherwise.
+  - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — read only
+    when the developer asks for prompt patterns or example phrasings of a
+    plan request. Composing a plan never requires it: the workflow below
+    takes its input from Steps 1–3, not from this catalogue.
+  - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
+    plan folder cannot be located or the `DWP_DIR` override is in play; Step
+    4.0 already inlines `.dwp/plans/PLAN_{name}/`.
+  - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
+    only when something is already wrong (discovery failure, stale
+    installation, missing test command, unsupported host capability,
+    inconsistent plan state).
+  - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the routing index; consult
+    only when a need is not covered by a section named above.
+- **Never by default:** no other guide, spec, preset or addon file is read
+  for this flow — not defensively, not "to be safe". Speculative reading is
+  exactly what the tier above replaces: name the moment, then read.
 
 ## Parameter Reference
 
@@ -346,7 +420,10 @@ inline and then again as a file:
    analysis file is busywork, not rigor.
 4. **`PROMPTS.md`** — from `../examples/PROMPTS_TEMPLATE.md`, stripped of its
    authoring scaffolding (see Step 4.4 item 4).
-5. **`PROGRESS.md`** — the bounded working index (`../spec/PLAN_STATE.md` §5.1).
+5. **`PROGRESS.md`** — the bounded working index: goal and invariants, the
+   active task and the exact next action, unresolved blockers, the contracts
+   and decisions still in force, and pointers to the durable records. Not a
+   narrative log — `../resume/SKILL.md` Step 2.1 is what reads it back.
 6. **`state.json`** — `schema` =
    `https://deepworkplan.com/schema/plan-state/v5.json`, `plan`, `updated_at`,
    `status: "pending"`, `completed_count: 0`, `task_count`, **`format`**
@@ -373,7 +450,11 @@ records. Do not paste the ten-section task template into the README.
 ```markdown
 # Plan: {Title}
 
-## 1. Goal            ## 2. Context            ## 3. Global Guidelines
+## 1. Goal
+
+## 2. Context
+
+## 3. Global Guidelines
 
 ## Plan Variables
 | Variable | Value |
@@ -394,15 +475,25 @@ One concise record here; machine state is derived from it, never duplicated.
 - [ ] Task 1: {title} — [#task-1](#task-1)
 - [ ] Task N: Final Review — [#task-N](#task-N)
 
-## 5. Execution Rules        ## 6. Skills & Agents Used
+## 5. Execution Rules
+
+## 6. Skills & Agents Used
+
 ## 7. Plan Status / Notes    → `Plan Status: 0/N completed`
 
 ## Task 1 {#task-1}
-**Goal** · **Context** (what a fresh session needs to start this task alone) ·
-**Touched Surface** (planned surface, planned docs surface, risk class, test
-mapping, selected gate and why) · **Acceptance Criteria** · **Validation** (a
-runnable command) · **Completion log** (status, skills disposition,
-documentation decision, gate record).
+**Goal:** … · **Context:** (what a fresh session needs to start this task
+alone) · **Touched Surface:** (planned surface, planned docs surface, risk
+class, test mapping, selected gate and why) · **Acceptance Criteria:** ·
+**Validation:** (a runnable command) · **Completion log:** (status, skills
+disposition, documentation decision, gate record).
+
+> **The label form is load-bearing, not styling.** Write each field label as
+> `**Goal:**` or `**Goal**` — those two, exactly. The checker parses these
+> labels to find each field (`verify/plan_contract.py`), so a decorative
+> variant like `**Goal.**` makes the field invisible to it and the plan fails
+> conformance with one "lacks Goal" issue per task, for zero content reasons.
+> Step 4.5 catches it; do not rely on that.
 
 ## Task N: Final Review {#task-N}
 The same mandatory Final Review — security pass, final-state validation, skills
@@ -464,8 +555,10 @@ exists, see *Error Handling — plan exists / partial materialization*. Never
 overwrite files that are not part of this plan.
 
 **Write order (resumable at any point):** `manifest.json` → `README.md`
-**skeleton** (goal, context, variables, guidelines and the full task list with
-titles and links, with `Plan Status: materializing`) → `analysis_results/PLAN_ANALYSIS.md`
+**skeleton** (goal, context, variables, the **Format Decision** record — the
+observed signals and why this plan is Full, including when an explicit `full`
+preference overrode the rubric, so the choice is auditable — guidelines and the
+full task list with titles and links, with `Plan Status: materializing`) → `analysis_results/PLAN_ANALYSIS.md`
 (the Step 3 record) → task files in order → `PROMPTS.md` → `PROGRESS.md` →
 `analysis_results/SKILLS_CANDIDATES.md` → `state.json` → **flip the README to
 `Plan Status: 0/N completed`** as the last write. From the second write onward,
@@ -570,7 +663,7 @@ Create:
    "For agents:" note, and drop or repoint its relative links (they resolve from
    `examples/`, not from inside a plan folder). What ships is the copy-paste
    prompts only.
-5. **PROGRESS.md** — a **bounded working index** (`../spec/PLAN_STATE.md` §5.1;
+5. **PROGRESS.md** — a **bounded working index** (`../resume/SKILL.md` Step 2.1 reads it back;
    `../guide/execution.md`): goal and constraints; active task and next action;
    unresolved blockers; current contracts and decisions still in force; direct
    pointers to durable records (task logs, `analysis_results/`). Soft budget
@@ -618,6 +711,34 @@ Neither branch changes the sequential path: every task must work sequentially,
 and the Final Review is always sequential.
 
 #### 4.5 Plan-Quality Check (both modes and both formats — before reporting success)
+
+Run `bash ../verify/conformance.sh --plan PLAN_name` from the repository root
+after materialization. The checker resolves the plan through the same
+`shared/context.sh` logic every flow uses, so the ordinary case needs nothing
+else. Only when the output lives outside the repo's own `.dwp/` do you set
+`DWP_DIR`, and it points at **the `.dwp` directory that contains `plans/`** —
+not at the plan folder itself (`../shared/dwp-paths.md`). Fix findings before
+handing off.
+When the Final Review task's checklist reaches its closure step, write it so a
+**review-only** outcome is a legitimate close: its whole output lands under the
+gitignored `.dwp/`, so a review that fixed nothing has nothing to commit and
+records that step as *not applicable*. Do not emit a checklist line that
+hard-codes a commit — `../execute/SKILL.md` forbids manufacturing a cosmetic
+one, and a generated step that contradicts the execution contract forces the
+executing agent to choose which of the two to disobey.
+
+Invoke the checker by its absolute path (`<pack>/verify/conformance.sh`) or
+from the pack directory — the `../verify/...` form above is written relative to
+this file, not to any flow's working directory.
+
+`../shared/finalize_plan.py` is an **execute-time** helper: at create time there
+is no candidate state and no completed log for it to validate, so do not try to
+run it here. What create owes is the Final Review **task text** that will close
+through it: the task must require completed logs carrying skills and
+documentation decisions, earned gate records, candidate validation against the
+real artifacts, and the receipt. Never let that final check depend on a
+fabricated success record of its own invocation.
+
 
 **For a Lite plan**, verify and fix before continuing:
 - **Requirements → tasks → gates** (Step 3.7) hold for the task records.

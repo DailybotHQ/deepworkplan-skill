@@ -265,6 +265,13 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
   the task `id`, a free-form `step` locator, a timestamp, and a one-line note. An
   agent **SHOULD** update it whenever it pauses inside a task; it **MUST** update
   it before any planned interruption in unattended mode.
+- **The terminal checkpoint is the one fixed value.** `step` is free-form
+  everywhere except at completion: a plan whose `status` is `completed`
+  **MUST** carry `checkpoint.task` = the last task's id and
+  `checkpoint.step` = the literal `"done"`. Every earlier checkpoint in a
+  plan's life is free-form, so this is the one place the convention is not
+  inferable from the plan's own history — state it here rather than leaving an
+  agent to discover it from a refusal.
 - `blocked` is `null` or `{ "task": N, "reason": "...", "since": "...", "needs": "..." }`.
   An unattended agent that hits a stop condition (`AGENT_PROTOCOL.md` §7.3)
   **MUST** populate `blocked` before halting — this is how a daemon's next
@@ -312,6 +319,21 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
   the affected gate records even when the checkbox is already set; the agent
   **MUST** rerun those gates and update the records before marking or
   re-marking the task complete.
+- **Evidence reuse requires an unchanged world.** Before reusing a recorded
+  pass after an interruption, the agent **MUST** compare the recorded
+  fingerprint (`fp=` in the gate evidence: revision plus dirty state) with the
+  current `git rev-parse HEAD` and `git status --porcelain`; a changed
+  revision, changed dirty/generated files, or a changed environment
+  invalidate reuse — the gate is rerun instead. A `log=` pointer inside gate
+  evidence that does not resolve within the plan folder is a conformance
+  finding (the writer refuses closure on it; the checker reports it), never
+  silently reusable evidence.
+- **External-action receipts.** An outward-facing action (report, push, PR,
+  message) is evidenced by its own receipt — id, URL, or remote branch —
+  recorded in the task log at action time. Deterministic tests simulate
+  receipts as local files; a genuinely missing receipt on resume is
+  investigated against the service's actual state, never guessed at and never
+  re-sent on assumption.
 - **Pointers, not history.** `checkpoint.step` and `checkpoint.note` **SHOULD**
   point at the exact instruction and the last durable artifact, so a fresh agent
   resumes from the pointer rather than from a transcript. Unknown or stale
@@ -409,4 +431,77 @@ task correspondence and the meaning of validation results.
 
 ---
 
-*Part of the DeepWorkPlan methodology v4.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+
+## Guarded state updates
+
+The installed updater rejects malformed state and completed tasks without passing
+nonempty gate evidence. Use `--gate-json` for commands containing pipes; it accepts
+the existing closed gate object. Different commands retain their records; retries
+supersede only the same command. `--block-reason` records a blocker, and
+`--resolve-blocker` explicitly resolves only the current task's blocker. Skipped
+work cannot make a plan completed. `--reopen-reason` records caller intent to
+refine; preserve the amendment and invalidated evidence in the task log first.
+`--expected-sha256` rejects a stale state snapshot. A cooperative `.lock` directory
+serializes writes; inspect a crashed writer before removing its lock. No protection
+is claimed against editors that ignore the lock. Records assert results; they do
+not prove command execution or semantic acceptance.
+
+### Verified plan publication
+
+Before announcing completion, author the finished task logs (including
+`Skills disposition:` and `Documentation decision:`), README index and PROGRESS
+from earned source/acceptance results. Then close the final task through
+`shared/update-state.py`: its terminal transition validates the completed
+candidate against all plan artifacts before writing state, verifies the actual
+files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
+an invented passing gate for this invocation to the candidate it is validating.
+The receipt is external evidence, not its own prerequisite. Run
+`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+
+An interrupted publication leaves `.finalizing.json`; normal verification fails
+until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR
+--candidate CANDIDATE.json --recover` succeeds. A stale cooperative lock requires
+checking that no writer is active before removal. No helper commits, pushes,
+executes stored gate commands or silently repairs Markdown. Missing Python means
+UNVERIFIED, never completed. These checks enforce records and structure; manually
+judge acceptance, consumer coverage and the truth of the underlying evidence.
+
+### Evidence truth and amendments
+
+Every scope, criterion or deferral change carries one durable amendment record
+(`refine/SKILL.md` 3.7): original criterion verbatim, what was observed, the
+disposition, the reason, the authority (user / developer / evidence), affected
+tasks, and which evidence was invalidated or preserved. Amendments are
+appended, never backdated; `manifest.json` keeps creation provenance and is
+never rewritten to match a changed live scope.
+
+The five evidence states, and what each may close:
+
+- **Completed investigation** — real recorded work; never the execution of the
+  original criterion. Closes the task only against a revised criterion that
+  names it.
+- **Unexecuted scenario** — recorded as not performed; contributes no passing
+  gate evidence in any era.
+- **Deferred requirement** — the criterion moves to a named destination task
+  with recorded authority; the source closes only with that amendment.
+- **Failed gate** — remains failing until the same acceptance intent is re-run
+  and passes; a retry supersedes only its own command.
+- **Achieved product outcome** — the criterion as written, verified by its
+  gate; the only state that completes a task unchanged.
+
+Enforcement is mechanical where the records allow it and manual where they do
+not. Gate evidence prefixed `invalidated by refine` is retained history, never
+passing evidence — the guarded writer refuses closure without a fresh later
+record for each invalidated command, and read-only verification reports a
+completed task that relies on it. A passing record whose own evidence admits
+the check never ran (`never entered`, `did not run`, `structurally impossible`,
+`unexecuted`, `cannot be measured`) is a contradiction, reported the same way;
+an honest non-execution belongs in an amendment, not behind a passing boolean.
+A completed state task whose record still reads `Status: pending` is likewise a
+reported mismatch. Narrative contradictions beyond these — a report whose
+conclusions disagree with a checklist's claims — require a human reviewer; the
+checker reports what records say, not what prose means. The user may explicitly
+accept a bounded exception with recorded authority; unattended pre-approval is
+never blanket permission to abandon a core objective, and an unmeetable
+mandatory criterion is a blocker, never completed work.

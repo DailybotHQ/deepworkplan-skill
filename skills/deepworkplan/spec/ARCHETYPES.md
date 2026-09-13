@@ -42,7 +42,7 @@ interpreted as in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 ---
 
-## 2. The Individual Repo (99% case)
+## 2. The Individual Repo (the common case)
 
 - An **individual repo** is a single codebase with one primary stack, its own
   validation commands, and per-module documentation. It is the **default**
@@ -192,4 +192,4 @@ majority of the following signals hold; otherwise it **MUST** classify it as an
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.2.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

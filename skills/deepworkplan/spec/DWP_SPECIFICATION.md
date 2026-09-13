@@ -815,7 +815,7 @@ catch-up task.
 
 ## 7. Archetype Behavior in Plans
 
-- For the **individual repo** (99% case), a plan operates entirely within one
+- For the **individual repo** (the common case), a plan operates entirely within one
   repository; all validation, commits, and outputs stay in that repo.
 - For the **orchestrator hub**, a plan **MAY** be an orchestrator plan (§8) that
   spawns child DWPs in sub-repos. The hub plan **MUST NOT** commit sub-project code
@@ -931,4 +931,43 @@ tier, declared in the manifest's `rigor` field when the state layer is present:
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+
+### Verified plan publication
+
+Before announcing completion, author the finished task logs (including
+`Skills disposition:` and `Documentation decision:`), README index and PROGRESS
+from earned source/acceptance results. Then close the final task through
+`shared/update-state.py`: its terminal transition validates the completed
+candidate against all plan artifacts before writing state, verifies the actual
+files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
+an invented passing gate for this invocation to the candidate it is validating.
+The receipt is external evidence, not its own prerequisite. Run
+`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+
+An interrupted publication leaves `.finalizing.json`; normal verification fails
+until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR
+--candidate CANDIDATE.json --recover` succeeds. A stale cooperative lock requires
+checking that no writer is active before removal. No helper commits, pushes,
+executes stored gate commands or silently repairs Markdown. Missing Python means
+UNVERIFIED, never completed. These checks enforce records and structure; manually
+judge acceptance, consumer coverage and the truth of the underlying evidence.
+
+### Evidence truth and amendments
+
+When scope or acceptance criteria change mid-plan, the change is recorded as an
+appended amendment — original criterion verbatim, observed fact, disposition,
+reason, authority, affected tasks, evidence invalidated and evidence preserved
+— never as a silent edit of history (`PLAN_STATE.md` "Evidence truth and
+amendments"). Work is named honestly: a **Completed investigation** is not the
+execution of the original criterion, an **Unexecuted scenario** contributes no
+passing evidence, a **Deferred requirement** moves with recorded authority, a
+**Failed gate** stays failing until the same acceptance intent passes, and only
+an **Achieved product outcome** completes a task as authored. Substituting an easier
+check is a revised criterion, not a repair. Machine-readable contradictions —
+passing records whose evidence admits non-execution, invalidated evidence
+relied on for closure, a completed task whose log says pending — are enforced
+by the writer and the read-only checker; contradictions of meaning between
+prose documents remain a human review obligation. A user may accept a bounded
+exception explicitly; unattended approval never abandards a core objective,
+and an unmeetable mandatory criterion is a blocker, not completed work.

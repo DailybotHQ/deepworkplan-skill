@@ -120,11 +120,24 @@ setup() {
     # the flow below v2's number even with drift, while tripping if a whole
     # companion (execute/SKILL.md ~36.7 KB or execution.md ~18.5 KB) is ever
     # re-linked as compulsory.
+    #
+    # Raised 30,000 -> 31,000 once, deliberately and on the record. The v5
+    # reliability acceptance runs required two operative additions here: a
+    # clean-task-boundary row in the interruption table (two fresh agents
+    # classified the commonest boundary as "not any row" and had to reason it
+    # out) and the router's unattended/partial-harness rules. Before raising
+    # it, every byte of duplication the file still carried was extracted —
+    # the restated Important Notes bullet, the twice-stated trust-boundary
+    # rules, the tier enumeration that repeated the Workflow headings, and a
+    # line of contributor test guidance that belonged in docs/TESTING_GUIDE.md
+    # — recovering 1,275 B. What remained was substance, so the bound moved
+    # rather than the rules. The headroom is deliberately small: this still
+    # trips on the failure mode it exists for, a whole companion re-linked.
     run bash "$REPO_ROOT/tests/efficiency/measure-instruction-load.sh" "$REPO_ROOT"
     [ "$status" -eq 0 ]
     bytes="$(printf '%s' "$output" | awk '/^resume /{print $2}')"
     [ -n "$bytes" ]
-    [ "$bytes" -le 30000 ]
+    [ "$bytes" -le 31000 ]
 }
 
 # Sentence-level assertion that tolerates the source file's own line wrapping:

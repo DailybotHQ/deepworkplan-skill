@@ -8,10 +8,35 @@ or required by downstream users.
 
 | Measure | How | Status |
 |---|---|---|
-| Instruction bytes per flow (compulsory read set) | `bash tests/efficiency/measure-instruction-load.sh` | **measured** (filesystem bytes; `/4` is a labeled estimate) |
+| Instruction bytes per flow — the **entry bundle** loaded at t0 | `bash tests/efficiency/measure-instruction-load.sh` | **measured** (filesystem bytes; `/4` is a labeled estimate) |
+| Instruction bytes per named **end-to-end path** (entry plus the companions its triggers load, unique files, repeats disclosed) | same command; paths declared in `tests/efficiency/paths.tsv` | **measured** (same units, same limits) |
+| Total context a real session consumes | — | **not measured, and neither column above bounds it** — see below |
 | Seeded-fault detection at the intended boundary | `bats tests/efficiency-fixtures.bats` + agent replays | **measured** |
+| Lifecycle guarantees end to end, with injected faults | `bats tests/reliability-acceptance.bats` (protocol: `tests/reliability/PROTOCOL.md`) | **measured**, deterministic — no agent involved |
+| The v5 lifecycle driven by a fresh agent context | live runs scored by `tests/reliability/oracles/score-acceptance.py` | **measured per run**; an existence proof, never a rate |
 | Gate wall-clock, retries, duplicate commands, interruptions, confirmations | recorded per replay from the agent trace | **measured** when the replay runs |
 | Live tokens (input/output/cached/reasoning) | provider counters only, with `source` | **unavailable** unless the harness exposes counters; never estimated after the fact |
+
+### The entry bundle is not a cap on a run
+
+The entry bundle is what a flow reads before it starts; the path total is what
+its named triggers add. Neither bounds the context a real session consumes.
+Both exclude the repository's own files the agent reads (`AGENTS.md`,
+`docs/TESTING_GUIDE.md`, the source under review, the plan folder), tool
+output, the plan files a flow writes and re-reads, re-reads after a compaction
+or handoff, the agent's own output, and anything the host injects — and in a
+real run those dominate. A smaller entry bundle is a smaller starting read, not
+a demonstrated live-session saving, and no fixed byte-to-token ratio, monetary
+figure or amortization argument may be derived from either column. The script
+prints these exclusions and this limit with every run;
+`bats tests/context-accounting.bats` fails if it stops doing so.
+
+Measured paths and phases are declared in `tests/efficiency/paths.tsv`, which
+is checked against each flow's own `## Shared resources` tiers so the
+measurement cannot drift from the contract. A read whose trigger always fires
+(the Final Review companions on every `create`, for instance) stays counted on
+the paths it fires on: moving an inevitable read behind a label is not a
+reduction, and the suite asserts it did not happen.
 
 ## Arms and protocol
 
@@ -72,6 +97,7 @@ methodology, and each has its own write-up with its own stated limits:
 | A plan written by one agent can be resumed correctly by a different agent from a different vendor | [`evaluations/cross-agent-handoff.md`](evaluations/cross-agent-handoff.md) — bidirectional, Claude Code ↔ Codex CLI | Two harnesses only. The other seven supported agents have **installation** coverage, not behavioral: [`COMPATIBILITY.md`](COMPATIBILITY.md) |
 | An existing repository upgrades in place without losing handwritten rules, custom skills or in-flight plans | [`evaluations/adoption-pilot.md`](evaluations/adoption-pilot.md) — three fixtures, checksum-verified, idempotent | Constructed fixtures, not a third-party production repo; only the Python fixture has a runnable toolchain here |
 | Lite plans remain executable and may promote without weakening state contracts | [`evaluations/lite-plan-lifecycle.md`](evaluations/lite-plan-lifecycle.md) — conformance and schema fixtures | Structural coverage only; no cross-harness recommendation-quality claim |
+| The v5 reliability guarantees, their guard cost and the instruction accounting behind them | [`evaluations/v5-reliability.md`](evaluations/v5-reliability.md) — entry bundles and end-to-end paths against `6bf7830` | Static instruction surface only; no live-agent, token or cost claim |
 
 Neither is an efficiency claim, and neither may be cited as one. The handoff runs
 were executed concurrently on a shared host, so their timings are meaningless.

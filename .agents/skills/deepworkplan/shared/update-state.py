@@ -30,6 +30,11 @@ import os
 import re
 import sys
 import tempfile
+from pathlib import Path
+import hashlib
+
+sys.dont_write_bytecode = True
+from state_contract import derive_status, invalidated, state_errors
 
 TASK_STATUSES = ("pending", "in_progress", "completed", "blocked", "skipped")
 PLAN_STATUSES = ("pending", "in_progress", "completed", "blocked")
@@ -75,19 +80,12 @@ def parse_gates(raw):
 
 
 def derive_plan_status(state):
-    tasks = state["tasks"]
-    if all(t["status"] in ("completed", "skipped") for t in tasks):
-        return "completed"
-    if any(t["status"] == "in_progress" for t in tasks):
-        return "in_progress"
-    if state["completed_count"] > 0:
-        return "in_progress"
-    return "pending"
+    return derive_status(state)
 
 
 def next_checkpoint(state, task_id, step, note):
     pending = [t["id"] for t in state["tasks"]
-               if t["status"] not in ("completed", "skipped")]
+               if t["status"] != "completed"]
     if pending:
         target = min(pending)
         step = step or "start"
@@ -109,6 +107,12 @@ def main():
     ap.add_argument("--task", type=int, required=True, metavar="N")
     ap.add_argument("--status", required=True, choices=TASK_STATUSES)
     ap.add_argument("--gate", action="append", default=[], metavar="CMD|EXIT|EVIDENCE")
+    ap.add_argument("--gate-json", action="append", default=[], help="JSON gate object; preserves pipes in commands")
+    ap.add_argument("--block-reason", default="")
+    ap.add_argument("--block-needs", default="")
+    ap.add_argument("--resolve-blocker", action="store_true")
+    ap.add_argument("--reopen-reason", default="")
+    ap.add_argument("--expected-sha256", default="", help="reject stale source state")
     ap.add_argument("--worked", default="")
     ap.add_argument("--notes", default="")
     ap.add_argument("--commit", default="")
@@ -132,12 +136,41 @@ def main():
     except (OSError, json.JSONDecodeError) as exc:
         die(f"cannot read state: {exc}")
 
+    original = Path(args.state).read_bytes()
+    if args.expected_sha256 and hashlib.sha256(original).hexdigest() != args.expected_sha256:
+        die("stale state snapshot")
+    errors = state_errors(state, plan_dir=Path(args.state).parent)
+    if errors:
+        die("invalid input: " + "; ".join(errors))
+    if state.get("materialization", "ready") != "ready" or state.get("promotion"):
+        die("plan is not ready")
+    if state.get("approval", "approved") not in ("approved", "pre_approved"):
+        die("plan is not approved")
     tasks = state.get("tasks") or []
     task = next((t for t in tasks if t.get("id") == args.task), None)
     if task is None:
         die(f"no task {args.task} in this plan "
             f"(have: {[t.get('id') for t in tasks]})")
 
+    if task['status'] == 'completed' and args.status != 'completed' and not args.reopen_reason:
+        die("completed task requires an explicit refine/reopen reason")
+    if args.status in ('in_progress', 'completed') and any(t['status'] != 'completed' for t in tasks if t['id'] < args.task):
+        die("prior required task is not completed")
+    if args.resolve_blocker:
+        if not state.get('blocked') or state['blocked']['task'] != args.task:
+            die("cannot resolve an unrelated or absent blocker")
+        if args.status not in ('in_progress', 'completed'):
+            die("blocker resolution must resume or complete its task")
+        state['blocked'] = None
+    if state.get('blocked') and args.status != 'blocked':
+        die("resolve the active blocker explicitly first")
+    if args.status == 'blocked':
+        if not args.block_reason.strip():
+            die("blocking requires a reason")
+        if state.get('blocked') and state['blocked']['task'] != args.task:
+            die("cannot replace an unrelated blocker")
+        state['blocked'] = {'task': args.task, 'reason': args.block_reason,
+                            'since': (state.get('blocked') or {}).get('since', now()), 'needs': args.block_needs}
     stamp = now()
     if task["status"] != args.status:
         # Idempotence: timestamps record when a transition happened, so a
@@ -156,8 +189,32 @@ def main():
         if args.notes:
             outcome["notes"] = args.notes
         task["outcome"] = outcome
-    if args.gate:
-        task["gates"] = parse_gates(args.gate)
+    incoming = parse_gates(args.gate)
+    for raw in args.gate_json:
+        try:
+            gate = json.loads(raw)
+        except ValueError:
+            die("invalid --gate-json")
+        if not isinstance(gate, dict):
+            die("--gate-json must be an object")
+        incoming.append(gate)
+    if incoming:
+        # Retain unrelated results; latest record for a command wins. Logs keep history.
+        records = list(task.get('gates', []))
+        for gate in incoming:
+            previous = next((g for g in reversed(records) if g.get('command') == gate.get('command')), None)
+            if previous and {k:v for k,v in previous.items() if k != 'last_run'} == {k:v for k,v in gate.items() if k != 'last_run'}:
+                continue
+            records.append(gate)
+        task['gates'] = records
+    if args.status == 'completed':
+        latest = {g.get('command'): g for g in task.get('gates', []) if isinstance(g, dict)}
+        if not latest or any(not str(g.get('command', '')).strip() or not str(g.get('evidence', '')).strip()
+                             or g.get('passes') is not True or g.get('exit_code') != 0 for g in latest.values()):
+            die("completion requires successful gates with command, exit code and evidence")
+        stale = [c for c, g in latest.items() if invalidated(g)]
+        if stale:
+            die("completion requires rerunning evidence invalidated by refine: " + ", ".join(map(str, stale)))
 
     state["completed_count"] = sum(1 for t in tasks if t["status"] == "completed")
     # Plan-level `blocked` carries its own record (reason/since) authored by
@@ -188,8 +245,27 @@ def main():
     if not 0 <= state["completed_count"] <= state.get("task_count", len(tasks)):
         die("completed_count out of range")
 
+    errors = state_errors(state, strict=True, plan_dir=Path(args.state).parent)
+    if errors:
+        die("invalid candidate: " + "; ".join(errors))
+    if state['status'] == 'completed':
+        from finalize_plan import publish
+        try:
+            publish(Path(args.state).parent, state, hashlib.sha256(original).hexdigest())
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            die(str(exc))
+        print(f"task {args.task} → completed · plan completed and verified")
+        return
     directory = os.path.dirname(os.path.abspath(args.state))
     payload = json.dumps(state, indent=2, ensure_ascii=False) + "\n"
+    lock = args.state + '.lock'
+    try:
+        os.mkdir(lock)
+    except FileExistsError:
+        die("state is locked; inspect interrupted writer before recovering lock")
+    if Path(args.state).read_bytes() != original:
+        os.rmdir(lock)
+        die("state changed during update")
     fd, tmp_path = tempfile.mkstemp(dir=directory, prefix=".state.json.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
@@ -199,6 +275,8 @@ def main():
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise
+    finally:
+        os.rmdir(lock)
 
     print(f"task {args.task} → {args.status} · "
           f"{state['completed_count']}/{state['task_count']} completed · "

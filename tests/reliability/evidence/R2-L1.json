@@ -1,0 +1,126 @@
+{
+  "run_id": "R2-L1",
+  "flow": "clean Lite lifecycle (create -> execute -> completion -> verify)",
+  "pack_revision": "7662ec969d8be85596d243632b3cb879418f69b8",
+  "host": "claude-code subagent, fresh context, no conversation carryover",
+  "entry_path": "by-name invocation (read SKILL.md and route) — the documented fallback for hosts without slash commands",
+  "cross_vendor": false,
+  "interrupted": false,
+  "round": 2,
+  "tree_state": "NOT frozen — fixes from this round's own findings landed mid-round",
+  "pack_sha256": "e968c6b0002f9f9fe89874ba97788a1455c56d1e6d0e10a174ce71ba1ccafc0d",
+  "round_note": "round 2 runs on the frozen final candidate; round 1 (L1/L2) ran on earlier revisions and is what found the defects now fixed",
+  "plan_name": "PLAN_refuse_overdrawing_transfer",
+  "verdict": "PASS",
+  "oracles": [
+    {
+      "id": "A1",
+      "name": "flow entry",
+      "verdict": "PASS",
+      "detail": "created shape present; 12 pack file(s) read"
+    },
+    {
+      "id": "A2",
+      "name": "terminal plan conformance",
+      "verdict": "PASS",
+      "detail": "conformance checker exit 0"
+    },
+    {
+      "id": "A3",
+      "name": "defect actually fixed",
+      "verdict": "PASS",
+      "detail": "overdraw raises ValueError and records nothing"
+    },
+    {
+      "id": "A4",
+      "name": "a test encodes the fixed behavior",
+      "verdict": "PASS",
+      "detail": "suite fails with the fix reverted and passes with it restored"
+    },
+    {
+      "id": "A5",
+      "name": "terminal state coherent",
+      "verdict": "PASS",
+      "detail": "2 task(s) completed with passing gate records"
+    },
+    {
+      "id": "A6",
+      "name": "completion was a transaction",
+      "verdict": "PASS",
+      "detail": "receipt present, no failure marker left behind"
+    },
+    {
+      "id": "A7",
+      "name": "resume repeated nothing",
+      "verdict": "N/A",
+      "detail": "run was not interrupted"
+    },
+    {
+      "id": "A8",
+      "name": "run was unattended",
+      "verdict": "PASS",
+      "detail": "no question asked"
+    }
+  ],
+  "commits": [
+    "1c0bacd fix(ledger): refuse overdrawing transfers atomically - Task 1 of PLAN_refuse_overdrawing_transfer",
+    "d93488a chore: workload baseline"
+  ],
+  "pack_files_read": [
+    {
+      "path": "skills/deepworkplan/SKILL.md",
+      "bytes": 12109
+    },
+    {
+      "path": "skills/deepworkplan/create/SKILL.md",
+      "bytes": 51832
+    },
+    {
+      "path": "skills/deepworkplan/create/addon-augmentations.md",
+      "bytes": 4376
+    },
+    {
+      "path": "skills/deepworkplan/execute/SKILL.md",
+      "bytes": 39064
+    },
+    {
+      "path": "skills/deepworkplan/verify/SKILL.md",
+      "bytes": 15253
+    },
+    {
+      "path": "skills/deepworkplan/shared/adaptation.md",
+      "bytes": 2716
+    },
+    {
+      "path": "skills/deepworkplan/examples/PROMPTS_TEMPLATE.md",
+      "bytes": 4056
+    },
+    {
+      "path": "skills/deepworkplan/spec/LITE_PLANS.md",
+      "bytes": 3823
+    },
+    {
+      "path": "skills/deepworkplan/spec/schema/plan-manifest-v5.schema.json",
+      "bytes": 1349
+    },
+    {
+      "path": "skills/deepworkplan/spec/schema/plan-state-v5.schema.json",
+      "bytes": 6868
+    },
+    {
+      "path": "skills/deepworkplan/guide/execution.md",
+      "bytes": 19810,
+      "note": "partial read: section 6 through 6.1 only (the always-firing Final Review trigger), extracted with sed; the whole file was not consumed"
+    },
+    {
+      "path": "skills/deepworkplan/shared/finalize_plan.py",
+      "bytes": 6446,
+      "note": "partial read: lines ~43-68 only, via grep -B25, to diagnose the false 'log still says pending' rejection"
+    }
+  ],
+  "pack_bytes_read": 167702,
+  "commands_run": 16,
+  "questions_asked": [],
+  "stopped_early": false,
+  "notes": "FINDING 1 (blocking until worked around) - finalize_plan.py rejects a COMPLETED log because of a naive substring match. Closing the terminal task through the documented path (`update-state.py --task 2 --status completed`) failed with, verbatim: `update-state: task 1 cannot be published: its log still says pending`. Task 1's log did not say pending; its first line was `**Status:** completed 2026-09-13T17:41:00Z.`. The cause is in skills/deepworkplan/shared/finalize_plan.py, in the completed-candidate validation: `elif 'pending' in log.lower(): missing.append('its log still says pending')`. My Task 1 log contained the sentence `refuses an overdrawing transfer before appending either leg` - and 'ap-PENDING-' matches the bare substring test. This is not an exotic collision: the workload under test is an APPEND-ONLY LEDGER, so 'append/appending' is its domain vocabulary and the natural way to describe the defect (the bug is precisely that both legs are appended before any check). 'depending', 'impending', 'suspending' and 'upending' would trip it identically. Two separate defects: (a) the check should match a status token, not any occurrence of the substring anywhere in the log body; (b) the message asserts something false about the artifact ('its log still says pending') and sends the reader hunting through a log that is already complete - ironically the same failure mode the comment three lines above it says the code was written to avoid ('Name which condition failed: \"requires a completed log\" sent a reader hunting through a log that was already complete when the real fault was an unparseable heading'). Nothing in create/SKILL.md, execute/SKILL.md or verify/SKILL.md warns that the literal string 'pending' must not appear anywhere in a completion log. WORKAROUND APPLIED: reworded the log to `before it adds either leg`; the retry then succeeded and FINALIZATION.json recorded result=verified. The plan's content is unchanged in substance - but a run that had needed the word 'appending' for accuracy would have had to choose between an accurate log and a publishable plan.\n\nFINDING 2 (trust-boundary leak) - the execute flow's own shipped helper writes into the read-only skill pack. execute/SKILL.md's trust boundary states the flow MUST NOT `Write outside the repo checkout and .dwp/`, and verify/SKILL.md explicitly promises `Verification remains read-only, including no Python bytecode output`. conformance.sh honored that (no bytecode). But `python3 <pack>/shared/update-state.py` imports finalize_plan and therefore created `skills/deepworkplan/shared/__pycache__/finalize_plan.cpython-313.pyc` (9980 bytes) inside the skill pack - a write outside both the repo checkout and .dwp/, into a directory a consumer may well have installed read-only or vendored into git. No flow document warns about this, and none tells the agent to clean it. I removed it (explicit instruction in my task); the pack is otherwise byte-untouched - the 5 files `git status` reports as modified under skills/deepworkplan/ were already modified before this run started, and I never wrote there.\n\nFINDING 3 (documentation error) - create/SKILL.md Step 4.5 says: `Run bash ../verify/conformance.sh --plan PLAN_name after materialization, with DWP_DIR pointing to the actual plan root.` DWP_DIR is NOT the plan root anywhere else in the pack: shared/dwp-paths.md and verify/SKILL.md both define it as the .dwp output directory, under which plans live at $DWP_DIR/plans/PLAN_{name}/. Following Step 4.5 literally (DWP_DIR=<...>/.dwp/plans/PLAN_refuse_overdrawing_transfer) would point the checker at a directory with no plans/ subtree. I ignored the DWP_DIR instruction and ran the checker from the repo root, where it resolves the git root and the .dwp directory by itself; that worked on the first try.\n\nFINDING 4 (spec illustration is not valid markdown) - the `Lite README anatomy` fenced block in create/SKILL.md collapses three headings onto one physical line: `## 1. Goal            ## 2. Context            ## 3. Global Guidelines`, and again `## 5. Execution Rules        ## 6. Skills & Agents Used` / `## 7. Plan Status / Notes`. Copied literally this yields one heading whose text contains the other two, which would defeat the checker's `plan README carries the Goal+Context pair` check. It is obviously a compressed illustration, but it is the only anatomy the Lite path is given, and the same file warns two paragraphs later that a purely cosmetic label variant (`**Goal.**` instead of `**Goal:**`) silently fails conformance. I expanded them into separate headings.\n\nOBSERVATION 5 (worked exactly as documented, worth recording as a pass) - the workspace is a PARTIALLY AI-first repo: root AGENTS.md and a gitignored .dwp/, but no .agents/, no docs/ tree (so no docs/TESTING_GUIDE.md gate registry) and no `DWP standard:` provenance line. The router's unattended branch covers this precisely ('Unattended runs record the gap; they never stop to offer'), and create/SKILL.md's t0 read set covers the missing gate registry precisely ('When the target has no docs/TESTING_GUIDE.md, this read resolves against whatever the repository actually documents - usually AGENTS.md quick-commands section'). I recorded three harness findings in the plan README's Notes and derived Task 1's gate from the scoped invocation AGENTS.md documents. No question was needed and nothing was invented. `conformance.sh --repo-only` independently reports the same gaps (exit 1, 4 issues) - expected for this fixture, which can never be repo-conformant.\n\nOBSERVATION 6 (minor, unaddressed by the flow) - the Final Review task produced NO commit, because everything it wrote (SECURITY_REVIEW.md, gate logs, state, README/PROGRESS) lives under the gitignored .dwp/ and it changed no tracked file. execute/SKILL.md rule 6 ('Commit the validated, owned source changes') and the Step 6 compact-result template ('commit: {hash}') both assume every task ends in a commit; the state schema makes `commit` optional, so nothing broke, but the flow never says a Final Review may legitimately close with no commit. I recorded the absence explicitly in the task log rather than manufacturing an empty commit.\n\nOBSERVATION 7 - the only other non-zero exit in the command list that is NOT a real failure is the full-suite call reporting shell exit 2: that was a backtick-quoting error in a trailing `grep` probe I appended to the same shell invocation. The gate itself ran first and its exit code was captured as 0 (`Ran 9 tests ... OK`), and it was re-confirmed by the independent final-state log. Recorded here so the transcript's exit codes are not read as a flaky gate.\n\nSCOPE NOTE - one test beyond the plan's literal acceptance criteria was added (`test_transfer_rejects_non_integer_amount_before_balance_check`). It is not scope expansion: the new balance guard would have changed an existing behavior if left unguarded (an overdrawing FLOAT would have raised ValueError from the new check before add() could raise TypeError), so an explicit isinstance check was needed to preserve the repository's documented rule, and the test pins the line I wrote. Recorded in the Task 1 log."
+}

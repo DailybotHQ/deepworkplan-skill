@@ -108,6 +108,9 @@ cd ~/deepworkplan-skill
 - `~/.<agent>/skills/deepworkplan-resume` → `skills/deepworkplan/resume/`
 - `~/.<agent>/skills/deepworkplan-status` → `skills/deepworkplan/status/`
 - `~/.<agent>/skills/deepworkplan-onboard` → `skills/deepworkplan/onboard/`
+- `~/.<agent>/skills/deepworkplan-verify` → `skills/deepworkplan/verify/`
+- `~/.<agent>/skills/deepworkplan-author` → `skills/deepworkplan/author/`
+- `~/.<agent>/skills/deepworkplan-upgrade` → `skills/deepworkplan/upgrade/`
 
 The per-sub-skill symlinks are what make `deepworkplan-create` etc. discoverable
 as standalone slash commands.
@@ -119,7 +122,7 @@ To uninstall:
 ```bash
 rm -rf ~/deepworkplan-skill
 rm -f ~/.<agent>/skills/deepworkplan \
-      ~/.<agent>/skills/deepworkplan-{create,execute,refine,resume,status,onboard}
+      ~/.<agent>/skills/deepworkplan-{create,execute,refine,resume,status,onboard,verify,author,upgrade}
 ```
 
 **Pros:** zero external tools, full control, explicit about what's on disk.
@@ -167,7 +170,7 @@ discoverability, manual updates, one agent at a time.
 After any method, restart your agent (close + reopen the session, or use its
 "reload" command) and check the skill is discovered. Ask *"what deepworkplan
 skills are available?"* — a properly installed pack lists `deepworkplan` plus the
-six sub-skills.
+nine sub-skills.
 
 To verify the symlink state directly:
 
@@ -175,7 +178,8 @@ To verify the symlink state directly:
 ls -la ~/.claude/skills/ | grep deepworkplan   # or your agent's path
 ```
 
-You should see `deepworkplan` and `deepworkplan-{create,execute,refine,resume,status,onboard}`
+You should see `deepworkplan` and
+`deepworkplan-{create,execute,refine,resume,status,onboard,verify,author,upgrade}`
 (or just the `deepworkplan` directory if you used Method 4).
 
 ---
@@ -192,7 +196,26 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
   `.dwp/` to your `.gitignore`.
 - **Plans** land under a gitignored `.dwp/` directory at the repo root
   (`.dwp/plans/PLAN_<slug>/`), overridable via the `DWP_DIR`
-  environment variable.
+  environment variable. Because that directory is ignored, a fresh clone has
+  no plan data: moving a plan to a new machine is an explicit transfer of the
+  whole plan folder (see
+  [`../skills/deepworkplan/shared/dwp-paths.md`](../skills/deepworkplan/shared/dwp-paths.md),
+  "Workspace persistence and transfer").
+
+After onboarding, the repository's `AGENTS.md` carries an intent-to-flow
+routing block: explicit planning requests create a plan, execute/resume
+requests invoke those flows, status/verify stay read-only, and ordinary
+direct edits ("fix this bug", "rename that") are done directly — they never
+silently become a plan. `trust`/`auto` authorizes unattended continuation
+within the requested flow; it is not a flow selector. The exact
+post-onboarding next command is `/dwp-create "<one-line goal>"` on hosts
+with slash commands, or `#deepworkplan-create "<one-line goal>"` / plain
+text ("run deepworkplan-create …") on hosts without — flow discovery is
+local (`.agents/commands/` delegators plus the installed skill), so no
+network or prior session is needed. Hosts missing slash commands, subprocess
+agents, parallel teams or persistent sessions fall back per capability to
+the portable sequential path
+([`COMPATIBILITY.md`](COMPATIBILITY.md), "Portable sequential path").
 
 ---
 

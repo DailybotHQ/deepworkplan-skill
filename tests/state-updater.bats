@@ -15,11 +15,13 @@ setup() {
     SCRIPT="$REPO_ROOT/skills/deepworkplan/shared/update-state.py"
     SCHEMA="$REPO_ROOT/skills/deepworkplan/spec/schema/plan-state-v2.schema.json"
     FX="$REPO_ROOT/tests/fixtures/lite-plan/.dwp/plans/PLAN_lite_fixture"
-    WORK="$(mktemp -d)"
+    BASE_WORK="$(mktemp -d)"
+    WORK="$BASE_WORK/PLAN_lite_fixture"
+    mkdir -p "$WORK"
     cp "$FX/state.json" "$WORK/state.json"
 }
 
-teardown() { rm -rf "$WORK"; }
+teardown() { rm -rf "$BASE_WORK"; }
 
 # Assert $WORK/state.json validates against the shipped v2 schema (skipped
 # when jsonschema is not installed — same guard as schema-contract.bats).
@@ -42,7 +44,7 @@ PY
     run python3 - "$SCRIPT" <<'PY'
 import ast, sys
 tree = ast.parse(open(sys.argv[1]).read())
-allowed = {"json", "sys", "os", "re", "argparse", "datetime", "pathlib", "tempfile"}
+allowed = {"json", "sys", "os", "re", "argparse", "datetime", "pathlib", "tempfile", "hashlib", "state_contract", "finalize_plan"}
 imports = set()
 for node in ast.walk(tree):
     if isinstance(node, ast.Import):
@@ -102,9 +104,24 @@ PY
 }
 
 @test "derives plan completion and never rewrites the first close's timestamps" {
-    python3 "$SCRIPT" "$WORK/state.json" --task 1 --status completed >/dev/null
+    python3 "$SCRIPT" "$WORK/state.json" --task 1 --status completed --gate "fixture-check|0|executed=1/1" >/dev/null
     first_done="$(python3 -c 'import json;print(json.load(open("'"$WORK"'/state.json"))["tasks"][0]["completed_at"])')"
-    run python3 "$SCRIPT" "$WORK/state.json" --task 2 --status completed
+    # The terminal transition now checks the actual plan, not state alone.
+    python3 - "$WORK" "$REPO_ROOT" <<'PYFIX'
+import sys, tempfile, shutil
+from pathlib import Path
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(sys.argv[2])/'tests'))
+from completion_test import ready_plan
+with tempfile.TemporaryDirectory() as base:
+    source, _ = ready_plan(base)
+    for item in source.iterdir():
+        if item.name == 'state.json': continue
+        target=Path(sys.argv[1])/item.name
+        if item.is_dir(): shutil.copytree(item,target,dirs_exist_ok=True)
+        else: shutil.copyfile(item,target)
+PYFIX
+    run python3 "$SCRIPT" "$WORK/state.json" --task 2 --status completed --gate "fixture-check|0|executed=1/1"
     [ "$status" -eq 0 ]
     validates
     python3 - "$WORK/state.json" "$first_done" <<'PY'

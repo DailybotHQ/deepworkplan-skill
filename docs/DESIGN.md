@@ -117,14 +117,15 @@ via `DWP_DIR`. We chose a single conventional, gitignored directory because:
 This is a public contract (see `AGENTS.md` rule #5): changing the `.dwp/` layout
 or the `DWP_DIR`/`DWP_AGENT_TOOL` env vars is a breaking change.
 
-## 8. Reasoning over copy-paste (~90% baseline, ~10% reasoned per repo)
+## 8. Reasoning over copy-paste (common baseline, reasoned remainder)
 
 The skill is **markdown-first**: its "code" is instructions an agent reads and
 then *reasons about*, not templates it blindly stamps out. As
 [`shared/adaptation.md`](../skills/deepworkplan/shared/adaptation.md) puts it,
-roughly 90% of any generated artifact follows a fixed baseline shape, and ~10% is
-reasoned from the target repo's actual stack, validation commands, and module
-layout. We designed it this way because a skill that copy-pastes a fixed
+most of any generated artifact follows a fixed baseline shape, and the
+remainder is reasoned from the target repo's actual stack, validation commands,
+and module layout. The split is an observation from an audit of six
+repositories, not a measured constant, and is not published as a ratio. We designed it this way because a skill that copy-pastes a fixed
 `AGENTS.md` produces plausible-but-wrong docs for every repo that isn't the one
 it was templated from. The onboarding presets under
 [`onboard/presets/`](../skills/deepworkplan/onboard/presets/README.md) are
@@ -134,7 +135,7 @@ it was templated from. The onboarding presets under
 
 Onboarding and plan execution branch on two repo archetypes, classified by a
 heuristic in [`spec/ARCHETYPES.md`](../skills/deepworkplan/spec/ARCHETYPES.md): a
-normal **individual repo** (the ~99% case) and an **orchestrator hub** that
+normal **individual repo** (the common case) and an **orchestrator hub** that
 coordinates work across many managed repos. We encode this explicitly rather than
 pretend one shape fits all because the orchestrator case needs child `.dwp/`
 nesting, an `ORCHESTRATOR_MANIFEST.md`, and integration-checkpoint tasks that
@@ -177,7 +178,7 @@ this repo has no consent/secret-scan flows — there's no outbound action to gat
 `SKILL.md` in sync, prepends to `CHANGELOG.md`, tags, and creates a GitHub
 Release on every merge to `main`. Contributors never hand-edit `version:` fields,
 `CHANGELOG.md`, or tags. We automate this because a markdown skill spread across a
-router plus six sub-skills plus addons is exactly the kind of thing where
+router plus nine sub-skills plus addons is exactly the kind of thing where
 hand-bumping versions drifts out of sync — and a wrong version is what users see
 first.
 

@@ -1,0 +1,128 @@
+{
+  "run_id": "L1",
+  "flow": "clean Lite lifecycle (create -> execute -> completion -> verify)",
+  "pack_revision": "7662ec969d8be85596d243632b3cb879418f69b8",
+  "host": "claude-code subagent, fresh context, no conversation carryover",
+  "entry_path": "by-name invocation (read SKILL.md and route) — the documented fallback for hosts without slash commands",
+  "cross_vendor": false,
+  "interrupted": false,
+  "round": 1,
+  "tree_state": "dirty (task 9 in progress)",
+  "pack_sha256": null,
+  "round_note": "round 1 — ran against an UNCOMMITTED working tree at this revision while Task 9 was in progress, and the router changed on disk during L2 session 2. These runs are reported as the round that FOUND the defects, not as acceptance evidence for a frozen candidate; round 2 (R2-L1, R2-L2) is that.",
+  "plan_name": "PLAN_overdraft_guard",
+  "verdict": "PASS",
+  "oracles": [
+    {
+      "id": "A1",
+      "name": "flow entry",
+      "verdict": "PASS",
+      "detail": "created shape present; 13 pack file(s) read"
+    },
+    {
+      "id": "A2",
+      "name": "terminal plan conformance",
+      "verdict": "PASS",
+      "detail": "conformance checker exit 0"
+    },
+    {
+      "id": "A3",
+      "name": "defect actually fixed",
+      "verdict": "PASS",
+      "detail": "overdraw raises ValueError and records nothing"
+    },
+    {
+      "id": "A4",
+      "name": "a test encodes the fixed behavior",
+      "verdict": "PASS",
+      "detail": "suite fails with the fix reverted and passes with it restored"
+    },
+    {
+      "id": "A5",
+      "name": "terminal state coherent",
+      "verdict": "PASS",
+      "detail": "2 task(s) completed with passing gate records"
+    },
+    {
+      "id": "A6",
+      "name": "completion was a transaction",
+      "verdict": "PASS",
+      "detail": "receipt present, no failure marker left behind"
+    },
+    {
+      "id": "A7",
+      "name": "resume repeated nothing",
+      "verdict": "N/A",
+      "detail": "run was not interrupted"
+    },
+    {
+      "id": "A8",
+      "name": "run was unattended",
+      "verdict": "PASS",
+      "detail": "no question asked"
+    }
+  ],
+  "commits": [
+    "26bfe9a fix(ledger): complete task 1 - refuse overdrawing transfers atomically",
+    "67a77ad chore: workload baseline"
+  ],
+  "pack_files_read": [
+    {
+      "path": "skills/deepworkplan/SKILL.md",
+      "bytes": 10650
+    },
+    {
+      "path": "skills/deepworkplan/create/SKILL.md",
+      "bytes": 50822
+    },
+    {
+      "path": "skills/deepworkplan/create/addon-augmentations.md",
+      "bytes": 4376
+    },
+    {
+      "path": "skills/deepworkplan/execute/SKILL.md",
+      "bytes": 39064
+    },
+    {
+      "path": "skills/deepworkplan/verify/SKILL.md",
+      "bytes": 15253
+    },
+    {
+      "path": "skills/deepworkplan/verify/plan_contract.py",
+      "bytes": 38903
+    },
+    {
+      "path": "skills/deepworkplan/shared/adaptation.md",
+      "bytes": 2716
+    },
+    {
+      "path": "skills/deepworkplan/examples/PROMPTS_TEMPLATE.md",
+      "bytes": 4056
+    },
+    {
+      "path": "skills/deepworkplan/guide/execution.md",
+      "bytes": 19810
+    },
+    {
+      "path": "skills/deepworkplan/spec/LITE_PLANS.md",
+      "bytes": 3823
+    },
+    {
+      "path": "skills/deepworkplan/spec/PLAN_STATE.md",
+      "bytes": 26531
+    },
+    {
+      "path": "skills/deepworkplan/spec/schema/plan-manifest-v5.schema.json",
+      "bytes": 1349
+    },
+    {
+      "path": "skills/deepworkplan/spec/schema/plan-state-v5.schema.json",
+      "bytes": 6868
+    }
+  ],
+  "pack_bytes_read": 224221,
+  "commands_run": 57,
+  "questions_asked": [],
+  "stopped_early": false,
+  "notes": "Run completed end to end; no procedure step required a question, so nothing blocked. Findings, verbatim where they are quotations of pack text:\n\n1. ROUTER BRANCHING DOES NOT COVER THIS REPO. SKILL.md's 'Start here' has two branches: 'If the repository is not yet AI-first -- there is no root AGENTS.md and no .agents/ directory' (onboard), and 'If the repository is already AI-first but its harness predates this skill -- AGENTS.md / .agents/ exist, yet there is no DWP standard: provenance line' (offer the upgrade). The workspace has AGENTS.md but NO .agents/, so it matches neither branch literally. The third branch ('already AI-first and current', route silently) is also false. I routed by the requested intent (create) and did not offer onboarding, because offering is a question and this run is unattended; the harness gap is instead recorded inside the plan README's Notes and in SECURITY_REVIEW.md. Flagging it as an ambiguity in the router, not as a failure.\n\n2. COMPULSORY READ THAT DOES NOT EXIST. create/SKILL.md's essential-now tier names \"The target repository's docs/TESTING_GUIDE.md ... the documented full and scoped validation commands and the source-to-test mapping every generated gate is selected from ... it is compulsory\". This repository has no docs/ tree at all. The Error Handling entry ('No documented validation commands in the target repo') assumes the all-or-nothing case, but here AGENTS.md -> Quick Commands documents BOTH a real full and a real scoped invocation. I derived the gates from AGENTS.md rather than falling back to the full suite on every task, and recorded that choice plus the upgrade path in the plan README. The procedure has no explicit rule for 'commands documented, but not in docs/TESTING_GUIDE.md'.\n\n3. LITE README FIELD-LABEL SYNTAX IS UNDER-SPECIFIED, AND COST ONE FAILED CONFORMANCE RUN. create/SKILL.md's 'Lite README anatomy' sketches task records as '**Goal** . **Context** (what a fresh session needs to start this task alone) . **Touched Surface** ...' -- prose, with no statement of the exact label form the checker requires. I wrote '**Goal.**' / '**Context.**' (bold label ending in a period). verify/conformance.sh then failed with 10 issues ('Lite task lacks Goal: 1', 'lacks Touched Surface: 1', 'lacks Acceptance Criteria: 1', 'lacks Validation: 1', 'lacks Context: 1', and the same five for task 2) even though every section was present and non-empty. The cause is verify/plan_contract.py:80, label_pattern = r'\\*\\*(?:'+label+r')\\s*:?\\*\\*[ \\t]*[:.-]?', which accepts '**Goal:**' or '**Goal**' but not '**Goal.**'. Renaming the labels to '**Goal:**' etc. fixed all 10 with no content change. An agent that trusted the anatomy sketch and did not run Step 4.5 would have shipped a plan the checker rejects. Suggest the anatomy block state the accepted label form literally.\n\n4. update-state.py TIGHTENS state.json PERMISSIONS. After the first --task update, state.json changed from 0644 to 0600 (and FINALIZATION.json is written 0600). Harmless here, undocumented in the pack text I read.\n\n5. NO GIT IDENTITY IN THE WORKSPACE. The workspace repo has no user.name/user.email configured and the pack does not mention this. I passed -c user.name / -c user.email inline for the single commit rather than writing to the repo's git config, to avoid mutating configuration the task did not ask for.\n\n6. SCOPE DISCIPLINE HELD, AND PRODUCED A RECORDED NON-FIX. transfer() still accepts a NEGATIVE cents (-1000 > balance is false), which moves money the other way and overdraws the TARGET -- the same defect class from the other direction, pre-existing. AGENTS.md defines neither the sign convention nor that case and the task record does not authorize it, so per execute Step 5 ('When scope exceeds the compact task record, stop for refine rather than silently expanding work') I left behavior unchanged and recorded it in Task 1's log and as finding 2 of SECURITY_REVIEW.md. Noting it here so the evaluation sees a deliberately unfixed real defect rather than an oversight.\n\n7. REQUIRED LOCAL REVIEW COULD NOT RUN. .agents/skills/ai-diff-reviewer/ and all three recognized extension paths are absent, so the Final Review recorded a 'local reviewer not installed' info finding per the addon's honest-degradation rule and carried it into the completion report. Installing it is onboarding's job and this run forbids installers.\n\n8. VERIFY EXIT CODES. bash verify/conformance.sh --plan PLAN_overdraft_guard -> exit 0, 'CONFORMANT (11 passed, 1 advisory)'. The unscoped repository-wide run -> exit 1, 'NOT CONFORMANT -- 4 issue(s) (16 passed, 6 advisory)'; all 4 failures are the pre-existing fixture condition (.agents/agents, .agents/commands, .agents/skills, .agents/docs missing), untouched by this plan.\n\n9. NO EXECUTIVE REPORT, NO DAILYBOT, NO PUSH/PR. Unattended cannot answer the Executive Report offer, so none was generated (recorded, plan still complete). Dailybot is not installed, so every lifecycle report point was skipped silently. Nothing was pushed and no PR opened -- neither the plan nor the task authorized it.\n\n10. PARTIAL PACK READS (honesty about pack_files_read). Byte counts above are each file's full wc -c, but four were read in part, not whole: create/SKILL.md (read lines 1-560 and 686-805 plus a headings index; lines 560-686 are the Full-representation expansion, which the Lite path never reaches), guide/execution.md (section 6.1 only, lines 72-125), verify/plan_contract.py (lines 73-89 and 320-380, read only to diagnose finding 3), and spec/PLAN_STATE.md (section 5.1 onward). Every other listed file was read in full. shared/context.sh, verify/conformance.sh, shared/update-state.py and shared/finalize_plan.py were EXECUTED but their sources were never read -- create/SKILL.md states of context.sh that 'its source is not part of this flow's reads' -- so they are deliberately not in pack_files_read.\n\n11. Nothing outside the workspace was modified except this report file. The skill pack is byte-unchanged."
+}

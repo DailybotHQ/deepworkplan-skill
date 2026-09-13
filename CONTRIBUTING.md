@@ -73,7 +73,9 @@ deepworkplan-skill/
 └── skills/deepworkplan/           ← THE INSTALLED ARTIFACT — only this ships
     ├── SKILL.md                   ← router meta-skill (version source of truth)
     ├── spec/                      ← the 5 RFC-2119 normative docs
-    ├── shared/                    ← context.sh, dwp-paths.md, adaptation.md
+    ├── shared/                    ← context.sh, dwp-paths.md, adaptation.md,
+    │                                 troubleshooting.md, update-state.py,
+    │                                 state_contract.py, finalize_plan.py
     ├── create/ execute/ refine/ resume/ status/ onboard/  ← sub-skills
     ├── guide/ examples/           ← methodology guide + templates
     └── addons/                    ← opt-in devcontainer + dailybot addons
@@ -217,7 +219,7 @@ Every merge to `main` triggers `auto-release.yml`, which:
    - `feat(scope)!:` or `BREAKING CHANGE:` in body → **MAJOR**
    - `feat(scope):` → **MINOR**
    - everything else (`fix:`, `chore:`, `docs:`, `ci:`, no prefix) → **PATCH**
-4. Syncs the new version into **all** SKILL.md files (router + six sub-skills +
+4. Syncs the new version into **all** SKILL.md files (router + nine sub-skills +
    addons).
 5. Prepends a section to `CHANGELOG.md` listing the merged commits.
 6. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`.
@@ -244,7 +246,8 @@ documented in [`AGENTS.md`](AGENTS.md) → "Commit Message Format":
 
 **Scopes:** `skill` (general pack/router), `create` / `execute` / `refine` /
 `resume` / `status` / `onboard` (specific sub-skill), `addon` (an addon under
-`addons/`), `shared` (context.sh, dwp-paths.md, adaptation.md), `setup`
+`addons/`), `shared` (context.sh, dwp-paths.md, adaptation.md, update-state.py,
+state_contract.py, finalize_plan.py), `setup`
 (setup.sh), `ci` (.github/), `docs` (docs/, README, guide), `release`
 (versioning, CHANGELOG).
 
@@ -281,7 +284,7 @@ line and prepend a duplicate changelog section.
 | **shellcheck** | `setup.sh`, `skills/deepworkplan/shared/context.sh`, `scripts/*.sh` | Bash syntax issues, unsafe quoting, unused vars |
 | **context.sh smoke** | Output is valid single-line JSON; `DWP_AGENT_TOOL` and `DWP_DIR` overrides are honored | Behavioral regressions in the shared context detector |
 | **bats tests** | All cases in `tests/*.bats` | Unit-test regressions in `context.sh` and `setup.sh` |
-| **setup.sh smoke (Linux + macOS)** | `--help` runs, and `--host claude` creates the pack + six sub-skill symlinks — on both Ubuntu and macOS bash 3.2 | bash 4+ idioms (`mapfile`, `declare -A`, `${var^^}`) that break for macOS users |
+| **setup.sh smoke (Linux + macOS)** | `--help` runs, and `--host claude` creates the pack + nine sub-skill symlinks — on both Ubuntu and macOS bash 3.2 | bash 4+ idioms (`mapfile`, `declare -A`, `${var^^}`) that break for macOS users |
 | **Markdown link check** | Internal cross-references and external links resolve | Dead links in docs |
 
 The `concurrency` group ensures consecutive pushes cancel earlier still-running

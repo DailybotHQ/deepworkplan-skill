@@ -48,6 +48,30 @@ def main():
         if "[`GUIDE.md`](GUIDE.md)" not in f.read_text():
             problems.append(f"missing index pointer header: {f.name}")
 
+    # 3b. cited sections resolve to a real heading
+    #
+    # v5 tiers reads as "read only §X of file Y". If §X does not exist, an
+    # agent extracting that section gets EMPTY OUTPUT and a zero exit — a
+    # silent no-read, the worst failure mode for progressive disclosure. Found
+    # by an acceptance run: both create and execute said "guide/execution.md
+    # §6.1" while that file's heading is `## 6.1.`, so a `### 6.1` extraction
+    # silently read nothing.
+    section_re = re.compile(
+        r'`?\.{0,2}/?(?:\.\./)*((?:guide|spec)/[A-Za-z0-9_.-]+\.md)`?[^\n]{0,40}?'
+        r'§(\d+(?:\.\d+)*)')
+    for md in sorted(pack.rglob("*.md")):
+        text = md.read_text()
+        for rel, section in section_re.findall(text):
+            target = pack / rel
+            if not target.is_file():
+                continue
+            body = target.read_text()
+            # A heading for §N.M is any level whose text starts with that number.
+            pattern = re.compile(r'(?m)^#{1,6}[ \t]+' + re.escape(section) + r'[.)]?(?:[ \t]|$)')
+            if not pattern.search(body):
+                problems.append(
+                    f"cited section does not exist: {md.relative_to(pack)} -> {rel} §{section}")
+
     # 4. preservation
     if a.baseline:
         before = collections.Counter(l for l in pathlib.Path(a.baseline).read_text().split("\n") if l.strip())

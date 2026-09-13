@@ -180,3 +180,10 @@ End with one of: **CONFORMANT** (all MUST criteria pass) or **NOT CONFORMANT —
 > find a `PLAN_onboard_*` under `.dwp/plans/`, report conformance gaps as
 > **in progress, not failures**, and point the developer at `/dwp-status` and
 > `/dwp-resume` to finish that plan rather than starting a new remediation plan.
+
+### Interrupted finalization
+
+A `.finalizing.json` marker is a failure, not an ignorable scratch file.
+Verification remains read-only, including no Python bytecode output. Recover
+through the execution finalization protocol after inspecting the marker and
+workspace; never repair inside verify.

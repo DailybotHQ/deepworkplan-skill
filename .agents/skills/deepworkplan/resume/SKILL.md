@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-resume
 description: Resume interrupted Lite or Full Deep Work Plans from durable Markdown and state, including safe recovery of promotions without duplicating completed work or gates.
-version: "5.1.0"
+version: "5.2.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -10,16 +10,16 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 # DeepWorkPlan — Resume
 
 Safely continue an interrupted plan from where it stopped — no duplicated work,
-strict order, continuing from the first `[ ]` task — from **repository
-artifacts alone**: a different session, agent, model or harness must be able to
-pick the plan up without the previous conversation.
+strict order, continuing from the first `[ ]` task — from **durable workspace
+artifacts alone** (the plan folder on disk, gitignored `.dwp/` included): a
+different session, agent, model or harness must be able to pick the plan up
+without the previous conversation. A fresh clone without `.dwp/` has nothing
+to resume — see *Persistence* below.
 
 ## Shared resources (read at their moment, not upfront)
 
 The compulsory set for this flow is the router SKILL plus this file: every
-rule the resumption assessment runs on — compact-index-first loading,
-evidence gathering, markdown-wins reconciliation, the interruption-boundary
-table, takeover, the smoke test — is stated inline in the steps below. A
+rule the resumption assessment runs on is stated inline in Step 2 below. A
 default resumption reads **no** guide, spec, shared companion, or execution
 contract before assessment; each loads when its moment arrives. (This
 ordering is deliberate: reading companions "to be safe" is the failure mode
@@ -96,20 +96,17 @@ the checkpoint and use refine; do not promote or alter approvals implicitly.
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
 **Writes:** identical scope to `execute` (task outputs, `.dwp/` working state,
-per-task commits after gates pass) — resume continues an interrupted plan, it
-does not widen the boundary. Recorded state follows the **DWP Resume Protocol**
-(`../spec/DWP_SPECIFICATION.md` §5.3): completed `[x]` tasks are **trusted as
-recorded** — never re-validated unless the developer explicitly asks, `refine`
-marked them `(re-validate: …)`, or the protocol's smoke test fails in a way that
-implicates a completed task — while the **world** is smoke-tested (cheapest
-standing validation) before anything is built on it.
+per-task commits after gates pass) — resuming does not widen the boundary.
 
-**It MUST NOT:** re-run or "fix up" already-completed tasks unless the
-developer asks, a `(re-validate…)` marker exists, or the §5.3 smoke test
-implicates them; skip the post-interruption smoke test; repeat a commit, gate,
-skill authoring, report or other external action that the evidence shows
-already happened; migrate a legacy plan (that is `refine migrate`, on explicit
-request only); push without instruction; or write outside the repo checkout and
+**It MUST NOT:** re-run or "fix up" a completed `[x]` task — under the **DWP
+Resume Protocol** (`../spec/DWP_SPECIFICATION.md` §5.3) those are trusted as
+recorded, and only three things reopen one: the developer asks, `refine` left a
+`(re-validate: …)` marker, or the smoke test fails in a way that implicates it;
+skip that post-interruption smoke test, which validates the **world** (the
+cheapest standing check) before anything is built on it; repeat a commit, gate,
+skill authoring, report or other external action the evidence shows already
+happened; migrate a legacy plan (that is `refine migrate`, on explicit request
+only); push without instruction; or write outside the repo checkout and
 `.dwp/`.
 
 ## Workflow
@@ -146,6 +143,13 @@ pointer**, never by replaying everything.
    current revision.
 3. **Reconcile Markdown, JSON and the workspace — before any work.** The
    markdown wins every disagreement (`../spec/PLAN_STATE.md` §5):
+   - Where `state.json` exists, gather machine evidence first: run
+     `python3 ../verify/plan_contract.py <plan-dir>` (read-only) and surface
+     every finding — failed gates, `invalidated by refine` reliance, evidence
+     admitting non-execution, dangling `log=` pointers — in `PROGRESS.md`.
+     Markdown wins a **status** disagreement; it never lets a summary override
+     a failed gate, admitted non-execution, invalidated evidence or an
+     implementation the tree does not show.
    - `state.json` vs README checkboxes disagree → regenerate `state.json` from the
      README (and git log), note the reconciliation in `PROGRESS.md`, continue.
    - `state.json.blocked` is set → surface it: that is why the plan stopped.
@@ -166,18 +170,25 @@ pointer**, never by replaying everything.
 
    | Interrupted… | Evidence to check | Then |
    |---|---|---|
+   | at a clean task boundary (the commonest case) | the last task's whole closure order present and consistent, checkpoint pointing at un-started work | **no repair step is owed** — take over (2.6), smoke-test (2.7), start the next task. Do not hunt for a missing step |
    | before the gate ran | uncommitted changes; no gate record | finish the implementation if incomplete; run the gate **once** |
-   | after the gate, before the commit | gate record present, `passes: true`, and inputs unchanged (fingerprint) | reuse the passing gate result; commit **once** |
+   | after the gate, before the commit | gate record present, `passes: true`, and the recorded `fp=` still matches the world — same revision (`git rev-parse HEAD`), same dirty/generated files (`git status --porcelain`), same environment; any difference invalidates reuse | rerun the gate, record the fresh result, then commit **once** |
    | after the commit, before the README/log update | commit exists in `git log`; README still `[ ]` | complete log → README → PROGRESS → `state.json`; do **not** re-commit |
    | between Markdown and `state.json` updates | README `[x]`, state stale | regenerate `state.json`; nothing else |
-   | after an external action (report, push, PR, message) | the action's own evidence (report id, remote branch, PR URL in the log) | do **not** repeat it; record that it already happened |
+   | after an external action (report, push, PR, message) | the action's own evidence (report id, remote branch, PR URL in the log) | do **not** repeat it; record that it already happened — a missing receipt is investigated against the service's actual state, never guessed or re-sent |
    | mid-implementation with no checkpoint note | dirty tree only | review the diff against the task; incorporate valid partial progress, finish the rest |
 
    Changed inputs since a recorded gate (a later edit, a `refine`, a new
    revision) invalidate that gate → rerun it. Where the table resumes the
    tail of the update order, the `state.json` step may use the shipped
    updater (`../shared/update-state.py`) as a targeted, atomic mutation;
-   only the reconcile-from-markdown row regenerates the whole file.
+   only the reconcile-from-markdown row regenerates the whole file. Retain
+   the original review baseline: when the interruption landed mid-review, the
+   diff and criteria under review at the halt are the baseline resumed —
+   rebuild nothing the checkpoint already records. An interrupted completion
+   publication leaves a `.finalizing.json` marker in the plan folder: inspect
+   it and recover via `python3 ../shared/finalize_plan.py <plan-dir>
+   --candidate <candidate.json> --recover` before any other plan action.
 6. **Takeover from another agent or model.** If the checkpoint, log or
    `PROGRESS.md` was written by a different agent/model (`state.json.updated_by`,
    the log's wording) or the session is a fresh context: read the checkpoint
@@ -256,11 +267,25 @@ action and the evidence pointers, and `state.json` (`checkpoint` `{task, step,
 at, note}` or `blocked`). That is the whole handoff: a fresh agent, another
 model, or another harness resumes from these files with Step 2.
 
+## Persistence: same workspace, new machine, or nothing to resume
+
+- **Same workspace:** the handoff artifacts above are already on disk; Step 2
+  is the whole recovery.
+- **New machine / fresh clone:** `.dwp/` is gitignored by design, so a fresh
+  `git clone` carries **no** plan data — report that honestly, never
+  fabricate progress from commits. Transfer is explicit and manual
+  (`../shared/dwp-paths.md`, "Workspace persistence and transfer"): copy the
+  **whole plan folder** — README, task files, `PROGRESS.md`, `manifest.json`,
+  `state.json`, and `analysis_results/` with every cited gate log — check out
+  the recorded repository revision, and re-create the dirty work the
+  checkpoint names. The minimum handoff manifest: the complete plan folder,
+  evidence pointers, repository revision(s), and required dirty work.
+- **Missing artifacts** (no plan folder, absent state, dangling `log=` pointer):
+  report what is missing and stop at that boundary; never reconstruct history
+  from memory. No daemon, auto-upload, or automatic unignoring of `.dwp/`
+  exists — persistence is a deliberate copy.
+
 ## Important Notes
-- Trust the task list (`[x]` done / `[ ]` pending); verify with git; read the
-  active task's log and the compact index; retrieve history by pointer; never
-  duplicate work; never skip; assess partial work at its boundary; stop on
-  blockers.
 - **Legacy plans:** execute as recorded; no automatic lifecycle migration.
 
 ## Error Handling

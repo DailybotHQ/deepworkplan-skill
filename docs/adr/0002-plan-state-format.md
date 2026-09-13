@@ -106,3 +106,10 @@ Unverified and quarantined as such: the exact TOON byte delta on a real
 `state.json` (no stdlib encoder available to measure honestly — the 20%/45%
 figures are JSON-compact and key-elimination arithmetic, not a TOON
 measurement) and `toon-python`'s PyPI name/version/write support.
+
+## Reliability hardening
+
+ADR 0003 extends the updater with input/candidate validation, explicit blocker
+transitions, preserved per-command evidence and cooperative stale-write defense.
+Published schemas remain unchanged; old claims that the helper never authors a
+blocker are superseded by the explicit --block-reason interface.

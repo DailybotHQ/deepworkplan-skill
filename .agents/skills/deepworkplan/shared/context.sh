@@ -74,8 +74,14 @@ fi
 DWP_DIR="${DWP_DIR:-$REPO_ROOT/.dwp}"
 
 # ── Output (single-line JSON) ────────────────────────────────────────────────
-# Emits compact JSON assuming paths and names without embedded quotes (true for
-# git repos and branch names); a consumer needing hardened escaping can pipe
-# through jq/python3.
+# Emits compact JSON. Paths are hostile-but-valid in the wild — spaces, shell
+# metacharacters, and even embedded quotes or backslashes escapes — so every
+# field is escaped for a JSON string literal before printing. Bash 3.2
+# compatible: sed is POSIX, no mapfile/associative arrays/case conversion.
+json_escape() {
+  printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
 printf '{"repo":"%s","repo_root":"%s","branch":"%s","agent_tool":"%s","dwp_dir":"%s"}\n' \
-  "$REPO" "$REPO_ROOT" "$BRANCH" "$AGENT_TOOL" "$DWP_DIR"
+  "$(json_escape "$REPO")" "$(json_escape "$REPO_ROOT")" "$(json_escape "$BRANCH")" \
+  "$(json_escape "$AGENT_TOOL")" "$(json_escape "$DWP_DIR")"

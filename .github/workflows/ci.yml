@@ -44,6 +44,11 @@ jobs:
           if ls scripts/*.sh >/dev/null 2>&1; then
             shellcheck scripts/*.sh
           fi
+          # Contributor scripts under tests/ are linted too: they gate the
+          # published instruction-accounting numbers.
+          if ls tests/efficiency/*.sh >/dev/null 2>&1; then
+            shellcheck tests/efficiency/*.sh
+          fi
 
   context-sh-smoke:
     name: context.sh smoke
@@ -82,10 +87,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test-only Python dependencies
+        # Without these the schema, lifecycle and Lite-plan cases call
+        # `skip "jsonschema not installed"` and the job goes green having
+        # verified none of them. Missing dependencies are unavailable
+        # validation, never a pass (docs/TESTING_GUIDE.md).
+        run: pip install jsonschema pyyaml
       - name: Install bats-core
         run: sudo apt-get update && sudo apt-get install -y bats
       - name: Run bats tests
-        run: bats tests/
+        run: bats tests/ | tee /tmp/bats.tap
+      - name: Enforce the declared skip policy and a nonempty selection
+        run: |
+          set -euo pipefail
+          # Bats exits 0 for an empty or fully filtered selection. Zero
+          # selected is never success.
+          planned="$(sed -n 's/^1\.\.\([0-9]*\)$/\1/p' /tmp/bats.tap | head -1)"
+          if [ -z "$planned" ] || [ "$planned" -lt 300 ]; then
+            echo "FAIL: TAP plan reports ${planned:-no} test(s) — the suite did not run"
+            exit 1
+          fi
+          echo "OK: $planned tests planned"
+          # Exactly one skip is environment-dependent and allowed: the
+          # installer's no-agents auto-detect branch cannot be reached when an
+          # agent binary is on PATH. Every other skip is a silent gap.
+          if grep -n '# skip' /tmp/bats.tap | grep -v "auto-detect can't reach the 'no agents' branch"; then
+            echo "FAIL: an undeclared skip occurred — see the lines above."
+            echo "Required schema/lifecycle cases must execute, not skip."
+            exit 1
+          fi
+          echo "OK: no undeclared skips"
 
   setup-smoke:
     name: setup.sh smoke (Linux + macOS bash 3.2)
@@ -107,20 +141,20 @@ jobs:
           mkdir -p "$HOME/.claude"
           bash setup.sh --host claude
           test -L "$HOME/.claude/skills/deepworkplan" || { echo "FAIL: pack symlink missing"; exit 1; }
-          for v in create execute refine resume status onboard; do
+          for v in create execute refine resume status verify onboard author upgrade; do
             test -L "$HOME/.claude/skills/deepworkplan-$v" || { echo "FAIL: deepworkplan-$v symlink missing"; exit 1; }
           done
-          echo "OK: pack + six sub-skill symlinks created"
+          echo "OK: pack + nine sub-skill symlinks created"
       - name: setup.sh --host cursor creates pack + sub-skill symlinks
         run: |
           export HOME=$(mktemp -d)
           mkdir -p "$HOME/.cursor"
           bash setup.sh --host cursor
           test -L "$HOME/.cursor/skills/deepworkplan" || { echo "FAIL: pack symlink missing"; exit 1; }
-          for v in create execute refine resume status onboard; do
+          for v in create execute refine resume status verify onboard author upgrade; do
             test -L "$HOME/.cursor/skills/deepworkplan-$v" || { echo "FAIL: deepworkplan-$v symlink missing"; exit 1; }
           done
-          echo "OK: cursor pack + six sub-skill symlinks created"
+          echo "OK: cursor pack + nine sub-skill symlinks created"
 
   contract-checks:
     name: State-layer schema/contract + guide migration checks
@@ -137,6 +171,44 @@ jobs:
         run: python3 scripts/check-guide-migration.py
       - name: Instruction-load measurement runs (smoke)
         run: bash tests/efficiency/measure-instruction-load.sh >/dev/null
+
+  python-floor:
+    name: Runtime helpers on the Python 3.9 floor
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: The shipped helpers must run stdlib-only on the documented floor
+        # AGENTS.md and docs/TESTING_GUIDE.md claim "Python 3.9+ stdlib" for
+        # every shipped helper. Nothing verified it: the rest of CI runs 3.11
+        # with jsonschema and pyyaml installed, so a 3.10+ syntax feature or an
+        # accidental third-party import would have shipped unnoticed.
+        run: |
+          set -euo pipefail
+          python3 --version
+          # No third-party package is installed in this job on purpose.
+          for helper in skills/deepworkplan/shared/update-state.py \
+                        skills/deepworkplan/shared/state_contract.py \
+                        skills/deepworkplan/shared/finalize_plan.py \
+                        skills/deepworkplan/verify/plan_contract.py; do
+            python3 -m py_compile "$helper"
+            echo "OK: $helper compiles on $(python3 --version)"
+          done
+          # And they must actually run, not merely parse: the read-only checker
+          # over a real fixture plan, with no optional dependency available.
+          python3 -c 'import jsonschema' 2>/dev/null && { echo "FAIL: jsonschema present — this job must prove the stdlib-only path"; exit 1; }
+          WORK="$(mktemp -d)"
+          cp -R tests/fixtures/lite-plan/.dwp "$WORK/.dwp"
+          bash skills/deepworkplan/verify/conformance.sh --plan PLAN_lite_fixture "$WORK"
+          echo "OK: the read-only checker runs on the documented floor without third-party packages"
+      - name: Remove any bytecode the run left inside the pack
+        # The pack is hash-pinned; a stray __pycache__ would be a diff.
+        run: |
+          find skills/deepworkplan -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+          test -z "$(find skills/deepworkplan -name '__pycache__' -type d)" || {
+            echo "FAIL: bytecode remains inside the installed pack"; exit 1; }
 
   markdown-links:
     name: Markdown link check

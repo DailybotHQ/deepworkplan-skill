@@ -249,6 +249,14 @@ or a different agent picking up the next turn. Every resumed action is
 inspects the actual evidence and completes only what is missing — it never
 repeats a commit, a gate with unchanged inputs, or a report already sent.
 
+Because `.dwp/` is gitignored by design, a workspace that was recreated —
+fresh clone, new machine, recycled container — **MUST** have the state layer
+transferred in before resuming (`shared/dwp-paths.md` "Workspace persistence
+and transfer"). A checkout without plan data **MUST** report missing recovery
+data and halt; it **MUST NOT** fabricate progress from commits. Transfer is
+an explicit, manual step: no daemon, auto-upload, or automatic unignoring of
+`.dwp/` is part of this methodology.
+
 ---
 
 ## 8. References
@@ -261,4 +269,4 @@ repeats a commit, a gate with unchanged inputs, or a report already sent.
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
