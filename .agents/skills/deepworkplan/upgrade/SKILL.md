@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-upgrade
 description: Check whether a newer DeepWorkPlan skill and DWP standard exists and — only after the developer explicitly accepts — install the latest published tag through the documented channel and re-run onboarding exactly as if https://deepworkplan.com/init.md were executed fresh, preserving every plan under .dwp/ and surfacing local adaptations instead of silently overwriting them. Use when the developer asks to upgrade, update, or refresh DWP in a repository that already has it installed. Do not use it to onboard a repo for the first time (that is the onboard sub-skill) or to migrate an old plan's shape (that is refine migrate, and plans are never migrated by an upgrade).
-version: "5.0.0"
+version: "5.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -61,8 +61,9 @@ versions relative to that directory.
    --repo DailybotHQ/deepworkplan-skill` is an equivalent alternative when the
    GitHub CLI is present.)
 3. **Report, then stop.** State, in a few lines: installed skill version,
-   latest published version, the standard each implements (the two series are
-   2.x historical and 4.x current — `../spec/DWP_SPECIFICATION.md` "Status"),
+   latest published version, the standard each implements (the series are
+   2.x and 4.x historical and 5.x current — `../spec/DWP_SPECIFICATION.md`
+   "Status"),
    and where the changelog lives
    (`https://github.com/DailybotHQ/deepworkplan-skill/blob/main/CHANGELOG.md`).
    If installed == latest, say the repository is current and **end here**.
@@ -103,9 +104,16 @@ versions relative to that directory.
    ```
    A repository that installed via Method 2 or 3 upgrades through its own
    documented channel instead (`openclaw skills update deepworkplan`, or
-   `git pull && ./setup.sh` in the clone). Verify afterwards that the
-   installed `version:` now equals the accepted tag; a mismatch aborts the
-   phase with the difference stated — never continue on a wrong version.
+   `git pull && ./setup.sh` in the clone). Around every CLI install, run the
+   Phase 7 install-verification contract from `../onboard/SKILL.md` (two CLI
+   defects are known from round-1 evidence — `../shared/troubleshooting.md`
+   §2): pre-create `.agents/skills/deepworkplan/` before the call, then
+   verify the installed `SKILL.md` frontmatter `version:` equals the
+   accepted tag **and** the directory is non-empty. A mismatch or an
+   empty/false success aborts the phase with the difference stated — retry
+   once after pre-creating the directory, then fall back to the byte-exact
+   `git archive <tag>` install with a `diff -rq` byte-check and record the
+   event; never continue on a wrong or empty install.
 2. **Re-run onboarding as if executing
    https://deepworkplan.com/init.md fresh.** Read `../onboard/SKILL.md` and
    execute it end-to-end as a first-run onboarding — **not** its Phase 0

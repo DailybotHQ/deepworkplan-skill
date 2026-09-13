@@ -57,7 +57,8 @@ for every task is `.dwp/onboard/RECON.md`.
 - [ ] N-1. Install skill + scaffold .dwp/ and tmp/ + addons offered
 - [ ] N.  MANDATORY FINAL: Final Review — Phase 8 self-check (conformance gate)
           + security pass + final-state validation + skills reconciliation
-          (skills decisions are task-local; the Executive Report is optional)
+          + documentation reconciliation (docs decisions are task-local; the
+          Executive Report is optional)
 
 ## 5. Execution Rules for the Agent
 Re-anchor to this goal before each task. One task at a time. Run the task's
@@ -168,8 +169,8 @@ tested (onboard Phase 5). Add a docs/ subfolder only if the module is complex
 ## 3. Goal
 Run onboard Phase 8 self-check across everything generated, then the plan's
 single mandatory Final Review (DWP_SPECIFICATION §6.1): security pass,
-final-state validation, skills reconciliation, completion with the one-time
-Executive Report offer.
+final-state validation, skills reconciliation, documentation reconciliation,
+completion with the one-time Executive Report offer.
 
 ## 5. Acceptance Criteria
 - [ ] `/dwp-verify` (or the Phase 8 checklist) reports CONFORMANT.
@@ -178,6 +179,9 @@ Executive Report offer.
 - [ ] Security pass written to `analysis_results/SECURITY_REVIEW.md`;
       `docs/SECURITY.md` verified current; no unresolved critical finding.
 - [ ] Every task log carries a skills disposition; the candidates ledger is reconciled.
+- [ ] Documentation reconciliation recorded in `SECURITY_REVIEW.md`: every doc
+      the plan generated or updated matches the surface it ships (checked →
+      current, or fixed in-review).
 - [ ] `.dwp/onboard/REPORT.md` records the first usable outcome (verified command
       and mapping, skill identity/version, capability limits, next action).
 - [ ] Executive Report offered once; generated only if requested.

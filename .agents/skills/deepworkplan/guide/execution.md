@@ -92,7 +92,11 @@ Security is not a separate workstream bolted on at the end of a project — ever
 
 **(c) Skills reconciliation** — checks that every task's log carries a skills disposition and that every entry in `analysis_results/SKILLS_CANDIDATES.md` has one; finishes any warranted authoring still open (and validates it before (b) is final). It does **not** re-read the whole plan to rediscover patterns and writes **no** second discovery report — the ledger is the record.
 
-**(d) Completion** — reports deliverables, validation evidence, limitations and PR links; offers the Executive Report **once**; when Dailybot (or another configured reporting channel) is installed and authorized, sends the completion report there (best-effort, never blocking). Absence of Dailybot does not block completion. The plan is complete at this point.
+**(d) Documentation reconciliation** — sweeps every behavior-changing task's reconciled surface against the docs that register it: the gate registry (`docs/TESTING_GUIDE.md`) first, then architecture, module and feature docs, then the `AGENTS.md` index for new top-level surface. Misses are fixed **inside the review** and affected validations rerun; the result lands in `analysis_results/SECURITY_REVIEW.md` as a "Documentation reconciliation" subsection (checked → current, or the fixed list). Bounded to the plan's touched surface — a whole-repo documentation audit belongs to `/dwp-verify`. The plan does not close with an undocumented behavior-changing surface unless the user explicitly accepted the miss.
+
+Documentation is not a follow-up project — the plan closes with every surface it touched still legible in the docs that register it. The step exists because its absence has shipped real misses: a released feature whose new validation gate was never registered in the gate registry.
+
+**(e) Completion** — reports deliverables, validation evidence, limitations and PR links; offers the Executive Report **once**; when Dailybot (or another configured reporting channel) is installed and authorized, sends the completion report there (best-effort, never blocking). Absence of Dailybot does not block completion. The plan is complete at this point.
 
 ### Task-Local Skills Decisions (Every Task)
 

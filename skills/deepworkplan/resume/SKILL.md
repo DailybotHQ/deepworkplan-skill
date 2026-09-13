@@ -14,23 +14,54 @@ strict order, continuing from the first `[ ]` task — from **repository
 artifacts alone**: a different session, agent, model or harness must be able to
 pick the plan up without the previous conversation.
 
-## Shared resources (read these)
+## Shared resources (read at their moment, not upfront)
 
-- [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch, and
-  `dwp_dir`.
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans at
-  `.dwp/plans/PLAN_{name}/`.
-- [`../shared/adaptation.md`](../shared/adaptation.md) — the two repository
-  archetypes (relevant for orchestrator/child-DWP awareness).
-- [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — **conditional:**
-  read only when something is already wrong (discovery failure, stale
-  installation, missing test command, unsupported host capability,
-  inconsistent plan state).
-- [`../execute/SKILL.md`](../execute/SKILL.md) — the execution rules this flow
-  resumes into (gate selection, repair/stop, task-local closure, Final Review,
-  Dailybot golden rule; team-agents and orchestrator branches on demand).
-- **Guide (essential — read for this flow):** none beyond what `../execute/SKILL.md` names ([`../guide/execution.md`](../guide/execution.md)).
-- **Guide (conditional — read only when the trigger fires):** [`../guide/prompts.md`](../guide/prompts.md) §9 (resume rules and scenarios) when the interruption is unusual; [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §5–§6 when the plan carries `state.json` and a desync, a takeover, or a standard question needs the normative rule. [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index.
+The compulsory set for this flow is the router SKILL plus this file: every
+rule the resumption assessment runs on — compact-index-first loading,
+evidence gathering, markdown-wins reconciliation, the interruption-boundary
+table, takeover, the smoke test — is stated inline in the steps below. A
+default resumption reads **no** guide, spec, shared companion, or execution
+contract before assessment; each loads when its moment arrives. (This
+ordering is deliberate: reading companions "to be safe" is the failure mode
+this tiering removed.)
+
+- **Essential now (before the first task):**
+  [`../shared/context.sh`](../shared/context.sh) — **run** it
+  (`bash ../shared/context.sh`) to resolve repo root, branch, agent tool and
+  `dwp_dir`; its source is not part of this flow's reads. That is the whole
+  t0 set — the resume protocol (Step 2) and the handoff rules are inline
+  below.
+- **Conditional — read only when the trigger fires:**
+  - [`../execute/SKILL.md`](../execute/SKILL.md) — read only when Step 5
+    resumes into the execution loop: the contract every resumed task runs
+    under (gate selection from the actual surface, repair/stop, task-local
+    closure, the Final Review, the Dailybot golden rule; team-agents and
+    orchestrator branches on demand). Assessment — Steps 1–4 — never needs
+    it: the closure order and interruption-boundary rules are inline above,
+    and once loaded, that file's own conditional tier governs its
+    execution-time companions.
+  - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §5–§6 — read only when
+    the plan carries `state.json` and a desync, a takeover, or a standard
+    question needs the normative rule; the everyday needs (markdown wins,
+    regenerate from the README, the checkpoint shape) are inline in Step 2.
+  - [`../guide/prompts.md`](../guide/prompts.md) §9 — read only when the
+    interruption is unusual enough that the Step 2.5 boundary table does not
+    classify it (resume rules and scenarios).
+  - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
+    plan folder cannot be located or the `DWP_DIR` override is in play
+    (Steps 0–1 already inline `.dwp/plans/PLAN_{name}/`).
+  - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
+    only when something is already wrong (discovery failure, stale
+    installation, missing test command, unsupported host capability,
+    inconsistent plan state).
+  - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the routing index; consult
+    only when a need is not covered by a section named above.
+- **Never by default:** no other guide, spec, preset or addon file is read
+  for this flow — not defensively, not "to be safe". `../shared/adaptation.md`
+  and `../guide/execution.md` in particular are not resume reads: adaptation
+  moments belong to the tasks being resumed (execute's conditional tier
+  names them) and execution.md's moments are owned by execute/SKILL.md's
+  tier once Step 5 loads it. Name the moment, then read.
 
 ## Parameter Support
 
@@ -196,7 +227,7 @@ not discard work.
 
 > From here, the standard **Execute** rules apply
 > (`../execute/SKILL.md`): the per-task significance Dailybot report, the
-> plan-completion **milestone** golden rule, the Final Review (a)–(d) with the
+> plan-completion **milestone** golden rule, the Final Review (a)–(e) with the
 > one-time Executive Report offer, and — for orchestrator plans — orchestrator
 > task types (`create_child_dwp` / `integration_checkpoint` /
 > `execute_child_dwp`), manifest checks, and team-agents parallel groups (real

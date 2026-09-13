@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
 description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
-version: "5.0.0"
+version: "5.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -39,7 +39,7 @@ plan is handed off; create never modifies product source or calls execute.
 ## Lite-first lifecycle
 
 Write `manifest.json`, `README.md`, `PROGRESS.md`, `PROMPTS.md`, appropriate
-`analysis_results/` and `state.json` using the v2 schemas. A Lite README has
+`analysis_results/` and `state.json` using the v5 schemas. A Lite README has
 one shared rules section and compact anchored task records (`#task-N`) containing
 goal, touched surface, acceptance criteria, validation and completion evidence.
 It includes an inline Final Review. It does not create task files or boilerplate
@@ -70,8 +70,8 @@ nobody asked for.
   `.dwp/plans/` output convention.
 - [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
   and the two repository archetypes (individual repo vs orchestrator hub).
-- **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.4) and [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10).
-- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) **always when composing the Final Review** (required local-review step on every 2.3.0 plan — do not gate this read on whether the target already has the reviewer installed); [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
+- **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.5).
+- **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10) when the Format Decision is Full or the plan references promotion/tree anatomy — the Lite-first path writes its three-file shape inline (Step 4.0); [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) **always when composing the Final Review** (required local-review step on every 2.3.0 plan — do not gate this read on whether the target already has the reviewer installed); [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns.
 - [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
   `PROMPTS.md` template for each plan.
@@ -270,20 +270,28 @@ reviewed before execution (guided) or handed off directly (trust).
   upgraded (`../spec/DOCUMENTATION_STANDARD.md` §3.5). Do **not** paste a generic
   full-suite command into every task: full validation of the **final state** is
   the Final Review's job (§5.1.3).
-- **3.6 Test and security discipline.** Bake the **test discipline**
-  (`../guide/authoring.md` §5.3) into every behavior-changing task: its
-  Acceptance Criteria require unit-first automated coverage for the new/changed
-  behavior (fast, isolated, observable behavior; integration at real seams; no
-  ratio or count quota), and its Validation runs the selected tests plus
-  lint/type-check/format. Where related work is substantial, prefer a dedicated
-  `N.task_add_tests_for_{feature}.md` task right after the implementation task.
-  Likewise, for any task that touches auth, input handling, secrets/config,
-  network surface, or dependencies, bake the **security discipline** into it
-  (`../guide/authoring.md` §5.4); where the security-sensitive work is
-  substantial, prefer a dedicated `N.task_security_hardening_{feature}.md` task
-  placed after the implementation tasks and **before** the comprehensive-tests
-  task, so findings are fixed before tests encode the behavior and become
-  regression test cases rather than rework.
+- **3.6 Test, security, and documentation discipline.** Bake the **test
+  discipline** (`../guide/authoring.md` §5.3) into every behavior-changing
+  task: its Acceptance Criteria require unit-first automated coverage for the
+  new/changed behavior (fast, isolated, observable behavior; integration at
+  real seams; no ratio or count quota), and its Validation runs the selected
+  tests plus lint/type-check/format. Where related work is substantial, prefer
+  a dedicated `N.task_add_tests_for_{feature}.md` task right after the
+  implementation task. Likewise, for any task that touches auth, input
+  handling, secrets/config, network surface, or dependencies, bake the
+  **security discipline** into it (`../guide/authoring.md` §5.4); where the
+  security-sensitive work is substantial, prefer a dedicated
+  `N.task_security_hardening_{feature}.md` task placed after the
+  implementation tasks and **before** the comprehensive-tests task, so
+  findings are fixed before tests encode the behavior and become regression
+  test cases rather than rework. Finally, bake the **documentation discipline
+  (boy-scout)** into every task that changes behavior, structure, commands,
+  configuration, or agent surface (`../guide/authoring.md` §5.5;
+  `../spec/DWP_SPECIFICATION.md` §6.6): its Touched Surface names the doc
+  files it keeps current and its Acceptance Criteria include their currency;
+  where the obliged documentation is itself substantial, prefer a dedicated
+  `N.task_document_{feature}.md` task placed with the implementation it
+  documents — never deferred past the Final Review's documentation sweep.
 - **3.7 Requirements → tasks → gates check.** Before leaving this step, confirm:
   every requirement from 3.2 has an owning task and an observable acceptance
   criterion; prerequisites are available in order; every task is cohesive,
@@ -320,13 +328,16 @@ inline and then again as a file:
 
 1. **`manifest.json` (first write)** — immutable creation identity, written once
    and never edited: `schema` =
-   `https://deepworkplan.com/schema/plan-manifest/v2.json`, `spec_version`
-   **"4.0.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
+   `https://deepworkplan.com/schema/plan-manifest/v5.json`, `spec_version`
+   **"5.0.0"**, `name`, `title`, `archetype`, `rigor`, `created_at`,
    `created_by`, `task_count` (the creation count, Final Review included) and
    **`plan_format`** (`"lite"`, or `"full"` when an explicit `full` preference or
    the rubric already decided Full). Atomic (write-temp-then-rename); valid
-   against `../spec/schema/plan-manifest-v2.schema.json` — the schema is closed.
-   A later change of live task count **never** rewrites this file.
+   against `../spec/schema/plan-manifest-v5.schema.json` — the schema is closed.
+   A later change of live task count **never** rewrites this file. Plans
+   created under 4.0.0 keep their v2 schema URL, and plans created under 2.3.0
+   and earlier keep their v1 URL; all remain conformant and are never
+   rewritten.
 2. **`README.md` skeleton (second write)** — everything in *Lite README anatomy*
    below except the status line, which reads `Plan Status: materializing`.
 3. **`analysis_results/`** — the folder, plus `SKILLS_CANDIDATES.md` with the
@@ -337,7 +348,7 @@ inline and then again as a file:
    authoring scaffolding (see Step 4.4 item 4).
 5. **`PROGRESS.md`** — the bounded working index (`../spec/PLAN_STATE.md` §5.1).
 6. **`state.json`** — `schema` =
-   `https://deepworkplan.com/schema/plan-state/v2.json`, `plan`, `updated_at`,
+   `https://deepworkplan.com/schema/plan-state/v5.json`, `plan`, `updated_at`,
    `status: "pending"`, `completed_count: 0`, `task_count`, **`format`**
    (`"lite"` — this branch only writes Lite; a Full plan's state is written by
    Step 4.4), **`materialization`** (`"ready"` once every file above is on
@@ -346,7 +357,7 @@ inline and then again as a file:
    `tasks[]` entry per task:
    `{ "id": N, "locator": { "kind": "inline", "value": "#task-N" }, "title": …,
    "status": "pending", "gates": [] }`. Atomic; valid against
-   `../spec/schema/plan-state-v2.schema.json` — closed schema, so evidence rides
+   `../spec/schema/plan-state-v5.schema.json` — closed schema, so evidence rides
    in the gate `evidence` string, not in new fields.
 7. **Flip the README status (last write)** — replace `Plan Status: materializing`
    with `Plan Status: 0/N completed`. Only now is the plan materialized.
@@ -367,7 +378,7 @@ records. Do not paste the ten-section task template into the README.
 ## Plan Variables
 | Variable | Value |
 | --- | --- |
-| Standard | DWP spec 4.0.0 |
+| Standard | DWP spec 5.0.0 |
 | Plan Format | Lite |
 | Materialization | ready |
 | Approval | pending            ← guided; `pre-approved (trust)` in trust mode |
@@ -388,14 +399,15 @@ One concise record here; machine state is derived from it, never duplicated.
 
 ## Task 1 {#task-1}
 **Goal** · **Context** (what a fresh session needs to start this task alone) ·
-**Touched Surface** (planned surface, risk class, test mapping,
-selected gate and why) · **Acceptance Criteria** · **Validation** (a runnable
-command) · **Completion log** (status, skills disposition, gate record).
+**Touched Surface** (planned surface, planned docs surface, risk class, test
+mapping, selected gate and why) · **Acceptance Criteria** · **Validation** (a
+runnable command) · **Completion log** (status, skills disposition,
+documentation decision, gate record).
 
 ## Task N: Final Review {#task-N}
 The same mandatory Final Review — security pass, final-state validation, skills
-reconciliation — kept concise and inline. Its evidence lands in
-`analysis_results/SECURITY_REVIEW.md`.
+reconciliation, documentation reconciliation — kept concise and inline. Its
+evidence lands in `analysis_results/SECURITY_REVIEW.md`.
 ```
 
 **Anchor rules.** Each `{#task-N}` occurs **exactly once**; IDs are contiguous
@@ -467,14 +479,15 @@ Create:
 
 1. **Folder + `manifest.json` (first write):** create `.dwp/plans/PLAN_{name}/`
    and immediately write `manifest.json` — plan identity: name, title, archetype,
-   rigor tier, `spec_version` **"4.0.0"**, `plan_format` **"full"**, `task_count`
+   rigor tier, `spec_version` **"5.0.0"**, `plan_format` **"full"**, `task_count`
    = the number of task files this materialization will write (Final Review
    included), creating agent — atomically (write-temp-then-rename), valid against
-   `../spec/schema/plan-manifest-v2.schema.json` (closed schema), written once,
+   `../spec/schema/plan-manifest-v5.schema.json` (closed schema), written once,
    never edited after. When Step 4.0 already wrote the manifest, keep it: only a
    manifest created with `plan_format: "lite"` that has **not** yet been
-   materialized may be written with `"full"` here. Plans created under 2.3.0 and
-   earlier keep their v1 schema URL and remain conformant.
+   materialized may be written with `"full"` here. Plans created under 4.0.0
+   keep their v2 schema URL, and plans created under 2.3.0 and earlier keep
+   their v1 schema URL; all remain conformant and are never rewritten.
 1b. **README skeleton (second write):** write `README.md` with everything in
    item 8 except the final status: the Task List names **every** intended task
    with its future filename and link, and the status line reads
@@ -500,10 +513,13 @@ Create:
    validation step: *"Skills decision: record `none` / `update` / `create` /
    `defer` in the log; append any real candidate to
    `analysis_results/SKILLS_CANDIDATES.md` by stable ID `T{N}-{seq}`; do any
-   warranted in-scope authoring now"* (`../spec/DWP_SPECIFICATION.md` §6.2). The
-   Completion & Log template **MUST** carry a `Skills disposition:` line and a
-   `Gate record:` line (command, cwd, scope/reason, revision or fingerprint,
-   result, evidence path).
+   warranted in-scope authoring now"* (`../spec/DWP_SPECIFICATION.md` §6.2)
+   **and** *"Documentation decision: docs updated for the touched surface —
+   list, or `not applicable — <reason>`"*
+   (`../spec/DWP_SPECIFICATION.md` §6.6). The Completion & Log template
+   **MUST** carry a `Skills disposition:` line, a `Documentation decision:`
+   line, and a `Gate record:` line (command, cwd, scope/reason, revision or
+   fingerprint, result, evidence path).
 3. **The Final Review task** — `{N}.task_final_review.md`, **last**, the single
    mandatory final task (`../spec/DWP_SPECIFICATION.md` §6.1;
    `../guide/execution.md` §6.1). Its instructions, in order: **(a) security
@@ -520,7 +536,18 @@ Create:
    which are rerun. **(c) Skills reconciliation** — confirm every task log has a
    disposition and every `SKILLS_CANDIDATES.md` entry has one; finish any open
    warranted authoring before (b) is final; no whole-plan rediscovery, no second
-   report. **(d) Completion** — report deliverables, evidence, limitations and
+   report. **(d) Documentation reconciliation** — sweep every
+   behavior-changing task's reconciled surface against the docs that register
+   it (the Touched Surfaces and §6.6 decisions are the ledger): gate registry
+   (`docs/TESTING_GUIDE.md`) first, then architecture, module and feature
+   docs, then the `AGENTS.md` index for new top-level surface; fix misses in
+   this review, rerun affected validations, and record the result in
+   `SECURITY_REVIEW.md` as a "Documentation reconciliation" subsection
+   (checked → current, or the fixed list). Bounded to the plan's touched
+   surface — a whole-repo docs audit belongs to `/dwp-verify`; the plan does
+   not close with an undocumented behavior-changing surface unless the user
+   explicitly accepted the miss. **(e) Completion** — report deliverables,
+   evidence, limitations and
    PR links; **offer the Executive Report once** (generate only on request; an
    explicit request recorded in the plan guidelines counts); where a reporting
    channel is configured (`AGENT_PROTOCOL.md` §5), send the completion report
@@ -559,11 +586,12 @@ Create:
    trust), `promotion: null`, and one `locator` per task —
    `{ "kind": "file", "value": "N.task_….md" }`. Atomically
    (write-temp-then-rename); valid against
-   `../spec/schema/plan-state-v2.schema.json` (no extra fields — the schema is
-   closed). Existing v1 plans keep `file` and their v1 schema URL. `manifest.json` was written in item 1
+   `../spec/schema/plan-state-v5.schema.json` (no extra fields — the schema is
+   closed). Existing v2 plans keep their v2 schema URL; existing v1 plans keep
+   `file` and their v1 schema URL — neither is ever rewritten. `manifest.json` was written in item 1
    and is not touched here.
 8. **README.md** (content — written as the skeleton in item 1b) — Goal; Context; Plan Variables (incl. `**Standard:** DWP
-   spec 4.0.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
+   spec 5.0.0` and `**Plan Format:** Full`, the tier and why, and in trust mode `Pre-approved for unattended
    execution: yes (trust)`); Global Guidelines (incl. an explicit Executive
    Report request if the user made one); Task List with `[ ]` checkboxes + links
    (the Final Review last); Execution Rules; Skills & Agents Used; Plan Status /
@@ -571,9 +599,9 @@ Create:
    `SECURITY_REVIEW.md` — Final Review; `EXECUTIVE_REPORT.md` — optional, on
    request); Quick Reference to `PROMPTS.md`. Add the note: *"Every plan ends
    with a single Final Review (security pass, final-state validation, skills
-   reconciliation). Skills decisions are made inside each task; the Executive
-   Report is optional and offered at completion. Auto-generated by
-   `/dwp-create`."* For a **long Full plan** (20 or more task files), the
+   reconciliation, documentation reconciliation). Skills decisions are made
+   inside each task; the Executive Report is optional and offered at
+   completion. Auto-generated by `/dwp-create`."* For a **long Full plan** (20 or more task files), the
    README also carries the optional **Stage Gates** table
    (`../guide/authoring.md` §4.3) — one named checkpoint per coherent phase,
    placed adjacent to Execution Rules. Lite plans never carry it, and shorter
@@ -599,8 +627,8 @@ and the Final Review is always sequential.
 - Every task record has a Goal, a Context, a Touched Surface, Acceptance
   Criteria, a runnable Validation gate and a completion-log placeholder. No task was padded
   in to reach a count.
-- `manifest.json` validates against the v2 manifest schema with
-  `plan_format: "lite"`; `state.json` validates against the v2 state schema, its
+- `manifest.json` validates against the v5 manifest schema with
+  `plan_format: "lite"`; `state.json` validates against the v5 state schema, its
   `task_count` and `completed_count` agree with the records, every locator is
   `inline` pointing at that task's anchor, and its `approval` matches the README's
   `Approval` row.

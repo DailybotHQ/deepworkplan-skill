@@ -26,11 +26,20 @@ requirements are called out inline.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.3.0 |
+| **Version** | 5.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `DOCUMENTATION_STANDARD.md` 2.1.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DOCUMENTATION_STANDARD.md` (v1.0.0) |
+| **Supersedes** | `DOCUMENTATION_STANDARD.md` 2.3.0, 2.1.0; `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/DOCUMENTATION_STANDARD.md` (v1.0.0) |
 | **Companions** | `DWP_SPECIFICATION.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md` |
 | **License** | MIT |
+
+> **Divergence from 2.3.0 (overview).** 5.0.0 aligns this document's version
+> with the DWP standard it accompanies (the same alignment move
+> `DWP_SPECIFICATION.md` 4.0.0 and 5.0.0 made — no existing requirement
+> changes) **plus** this generation's additive rules: the lean-index **budget
+> is enforced** (§2.1.1 — harness-generated AGENTS.md stays in the 150–500
+> line budget by moving detail into `docs/` and linking) and the **feature
+> tier** (§4.1 — major capability areas carry their own internal `docs/`,
+> with testable triggers for when it applies).
 
 > **Divergence from v1 (overview).** v1 framed the standard as a "3-tier hierarchy"
 > with Bronze/Silver/Gold/Platinum conformance badges and used `.agent_commands/`
@@ -76,6 +85,28 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 - `AGENTS.md` **SHOULD** be 150–500 lines. If it exceeds ~500 lines, content **SHOULD** move into `docs/` and be linked from the index.
 
 `AGENTS.md` **MUST** serve three roles: an **index**, a set of **mandatory rules**, and a **quick commands** reference.
+
+### 2.1.1. Budget enforcement — the lean index is a guarantee, not a hope
+
+The budget above is enforced on what the harness produces:
+
+- The `AGENTS.md` that onboarding — or any later harness-maintained update —
+  generates **MUST** stay within the budget. When the reasoned content would
+  exceed it, the agent **MUST** move the detail into the focused `docs/` guide
+  (or the module/feature doc, §4) that owns it and link it from the index.
+  The index **MUST** link every doc that received displaced content: nothing
+  silently disappears, and the file stays a lean index by construction (§2.4.1).
+- An existing handwritten `AGENTS.md` over the budget is **never silently
+  rewritten**: onboarding and upgrade report the overweight with a concrete
+  migration proposal — what moves where, which links get added — and apply it
+  only with consent (`AGENT_PROTOCOL.md` §6; §3.5's non-destructive
+  reconciliation). The proposal, not a forced edit, is the deliverable.
+- The two limits of §2.4.1 bind here too: no constraint an agent needs to act
+  safely is dropped to fit the budget, and the ceiling is never an excuse to
+  hide required context — detail moves, it is not deleted.
+- A conformance checker treats an over-budget `AGENTS.md` as an advisory
+  (SHOULD): the line count is objective, authorship is not, and the **MUST**
+  above binds the harness, not a checker's guess about who wrote the file.
 
 ### 2.2. Role 1 — Index (navigation)
 
@@ -333,7 +364,7 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 4.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 5.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
 
@@ -343,9 +374,10 @@ the onboarding flow **MUST** keep them distinct:
   advance independently, so recording one of those would compare unrelated
   scales: a conformance checker reads this line against the DWP standard it
   implements and rejects a repository declaring one it does not support. The
-  standard's series are 2.x (historical) and 4.x (current — there is no 3.x);
-  the skill package `version:` and the `/v2.json` schema URLs are two further,
-  separate series, never compared against this line.
+  standard's series are 2.x and 4.x (historical) and 5.x (current — there is
+  no 3.x); the skill package `version:` and the `/v2.json` and `/v5.json`
+  schema URLs are two further, separate series, never compared against this
+  line.
 - **Legacy versus declared.** A conformance checker **MUST** distinguish a
   repository onboarded under an earlier version (no §3.4 content, no declaration)
   from a repository that declares this version and lacks a **MUST**: the former
@@ -389,6 +421,37 @@ audited repos (e.g. `api-services/app/integrations/docs/` with `README.md`,
 
 Which modules qualify as "major" or "complex" is part of the **repo-specific 10%**
 (§7) and **MUST** be reasoned about per repo.
+
+### 4.1. The feature tier — per-feature `docs/` for major capability areas
+
+Above the per-module tier sits a **feature tier**: a **major feature or
+capability area** — bigger than one module — gets its own `docs/` folder next
+to its code, entered via its own `README.md`, holding the area's architecture
+decisions, contracts, and runbooks.
+
+- An area qualifies when **any** of these triggers fires (heuristics, not
+  bureaucracy — the judgment stays with the per-repo reasoning, §7):
+  - it **spans 2+ major modules** — a capability several modules cooperate to
+    provide (e.g. a domain model shared across services);
+  - it **owns a sub-app or subsystem directory** — a self-contained
+    application or subsystem folder inside the repo (observed shape:
+    `app/{domain}/`, or a top-level sub-app such as `mailtron/`);
+  - it **carries its own contracts** — an API surface, event or schema
+    contracts, protocol definitions — that multiple consumers depend on.
+- Once an area is recorded as major, its feature `docs/` **SHOULD** exist; the
+  most significant entries **SHOULD** be linked from the READMEs of the
+  modules the area spans and surfaced in the root `AGENTS.md` index, exactly
+  like per-module docs. An area deliberately left undocumented carries a
+  recorded reason — a decision, not an oversight.
+- The feature tier complements the per-module tier, never replaces it: a
+  module inside a feature area still carries its own `README.md` (§4).
+
+> **Observed input, adapted by reasoning.** This tier generalizes the audited
+> `api-services` shape — a flat root `docs/` hub plus nested per-area `docs/`
+> (e.g. `app/domain/docs/`, `app/mcp/docs/`, and the sub-app `mailtron/docs/`,
+> each entered via a `README.md`). Reason the structure from the target
+> repo's real feature areas (§7); never copy another repo's folder layout
+> verbatim.
 
 > **Divergence from v1.** v1 shipped only a per-module *`AGENTS.md`* template and
 > treated nested docs as an optional "Tier 3 / Platinum" extra. v2 makes a per-major-module

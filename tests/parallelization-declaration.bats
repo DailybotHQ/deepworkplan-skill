@@ -83,3 +83,17 @@ p_doc_has() {
     grep -qF '| Role | Assigned Tasks | Model | Spawn Prompt |' "$GUIDE"
     p_doc_has "$CREATE" "default model \`sonnet\`"
 }
+
+@test "Lite plans keep the parallelization declaration (no silent loss)" {
+    # Task 9 of PLAN_v5_superiority_guarantee: LITE_PLANS.md previously never
+    # stated where the decision lives for a Lite plan, and create's
+    # materialization spoke Full vocabulary ("section to each parallel task
+    # file") — a Lite plan has no task files. Both surfaces now state the
+    # anchored-task-records rule explicitly.
+    local LITE="$SK/spec/LITE_PLANS.md"
+    p_doc_has "$LITE" "carries the parallelization decision the same way Full does"
+    p_doc_has "$LITE" "anchored task records instead of task files"
+    p_doc_has "$LITE" "never silent in Lite either"
+    p_doc_has "$CREATE" "attaches"
+    p_doc_has "$CREATE" "anchored task records instead of task files"
+}

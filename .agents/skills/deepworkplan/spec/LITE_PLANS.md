@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Version | 4.0.0 |
+| Version | 5.0.0 |
 | Status | Stable |
 
 ## Representation and lifecycle
@@ -10,7 +10,10 @@
 Each plan has one folder and immutable creation manifest. `lite` stores compact,
 executable task records in the README; `full` stores detailed task files. Lite is
 not a partial Full plan: it has stable task IDs, anchors, touched surface,
-acceptance criteria, gates, completion evidence and a Final Review.
+acceptance criteria, gates, completion evidence (skills disposition and
+documentation decision included — `DWP_SPECIFICATION.md` §6.2, §6.6) and a
+Final Review (security pass, final-state validation, skills and documentation
+reconciliation — §6.1).
 
 Format, materialization, approval and execution are independent. Format is
 `lite` or `full`; materialization is `materializing`, `ready` or `promoting`;
@@ -42,6 +45,12 @@ gates; otherwise DWP records why Full is required. Identical options repeat
 idempotently; conflicting formats are an error. `--` ends option parsing.
 Selection records observed scope, dependencies, required instruction detail,
 unknowns and rationale; it is an auditable judgment, not a cross-model guarantee.
+
+Lite carries the parallelization decision the same way Full does
+(`DWP_SPECIFICATION.md` §9; `guide/team-agents.md` §14.2): the
+`Execution: sequential — {rationale}` line, or the Team Agents Configuration
+section — with per-task Team Agents Metadata attached to the anchored task
+records instead of task files. The decision is never silent in Lite either.
 
 ## Promotion and compatibility
 

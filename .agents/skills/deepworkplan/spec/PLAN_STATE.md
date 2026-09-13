@@ -19,6 +19,10 @@ prose.
 
 JSON Schemas for both artifacts ship with this specification in
 [`schema/`](schema/) and are published at `https://deepworkplan.com/schema/`.
+The v5 schema URLs (`plan-manifest/v5.json`, `plan-state/v5.json`) are
+**generation snapshots** of the v2 shape for the 5.0.0 standard — no property
+differs — and new plans from 5.0.0 declare them; plans referencing v1/v2 URLs
+remain valid forever and are never rewritten.
 
 ---
 
@@ -26,9 +30,9 @@ JSON Schemas for both artifacts ship with this specification in
 
 | Field | Value |
 |-------|-------|
-| **Version** | 4.0.0 |
+| **Version** | 5.0.0 |
 | **Status** | Stable |
-| **Supersedes** | `PLAN_STATE.md` 2.4.0 (and 2.2.0; net-new in 2.2.0) |
+| **Supersedes** | `PLAN_STATE.md` 4.0.0, 2.4.0 (and 2.2.0; net-new in 2.2.0) |
 | **Companions** | `DWP_SPECIFICATION.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `DOCUMENTATION_STANDARD.md`, `ADDONS.md` |
 | **License** | MIT |
 
@@ -320,17 +324,20 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
 - Both schemas are versioned by URL (`/v1.json`). Every object in the v1 schemas
   is **closed** (`additionalProperties: false`), so a new field — even an optional
   one — is **not** accepted by an existing v1 validator. Adding, renaming, or
-  re-typing a field therefore requires `/v2.json` (published alongside v1, with
-  the `schema` field selecting it) and a migration note in the spec changelog.
+  re-typing a field therefore requires a new URL generation (`/v2.json` was that
+  move, published alongside v1 with the `schema` field selecting it) and a
+  migration note in the spec changelog.
   **2.3.0 adds no field to either schema**: every new piece of evidence maps onto
   existing strings (§4.2, §4.3), so a 2.3.0 state file validates against the v1
   schema as shipped in 2.2.0, and a 2.2.0 state file validates unchanged under
   2.3.0. Package SemVer (the skill), the spec document version, and the schema
   URL version are three separate things and are never conflated. The standard's
-  own series are 2.x (historical — those plans stay valid, §6.5) and 4.x
-  (current, aligned with the product line); there is no 3.x standard, and the
-  `/v2.json` schema URLs stay v2 across both (a schema-shape series, not the
-  standard's version).
+  own series are 2.x and 4.x (historical — those plans stay valid, §6.5) and 5.x
+  (current, aligned with the product line); there is no 3.x standard. The
+  `/v2.json` schema URLs stay v2 across all three series, and `/v5.json` is a
+  **generation snapshot** of the v2 shape (no property added, renamed, or
+  re-typed): the URL generation marks the plan's methodology line, not a
+  schema-shape change.
 - `spec_version` in the manifest pins the DWP spec version the plan was created
   under and is never rewritten (§2); an agent encountering a newer plan than its
   installed spec **MUST** say so rather than guess (`DWP_SPECIFICATION.md` §6.5).
@@ -371,7 +378,9 @@ declares a standard it objectively violates (`DWP_SPECIFICATION.md` §6.5).
 
 ### v2 evidence compatibility
 
-New Lite and Full plans use the v2 schemas. A task's typed `locator` replaces
+New Lite and Full plans use the v5 schemas (generation snapshots of the v2
+shape; plans created under 4.0.0 keep their v2 URLs and stay valid). A task's
+typed `locator` replaces
 v1's `file`; the execution evidence contract is unchanged: `started_at`,
 `completed_at`, `commit`, `gates` and `outcome` remain supported with the same
 types and limits. After validating a task, commit its owned changes and record
@@ -388,10 +397,13 @@ task correspondence and the meaning of validation results.
 - [`schema/plan-manifest.schema.json`](schema/plan-manifest.schema.json),
   [`schema/plan-state.schema.json`](schema/plan-state.schema.json),
   [`schema/plan-manifest-v2.schema.json`](schema/plan-manifest-v2.schema.json),
-  [`schema/plan-state-v2.schema.json`](schema/plan-state-v2.schema.json)
+  [`schema/plan-state-v2.schema.json`](schema/plan-state-v2.schema.json),
+  [`schema/plan-manifest-v5.schema.json`](schema/plan-manifest-v5.schema.json),
+  [`schema/plan-state-v5.schema.json`](schema/plan-state-v5.schema.json)
 - [`LITE_PLANS.md`](LITE_PLANS.md) defines v2 Lite/Full representation, typed
   task locators and promotion recovery. v1 state remains immutable for plans
-  created with it; new Lite and Full plans declare the v2 schema URLs.
+  created with it; new Lite and Full plans declare the v5 schema URLs
+  (generation snapshots of v2 — plans created under 4.0.0 keep their v2 URLs).
 - `DWP_SPECIFICATION.md` (§4, §5, §11), `AGENT_PROTOCOL.md` (§7), `ARCHETYPES.md` (§4)
 - [JSON Schema 2020-12](https://json-schema.org/specification)
 

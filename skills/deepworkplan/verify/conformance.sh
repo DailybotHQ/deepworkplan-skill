@@ -86,14 +86,14 @@ warn() {
 }
 
 # The newest DWP spec this checker implements (DWP_SPECIFICATION.md "Version").
-SUPPORTED_SPEC="4.0.0"
+SUPPORTED_SPEC="5.0.0"
 
-# The standard's released series: 2.x is historical (repositories and plans
-# onboarded before the 4.x jump stay valid, DWP_SPECIFICATION.md §6.5), 4.x is
-# current. There is no 3.x standard — the v3 launch was a product release, not
-# a standard bump (the three series are mapped in DWP_SPECIFICATION.md "Status").
+# The standard's released series: 2.x and 4.x are historical (repositories and
+# plans onboarded before each jump stay valid, DWP_SPECIFICATION.md §6.5), 5.x
+# is current. There is no 3.x standard — the v3 launch was a product release,
+# not a standard bump (the series are mapped in DWP_SPECIFICATION.md "Status").
 standard_series_ok() {  # $1 = declared version; bash 3.2 safe
-  case "${1%%.*}" in 2|4) return 0 ;; *) return 1 ;; esac
+  case "${1%%.*}" in 2|4|5) return 0 ;; *) return 1 ;; esac
 }
 
 version_le() {
@@ -166,6 +166,7 @@ check_repo() {
     warn "docs/ missing (agent workspaces adapt this; repos MUST have it)"
   fi
 
+  check_docs_architecture
   check_local_reviewer
 
   # 2.4.0 removed .dwp/drafts/; only plans/ is required. A leftover drafts/
@@ -211,7 +212,7 @@ check_repo_standard() {
       return 0
     fi
     if ! standard_series_ok "$declared"; then
-      fail "AGENTS.md declares DWP standard $declared, which is not a DWP standard (the series are 2.x historical and 4.x current; there is no 3.x) — correct the provenance line"
+      fail "AGENTS.md declares DWP standard $declared, which is not a DWP standard (the series are 2.x and 4.x historical and 5.x current; there is no 3.x) — correct the provenance line"
       return 0
     fi
     pass "AGENTS.md declares DWP standard $declared"
@@ -230,6 +231,75 @@ check_repo_standard() {
   fi
   if [ -z "$declared" ] && [ -f AGENTS.md ]; then
     warn "harness-version finding: AGENTS.md has no 'DWP standard:' provenance line — run the onboard sub-skill in upgrade mode"
+  fi
+}
+
+# Documentation architecture: the AGENTS.md lean-index budget (§2.1.1), index
+# link resolution (§2.2), and the onboarding docs registry (§4/§4.1) when the
+# repository recorded one in .dwp/onboard/RECON.md. Severity follows the
+# standard: the budget is a SHOULD for a checker (a line count is objective,
+# authorship is not — the §2.1.1 MUST binds the harness, not a checker's
+# guess); a dead index link violates a MUST; the registry is the repository's
+# own recorded judgment, so a registered module without its README.md fails
+# while a missing feature docs/ and a stale path are advisories. Without a
+# registry there is no recorded judgment to hold the repo to — check nothing,
+# report nothing.
+check_docs_architecture() {
+  local agents_lines=0 links="" dead=0 link target recon kind path line
+  if [ -f AGENTS.md ]; then
+    agents_lines="$(wc -l < AGENTS.md | tr -d ' ')"
+    if [ "$agents_lines" -le 500 ]; then
+      pass "AGENTS.md within the lean-index budget ($agents_lines/500 lines, DOCUMENTATION_STANDARD §2.1.1)"
+    else
+      warn "AGENTS.md is $agents_lines lines — over the 500-line budget; move detail into docs/ and link it (DOCUMENTATION_STANDARD §2.1.1)"
+    fi
+    # Relative .md/.mdx targets only; fenced code blocks are stripped so
+    # examples inside them are not read as the index; URLs are out of scope.
+    links="$(awk '/^```/{f=!f; next} !f' AGENTS.md | grep -oE '\]\([^) ]+\.(md|mdx)(#[^) ]+)?\)' | sed -E 's/^\]\(//; s/\)$//' || true)"
+    dead=0
+    while IFS= read -r link; do
+      [ -n "$link" ] || continue
+      target="${link%%#*}"
+      case "$target" in
+        *://*|mailto:*) continue ;;
+      esac
+      if [ ! -e "$target" ]; then
+        printf '      dead index link: %s\n' "$link"
+        dead=$((dead + 1))
+      fi
+    done < <(printf '%s\n' "$links")
+    if [ "$dead" -eq 0 ]; then
+      pass "AGENTS.md index .md links resolve (DOCUMENTATION_STANDARD §2.2)"
+    else
+      fail "AGENTS.md index links $dead file(s) that do not exist (DOCUMENTATION_STANDARD §2.2 MUST NOT)"
+    fi
+  fi
+
+  recon="$PLAN_ROOT/onboard/RECON.md"
+  if [ -f "$recon" ]; then
+    while IFS= read -r line; do
+      kind="${line%%:*}"
+      path="$(printf '%s' "$line" | sed -E 's/^[^:]+:[[:space:]]*//; s/[[:space:]]*\(.*$//')"
+      case "$kind" in
+        module)
+          if [ ! -e "$path" ]; then
+            warn "docs registry: module '$path' no longer exists (stale onboarding registry entry)"
+          elif [ ! -f "$path/README.md" ]; then
+            fail "docs registry: module '$path' has no README.md (DOCUMENTATION_STANDARD §4)"
+          fi
+          ;;
+        feature-area)
+          case "$line" in
+            *"no docs"*) continue ;;
+          esac
+          if [ ! -e "$path" ]; then
+            warn "docs registry: feature area '$path' no longer exists (stale onboarding registry entry)"
+          elif [ ! -d "$path/docs" ]; then
+            warn "docs registry: feature area '$path' recorded major has no docs/ (DOCUMENTATION_STANDARD §4.1)"
+          fi
+          ;;
+      esac
+    done < "$recon"
   fi
 }
 

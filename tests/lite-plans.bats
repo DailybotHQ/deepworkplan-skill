@@ -39,12 +39,13 @@ PY
   [ "$status" -eq 0 ]
 }
 
-@test "create materializes Lite with the v2 schemas, not a draft" {
-  # The Lite-first path must name the concrete v2 schemas it validates against;
-  # prose alone let an agent fall through to the v1 Full writer.
-  run grep -q 'spec/schema/plan-manifest-v2.schema.json' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+@test "create materializes Lite with the v5 schemas, not a draft" {
+  # The Lite-first path must name the concrete v5 schemas it validates against;
+  # prose alone let an agent fall through to the v1 Full writer. (The v5 files
+  # are generation snapshots of the v2 shape — DWP standard 5.0.0.)
+  run grep -q 'spec/schema/plan-manifest-v5.schema.json' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
   [ "$status" -eq 0 ]
-  run grep -q 'spec/schema/plan-state-v2.schema.json' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
+  run grep -q 'spec/schema/plan-state-v5.schema.json' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
   [ "$status" -eq 0 ]
   run grep -q '"kind": "inline", "value": "#task-N"' "$REPO_ROOT/skills/deepworkplan/create/SKILL.md"
   [ "$status" -eq 0 ]

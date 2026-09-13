@@ -113,12 +113,13 @@ class LifecycleContracts(unittest.TestCase):
         self.verify()
 
     def test_standard_series(self):
-        # 2.x is historical (accepted with a marker), 4.x is current; 3.x
-        # never existed as a standard and 5.x+ is newer than the checker.
-        for spec, fragment, ok in [('4.0.0', 'plan standard: DWP spec 4.0.0', True),
+        # 2.x and 4.x are historical (accepted with a marker), 5.x is
+        # current; 3.x never existed as a standard (the v3 launch was a
+        # product release, not a standard bump).
+        for spec, fragment, ok in [('5.0.0', 'plan standard: DWP spec 5.0.0', True),
+                                   ('4.0.0', '(historical, accepted)', True),
                                    ('2.4.0', '(historical, accepted)', True),
-                                   ('3.0.0', 'not a DWP standard', False),
-                                   ('5.0.0', 'newer than this checker supports', False)]:
+                                   ('3.0.0', 'not a DWP standard', False)]:
             self.manifest['spec_version'] = spec
             self.assertIn(fragment, self.verify(ok))
         self.manifest['spec_version'] = '2.4.0'

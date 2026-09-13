@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-design-system
 description: Optional DeepWorkPlan addon that gives a repo with a user-facing interface surface a DESIGN.md (under docs/, indexed from AGENTS.md) — a Markdown design-system file any coding agent reads to generate interface output consistent with the repo's OWN conventions. Covers three profiles detected independently from real files — visual-ui (rendered web/mobile/desktop UI), cli-output (styled terminal output — semantic colors, panels, spinners, prompts, TTY/NO_COLOR degradation), and conversational (chat/email messaging — voice and register, message anatomy, per-platform rendering). Reasons about the repo's ACTUAL design source (CSS custom properties, Tailwind config, token files, component styles, a CLI display/theme module, or message-composition helpers) rather than copying a brand file; checks contrast (WCAG AA), color-is-not-the-only-carrier, plain-text fallbacks, and token integrity. A detected interface surface makes the evaluation and offer mandatory (with a clear recommendation), while installation always requires explicit acceptance — no profile is auto-applied, even in trust mode. Never offered for a repo with no interface surface (pure library, headless service, infra-only); never required for baseline conformance; reconciles an existing DESIGN.md instead of clobbering it. Use when the developer wants agents to produce on-brand, consistent interface output — visual UI, terminal output, or outbound messages.
-version: "5.0.0"
+version: "5.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write

@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-execute
 description: Execute Lite or Full Deep Work Plans task-by-task — select validation from the actual surface, preserve state and evidence, recover safely, and finish with the Final Review.
-version: "5.0.0"
+version: "5.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -14,24 +14,71 @@ time**, validating and committing after each, and reporting progress — fluentl
 inside the plan's authorization, without asking whether to continue after every
 successful task.
 
-## Shared resources (read these)
+## Shared resources (read at their moment, not upfront)
 
-- [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch,
-  agent tool, and `dwp_dir` (the `.dwp/` output location).
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans live at
-  `.dwp/plans/PLAN_{name}/`.
-- [`../shared/adaptation.md`](../shared/adaptation.md) — the two repository
-  archetypes (individual repo vs orchestrator hub) that govern how navigation
-  and validation commands resolve.
-- [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — **conditional:**
-  read only when something is already wrong (discovery failure, stale
-  installation, missing test command, unsupported host capability,
-  inconsistent plan state).
-- **Guide (essential — read for this flow):** [`../guide/execution.md`](../guide/execution.md) (agent execution rules §6, Final Review and task-local lifecycle §6.1, per-task commit workflow, completion tracking).
-- **Guide (conditional — read only when the trigger fires):** [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 when Step 2.1 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) §14 when Step 2.2 finds a Team Agents Configuration and team mode is selected; [`../guide/authoring.md`](../guide/authoring.md) §5.3–§5.4 when judging a task's test or security discipline; [`../guide/prompts.md`](../guide/prompts.md) §9 for resume scenarios; [`../create/addon-augmentations.md`](../create/addon-augmentations.md) when the Final Review runs (required local-review pass on every 2.3.0 plan — load even if the reviewer is not yet installed, so the missing-install finding path is available); the repository's `docs/TESTING_GUIDE.md` when a task's gate must be widened or derived. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
-- [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) — the machine-readable state
-  layer (`manifest.json` + `state.json`); update it at every completion when the
-  plan carries it.
+The compulsory set for this flow is the router SKILL plus this file: every
+rule the loop runs on — strict order, gate selection from the actual surface,
+STOP-on-fail, task-local closure, commit format, the state-update command,
+the Final Review — is stated inline in the steps below. A default session
+reads **no** guide, spec or shared companion before Task 1; companions load
+when their moment arrives. (This ordering is deliberate: reading companions
+"to be safe" is the failure mode this tiering removed.)
+
+- **Essential now (before the first task):**
+  [`../shared/context.sh`](../shared/context.sh) — **run** it
+  (`bash ../shared/context.sh`) to resolve repo root, branch, agent tool and
+  `dwp_dir`; its source is not part of this flow's reads. That is the whole
+  t0 set — the operative rules the loop needs are inline below.
+- **Conditional — read only when the trigger fires:**
+  - [`../spec/LITE_PLANS.md`](../spec/LITE_PLANS.md) — read only when the
+    plan README declares `Plan Format: Lite` or a v2 state line (anchored
+    task records, approval axis, promotion recovery).
+  - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §4–§5 — read only when
+    `state.json` and the README disagree (markdown wins — regenerate), when a
+    takeover needs the checkpoint contract, or when `update-state.py` cannot
+    run and a whole-file rewrite is unavoidable. The everyday needs are
+    inline: bookkeeping order and the closed gate-record shape in Step 5
+    rules 5–6.
+  - [`../guide/execution.md`](../guide/execution.md) — read §6.1 only when
+    the Final Review task begins (the prose behind its five parts (a)–(e));
+    read the Multi-Project Commit Workflow only when the plan spans multiple
+    repositories; read rule 6 only when a Dailybot report moment arrives with
+    the addon installed. The loop rules (§6 rules 1–5) and completion
+    tracking are already inline in Step 5 and Important Notes.
+  - [`../guide/authoring.md`](../guide/authoring.md) §5.3–§5.4 — read only
+    when judging a task's test or security discipline.
+  - [`../guide/prompts.md`](../guide/prompts.md) §9 — read only when a
+    resume scenario arises mid-execution (the resume sub-skill owns them).
+  - [`../shared/adaptation.md`](../shared/adaptation.md) — read only when
+    adapting a pack example or template command into repo-specific form; the
+    operative rule — select from the actual surface, never a fixed command
+    set — is inline in Step 5 rule 3.
+  - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
+    plan folder cannot be located or the `DWP_DIR` override is in play
+    (Steps 0–3 already inline `.dwp/plans/PLAN_{name}/`).
+  - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
+    only when something is already wrong (discovery failure, stale
+    installation, missing test command, unsupported host capability,
+    inconsistent plan state).
+  - [`orchestrator.md`](orchestrator.md) (this directory) plus
+    [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 — read only
+    when Step 2.1 detects an orchestrator plan.
+  - [`team-agents.md`](team-agents.md) (this directory) plus
+    [`../guide/team-agents.md`](../guide/team-agents.md) §14 — read only
+    when Step 2.2 finds a Team Agents Configuration and team mode is
+    selected.
+  - [`../create/addon-augmentations.md`](../create/addon-augmentations.md) —
+    read only when the Final Review runs its required local-review pass
+    (load it even if the reviewer is not yet installed, so the
+    missing-install finding path is available); the reviewer's own files
+    load at that same moment, never before.
+  - The repository's `docs/TESTING_GUIDE.md` — read only when a task's gate
+    must be widened or derived.
+  - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the routing index; consult
+    only when a need is not covered by a section named above.
+- **Never by default:** no other guide, spec, preset or addon file is read
+  for this flow — not defensively, not "to be safe". Speculative reading is
+  exactly what the tier above replaces: name the moment, then read.
 
 ## Parameter Support
 
@@ -64,7 +111,8 @@ plan created with trust is `pre_approved` but still begins only on an explicit
 execute request, and `create` never calls execute itself. Read the first
 unchecked anchored task, perform its gate, update its compact log, then README,
 PROGRESS and state in the usual safe order. The inline Final Review remains last
-and performs the same security, final validation and skills reconciliation.
+and performs the same security, final validation, skills and documentation
+reconciliation.
 
 When scope exceeds the compact task record, stop for refine rather than silently
 expanding work. A v2 state locator is authoritative: `inline` resolves to a
@@ -190,7 +238,8 @@ Rules (strict):
 
 2. **For each task** — open `N.task_{title}.md`, read it fully, follow its
    instructions and Execution Checklist. Read its `Read Before Starting`
-   pointers and its Touched Surface (planned surface, risk class, selected gate).
+   pointers and its Touched Surface (planned surface, planned docs surface,
+   risk class, selected gate).
    Then implement. Before selecting or running gates, make the **skills decision**
    (`../spec/DWP_SPECIFICATION.md` §6.2): record `none` / `update <existing>` /
    `create <name>` / `defer — <reason, owner>`, checking the existing `.agents/`
@@ -198,6 +247,11 @@ Rules (strict):
    and catalog updates now, so the actual surface and its validation include
    them. Append real candidates to `analysis_results/SKILLS_CANDIDATES.md` by
    stable ID `T{N}-{seq}`; update an existing ID on resume (`none` needs no row).
+   In the same step, make the **documentation decision**
+   (`../spec/DWP_SPECIFICATION.md` §6.6): update, inside this task, the docs
+   the Touched Surface registers for what the task changes — or record
+   `not applicable — <reason>`; a doc named in the plan but left stale by
+   close is a reconciliation miss, never a follow-up.
 
 3. **Select and run the validation gate — from the actual surface.** After
    implementing, and before running anything:
@@ -284,10 +338,16 @@ Rules (strict):
      reveals additional warranted authoring, return to implementation and Step 3:
      reconcile the changed surface and rerun affected gates before closing.
      A gate from before that edit does not validate the new artifact.
+   - **Reconcile the documentation decision** the same way: every doc the
+     Touched Surface names is current with the actual diff — including files
+     the implementation touched that the plan did not name — or the log
+     records why not (`../spec/DWP_SPECIFICATION.md` §6.6). Stale docs do not
+     invalidate the code gate; they are recorded and swept by the Final
+     Review's documentation reconciliation.
    - **Complete the log**, then the projections, in this order
      (`../spec/PLAN_STATE.md` §5.1): the task's Completion & Log (status,
      timestamp, summary, files changed, gate records, skills disposition,
-     notes) → the README `[ ] → [x]` and `Plan Status` count → the `PROGRESS.md`
+     documentation decision, notes) → the README `[ ] → [x]` and `Plan Status` count → the `PROGRESS.md`
      entry (a short summary: outcome, decisions, values/paths — the full
      narrative stays in the task log).
 
@@ -439,7 +499,18 @@ this order and do not reorder:
   `analysis_results/SKILLS_CANDIDATES.md` entry has one; finish any open
   warranted authoring before (b) is final. No whole-plan rediscovery, no second
   report.
-- **(d) Closure and completion:** where the plan authorized pull requests, push
+- **(d) Documentation reconciliation:** sweep every behavior-changing task's
+  reconciled surface against the docs that register it — the Touched Surfaces
+  and §6.6 documentation decisions are the ledger. Gate registry
+  (`docs/TESTING_GUIDE.md`) first (new or changed commands and gates), then
+  architecture, module and feature docs, then the `AGENTS.md` index for new
+  top-level surface. Fix misses inside this review, rerun any validation the
+  fix affected (under (b)), and record the result in `SECURITY_REVIEW.md` as a
+  **Documentation reconciliation** subsection (checked → current, or the fixed
+  list). Bounded to the plan's touched surface — a whole-repo documentation
+  audit belongs to `/dwp-verify`. The plan does not close with an undocumented
+  behavior-changing surface unless the user explicitly accepted the miss.
+- **(e) Closure and completion:** where the plan authorized pull requests, push
   the final commits, update the PR bodies, verify the pushed heads equal the
   reviewed revisions and that required checks/reviews refer to those heads;
   never merge or publish unless the plan says so. Then report the **completion

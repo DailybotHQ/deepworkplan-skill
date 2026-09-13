@@ -21,7 +21,33 @@ routing is available, or a sub-skill path does not resolve.
 > tools report overall success while individual per-agent targets fail. Verify
 > the directory your harness reads, not the installer's exit code.
 
-## 2. The installation is stale
+## 2. A skills-CLI install delivered the wrong tag or no content
+
+**Symptom:** `npx … skills add <repo>@<tag>` printed the requested tag (or
+"Done!") and exited 0, but the installed `SKILL.md` `version:` is not the
+requested tag, or the target directory is empty / missing its `SKILL.md`.
+
+Two upstream CLI defects, both reproduced in the v2/v5 round-1 benchmark
+install ledgers: the `@tag` pin can be display-only (the requested tag
+printed while the latest bytes are delivered), and a parallel-mkdir race can
+report success while placing no content.
+
+1. **Empty or partial target (false success):** remove the empty attempt,
+   pre-create the target directory (`mkdir -p .agents/skills/<name>/`), and
+   retry the identical command once — this alone fixed every round-1
+   occurrence.
+2. **Wrong tag delivered:** do not trust the printed source line. Reinstall
+   byte-exact from the tag itself:
+   `git archive <tag> skills/<name> | tar -x --strip-components=1 -C .agents/skills`,
+   then `diff -rq` the result against a `git archive` export of the same
+   tag — it must be identical.
+3. **Prevent both:** pre-create the target directory *before* every
+   `skills add` call, and verify every install afterwards — installed
+   `version:` equals the requested tag, directory non-empty. `onboard`
+   Phase 7 / Phase 7a and `upgrade` Phase 3 run this verification as a
+   mandatory step.
+
+## 3. The installation is stale
 
 **Symptom:** behavior does not match the documented flow, or the specification
 version referenced in the pack disagrees with what a plan declares.
@@ -33,7 +59,7 @@ version referenced in the pack disagrees with what a plan declares.
 4. A repository that vendors a deliberately adapted copy is a different case:
    changing it is an intentional, reviewed act, never a silent refresh.
 
-## 3. No test or validation command exists
+## 4. No test or validation command exists
 
 **Symptom:** a task needs a validation gate, but the repository documents none.
 
@@ -46,7 +72,7 @@ version referenced in the pack disagrees with what a plan declares.
 4. Until a real gate exists, a task that changes behavior cannot be marked
    complete on the strength of "it builds" or "the file exists".
 
-## 4. The host cannot do something the flow assumes
+## 5. The host cannot do something the flow assumes
 
 **Symptom:** slash commands, hooks, subagents or a proprietary task API are
 unavailable.
@@ -58,7 +84,7 @@ unavailable.
    say so — installation cannot compensate for that.
 3. Never silently downgrade a required gate because the host made it awkward.
 
-## 5. The plan's state is inconsistent
+## 6. The plan's state is inconsistent
 
 **Symptom:** README checkboxes, task logs, `PROGRESS.md` and `state.json`
 disagree, or a task looks half-done.
@@ -74,7 +100,7 @@ disagree, or a task looks half-done.
 4. Record the reconciliation in the task log. Do not rewrite history to look
    tidy; a failed gate that was later fixed is part of the evidence.
 
-## 6. Resuming a plan another agent started
+## 7. Resuming a plan another agent started
 
 1. Read, in order: the plan README's task list, `state.json`'s checkpoint, the
    last completed task's log, then the git log.
@@ -83,7 +109,7 @@ disagree, or a task looks half-done.
 4. Record your own identity in what you write; the artifact should show who did
    which part.
 
-## 7. An in-flight plan predates the current specification
+## 8. An in-flight plan predates the current specification
 
 A plan created under an earlier lifecycle keeps that lifecycle. Do not migrate
 it silently to look current. Either finish it as recorded, or migrate it
