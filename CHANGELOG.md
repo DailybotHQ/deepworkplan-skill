@@ -9,6 +9,25 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.3.0] — 2026-09-13
+
+### Changes
+
+- Merge pull request #44 from DailybotHQ/feat/v5-reliability-closure
+- fix(execute): a plan that cannot publish is blocked, not quietly completed
+- test(skill): verify packaging, compatibility and evidence portability
+- ci: make the workflow actually execute the reliability guarantees
+- feat(skill): demonstrate the v5 lifecycle with fresh-context acceptance runs
+- docs(skill): align the shipped methodology and public skill claims
+- feat(skill): measure realistic instruction paths and reduce avoidable load
+- feat(skill): make flow activation explicit and portable
+- feat(resume): harden interruption recovery and workspace persistence
+- feat(reliability): complete task 4 - preserve truth when scope or acceptance criteria change
+- feat(reliability): complete task 3 - make plan completion a verified, recoverable operation
+- fix(reliability): complete task 2 - guard state transitions and retain per-command evidence
+- fix(reliability): complete task 1 - define operational guarantees and verified testing registry
+
+
 ## [5.2.0] — 2026-09-13
 
 ### Changes
