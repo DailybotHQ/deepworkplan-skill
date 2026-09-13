@@ -554,13 +554,23 @@ cosmetic commit to satisfy the step, and never treat its absence as an
 incomplete closure. A review that **did** fix something commits that fix
 normally, and reruns the validations the fix affected.
 
-**Publication receipt.** Closing the last task through `shared/update-state.py`
-publishes the plan and writes `analysis_results/FINALIZATION.json`. If that
-transaction cannot run, the plan is **not** silently closed by hand: record why
-in the task log, leave the receipt absent rather than writing one (a
-hand-written receipt asserts a verification that never happened), and treat the
-missing publication as a finding the completion summary carries. `/dwp-verify`
-reports the absence as an advisory.
+**Publication receipt — completion is a transaction, not a status flip.**
+Closing the last task through `shared/update-state.py` validates the terminal
+projection against the plan's real artifacts and writes
+`analysis_results/FINALIZATION.json`. A plan without that receipt was never
+verified.
+
+So a refusal from that transaction is **never** permission to close by hand.
+Read the message first: most refusals are correctable input errors (a missing
+`--checkpoint-step done`, a log whose status line still says pending, a task
+without its skills or documentation decision), and they are atomic — nothing is
+written, no marker is left — so fix the input and re-run. If it genuinely
+cannot complete, the plan is **blocked, not complete**: record the verbatim
+failure in the task log, leave the receipt absent (writing one by hand asserts a
+verification that never happened), and stop. Report it the way an open critical
+security finding is reported — fixed, or explicitly accepted by the user before
+completion is claimed. `/dwp-verify` reports the absence as an advisory on the
+resulting plan, which is a detector, not an authorization.
 
 **Security gate:** a plan is complete only when the Final Review's (or, for a
 legacy plan, the Security Review's) `analysis_results/SECURITY_REVIEW.md` exists

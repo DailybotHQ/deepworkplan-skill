@@ -281,3 +281,16 @@ doc_has() {
     doc_has "$SK/execute/SKILL.md" "A review-only Final Review may close with no commit."
     doc_has "$SK/execute/SKILL.md" "Never manufacture an empty or cosmetic commit"
 }
+
+@test "a plan that cannot publish is blocked, not quietly completed" {
+    # Raised by the Final Review's own security pass: the first wording let a
+    # failed publication become "a finding the completion summary carries",
+    # which is the hand-close the R2-L2 acceptance run actually performed. The
+    # extension makes weakening the completion protocol a critical finding.
+    doc_has "$SK/execute/SKILL.md" "completion is a transaction, not a status flip"
+    doc_has "$SK/execute/SKILL.md" "never** permission to close by hand"
+    doc_has "$SK/execute/SKILL.md" "the plan is **blocked, not complete**"
+    doc_has "$SK/execute/SKILL.md" "a detector, not an authorization"
+    # A hand-written receipt stays forbidden.
+    doc_has "$SK/execute/SKILL.md" "asserts a verification that never happened"
+}
