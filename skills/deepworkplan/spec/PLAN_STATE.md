@@ -410,3 +410,17 @@ task correspondence and the meaning of validation results.
 ---
 
 *Part of the DeepWorkPlan methodology v4.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+
+## Guarded state updates
+
+The installed updater rejects malformed state and completed tasks without passing
+nonempty gate evidence. Use `--gate-json` for commands containing pipes; it accepts
+the existing closed gate object. Different commands retain their records; retries
+supersede only the same command. `--block-reason` records a blocker, and
+`--resolve-blocker` explicitly resolves only the current task's blocker. Skipped
+work cannot make a plan completed. `--reopen-reason` records caller intent to
+refine; preserve the amendment and invalidated evidence in the task log first.
+`--expected-sha256` rejects a stale state snapshot. A cooperative `.lock` directory
+serializes writes; inspect a crashed writer before removing its lock. No protection
+is claimed against editors that ignore the lock. Records assert results; they do
+not prove command execution or semantic acceptance.

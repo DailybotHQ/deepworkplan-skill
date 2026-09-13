@@ -25,6 +25,10 @@ from pathlib import Path
 import re
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
+sys.dont_write_bytecode = True
+from state_contract import gate_findings, shape_errors, derive_status
+
 # The newest DWP spec this checker implements; keep in sync with conformance.sh
 # SUPPORTED_SPEC and DWP_SPECIFICATION.md "Version".
 SUPPORTED_SPEC = '5.0.0'
@@ -46,54 +50,6 @@ def version(text):
     """Dotted numeric version as a comparable tuple; () when unparseable."""
     match = re.match(r'^(\d+)\.(\d+)\.(\d+)$', str(text or ''))
     return tuple(int(g) for g in match.groups()) if match else ()
-
-
-def shape_errors(value, rule, schema, path='$'):
-    if '$ref' in rule:
-        target = schema
-        for key in rule['$ref'].removeprefix('#/').split('/'):
-            target = target[key]
-        return shape_errors(value, target, schema, path)
-    errors = []
-    types = {'object': dict, 'array': list, 'string': str, 'integer': int,
-             'boolean': bool, 'null': type(None)}
-    expected = rule.get('type')
-    if expected:
-        expected = expected if isinstance(expected, list) else [expected]
-        if not any(type(value) is types[t] for t in expected):
-            return [f'{path}: expected {expected}']
-    if 'const' in rule and value != rule['const']:
-        errors.append(f'{path}: expected {rule["const"]!r}')
-    if 'enum' in rule and value not in rule['enum']:
-        errors.append(f'{path}: unknown value {value!r}')
-    if isinstance(value, dict):
-        for key in rule.get('required', []):
-            if key not in value:
-                errors.append(f'{path}: missing {key}')
-        properties = rule.get('properties', {})
-        for key, item in value.items():
-            if key in properties:
-                errors.extend(shape_errors(item, properties[key], schema, path+'.'+key))
-            elif rule.get('additionalProperties') is False:
-                errors.append(f'{path}: unexpected field {key}')
-    if isinstance(value, list):
-        if len(value) < rule.get('minItems', 0):
-            errors.append(f'{path}: too few entries')
-        for i, item in enumerate(value):
-            errors.extend(shape_errors(item, rule.get('items', {}), schema, f'{path}[{i}]'))
-    if isinstance(value, str):
-        if 'pattern' in rule and not re.search(rule['pattern'], value):
-            errors.append(f'{path}: invalid value {value!r}')
-        if len(value) > rule.get('maxLength', len(value)):
-            errors.append(f'{path}: exceeds maximum length')
-    if type(value) is int and value < rule.get('minimum', value):
-        errors.append(f'{path}: below minimum')
-    for item in rule.get('allOf', []):
-        errors.extend(shape_errors(value, item, schema, path))
-    if 'if' in rule:
-        branch = 'else' if shape_errors(value, rule['if'], schema) else 'then'
-        errors.extend(shape_errors(value, rule.get(branch, {}), schema, path))
-    return errors
 
 
 def unfenced(text):
@@ -174,43 +130,6 @@ def security_findings(plan):
         return ['completed plan SECURITY_REVIEW.md mentions critical findings without a clear '
                 'resolution/acceptance (DWP_SPECIFICATION §6.1)']
     return []
-
-
-def gate_findings(tasks, state_layer):
-    """Execution evidence, identical in both eras (PLAN_STATE.md §7).
-
-    A record missing the documented `passes` boolean is malformed, not failing:
-    report the shape once rather than accusing every task of a failed gate.
-    """
-    errors, malformed = [], 0
-    for task in tasks:
-        if not isinstance(task, dict):
-            errors.append('state task must be an object')
-            continue
-        latest = {}
-        for gate in task.get('gates', []):
-            if not isinstance(gate, dict):
-                malformed += 1
-                continue
-            if not isinstance(gate.get('passes'), bool):
-                malformed += 1
-                continue
-            latest[gate.get('command')] = gate
-            if gate['passes'] and re.search(
-                    r'(ran|selected|executed)\s*=\s*0(?:\b|/)|no tests? (ran|found|collected)',
-                    str(gate.get('evidence', '')), re.I):
-                errors.append('passing gate has zero-selection evidence')
-        if task.get('status') == 'completed':
-            if any(not g['passes'] or g.get('exit_code', 0) != 0 for g in latest.values()):
-                errors.append(f'completed task {task.get("id")} has a failing gate without a '
-                              f'later passing run')
-            if state_layer and (not task.get('completed_at') or not latest):
-                errors.append(f'completed state-layer task {task.get("id")} requires '
-                              f'completed_at and gate evidence')
-    if malformed:
-        errors.append(f'{malformed} gate record(s) do not carry the documented `passes` boolean '
-                      f'(PLAN_STATE.md §4.2) — their result cannot be read')
-    return errors
 
 
 class Report:
@@ -436,6 +355,9 @@ def current(plan, state, manifest, report):
         report.ok('Lite task anchors, records and Final Review are valid' if lite else
                   'Full task files, records and Final Review are valid')
     report.extend(gate_findings(tasks, True), 'task gate evidence supports every completed task')
+    report.verdict(state['status'] == derive_status(state), 'task/blocker status is coherent', 'task/blocker status is incoherent')
+    if state.get('blocked') and (state['blocked']['task'] not in ids or tasks[state['blocked']['task']-1]['status'] != 'blocked'):
+        report.bad('active blocker does not identify a blocked task')
     complete = bool(tasks) and all(isinstance(t, dict) and t.get('status') == 'completed' for t in tasks)
     report.verdict(complete == (state.get('status') == 'completed'),
                    'plan execution status agrees with task completion',

@@ -42,7 +42,7 @@ PY
     run python3 - "$SCRIPT" <<'PY'
 import ast, sys
 tree = ast.parse(open(sys.argv[1]).read())
-allowed = {"json", "sys", "os", "re", "argparse", "datetime", "pathlib", "tempfile"}
+allowed = {"json", "sys", "os", "re", "argparse", "datetime", "pathlib", "tempfile", "hashlib", "state_contract"}
 imports = set()
 for node in ast.walk(tree):
     if isinstance(node, ast.Import):
@@ -102,9 +102,9 @@ PY
 }
 
 @test "derives plan completion and never rewrites the first close's timestamps" {
-    python3 "$SCRIPT" "$WORK/state.json" --task 1 --status completed >/dev/null
+    python3 "$SCRIPT" "$WORK/state.json" --task 1 --status completed --gate "fixture-check|0|executed=1/1" >/dev/null
     first_done="$(python3 -c 'import json;print(json.load(open("'"$WORK"'/state.json"))["tasks"][0]["completed_at"])')"
-    run python3 "$SCRIPT" "$WORK/state.json" --task 2 --status completed
+    run python3 "$SCRIPT" "$WORK/state.json" --task 2 --status completed --gate "fixture-check|0|executed=1/1"
     [ "$status" -eq 0 ]
     validates
     python3 - "$WORK/state.json" "$first_done" <<'PY'

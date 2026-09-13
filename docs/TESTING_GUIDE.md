@@ -24,7 +24,7 @@ The runtime validator must still work without third-party Python packages.
 
 | Changed surface | Scoped command | Affected consumers |
 |---|---|---|
-| State updater | `bats tests/state-updater.bats tests/state-evidence.bats` | execute, resume, verifier; widen to full for shared semantics |
+| State updater | `bats tests/state-updater.bats tests/state-evidence.bats tests/state-transitions.bats` | execute, resume, verifier; widen to full for shared semantics |
 | Plan verifier / schema | `bats tests/conformance-sh.bats tests/schema-contract.bats tests/lite-plans.bats` | all plan readers/writers; full suite required |
 | Context/path detection | `bats tests/context-sh.bats` | every flow; shellcheck required |
 | Installer | `bats tests/setup-sh.bats` | all host adapters; Linux/macOS setup CI |
