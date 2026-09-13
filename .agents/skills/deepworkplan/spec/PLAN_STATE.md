@@ -424,3 +424,23 @@ refine; preserve the amendment and invalidated evidence in the task log first.
 serializes writes; inspect a crashed writer before removing its lock. No protection
 is claimed against editors that ignore the lock. Records assert results; they do
 not prove command execution or semantic acceptance.
+
+### Verified plan publication
+
+Before announcing completion, author the finished task logs (including
+`Skills disposition:` and `Documentation decision:`), README index and PROGRESS
+from earned source/acceptance results. Then close the final task through
+`shared/update-state.py`: its terminal transition validates the completed
+candidate against all plan artifacts before writing state, verifies the actual
+files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
+an invented passing gate for this invocation to the candidate it is validating.
+The receipt is external evidence, not its own prerequisite. Run
+`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+
+An interrupted publication leaves `.finalizing.json`; normal verification fails
+until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR
+--candidate CANDIDATE.json --recover` succeeds. A stale cooperative lock requires
+checking that no writer is active before removal. No helper commits, pushes,
+executes stored gate commands or silently repairs Markdown. Missing Python means
+UNVERIFIED, never completed. These checks enforce records and structure; manually
+judge acceptance, consumer coverage and the truth of the underlying evidence.

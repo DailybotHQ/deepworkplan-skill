@@ -586,3 +586,23 @@ For orchestrator plans, the completion rules in [`orchestrator.md`](orchestrator
   a folder without `README.md`, or whose README says `Plan Status: materializing`, is never executed.
 - Plan declares a newer standard than this skill → report and stop (§7.3).
 - Orchestrator-specific errors → [`orchestrator.md`](orchestrator.md).
+
+### Verified plan publication
+
+Before announcing completion, author the finished task logs (including
+`Skills disposition:` and `Documentation decision:`), README index and PROGRESS
+from earned source/acceptance results. Then close the final task through
+`shared/update-state.py`: its terminal transition validates the completed
+candidate against all plan artifacts before writing state, verifies the actual
+files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
+an invented passing gate for this invocation to the candidate it is validating.
+The receipt is external evidence, not its own prerequisite. Run
+`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+
+An interrupted publication leaves `.finalizing.json`; normal verification fails
+until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR
+--candidate CANDIDATE.json --recover` succeeds. A stale cooperative lock requires
+checking that no writer is active before removal. No helper commits, pushes,
+executes stored gate commands or silently repairs Markdown. Missing Python means
+UNVERIFIED, never completed. These checks enforce records and structure; manually
+judge acceptance, consumer coverage and the truth of the underlying evidence.

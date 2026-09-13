@@ -61,3 +61,9 @@ flow entry and fresh context, with pinned inputs and complete attempt records.
 Final Review runs all applicable full checks on the final source and mirror.
 Record command, cwd, selection, source/dirty fingerprint, dependency versions,
 exit code, counts and recoverable evidence. Reuse only equivalent inputs.
+
+## Completion transaction
+
+`bats tests/completion-transaction.bats` runs independent Lite/Full publication
+fixtures and before/after-publication fault injection. Run full Bats for changes
+to the shared validator, writer or finalizer. Required tests must not be skipped.

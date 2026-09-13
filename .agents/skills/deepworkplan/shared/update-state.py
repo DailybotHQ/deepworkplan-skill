@@ -245,6 +245,14 @@ def main():
     errors = state_errors(state, strict=True)
     if errors:
         die("invalid candidate: " + "; ".join(errors))
+    if state['status'] == 'completed':
+        from finalize_plan import publish
+        try:
+            publish(Path(args.state).parent, state, hashlib.sha256(original).hexdigest())
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            die(str(exc))
+        print(f"task {args.task} → completed · plan completed and verified")
+        return
     directory = os.path.dirname(os.path.abspath(args.state))
     payload = json.dumps(state, indent=2, ensure_ascii=False) + "\n"
     lock = args.state + '.lock'

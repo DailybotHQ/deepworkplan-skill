@@ -162,8 +162,10 @@ class Report:
         return not messages
 
 
-def check(plan, is_git=True):
+def check(plan, is_git=True, state_override=None, allow_finalizing=False):
     report = Report()
+    if (plan/'.finalizing.json').exists() and not allow_finalizing:
+        report.bad('interrupted finalization — inspect artifacts and recover before claiming completion')
     documents = {}
     for label in ('state', 'manifest'):
         path = plan / (label+'.json')
@@ -183,6 +185,8 @@ def check(plan, is_git=True):
             report.bad(f'unknown {label} schema URL {url!r} — upgrade the installed skill')
     if report.failed:
         return report
+    if state_override is not None:
+        documents['state'] = state_override
     state, manifest = documents.get('state', {}), documents.get('manifest', {})
     if state.get('schema') in (STATE_V2, STATE_V5):
         current(plan, state, manifest, report)

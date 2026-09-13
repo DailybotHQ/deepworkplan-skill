@@ -619,6 +619,14 @@ and the Final Review is always sequential.
 
 #### 4.5 Plan-Quality Check (both modes and both formats — before reporting success)
 
+Run `bash ../verify/conformance.sh --plan PLAN_name` after materialization, with
+DWP_DIR pointing to the actual plan root. Fix findings before handing off.
+When authoring Final Review, include verified plan publication from
+`../shared/finalize_plan.py`: completed logs with skills/docs decisions, earned
+gates, candidate validation, actual-artifact verification and receipt. Never make
+this final check depend on a fabricated success record of its own invocation.
+
+
 **For a Lite plan**, verify and fix before continuing:
 - **Requirements → tasks → gates** (Step 3.7) hold for the task records.
 - Task IDs are contiguous `1..N`; each `{#task-N}` anchor occurs exactly once;

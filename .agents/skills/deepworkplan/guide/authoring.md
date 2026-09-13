@@ -486,3 +486,10 @@ every plan after this one pays interest on whatever this one leaves stale.
 > Review's documentation sweep reports it — it does not silently absorb it.
 
 ---
+
+### Completion evidence in generated tasks
+
+Every completion log includes its status, `Skills disposition:` and
+`Documentation decision:`. Final Review uses the installed guarded finalization
+helper; source/acceptance gates already ran before a terminal candidate is
+validated. Its own receipt is not a prerequisite for its own check.
