@@ -34,6 +34,7 @@ The runtime validator must still work without third-party Python packages.
 | Activation / routing surface | `bats tests/activation-contract.bats` | router, onboard flow, delegator templates, generated command kits, capability docs |
 | Claims / version stamps / helper inventory | `bats tests/claims-consistency.bats` | TRUST.md, spec footers, contributor docs, the published claim table |
 | Lifecycle end to end (writer + finalizer + checker) | `bats tests/reliability-acceptance.bats` | every flow that closes a task or publishes a plan; widen to full Bats |
+| CI workflow | `bats tests/ci-guarantees.bats` | every suite CI runs; the installer's sub-skill list; the documented Python floor |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 
 Repository example: a change to `shared/update-state.py` starts with the
@@ -168,3 +169,32 @@ The **live** fresh-context runs behind the same protocol are scored by
 `python3 tests/reliability/oracles/score-acceptance.py <run-dir>` and recorded,
 separately labelled, in `docs/evaluations/v5-reliability.md`. Deterministic
 scenarios are never reported as if they were live evidence.
+
+## CI actually running what it claims
+
+`bats tests/ci-guarantees.bats` pins the workflow's own guarantees, because a
+CI job has two ways to go **green while verifying nothing** and neither looks
+like a failure: its required cases can all *skip* for want of a dependency, and
+its selection can match *no tests at all*. Both happened here — the bats job
+ran without `jsonschema`, so every schema, lifecycle and Lite-plan case skipped
+silently.
+
+The workflow now installs the test-only Python packages, reads the TAP plan and
+fails below a floor, and fails on any `# skip` other than the single documented
+environment-dependent case. The suite derives its expectations from the
+repository rather than from a second copy of the workflow: the dependency list
+comes from what the tests actually import under a skip guard, the installer's
+sub-skill list from `setup.sh`'s own `SKILLS` array, and the shell-lint
+coverage from every `*.sh` the repo ships. It also asserts that the
+deterministic gate needs **no** secret, no credential and nothing from the
+gitignored `.dwp/` — the reliability guarantees must reproduce from a clean
+checkout alone. Live agent evaluations stay local and on-demand by design
+(`tests/reliability/PROTOCOL.md`); CI reproduces only the deterministic half.
+
+A `python-floor` job runs the shipped helpers on Python 3.9 with no
+third-party package installed — asserting `jsonschema` is *absent* so the
+stdlib-only path is the one under test — compiles each helper, runs the
+read-only checker over a real fixture plan, and fails if any `__pycache__`
+survives inside the hash-pinned pack. Before it existed, the "Python 3.9+
+stdlib" claim in this guide was never exercised: every other job runs 3.11 with
+both optional packages present.
