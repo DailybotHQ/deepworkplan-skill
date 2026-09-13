@@ -16,8 +16,11 @@ silent, in either direction.
 - If parallelizable: in **guided** mode, inform the user (do not ask) and add the
   team-agents configuration; in **trust** mode, do it silently. Team-agents
   metadata is always additive and backward compatible (other agents ignore it).
-- Auto-assign parallel groups (tasks with no cross-dependencies), teammate roles
-  (derived from task content), and default model `sonnet`. Each parallel group
+- Auto-assign parallel groups (tasks with no cross-dependencies) and teammate
+  roles (derived from task content). The Model column records the host's own
+  cost-efficient teammate tier when the host has model tiers; the plan never
+  hardcodes a vendor model, and a host without model tiers leaves the column
+  empty. Each parallel group
   may name what it **starts after** (a task, a prior group, or a barrier);
   plans with parallel groups **also list their sequential tasks explicitly** in
   the groups table (corpus shape: `Sequential tasks: …` rows). Setup/integration

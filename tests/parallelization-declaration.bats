@@ -81,7 +81,11 @@ p_doc_has() {
     p_doc_has "$ROUTE" "Complexity:** Tier"
     p_doc_has "$ROUTE" "model"
     grep -qF '| Role | Assigned Tasks | Model | Spawn Prompt |' "$GUIDE"
-    p_doc_has "$CREATE" "default model \`sonnet\`"
+    # The Model column stays reachable, but the agent-neutral create flow
+    # never hardcodes a vendor model: the column records the host's own
+    # cost-efficient teammate tier, or stays empty on hosts without tiers.
+    p_doc_has "$CREATE" "never hardcodes a vendor model"
+    p_doc_has "$CREATE" "cost-efficient teammate tier"
 }
 
 @test "Lite plans keep the parallelization declaration (no silent loss)" {

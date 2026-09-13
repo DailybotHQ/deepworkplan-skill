@@ -2,6 +2,16 @@
 
 Verbatim from the main procedure. The sequential path is always preserved; every task also works sequentially, and the Final Review (or a legacy plan's three final tasks) is always sequential under the lead.
 
+**Host capability check, before anything else:** this branch drives Claude
+Code's real team agents (`TeamCreate` and teammates). When the host does not
+offer them — no team capability, no subprocess agents, or the session cannot
+keep teammates alive — do not attempt them and do not simulate them: execute
+the group's tasks sequentially under the standard single-task rules. The
+plan's guarantees are identical either way (team-agents metadata is additive
+by design); only wall-clock differs. Never report "parallel execution" for
+work that ran sequentially — the sequential fallback is an honest
+degradation, not native parallel parity.
+
 ## Team-Agents Parallel Groups
 
 > **CRITICAL: use REAL team agents, NOT subagents.** When the plan has a "Team

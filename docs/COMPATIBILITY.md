@@ -41,8 +41,10 @@ This is upstream CLI behavior, not a property of this pack.
 
 ## `setup.sh` host routes
 
-All nine advertised routes are asserted in `tests/setup-sh.bats`: the pack
-symlink plus all six sub-skill symlinks must appear in the documented directory.
+All nine advertised host routes are asserted in `tests/setup-sh.bats`: the pack
+symlink plus all nine sub-skill symlinks
+(`create`, `execute`, `refine`, `resume`, `status`, `onboard`, `verify`,
+`author`, `upgrade`) must appear in the documented directory.
 
 | `--host` | Skills directory | Level |
 | --- | --- | --- |
@@ -106,9 +108,33 @@ those.
 ### Portable sequential path
 
 The methodology's required path is plain file reads, edits and shell commands.
-Slash commands, hooks, subagents and proprietary task APIs are conveniences: when
-they are absent the sequential path still works. What an agent cannot do without
-is executing tools and reading/writing the repository.
+Slash commands, subprocess agents, parallel teams, persistent sessions, hooks
+and proprietary task APIs are conveniences: when they are absent the sequential
+path still works. What an agent cannot do without is executing tools and
+reading/writing the repository.
+
+Capability fallbacks are stated per capability in
+[`../skills/deepworkplan/shared/troubleshooting.md`](../skills/deepworkplan/shared/troubleshooting.md) §5
+(invoke by name without slash commands; sequential research without subprocess
+agents; sequential execution of parallel groups without teams; the on-disk plan
+folder is the cross-session state without persistent sessions). The parity
+rule there is normative: the sequential method working on a host is **not**
+native parallel parity and is never reported as such — a host supports a flow
+when the flow's guarantees hold there, not when every convenience exists.
+
+### Flow activation
+
+`tests/activation-contract.bats` pins the **static activation contract**: the
+intent-to-flow routing policy onboarding installs in the repository index
+(explicit planning creates, execute/resume invoke those flows, status/verify
+stay read-only, ordinary direct edits never silently become plans, trust is
+not a flow selector, discovery is local), the exact post-onboarding next
+command, the delegator templates' thinness and routing targets, and the
+capability-fallback wording. These are contract-presence checks on files —
+they are **not** evidence that any model reliably routes a fresh request into
+the right flow. That routing reliability is behavioral evidence, recorded per
+harness under the evidence levels above when live acceptance runs exist; none
+is claimed from static strings.
 
 ## Lite and Full plans
 

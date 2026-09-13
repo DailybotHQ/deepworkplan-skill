@@ -52,8 +52,9 @@ plain install). Before routing anywhere else:
 
 **If the repository is already AI-first but its harness predates this skill** —
 `AGENTS.md` / `.agents/` exist, yet there is no `DWP standard:` provenance line,
-the provenance line is from a non-current series (older than the 4.x this skill
-implements, or a 2.x line while upgrading), or
+the provenance line is from a non-current series (older than the 5.x this skill
+implements — 2.x and 4.x are historical series, `spec/DWP_SPECIFICATION.md`
+§6.5), or
 `docs/TESTING_GUIDE.md` lacks the scoped-invocation and mapping content the
 standard requires — **offer the targeted harness upgrade** before routing.
 Say in one line what is out of date, then run
@@ -126,6 +127,26 @@ full step-by-step flow.
 If the intent is ambiguous between planning and managing existing work, ask the
 developer which they mean before routing.
 
+**Activation rules that hold for every row of the table:**
+
+- **Ordinary direct edits never become plans silently.** "Fix this bug",
+  "rename this function", "update the README" are done directly — a Deep Work
+  Plan starts only when the developer asks for a plan (or picks a flow
+  explicitly). The routing table maps *requested* flows; it is not an
+  interception policy.
+- **Trust is not a flow selector.** `trust` / `auto` authorizes unattended
+  continuation *within* the flow the developer requested; it never widens a
+  read-only request into execution, and it never turns a direct edit into a
+  plan.
+- **Status and verify stay read-only.** They report; they never execute tasks
+  or mutate files — regardless of how they are invoked.
+- **Hosts without slash commands use the same flows by name.** Invoke the
+  sub-skill as `#deepworkplan-create` or in plain text ("run
+  deepworkplan-create"); the flows themselves are plain file reads, edits and
+  shell commands (`shared/troubleshooting.md` §5 states the capability
+  fallbacks). Flow discovery is local: the pack and the repo's `.agents/`
+  index live on disk — nothing routes through a network service.
+
 ### Normative specification (ships with the skill)
 
 The methodology's authoritative standard lives at [`spec/`](spec/README.md) —
@@ -139,8 +160,8 @@ rendered version lives at https://deepworkplan.com/spec.
 
 - [`shared/context.sh`](shared/context.sh) — detect repo root, branch, and agent
   tool; resolve the `.dwp/` output location.
-- [`shared/dwp-paths.md`](shared/dwp-paths.md) — the `.dwp/plans/` +
-  `.dwp/plans/` output convention and how to override it.
+- [`shared/dwp-paths.md`](shared/dwp-paths.md) — the `.dwp/` output
+  convention (plans under `.dwp/plans/`) and how to override it.
 - [`shared/adaptation.md`](shared/adaptation.md) — the reasoning-over-copy-paste
   principle and the two repository archetypes (individual repo vs orchestrator
   hub).

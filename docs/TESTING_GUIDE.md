@@ -30,6 +30,7 @@ The runtime validator must still work without third-party Python packages.
 | Installer | `bats tests/setup-sh.bats` | all host adapters; Linux/macOS setup CI |
 | Guide links | `python3 scripts/check-guide-migration.py` | flow read paths |
 | Read tiers | `bats tests/execute-read-contract.bats tests/resume-read-contract.bats` | measurement, authoring, final review |
+| Activation / routing surface | `bats tests/activation-contract.bats` | router, onboard flow, delegator templates, generated command kits, capability docs |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 
 Repository example: a change to `shared/update-state.py` starts with the
@@ -89,3 +90,21 @@ state-replacement desync boundary is asserted in both directions; the last
 case is a labeled contract-presence check on the resume flow, `dwp-paths.md`
 and the specs. Widen to full Bats for any change to `shared/context.sh`,
 `shared/state_contract.py` or the resume flow.
+
+## Flow activation and portability
+
+`bats tests/activation-contract.bats` checks that every delegator template
+(and this repository's own generated `.agents/commands/` kit) routes to a
+sub-skill that actually ships, placeholder-free and thin, with by-name
+invocation for hosts without slash commands; that the intent-to-flow routing
+block onboarding installs carries every activation property (planning
+creates, execute/resume invoke, status/verify read-only, direct edits never
+silently become plans, trust is not a flow selector, local discovery); that
+capability fallbacks and the no-parity-claim rule are stated; and that the
+activation surface is vendor-model-neutral and free of stale series claims.
+Tests over real template and kit files are behavioral oracles on those
+artifacts; the intent-mapping and wording cases are labeled
+contract-presence checks — they prove the contract is taught, never that a
+model routes live requests reliably (that is behavioral evidence, recorded
+per harness in `docs/COMPATIBILITY.md`). Widen to full Bats for any change
+to the router, the onboard flow or the command templates.

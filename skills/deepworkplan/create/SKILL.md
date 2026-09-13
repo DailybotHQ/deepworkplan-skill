@@ -58,16 +58,15 @@ inline non-DWP alternative merely because it is small.
 ## Philosophy
 
 The goal is a delightful, smooth experience. The user provides information once;
-the system handles all intermediate steps (analysis, materialization
-materialization, quality check) automatically — and never generates an artifact
-nobody asked for.
+the system handles all intermediate steps (analysis, materialization, quality
+check) automatically — and never generates an artifact nobody asked for.
 
 ## Shared resources (read these)
 
 - [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch,
   agent tool, and the `.dwp/` output location (`dwp_dir`).
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — the `.dwp/plans/` +
-  `.dwp/plans/` output convention.
+- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — the `.dwp/` output
+  convention (plans under `.dwp/plans/`).
 - [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
   and the two repository archetypes (individual repo vs orchestrator hub).
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.5).

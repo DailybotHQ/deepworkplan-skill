@@ -74,8 +74,8 @@ version referenced in the pack disagrees with what a plan declares.
 
 ## 5. The host cannot do something the flow assumes
 
-**Symptom:** slash commands, hooks, subagents or a proprietary task API are
-unavailable.
+**Symptom:** slash commands, subprocess agents, parallel teams, persistent
+sessions, hooks or a proprietary task API are unavailable.
 
 1. Those are conveniences. Fall back to the portable sequential path: read the
    plan, do one task, run its gate, record it, commit, move on.
@@ -83,6 +83,22 @@ unavailable.
    access. If the agent genuinely cannot run commands or edit files, stop and
    say so — installation cannot compensate for that.
 3. Never silently downgrade a required gate because the host made it awkward.
+
+Capability-by-capability fallback (each row is what to do when *only* that
+capability is missing — the methodology's guarantees do not change, only the
+ergonomics):
+
+| Missing capability | Fallback |
+| --- | --- |
+| Slash commands | Invoke the same flows by name: `#deepworkplan-create` where the host intercepts `#`, or plain text ("run deepworkplan-create"). The flows are file reads, edits and shell commands. |
+| Subprocess agents / subagents | Do the research and the work sequentially in the main session; parallel research is an optimization, never a requirement. |
+| Parallel team agents | Execute every parallel group sequentially under the standard single-task rules (team-agents metadata is additive by design). Report it as sequential execution — never as parallel. |
+| Persistent sessions / cross-session memory | The plan folder **is** the memory: README checkboxes, `PROGRESS.md`, task logs and `state.json` carry the state; a fresh session resumes from them (`resume` flow). Nothing required may live only in a prior conversation. |
+
+**Parity honesty:** the sequential method working on a host is **not** evidence
+of native parallel parity, and must never be reported as such. A host is
+"supported" for a flow when the flow's guarantees hold there — gate evidence,
+state coherence, recoverability — not when every convenience exists.
 
 ## 6. The plan's state is inconsistent
 
