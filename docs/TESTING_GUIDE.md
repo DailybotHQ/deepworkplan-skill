@@ -29,7 +29,8 @@ The runtime validator must still work without third-party Python packages.
 | Context/path detection | `bats tests/context-sh.bats` | every flow; shellcheck required |
 | Installer | `bats tests/setup-sh.bats` | all host adapters; Linux/macOS setup CI |
 | Guide links | `python3 scripts/check-guide-migration.py` | flow read paths |
-| Read tiers | `bats tests/execute-read-contract.bats tests/resume-read-contract.bats` | measurement, authoring, final review |
+| Read tiers | `bats tests/execute-read-contract.bats tests/resume-read-contract.bats tests/context-accounting.bats` | measurement, authoring, final review |
+| Instruction accounting | `bats tests/context-accounting.bats` + `bash tests/efficiency/measure-instruction-load.sh` | the read tiers of every flow, `tests/efficiency/paths.tsv`, the published evidence record |
 | Activation / routing surface | `bats tests/activation-contract.bats` | router, onboard flow, delegator templates, generated command kits, capability docs |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 
@@ -108,3 +109,22 @@ contract-presence checks — they prove the contract is taught, never that a
 model routes live requests reliably (that is behavioral evidence, recorded
 per harness in `docs/COMPATIBILITY.md`). Widen to full Bats for any change
 to the router, the onboard flow or the command templates.
+
+## Instruction accounting
+
+`bats tests/context-accounting.bats` guards the two numbers the pack
+publishes about its own instruction surface: the **entry bundle** a flow loads
+at t0, and the **end-to-end paths** its named triggers add. The paths, their
+phases and their literal triggers live in `tests/efficiency/paths.tsv`; the
+suite fails when the manifest names a file the pack does not have, or one the
+governing flow's `## Shared resources` section does not declare — so the
+measurement can never drift from the read contract it models. It also asserts
+the disclosures (`Repeated reads`, `Phase triggers`, `Exclusions`, `What this
+measurement is not`), that a path total equals the sum of its **distinct**
+files, and that a create simplification is a real path change rather than a
+relabel: a Lite creation must load no guide file, and the Full path must still
+count the companions it loads. Its injected-failure control appends a row
+naming a nonexistent file and requires a nonzero exit — a broken reference
+must never measure as zero bytes. Widen to full Bats for any change to a
+flow's read tiers, the measurement script or the manifest. Results and their
+limits: `docs/evaluations/v5-reliability.md`.

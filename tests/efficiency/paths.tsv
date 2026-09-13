@@ -1,0 +1,82 @@
+# End-to-end instruction paths — the named read paths measure-instruction-load.sh
+# reports in addition to the per-flow entry bundle.
+#
+# A path is an ordered list of PHASES. Each phase names the trigger that makes
+# the agent load the files in it. Bytes are counted ONCE per unique file per
+# path; a file that is read at more than one moment is disclosed separately in
+# the "Repeated reads" section rather than double-counted.
+#
+# Columns (tab-separated):  path_id  phase  trigger  relpath
+#   relpath is relative to skills/deepworkplan/ (the installed pack root).
+#
+# Rules this file must obey (enforced by tests/context-accounting.bats):
+#   - every relpath exists in the pack;
+#   - every relpath is DECLARED in the entry flow's "## Shared resources"
+#     section, so a path can never drift from the read contract it models;
+#   - every path's entry phase is exactly the flow's compulsory read set.
+#
+# Exclusions (deliberate, disclosed in the script output): repository files the
+# agent also reads (AGENTS.md, docs/TESTING_GUIDE.md, the plan folder, source
+# under review), tool output, generated plan files, re-reads after a context
+# compaction, and the agent's own output. This measures the SKILL's instruction
+# surface, nothing else.
+
+# --- create: the normal Lite path -------------------------------------------
+create-lite	entry	t0 — router + create contract + the template every plan writes	SKILL.md
+create-lite	entry	t0 — router + create contract + the template every plan writes	create/SKILL.md
+create-lite	entry	t0 — router + create contract + the template every plan writes	examples/PROMPTS_TEMPLATE.md
+create-lite	entry	t0 — router + create contract + the template every plan writes	shared/adaptation.md
+create-lite	final-review	composing the Final Review — every plan carries one, so this trigger always fires	create/addon-augmentations.md
+create-lite	final-review	composing the Final Review — every plan carries one, so this trigger always fires	guide/execution.md
+
+# --- create: the Full expansion ---------------------------------------------
+create-full	entry	t0 — router + create contract + the template every plan writes	SKILL.md
+create-full	entry	t0 — router + create contract + the template every plan writes	create/SKILL.md
+create-full	entry	t0 — router + create contract + the template every plan writes	examples/PROMPTS_TEMPLATE.md
+create-full	entry	t0 — router + create contract + the template every plan writes	shared/adaptation.md
+create-full	discipline	Step 3.6 — a task's test/security/documentation discipline is ambiguous	guide/authoring.md
+create-full	final-review	composing the Final Review — every plan carries one, so this trigger always fires	create/addon-augmentations.md
+create-full	final-review	composing the Final Review — every plan carries one, so this trigger always fires	guide/execution.md
+create-full	full-expansion	Step 4.4 — the plan is expanded into Full task files	guide/authoring.md
+create-full	full-expansion	Step 4.4 — the plan is expanded into Full task files	guide/structure.md
+
+# --- execute: a session that runs through the Final Review -------------------
+execute-final-review	entry	t0 — router + execute contract	SKILL.md
+execute-final-review	entry	t0 — router + execute contract	execute/SKILL.md
+execute-final-review	state-layer	state.json and the README disagree, or a takeover needs the checkpoint contract	spec/PLAN_STATE.md
+execute-final-review	gate-widening	a task's gate must be widened or derived	guide/authoring.md
+execute-final-review	final-review	the Final Review task begins	guide/execution.md
+execute-final-review	final-review	the Final Review task begins	create/addon-augmentations.md
+execute-final-review	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
+# --- resume: assessment only (Steps 1-4) ------------------------------------
+resume-assessment	entry	t0 — router + resume contract; assessment loads no companion	SKILL.md
+resume-assessment	entry	t0 — router + resume contract; assessment loads no companion	resume/SKILL.md
+
+# --- resume: assessment then back into the execution loop -------------------
+resume-execution	entry	t0 — router + resume contract; assessment loads no companion	SKILL.md
+resume-execution	entry	t0 — router + resume contract; assessment loads no companion	resume/SKILL.md
+resume-execution	execution-handoff	Step 5 resumes into the execution loop	execute/SKILL.md
+resume-execution	state-layer	a desync, a takeover, or a standard question needs the normative rule	spec/PLAN_STATE.md
+resume-execution	final-review	the resumed plan reaches its Final Review	guide/execution.md
+resume-execution	final-review	the resumed plan reaches its Final Review	create/addon-augmentations.md
+resume-execution	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
+# --- conditional escalation: the realistic worst case ------------------------
+# An orchestrator plan, in Lite representation, with a Team Agents
+# Configuration, that hits an inconsistent state mid-run and reaches its Final
+# Review. Every trigger below is a real one from execute/SKILL.md.
+conditional-escalation	entry	t0 — router + execute contract	SKILL.md
+conditional-escalation	entry	t0 — router + execute contract	execute/SKILL.md
+conditional-escalation	lite	the plan README declares Plan Format: Lite	spec/LITE_PLANS.md
+conditional-escalation	orchestrator	Step 2.1 detects an orchestrator plan	execute/orchestrator.md
+conditional-escalation	orchestrator	Step 2.1 detects an orchestrator plan	guide/orchestrator.md
+conditional-escalation	team-agents	Step 2.2 finds a Team Agents Configuration and team mode is selected	execute/team-agents.md
+conditional-escalation	team-agents	Step 2.2 finds a Team Agents Configuration and team mode is selected	guide/team-agents.md
+conditional-escalation	discipline	judging a task's test or security discipline	guide/authoring.md
+conditional-escalation	state-layer	state.json and the README disagree	spec/PLAN_STATE.md
+conditional-escalation	trouble	something is already wrong — inconsistent plan state	shared/troubleshooting.md
+conditional-escalation	gate-widening	a task's gate must be widened or derived	guide/authoring.md
+conditional-escalation	final-review	the Final Review task begins	guide/execution.md
+conditional-escalation	final-review	the Final Review task begins	create/addon-augmentations.md
+conditional-escalation	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md

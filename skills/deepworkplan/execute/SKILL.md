@@ -70,8 +70,9 @@ when their moment arrives. (This ordering is deliberate: reading companions
   - [`../create/addon-augmentations.md`](../create/addon-augmentations.md) —
     read only when the Final Review runs its required local-review pass
     (load it even if the reviewer is not yet installed, so the
-    missing-install finding path is available); the reviewer's own files
-    load at that same moment, never before.
+    missing-install finding path is available); the reviewer's own
+    [`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md)
+    loads at that same moment, never before.
   - The repository's `docs/TESTING_GUIDE.md` — read only when a task's gate
     must be widened or derived.
   - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the routing index; consult

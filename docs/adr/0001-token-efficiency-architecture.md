@@ -45,6 +45,18 @@ four are an *estimate* of tokens, never a measurement; Task 2 reproduces these
 figures with a stored command and Task 19 reports live counters only where a
 harness exposes them.
 
+> **Amendment, 2026-09-13 (v5 reliability closure).** The two figures above are
+> **entry bundles** — what each flow loads at t0 — and the phrase "for a run"
+> overstates them: neither caps what a whole run reads. The measurement now
+> publishes entry bundles and named **end-to-end paths** separately
+> (`tests/efficiency/paths.tsv`), and a resume that continues into execution
+> measures roughly 4.8x its entry bundle. Both columns still exclude the
+> repository's own files, tool output, the plan folder, re-reads after a
+> compaction and anything the host injects. The numbers in this table are left
+> as recorded — this is a decision record, not a live dashboard; current figures
+> and their limits live in
+> [`../evaluations/v5-reliability.md`](../evaluations/v5-reliability.md).
+
 ## 2. Decisions
 
 ### 2.1 Operational capability floor

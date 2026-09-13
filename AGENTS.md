@@ -30,6 +30,7 @@ the same instructions other agents do.
 | Installation + agent support matrix (what is actually tested) | [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
 | Reproducing the evaluation pack (what is measured, and what is not) | [docs/EVALUATION.md](docs/EVALUATION.md) |
 | Efficiency evidence, claims and their limits | [docs/evaluations/token-efficiency.md](docs/evaluations/token-efficiency.md) |
+| v5 reliability evidence: guarantees, guard cost, instruction accounting | [docs/evaluations/v5-reliability.md](docs/evaluations/v5-reliability.md) |
 | Cross-agent handoff trial (Claude Code ↔ Codex, both directions) | [docs/evaluations/cross-agent-handoff.md](docs/evaluations/cross-agent-handoff.md) |
 | Upgrading an existing repository (adoption pilot) | [docs/evaluations/adoption-pilot.md](docs/evaluations/adoption-pilot.md) |
 | Per-preset onboarding coverage | [docs/PRESET_TESTING_MATRIX.md](docs/PRESET_TESTING_MATRIX.md) |

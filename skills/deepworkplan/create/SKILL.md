@@ -61,21 +61,88 @@ The goal is a delightful, smooth experience. The user provides information once;
 the system handles all intermediate steps (analysis, materialization, quality
 check) automatically — and never generates an artifact nobody asked for.
 
-## Shared resources (read these)
+## Shared resources (read at their moment, not upfront)
 
-- [`../shared/context.sh`](../shared/context.sh) — resolve repo root, branch,
-  agent tool, and the `.dwp/` output location (`dwp_dir`).
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — the `.dwp/` output
-  convention (plans under `.dwp/plans/`).
-- [`../shared/adaptation.md`](../shared/adaptation.md) — reasoning-over-copy-paste
-  and the two repository archetypes (individual repo vs orchestrator hub).
-- **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README structure §4, task-file anatomy §5 incl. the Touched Surface, test and security discipline §5.3–§5.5).
-- **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) (folders §1, naming §2, lifecycle §10) when the Format Decision is Full or the plan references promotion/tree anatomy — the Lite-first path writes its three-file shape inline (Step 4.0); [`orchestrator.md`](orchestrator.md) (this directory) plus [`../guide/orchestrator.md`](../guide/orchestrator.md) if Step 2.6 detects an orchestrator plan; [`team-agents.md`](team-agents.md) (this directory) plus [`../guide/team-agents.md`](../guide/team-agents.md) **only if Step 2.10 finds parallelizable tasks** (the host merely *having* team agents is not a trigger); [`addon-augmentations.md`](addon-augmentations.md) (this directory) **always when composing the Final Review** (required local-review step on every 2.3.0 plan — do not gate this read on whether the target already has the reviewer installed); [`../guide/prompts.md`](../guide/prompts.md) §7 when composing prompt text; [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 when a task references skills or agents; [`../guide/execution.md`](../guide/execution.md) §6.1 when writing the Final Review task. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
-- [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — prompt patterns.
-- [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
-  `PROMPTS.md` template for each plan.
-- The target repository's `docs/TESTING_GUIDE.md` (`../spec/DOCUMENTATION_STANDARD.md` §3.4) — the documented full and scoped validation commands and the source-to-test mapping that every generated gate is selected from.
-- **Spec (conditional — read the named sections only when the trigger fires):** [`../spec/DWP_SPECIFICATION.md`](../spec/DWP_SPECIFICATION.md) §11 when the rigor tier is borderline and §5.0.2 when a Touched Surface is genuinely ambiguous; [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §3–§4 **and** [`../spec/schema/`](../spec/schema/) when writing the state layer in Step 4.4 item 7. The step text below is self-sufficient for the ordinary case — read these only when it is not.
+The compulsory set for this flow is the router SKILL plus this file, the
+`PROMPTS.md` template every plan writes, and the adaptation rule every
+generated gate obeys: the operative rules the composition runs on — the
+Lite-first shape, the analysis steps, the test/security/documentation
+discipline, the resumable write order and the quality checks — are stated
+inline in the steps below. A Lite creation, the normal path, reads **no**
+guide file at all; the Full expansion loads the authoring and structure
+companions at Step 4.4, when it starts. (This ordering is deliberate:
+reading companions "to be safe" is the failure mode this tiering removed.)
+
+- **Essential now (before composing anything):**
+  [`../shared/context.sh`](../shared/context.sh) — **run** it
+  (`bash ../shared/context.sh`) to resolve repo root, branch, agent tool and
+  `dwp_dir`; its source is not part of this flow's reads.
+  [`../examples/PROMPTS_TEMPLATE.md`](../examples/PROMPTS_TEMPLATE.md) — the
+  `PROMPTS.md` template Step 4.0 item 4 writes for **every** plan, Lite or
+  Full; it is inevitable, so it is declared here rather than hidden behind a
+  trigger that always fires.
+  [`../shared/adaptation.md`](../shared/adaptation.md) —
+  reasoning-over-copy-paste and the two repository archetypes (individual
+  repo vs orchestrator hub); Step 2.6's archetype decision and every
+  generated gate depend on it.
+  The target repository's `docs/TESTING_GUIDE.md`
+  (`../spec/DOCUMENTATION_STANDARD.md` §3.4) — the documented full and scoped
+  validation commands and the source-to-test mapping every generated gate is
+  selected from. It is a repository file, not a pack file: it is compulsory
+  but carries no pack bytes (see `tests/efficiency/paths.tsv` exclusions).
+  That is the whole t0 set — no guide or spec file is compulsory.
+- **Conditional — read only when the trigger fires:**
+  - [`../guide/authoring.md`](../guide/authoring.md) — read §4–§5 (plan
+    README structure, task-file anatomy incl. the Touched Surface) only when
+    Step 4.4 expands the plan into Full task files; read §5.3–§5.5 only when
+    a task's test, security or documentation discipline is genuinely
+    ambiguous and Step 3.6's inline rules do not settle it; read §4.3 only
+    when a Full plan reaches 20 or more task files and needs the Stage Gates
+    table. The Lite-first path never reaches any of these triggers.
+  - [`../guide/structure.md`](../guide/structure.md) §1–§2 and §10 — read
+    only when the Format Decision is Full, or the plan references promotion
+    or tree anatomy; the Lite-first path writes its shape inline (Step 4.0).
+  - [`orchestrator.md`](orchestrator.md) (this directory) plus
+    [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 — read only
+    when Step 2.6 detects an orchestrator plan.
+  - [`team-agents.md`](team-agents.md) (this directory) plus
+    [`../guide/team-agents.md`](../guide/team-agents.md) §14 — read only
+    when Step 2.10 finds parallelizable tasks; the host merely *having* team
+    agents is not a trigger.
+  - [`addon-augmentations.md`](addon-augmentations.md) (this directory) —
+    read only when composing the Final Review, which **every** plan carries:
+    this trigger always fires, so the end-to-end path measurement counts it
+    on both the Lite and the Full path. Do not gate this read on whether the
+    target already has the reviewer installed.
+  - [`../guide/execution.md`](../guide/execution.md) §6.1 — read only when
+    writing the Final Review task's prose; like the bullet above, this
+    trigger always fires and is counted in both measured create paths.
+  - [`../guide/prompts.md`](../guide/prompts.md) §7 — read only when
+    composing prompt text beyond the template.
+  - [`../guide/skills-integration.md`](../guide/skills-integration.md) §11 —
+    read only when a task references skills or agents.
+  - [`../spec/DWP_SPECIFICATION.md`](../spec/DWP_SPECIFICATION.md) — read §11
+    only when the rigor tier is borderline, and §5.0.2 only when a Touched
+    Surface is genuinely ambiguous.
+  - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §3–§4 **and**
+    [`../spec/schema/`](../spec/schema/) — read only when writing the state
+    layer in Step 4.4 item 7; the step text is self-sufficient otherwise.
+  - [`../examples/CREATE_PLAN.md`](../examples/CREATE_PLAN.md) — read only
+    when the developer asks for prompt patterns or example phrasings of a
+    plan request. Composing a plan never requires it: the workflow below
+    takes its input from Steps 1–3, not from this catalogue.
+  - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
+    plan folder cannot be located or the `DWP_DIR` override is in play; Step
+    4.0 already inlines `.dwp/plans/PLAN_{name}/`.
+  - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
+    only when something is already wrong (discovery failure, stale
+    installation, missing test command, unsupported host capability,
+    inconsistent plan state).
+  - [`../guide/GUIDE.md`](../guide/GUIDE.md) — the routing index; consult
+    only when a need is not covered by a section named above.
+- **Never by default:** no other guide, spec, preset or addon file is read
+  for this flow — not defensively, not "to be safe". Speculative reading is
+  exactly what the tier above replaces: name the moment, then read.
 
 ## Parameter Reference
 
