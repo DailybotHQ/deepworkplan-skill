@@ -9,6 +9,23 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.2.0] — 2026-09-13
+
+### Changes
+
+- Merge pull request #43 from DailybotHQ/feat/v5-phase3
+- chore(dogfood): sync the vendored deepworkplan mirror to feat/v5-phase3 — Task 11 of PLAN_v5_superiority_guarantee
+- feat(skill): tier the remaining read paths so no flow exceeds its v5.1.0 bundle — Task 11 of PLAN_v5_superiority_guarantee
+- feat(spec): publish the v5 schema line and align the standard to 5.0.0 — Task 10 of PLAN_v5_superiority_guarantee
+- docs(skill): close the Lite parallelization-declaration drift — Task 9 of PLAN_v5_superiority_guarantee
+- feat(onboard): verify every skills-CLI install — tag pin, non-empty, retry-once, byte-exact fallback
+- feat(resume): tier the read path — assessment-first, execute contract at its Step 5 moment
+- feat(execute): tier the read path — essential-now, trigger-conditional, never-by-default
+- feat(skill): enforce the AGENTS.md lean-index budget and the feature-tier docs architecture — Task 5 of PLAN_v5_superiority_guarantee
+- feat(execute): add the Final Review documentation reconciliation sweep — Task 4 of PLAN_v5_superiority_guarantee
+- feat(skill): add the boy-scout documentation discipline to the task contract
+
+
 ## [5.1.0] — 2026-09-12
 
 ### Changes
