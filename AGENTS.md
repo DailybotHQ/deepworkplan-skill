@@ -24,6 +24,7 @@ the same instructions other agents do.
 |----------|----------|
 | User-facing README | [README.md](README.md) |
 | Human contributor guide (narrative companion to this file) | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Validation commands and source-to-test mapping | [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) |
 | Design decisions (the *why* behind the layout) | [docs/DESIGN.md](docs/DESIGN.md) |
 | Install guide (compare / update / uninstall) | [docs/INSTALLATION.md](docs/INSTALLATION.md) |
 | Installation + agent support matrix (what is actually tested) | [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) |
