@@ -265,6 +265,13 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
   the task `id`, a free-form `step` locator, a timestamp, and a one-line note. An
   agent **SHOULD** update it whenever it pauses inside a task; it **MUST** update
   it before any planned interruption in unattended mode.
+- **The terminal checkpoint is the one fixed value.** `step` is free-form
+  everywhere except at completion: a plan whose `status` is `completed`
+  **MUST** carry `checkpoint.task` = the last task's id and
+  `checkpoint.step` = the literal `"done"`. Every earlier checkpoint in a
+  plan's life is free-form, so this is the one place the convention is not
+  inferable from the plan's own history — state it here rather than leaving an
+  agent to discover it from a refusal.
 - `blocked` is `null` or `{ "task": N, "reason": "...", "since": "...", "needs": "..." }`.
   An unattended agent that hits a stop condition (`AGENT_PROTOCOL.md` §7.3)
   **MUST** populate `blocked` before halting — this is how a daemon's next

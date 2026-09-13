@@ -204,6 +204,17 @@ Each `N.task_{task_title}.md` must have the following sections. The spec's canon
 
 ### 5.2. Example template
 
+> **Section headings and field labels are load-bearing, not styling.** The
+> conformance checker finds each field by parsing them
+> (`verify/plan_contract.py`), and this applies to **Full task files exactly as
+> it does to Lite inline records**. A heading is `## Goal` or `## 1. Goal`,
+> optionally with a parenthetical suffix (`## 11. Completion & Log (filled by
+> the agent)`), and nothing else on the line. An inline label is `**Goal:**` or
+> `**Goal**` — those two forms. A decorative variant such as `**Goal.**`, or a
+> heading that continues past the section name, makes the field invisible to
+> the checker: the plan then fails conformance with one "lacks Goal" issue per
+> task for zero content reasons.
+
 ````markdown
 # Task {N}: {Task Title}
 

@@ -70,6 +70,13 @@ c_doc_has() {
     # checklist omitted the field — a plan authored exactly per the anatomy
     # failed conformance until every task completed.
     CREATE="$SK/create/SKILL.md"
-    c_doc_has "$CREATE" "**Goal** · **Context**"
+    # The pinned form was updated from `**Goal** · **Context**` to the colon
+    # form. That is not a relaxation: the bare form was itself the defect an
+    # acceptance run hit — the anatomy taught a decorative label style, the
+    # agent wrote `**Goal.**`, and the checker reported one "lacks Goal" per
+    # task for zero content reasons. The anatomy now shows the exact two forms
+    # `verify/plan_contract.py` parses, so this assertion pins the corrected
+    # sketch. The field-presence requirement below is unchanged.
+    c_doc_has "$CREATE" "**Goal:** … · **Context:**"
     c_doc_has "$CREATE" "has a Goal, a Context, a Touched Surface"
 }

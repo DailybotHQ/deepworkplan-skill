@@ -196,5 +196,7 @@ def state_errors(state, strict=False, plan_dir=None):
     if cp and cp['task'] not in ids:
         errors.append('checkpoint references missing task')
     if strict and state['status'] == 'completed' and (not cp or cp.get('step') != 'done' or cp['task'] != ids[-1]):
-        errors.append('completed state requires terminal checkpoint')
+        errors.append('completed state requires terminal checkpoint: '
+                      '{"task": <last task id>, "step": "done", "at": …, "note": …} '
+                      '(PLAN_STATE.md §4.4)')
     return errors

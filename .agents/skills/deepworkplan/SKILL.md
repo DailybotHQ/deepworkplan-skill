@@ -69,6 +69,23 @@ downloads only on explicit acceptance, and re-runs onboarding as a fresh init �
 lifecycle; migrating one is a separate, explicit `refine migrate`. If the
 developer declines, route by intent as normal.
 
+> **Unattended runs record the gap; they never stop to offer.** Under
+> `trust`/`auto` or a pre-approved plan, that offer is the confirmation
+> authorization already removed. So do **not** ask: **write it down where the
+> work will see it** (a plan flow's README notes and `PROGRESS.md`; otherwise
+> the flow's own report) and route by intent. A stale harness is a recorded
+> finding like any missing optional tool (`spec/AGENT_PROTOCOL.md` §7.2) —
+> never a question, and never a silent omission either.
+
+> **A partially AI-first repository takes this same branch.** The branches
+> above are the clean cases; real repositories land in between (an `AGENTS.md`
+> with no `.agents/`, an `.agents/` with no provenance line, docs without a
+> testing guide). Any repository with **some** of the harness and not the rest
+> counts as out-of-date harness, not as a fresh one: reconcile through
+> `onboard` in `upgrade` mode, which adds only what is absent. Never re-onboard
+> from scratch over a repository that already carries part of the harness —
+> that is the one path that can overwrite handwritten work.
+
 **If the repository is already AI-first and current**, skip onboarding and route
 by intent **silently** — do not announce the detection or the routing decision
 (no "the repo is already AI-first" / "routing to the create sub-skill"

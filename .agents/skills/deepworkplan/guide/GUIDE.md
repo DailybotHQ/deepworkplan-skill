@@ -15,6 +15,16 @@ Use this document whenever you need to generate a new deep-work plan.
 
 ---
 
+> **Addressing a section: by its number, not by a heading level.** The tiered
+> read paths say things like "read §6.1 only when …". Find that section by its
+> **number**, at whatever heading level the file uses — this index requires
+> every top-level section to appear in its map, so a subsection such as
+> `## 6.1.` sits at the same level as its parent `## 6.`. Extracting `### 6.1`
+> would match nothing, exit **zero**, and read **empty** — a silent no-read,
+> which is the worst failure mode a progressive read path can have. If a
+> section extraction comes back empty, that is a defect to report, never a
+> section that happened to be blank.
+
 This file is the **routing index** of the methodology guide. The guide's content
 is unchanged; it is split into flow-scoped files so an agent loads only what its
 current flow needs (`spec/DWP_SPECIFICATION.md` §5). The design rationale is

@@ -12,6 +12,8 @@ or required by downstream users.
 | Instruction bytes per named **end-to-end path** (entry plus the companions its triggers load, unique files, repeats disclosed) | same command; paths declared in `tests/efficiency/paths.tsv` | **measured** (same units, same limits) |
 | Total context a real session consumes | — | **not measured, and neither column above bounds it** — see below |
 | Seeded-fault detection at the intended boundary | `bats tests/efficiency-fixtures.bats` + agent replays | **measured** |
+| Lifecycle guarantees end to end, with injected faults | `bats tests/reliability-acceptance.bats` (protocol: `tests/reliability/PROTOCOL.md`) | **measured**, deterministic — no agent involved |
+| The v5 lifecycle driven by a fresh agent context | live runs scored by `tests/reliability/oracles/score-acceptance.py` | **measured per run**; an existence proof, never a rate |
 | Gate wall-clock, retries, duplicate commands, interruptions, confirmations | recorded per replay from the agent trace | **measured** when the replay runs |
 | Live tokens (input/output/cached/reasoning) | provider counters only, with `source` | **unavailable** unless the harness exposes counters; never estimated after the fact |
 

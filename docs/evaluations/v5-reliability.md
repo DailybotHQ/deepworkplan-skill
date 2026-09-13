@@ -93,10 +93,19 @@ New runtime helpers (`shared/state_contract.py` 9,947 B,
 `shared/finalize_plan.py` 5,748 B, `shared/update-state.py` +4,290 B) are
 executed, not read as instructions, so they add nothing to any bundle.
 
-**Disclosed risk:** the resume entry bundle is 29,688 B against the 30,000 B
-bound pinned by `tests/resume-read-contract.bats` — 312 B of headroom. The
-bound was **not** raised to accommodate the guard cost; the next change to the
-resume flow must find room inside it or argue the bound up on its own merits.
+**The resume bound, and what happened to it.** At the close of the instruction
+accounting work the resume entry bundle sat at 29,688 B against the 30,000 B
+bound in `tests/resume-read-contract.bats` — 312 B of headroom — and the record
+said the next change must find room inside it or argue the bound up on its own
+merits. The acceptance runs then required two operative additions to that flow.
+So the argument was made, in the open: every byte of duplication the file still
+carried was extracted first (a restated Important Notes bullet, trust-boundary
+rules stated twice, a tier enumeration repeating the Workflow headings, and a
+line of contributor test guidance that belonged in the testing guide),
+recovering **1,275 B**. What remained was substance. The bound was then raised
+once, to 31,000 B, with the reasoning written into the test itself. The
+headroom stays deliberately small: the bound exists to trip when a whole
+companion (~19–38 KB) is re-linked as compulsory, and it still does.
 
 ### End-to-end paths (unique pack files, closure branch)
 
@@ -192,3 +201,107 @@ contract presence, the row says so.
   [`token-efficiency.md`](token-efficiency.md) rather than as a result.
 - No claim that a plan cannot fail. The guarantees are about what the
   repository records and recovers, not about model infallibility.
+
+## Behavioral acceptance — the v5 lifecycle driven by fresh agents
+
+**Protocol:** [`../../tests/reliability/PROTOCOL.md`](../../tests/reliability/PROTOCOL.md),
+written and committed **before** the first run. **Oracles:** A1–A8, scored from
+the run's artifacts by
+[`../../tests/reliability/oracles/score-acceptance.py`](../../tests/reliability/oracles/score-acceptance.py),
+never from the agent's narration. **Evidence:**
+[`../../tests/reliability/evidence/`](../../tests/reliability/evidence/), one
+sanitized file per run.
+
+### What ran
+
+Five live runs across three rounds, each a fresh agent context with no
+conversation carryover, each in a disposable workspace, each entering the flows
+by name (reading `SKILL.md` and routing from it — the documented fallback for
+hosts without slash commands).
+
+| Run | Round | Flow | Verdict |
+|---|---|---|---|
+| L1 | 1 | clean Lite lifecycle | **PASS** (8/8) |
+| L2 | 1 | Full lifecycle, interrupted, resumed by a second agent | **PASS** (8/8) |
+| R2-L1 | 2 | clean Lite lifecycle | **PASS** (8/8) |
+| R2-L2 | 2 | Full lifecycle, interrupted, resumed | **FAIL** — A6, no publication receipt |
+| R3-L2 | 3 | Full lifecycle, interrupted, resumed | **PASS** (8/8) |
+
+Two oracles carry most of the weight. **A3** calls the fixed code and requires
+an overdrawing transfer to raise *and record nothing*. **A4** reverts the run's
+own fix and requires its own suite to fail, then restores it and requires a
+pass — a test that passes either way is not coverage. Neither can be satisfied
+by text.
+
+### The R2-L2 failure, and why it is recorded rather than amended
+
+R2-L2 produced a coherent, conformant terminal plan with **no**
+`FINALIZATION.json`: it was closed by hand because the guarded publication
+crashed. The cause was a function-local `import re` in
+`finalize_plan.validate()` shadowing the module-level one for the whole
+function. Lite plans took the branch that bound it; a **Full** plan — every
+locator `kind: "file"` — never did, so guarded publication was unreachable for
+Full plans entirely. It had a perverse signature: *correct* artifacts caused the
+crash, because a task whose log was unreadable took an earlier branch and never
+reached the `re` call.
+
+That defect was introduced **by this plan's own work**, in the fix for a
+separate false-refusal defect. Every deterministic lifecycle scenario passed
+throughout, because they all used Lite plans — representation was a dimension
+the suite did not cover. Scenario **F12** now covers it: a Full plan published
+end to end, plus a static AST guard over every shipped helper that fails on any
+function-local import shadowing a module-level one.
+
+The resuming agent's conduct is the reason this was recoverable: it refused to
+hand-write a receipt, on the stated grounds that `"result": "verified"` would
+assert a verification that never happened. It recorded the absence instead.
+
+The run is published as **FAIL**. The fix came afterwards; amending the record
+would erase the only evidence that the failure mode is real.
+
+### What the runs found
+
+Thirteen product defects, none of which the static suites could see. A
+representative sample:
+
+| Defect | Found by | Why static tests missed it |
+|---|---|---|
+| A Full plan authored exactly as the canonical template documents could not pass the pack's own guarded finalization — and the error blamed the task's log, which was complete | L2 | The template and the parser were each internally consistent; only using both together exposed it |
+| Guarded publication unreachable for every Full plan (the shadowed import above) | R2-L2 | Every scenario used Lite plans |
+| A completed plan refused publication because its log contained the word "appending" — a substring test for "pending" — with a message that was false about the file | R2-L1 | Needs a real log written in the workload's own domain vocabulary |
+| The router told an unattended run to *offer* a harness upgrade — the confirmation `trust` exists to remove | L2 | A branch no test exercised with an unattended request |
+| A repository with `AGENTS.md` but no `.agents/` matched neither router branch | L1 | Both documented branches are internally consistent; the gap is between them |
+| `create` declared the target's `docs/TESTING_GUIDE.md` compulsory with no rule for its absence | L1 | Introduced by this plan's own instruction-accounting work, one task earlier |
+| "read §6.1" addressed a `##` heading; extracting `### 6.1` reads **empty** and exits **zero** | R3-L2a | A silent no-read produces no error to assert on |
+| The `--checkpoint-step done` literal the terminal transition requires appeared in no flow — only in the spec the execute tier does not load for a close | R3-L2 | The refusal names the requirement; nothing named the accepted form |
+
+Each is fixed with a regression that derives its expectation from the shipped
+artifacts rather than from a copy of the same sentence. Two findings were
+**not** accepted: three separate runs attributed a `__pycache__` inside the pack
+to the shipped flows, and reproduction showed the flows write nothing (their own
+diagnostic imports did) — the guarantee is now pinned by **F11** instead of a
+phantom being "fixed"; and one report proposed widening an `except` clause,
+which would have *hidden* the shadowed-import crash rather than surfacing it.
+
+### Limitations — read these before citing anything above
+
+- **No round ran against a frozen candidate.** Fixes from each round's own
+  findings landed while later sessions were running. Every run's `META.json`
+  records its real tree state, and two claims of "frozen" were corrected after
+  a run reported pack files changing mid-session. This is a limitation of the
+  protocol as executed, not a detail.
+- **One host, one model family.** Fresh contexts on the available host are
+  genuinely fresh, but two processes of the same host are **not** cross-vendor
+  evidence and are never labelled as such. Cross-vendor evidence remains the
+  separate record in [`cross-agent-handoff.md`](cross-agent-handoff.md).
+- **One small workload.** Nothing here generalizes to a large repository, a
+  costly suite, or a long-history plan.
+- **A pass is an existence proof, not a rate.** These runs show the lifecycle
+  can be driven correctly from the repository alone. They do not establish how
+  often an arbitrary model does so, and no percentage may be derived from them.
+- **No timing claims.** The runs shared a host with other work.
+- **The defect rate did not reach zero.** Round 1 found five defects, round 2
+  found seven, round 3 found three. The honest conclusion is not that the
+  lifecycle is now proven correct — it is that **fresh-context runs are a
+  productive detection channel that static suites do not replace**. Not one of
+  these thirteen defects was visible to a suite that was passing 380 cases.

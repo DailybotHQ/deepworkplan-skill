@@ -312,5 +312,5 @@ declared() {
 
 # Sentence-level assertion that tolerates the source file's own line wrapping.
 doc_has() {
-    tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"
+    sed 's/^[[:space:]]*>[[:space:]]\{0,1\}//' "$1" | tr '\n' ' ' | tr -s ' ' | grep -qF -- "$2"
 }

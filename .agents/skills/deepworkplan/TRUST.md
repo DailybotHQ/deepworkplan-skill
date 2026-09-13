@@ -18,8 +18,13 @@ only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check, and
 `shared/update-state.py`, `shared/state_contract.py` and
 `shared/finalize_plan.py` for the guarded state, evidence and completion
-transactions. Every one of them reads and writes only your repository and its
-`.dwp/` directory. The **core
+transactions. They read and write only your repository and its `.dwp/`
+directory — with one honest exception that is CPython's behavior rather than
+ours: importing a Python helper can leave a `__pycache__/` bytecode cache
+beside it inside the installed pack. The shipped flows set
+`sys.dont_write_bytecode` to avoid it, but a direct `python3 -c 'import …'`
+against a helper (a diagnosis step, say) will still create one. It is a cache
+of our own files, contains nothing of yours, and is safe to delete. The **core
 methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
 network calls**, and emits **no telemetry** of any kind.
 

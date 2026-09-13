@@ -383,6 +383,15 @@ Rules (strict):
    delta above (status, gates, outcome, commit, counts, checkpoint) atomically
    and its output is closed-schema-valid where the input was:
    `python3 ../shared/update-state.py <plan>/state.json --task N --status completed --commit <hash> --gate '<command>|<exit>|<evidence>' --worked '<one line>'`.
+   **Closing the LAST task additionally requires `--checkpoint-step done`** —
+   that literal, not a variation on the convention earlier tasks used. The
+   terminal transition validates the completed projection and publishes the
+   plan, and it refuses a terminal state without that checkpoint
+   (`../spec/PLAN_STATE.md` §4.4). A refusal here is a **correctable input
+   error, not a broken transaction**: it is atomic, `state.json` is untouched
+   and no marker is left, so fix the argument and re-run. Never read it as
+   permission to close the plan by hand — a hand-closed plan has no
+   publication receipt and no validated projection.
    A whole-file rewrite of `state.json` remains the documented fallback when
    scripting is genuinely unavailable; reconciliation from markdown (§5) is
    always a whole-file regeneration.
@@ -535,6 +544,23 @@ this order and do not reorder:
   a later request (from durable evidence, without replaying the plan). No
   answer, a decline, or an unattended run → no report; the plan is nonetheless
   **complete**.
+
+**A review-only Final Review may close with no commit.** Its whole output —
+`SECURITY_REVIEW.md`, the task log, the README and state updates — lands under
+the gitignored `.dwp/`, so when the review finds nothing to fix there is
+genuinely nothing to commit. Record the closure step as *not applicable — the
+review changed no tracked file* and move on. Never manufacture an empty or
+cosmetic commit to satisfy the step, and never treat its absence as an
+incomplete closure. A review that **did** fix something commits that fix
+normally, and reruns the validations the fix affected.
+
+**Publication receipt.** Closing the last task through `shared/update-state.py`
+publishes the plan and writes `analysis_results/FINALIZATION.json`. If that
+transaction cannot run, the plan is **not** silently closed by hand: record why
+in the task log, leave the receipt absent rather than writing one (a
+hand-written receipt asserts a verification that never happened), and treat the
+missing publication as a finding the completion summary carries. `/dwp-verify`
+reports the absence as an advisory.
 
 **Security gate:** a plan is complete only when the Final Review's (or, for a
 legacy plan, the Security Review's) `analysis_results/SECURITY_REVIEW.md` exists

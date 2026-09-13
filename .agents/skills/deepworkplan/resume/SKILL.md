@@ -19,9 +19,7 @@ to resume — see *Persistence* below.
 ## Shared resources (read at their moment, not upfront)
 
 The compulsory set for this flow is the router SKILL plus this file: every
-rule the resumption assessment runs on — compact-index-first loading,
-evidence gathering, markdown-wins reconciliation, the interruption-boundary
-table, takeover, the smoke test — is stated inline in the steps below. A
+rule the resumption assessment runs on is stated inline in Step 2 below. A
 default resumption reads **no** guide, spec, shared companion, or execution
 contract before assessment; each loads when its moment arrives. (This
 ordering is deliberate: reading companions "to be safe" is the failure mode
@@ -98,20 +96,17 @@ the checkpoint and use refine; do not promote or alter approvals implicitly.
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
 **Writes:** identical scope to `execute` (task outputs, `.dwp/` working state,
-per-task commits after gates pass) — resume continues an interrupted plan, it
-does not widen the boundary. Recorded state follows the **DWP Resume Protocol**
-(`../spec/DWP_SPECIFICATION.md` §5.3): completed `[x]` tasks are **trusted as
-recorded** — never re-validated unless the developer explicitly asks, `refine`
-marked them `(re-validate: …)`, or the protocol's smoke test fails in a way that
-implicates a completed task — while the **world** is smoke-tested (cheapest
-standing validation) before anything is built on it.
+per-task commits after gates pass) — resuming does not widen the boundary.
 
-**It MUST NOT:** re-run or "fix up" already-completed tasks unless the
-developer asks, a `(re-validate…)` marker exists, or the §5.3 smoke test
-implicates them; skip the post-interruption smoke test; repeat a commit, gate,
-skill authoring, report or other external action that the evidence shows
-already happened; migrate a legacy plan (that is `refine migrate`, on explicit
-request only); push without instruction; or write outside the repo checkout and
+**It MUST NOT:** re-run or "fix up" a completed `[x]` task — under the **DWP
+Resume Protocol** (`../spec/DWP_SPECIFICATION.md` §5.3) those are trusted as
+recorded, and only three things reopen one: the developer asks, `refine` left a
+`(re-validate: …)` marker, or the smoke test fails in a way that implicates it;
+skip that post-interruption smoke test, which validates the **world** (the
+cheapest standing check) before anything is built on it; repeat a commit, gate,
+skill authoring, report or other external action the evidence shows already
+happened; migrate a legacy plan (that is `refine migrate`, on explicit request
+only); push without instruction; or write outside the repo checkout and
 `.dwp/`.
 
 ## Workflow
@@ -175,6 +170,7 @@ pointer**, never by replaying everything.
 
    | Interrupted… | Evidence to check | Then |
    |---|---|---|
+   | at a clean task boundary (the commonest case) | the last task's whole closure order present and consistent, checkpoint pointing at un-started work | **no repair step is owed** — take over (2.6), smoke-test (2.7), start the next task. Do not hunt for a missing step |
    | before the gate ran | uncommitted changes; no gate record | finish the implementation if incomplete; run the gate **once** |
    | after the gate, before the commit | gate record present, `passes: true`, and the recorded `fp=` still matches the world — same revision (`git rev-parse HEAD`), same dirty/generated files (`git status --porcelain`), same environment; any difference invalidates reuse | rerun the gate, record the fresh result, then commit **once** |
    | after the commit, before the README/log update | commit exists in `git log`; README still `[ ]` | complete log → README → PROGRESS → `state.json`; do **not** re-commit |
@@ -287,15 +283,9 @@ model, or another harness resumes from these files with Step 2.
 - **Missing artifacts** (no plan folder, absent state, dangling `log=` pointer):
   report what is missing and stop at that boundary; never reconstruct history
   from memory. No daemon, auto-upload, or automatic unignoring of `.dwp/`
-  exists — persistence is a deliberate copy. Tests simulate external-action
-  receipts as local deterministic files; a live service is never duplicated
-  just to exercise a fixture.
+  exists — persistence is a deliberate copy.
 
 ## Important Notes
-- Trust the task list (`[x]` done / `[ ]` pending); verify with git; read the
-  active task's log and the compact index; retrieve history by pointer; never
-  duplicate work; never skip; assess partial work at its boundary; stop on
-  blockers.
 - **Legacy plans:** execute as recorded; no automatic lifecycle migration.
 
 ## Error Handling

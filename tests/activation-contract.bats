@@ -224,3 +224,28 @@ PY
     run grep -qF 'six sub-skill' "$REPO_ROOT/docs/INSTALLATION.md" "$REPO_ROOT/docs/COMPATIBILITY.md"
     [ "$status" -ne 0 ]
 }
+
+@test "an unattended run records a stale harness instead of stopping to offer" {
+    # Found by the L2 acceptance run (tests/reliability/PROTOCOL.md): the
+    # harness-upgrade branch told an unattended agent to *offer* an upgrade,
+    # which is exactly the confirmation trust removes. The agent recorded the
+    # gap in writing and routed on — correct behavior the router had not
+    # authorized. It does now, and the rule names where the record goes, so
+    # "record it" is actionable rather than advice.
+    flat="$(sed 's/^[[:space:]]*>[[:space:]]\{0,1\}//' "$ROUTER" | tr '\n' ' ' | tr -s ' ')"
+    echo "$flat" | grep -qF -- "Unattended runs record the gap; they never stop to offer."
+    echo "$flat" | grep -qF -- "do **not** ask"
+    echo "$flat" | grep -qF -- "write it down where the work will see it"
+    echo "$flat" | grep -qF -- "never a question, and never a silent omission either"
+}
+
+@test "a partially AI-first repository is reconciled, never re-onboarded" {
+    # Found by the L1 acceptance run: a workspace with AGENTS.md but no
+    # .agents/ matched neither documented branch, so the flow had no rule.
+    # The dangerous default would be treating it as a fresh repository and
+    # onboarding over handwritten work.
+    flat="$(sed 's/^[[:space:]]*>[[:space:]]\{0,1\}//' "$ROUTER" | tr '\n' ' ' | tr -s ' ')"
+    echo "$flat" | grep -qF -- "A partially AI-first repository takes this same branch."
+    echo "$flat" | grep -qF -- "Any repository with **some** of the harness and not the rest"
+    echo "$flat" | grep -qF -- "Never re-onboard from scratch over a repository"
+}

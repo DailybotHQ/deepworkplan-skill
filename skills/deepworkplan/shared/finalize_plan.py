@@ -9,6 +9,7 @@ An interrupted publication leaves .finalizing.json and requires explicit recover
 import argparse
 import hashlib
 import json
+import re
 import os
 from pathlib import Path
 import sys
@@ -45,7 +46,11 @@ def validate(plan, candidate):
         loc = task.get('locator')
         if loc and loc['kind'] == 'inline':
             # Read only this inline record; a later task's disposition cannot mask it.
-            import re
+            # `re` is imported at module scope. A function-local `import re`
+            # here once bound `re` as a local for the WHOLE function, so a
+            # Full plan — every locator `kind: file`, this branch never taken —
+            # hit an UnboundLocalError at the first `re` use further down, and
+            # guarded publication was unreachable for Full plans entirely.
             match = re.search(r'(?m)^#{2,6} .*\{'+re.escape(loc['value'])+r'\}.*$', readme)
             if not match:
                 raise ValueError('missing inline task record')
@@ -56,8 +61,28 @@ def validate(plan, candidate):
             body = (plan/(loc['value'] if loc else task['file'])).read_text()
         log = field_content(unfenced(body), 'Completion & Log') or field_content(unfenced(body), 'Completion log')
         # field_content stops at sublabels; dispositions are searched only in the task.
-        if not log or 'pending' in log.lower() or 'Skills disposition:' not in body or 'Documentation decision:' not in body:
-            raise ValueError(f'task {task["id"]} requires a completed log and skills/docs decisions')
+        # Name which condition failed: "requires a completed log" sent a reader
+        # hunting through a log that was already complete when the real fault
+        # was an unparseable heading.
+        missing = []
+        if not log:
+            missing.append('no readable "Completion & Log" section — check the heading '
+                           'is "## Completion & Log", optionally numbered and with a '
+                           'parenthetical suffix, and nothing else on the line')
+        elif re.search(r'(?im)^\s*(?:\*\*)?status(?:\*\*)?\s*:?\s*(?:\*\*)?\s*pending\b', log):
+            # Match the STATUS LINE, not the word anywhere in the log. A
+            # substring test refused a completed plan whose log said
+            # "before appending either leg" — "appending" contains "pending" —
+            # and reported that the log said pending, which was false. The
+            # read-only checker already used a status-line rule
+            # (plan_contract.log_status_mismatch); the finalizer now matches it.
+            missing.append('its log\'s status line still says pending')
+        if 'Skills disposition:' not in body:
+            missing.append('no "Skills disposition:" line')
+        if 'Documentation decision:' not in body:
+            missing.append('no "Documentation decision:" line')
+        if missing:
+            raise ValueError(f'task {task["id"]} cannot be published: ' + '; '.join(missing))
 
 
 def fingerprint(plan, candidate):

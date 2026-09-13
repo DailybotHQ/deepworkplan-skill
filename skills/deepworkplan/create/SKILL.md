@@ -90,6 +90,14 @@ reading companions "to be safe" is the failure mode this tiering removed.)
   validation commands and the source-to-test mapping every generated gate is
   selected from. It is a repository file, not a pack file: it is compulsory
   but carries no pack bytes (see `tests/efficiency/paths.tsv` exclusions).
+  **When the target has no `docs/TESTING_GUIDE.md`**, this read resolves
+  against whatever the repository *actually* documents — usually `AGENTS.md`'s
+  quick-commands section — and the gate is derived from the real commands
+  found there, scoped ones included. Only when the repository documents no
+  runnable validation at all does the full-suite fallback apply (Step 3.5).
+  Either way the missing registry is recorded as a harness finding in the
+  plan's notes; it is never a reason to stop, and never a reason to invent a
+  command the repository does not have.
   That is the whole t0 set — no guide or spec file is compulsory.
 - **Conditional — read only when the trigger fires:**
   - [`../guide/authoring.md`](../guide/authoring.md) — read §4–§5 (plan
@@ -412,7 +420,10 @@ inline and then again as a file:
    analysis file is busywork, not rigor.
 4. **`PROMPTS.md`** — from `../examples/PROMPTS_TEMPLATE.md`, stripped of its
    authoring scaffolding (see Step 4.4 item 4).
-5. **`PROGRESS.md`** — the bounded working index (`../spec/PLAN_STATE.md` §5.1).
+5. **`PROGRESS.md`** — the bounded working index: goal and invariants, the
+   active task and the exact next action, unresolved blockers, the contracts
+   and decisions still in force, and pointers to the durable records. Not a
+   narrative log — `../resume/SKILL.md` Step 2.1 is what reads it back.
 6. **`state.json`** — `schema` =
    `https://deepworkplan.com/schema/plan-state/v5.json`, `plan`, `updated_at`,
    `status: "pending"`, `completed_count: 0`, `task_count`, **`format`**
@@ -439,7 +450,11 @@ records. Do not paste the ten-section task template into the README.
 ```markdown
 # Plan: {Title}
 
-## 1. Goal            ## 2. Context            ## 3. Global Guidelines
+## 1. Goal
+
+## 2. Context
+
+## 3. Global Guidelines
 
 ## Plan Variables
 | Variable | Value |
@@ -460,15 +475,25 @@ One concise record here; machine state is derived from it, never duplicated.
 - [ ] Task 1: {title} — [#task-1](#task-1)
 - [ ] Task N: Final Review — [#task-N](#task-N)
 
-## 5. Execution Rules        ## 6. Skills & Agents Used
+## 5. Execution Rules
+
+## 6. Skills & Agents Used
+
 ## 7. Plan Status / Notes    → `Plan Status: 0/N completed`
 
 ## Task 1 {#task-1}
-**Goal** · **Context** (what a fresh session needs to start this task alone) ·
-**Touched Surface** (planned surface, planned docs surface, risk class, test
-mapping, selected gate and why) · **Acceptance Criteria** · **Validation** (a
-runnable command) · **Completion log** (status, skills disposition,
-documentation decision, gate record).
+**Goal:** … · **Context:** (what a fresh session needs to start this task
+alone) · **Touched Surface:** (planned surface, planned docs surface, risk
+class, test mapping, selected gate and why) · **Acceptance Criteria:** ·
+**Validation:** (a runnable command) · **Completion log:** (status, skills
+disposition, documentation decision, gate record).
+
+> **The label form is load-bearing, not styling.** Write each field label as
+> `**Goal:**` or `**Goal**` — those two, exactly. The checker parses these
+> labels to find each field (`verify/plan_contract.py`), so a decorative
+> variant like `**Goal.**` makes the field invisible to it and the plan fails
+> conformance with one "lacks Goal" issue per task, for zero content reasons.
+> Step 4.5 catches it; do not rely on that.
 
 ## Task N: Final Review {#task-N}
 The same mandatory Final Review — security pass, final-state validation, skills
@@ -530,8 +555,10 @@ exists, see *Error Handling — plan exists / partial materialization*. Never
 overwrite files that are not part of this plan.
 
 **Write order (resumable at any point):** `manifest.json` → `README.md`
-**skeleton** (goal, context, variables, guidelines and the full task list with
-titles and links, with `Plan Status: materializing`) → `analysis_results/PLAN_ANALYSIS.md`
+**skeleton** (goal, context, variables, the **Format Decision** record — the
+observed signals and why this plan is Full, including when an explicit `full`
+preference overrode the rubric, so the choice is auditable — guidelines and the
+full task list with titles and links, with `Plan Status: materializing`) → `analysis_results/PLAN_ANALYSIS.md`
 (the Step 3 record) → task files in order → `PROMPTS.md` → `PROGRESS.md` →
 `analysis_results/SKILLS_CANDIDATES.md` → `state.json` → **flip the README to
 `Plan Status: 0/N completed`** as the last write. From the second write onward,
@@ -636,7 +663,7 @@ Create:
    "For agents:" note, and drop or repoint its relative links (they resolve from
    `examples/`, not from inside a plan folder). What ships is the copy-paste
    prompts only.
-5. **PROGRESS.md** — a **bounded working index** (`../spec/PLAN_STATE.md` §5.1;
+5. **PROGRESS.md** — a **bounded working index** (`../resume/SKILL.md` Step 2.1 reads it back;
    `../guide/execution.md`): goal and constraints; active task and next action;
    unresolved blockers; current contracts and decisions still in force; direct
    pointers to durable records (task logs, `analysis_results/`). Soft budget
@@ -685,12 +712,32 @@ and the Final Review is always sequential.
 
 #### 4.5 Plan-Quality Check (both modes and both formats — before reporting success)
 
-Run `bash ../verify/conformance.sh --plan PLAN_name` after materialization, with
-DWP_DIR pointing to the actual plan root. Fix findings before handing off.
-When authoring Final Review, include verified plan publication from
-`../shared/finalize_plan.py`: completed logs with skills/docs decisions, earned
-gates, candidate validation, actual-artifact verification and receipt. Never make
-this final check depend on a fabricated success record of its own invocation.
+Run `bash ../verify/conformance.sh --plan PLAN_name` from the repository root
+after materialization. The checker resolves the plan through the same
+`shared/context.sh` logic every flow uses, so the ordinary case needs nothing
+else. Only when the output lives outside the repo's own `.dwp/` do you set
+`DWP_DIR`, and it points at **the `.dwp` directory that contains `plans/`** —
+not at the plan folder itself (`../shared/dwp-paths.md`). Fix findings before
+handing off.
+When the Final Review task's checklist reaches its closure step, write it so a
+**review-only** outcome is a legitimate close: its whole output lands under the
+gitignored `.dwp/`, so a review that fixed nothing has nothing to commit and
+records that step as *not applicable*. Do not emit a checklist line that
+hard-codes a commit — `../execute/SKILL.md` forbids manufacturing a cosmetic
+one, and a generated step that contradicts the execution contract forces the
+executing agent to choose which of the two to disobey.
+
+Invoke the checker by its absolute path (`<pack>/verify/conformance.sh`) or
+from the pack directory — the `../verify/...` form above is written relative to
+this file, not to any flow's working directory.
+
+`../shared/finalize_plan.py` is an **execute-time** helper: at create time there
+is no candidate state and no completed log for it to validate, so do not try to
+run it here. What create owes is the Final Review **task text** that will close
+through it: the task must require completed logs carrying skills and
+documentation decisions, earned gate records, candidate validation against the
+real artifacts, and the receipt. Never let that final check depend on a
+fabricated success record of its own invocation.
 
 
 **For a Lite plan**, verify and fix before continuing:

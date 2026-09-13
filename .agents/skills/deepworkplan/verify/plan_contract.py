@@ -79,7 +79,16 @@ def field_content(body, name):
     def label_pattern(label):
         return r'\*\*(?:'+label+r')\s*:?\*\*[ \t]*[:·-]?'
 
-    pattern = r'(?im)(?:^#{2,6}[ \t]+(?:\d+[.]?[ \t]*)?'+re.escape(name)+r'[ \t]*$|'+label_pattern(re.escape(name))+')'
+    # A section heading may carry a descriptive suffix in parentheses: the
+    # canonical task-file template in guide/authoring.md prescribes
+    # "## 11. Completion & Log (filled by the agent)", and three of the four
+    # example templates do the same. Requiring the heading to end at the name
+    # made every plan authored exactly as documented unparseable — the field
+    # read as empty and finalization failed, blaming the task's log instead of
+    # the heading. Tolerate one trailing parenthetical; it is decoration, not
+    # a different section.
+    pattern = (r'(?im)(?:^#{2,6}[ \t]+(?:\d+[.]?[ \t]*)?'+re.escape(name)
+               +r'[ \t]*(?:\([^)\n]*\))?[ \t]*$|'+label_pattern(re.escape(name))+')')
     match = re.search(pattern, body)
     if not match:
         return ''
@@ -547,6 +556,17 @@ def legacy(plan, state, manifest, is_git, report):
         else:
             report.bad('completed plan missing analysis_results/SECURITY_REVIEW.md '
                        '(DWP_SPECIFICATION §6.1) — Final Review must write it even when clean')
+        # The publication receipt. A completed plan that never went through the
+        # guarded transaction has no evidence that its terminal projection was
+        # ever validated against its artifacts — the checker used to accept
+        # that silently, so a plan could read CONFORMANT while missing the one
+        # output that proves its completion was verified.
+        if any(plan.rglob('FINALIZATION.json')):
+            report.ok('completed plan has its publication receipt (FINALIZATION.json)')
+        else:
+            report.note('completed plan has no FINALIZATION.json receipt — it was '
+                        'closed without the guarded publication (shared/finalize_plan.py); '
+                        'its terminal projection was never validated against its artifacts')
 
     # ---- README <-> files correspondence
     report.verdict(bool(summary), 'README has a Plan Status count')

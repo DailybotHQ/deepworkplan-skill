@@ -33,6 +33,7 @@ The runtime validator must still work without third-party Python packages.
 | Instruction accounting | `bats tests/context-accounting.bats` + `bash tests/efficiency/measure-instruction-load.sh` | the read tiers of every flow, `tests/efficiency/paths.tsv`, the published evidence record |
 | Activation / routing surface | `bats tests/activation-contract.bats` | router, onboard flow, delegator templates, generated command kits, capability docs |
 | Claims / version stamps / helper inventory | `bats tests/claims-consistency.bats` | TRUST.md, spec footers, contributor docs, the published claim table |
+| Lifecycle end to end (writer + finalizer + checker) | `bats tests/reliability-acceptance.bats` | every flow that closes a task or publishes a plan; widen to full Bats |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 
 Repository example: a change to `shared/update-state.py` starts with the
@@ -146,3 +147,24 @@ exact patterns; naming them again here would trip its own scan). Finally it requ
 claim table in `docs/evaluations/v5-reliability.md` to carry an explicit
 limitation. Widen to full Bats for any change to the spec documents, `TRUST.md`
 or the closure rules in `execute/SKILL.md`.
+
+## Lifecycle acceptance
+
+`bats tests/reliability-acceptance.bats` drives a whole plan through the
+shipped helpers over a real workspace — the guarded writer, the completion
+transaction and the read-only checker together — rather than testing each in
+isolation. F0 is the clean control: implement, test, log, commit, close, publish,
+verify, all passing. F1–F8 inject one fault each at the moment it would really
+occur (non-execution evidence, a zero-test selection, malformed state, evidence
+a `refine` invalidated, a log that still says pending, an unresolvable `log=`
+pointer, a finalization interrupted after its marker, unrelated dirty work) and
+require the refusal at the **named** boundary — which is not always the one an
+author would assume, so each scenario asserts where the refusal actually comes
+from. The protocol, workload and oracles are frozen in `tests/reliability/`.
+Widen to full Bats for any change to `shared/state_contract.py`,
+`shared/update-state.py`, `shared/finalize_plan.py` or `verify/plan_contract.py`.
+
+The **live** fresh-context runs behind the same protocol are scored by
+`python3 tests/reliability/oracles/score-acceptance.py <run-dir>` and recorded,
+separately labelled, in `docs/evaluations/v5-reliability.md`. Deterministic
+scenarios are never reported as if they were live evidence.

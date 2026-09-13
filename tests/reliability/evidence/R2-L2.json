@@ -1,0 +1,119 @@
+{
+  "run_id": "R2-L2",
+  "flow": "Full lifecycle with controlled interruption (create -> execute interrupted -> fresh-context resume -> completion -> verify)",
+  "pack_revision": "7662ec969d8be85596d243632b3cb879418f69b8",
+  "host": "claude-code subagent, fresh context, no conversation carryover",
+  "entry_path": "by-name invocation (read SKILL.md and route) — the documented fallback for hosts without slash commands",
+  "cross_vendor": false,
+  "interrupted": true,
+  "round": 2,
+  "tree_state": "NOT frozen — fixes from this round's own findings landed mid-round",
+  "pack_sha256": "e968c6b0002f9f9fe89874ba97788a1455c56d1e6d0e10a174ce71ba1ccafc0d",
+  "round_note": "round 2 — FAILED oracle A6 (no finalization receipt). Cause: a function-local `import re` in finalize_plan.validate() shadowed the module-level one for the whole function, so a Full plan (every locator kind 'file', inline branch never taken) raised UnboundLocalError and guarded publication was unreachable. The shadowing was introduced by this plan's own Task 9 fix for the substring false-refusal. Fixed, pinned by scenario F12 (Full publication end to end plus a static AST guard over every shipped helper), and re-run as R3-L2. Recorded as a FAIL, not amended: the run really did fail, and the fix came afterwards.",
+  "plan_name": "PLAN_refuse_overdrawn_transfer",
+  "verdict": "FAIL",
+  "oracles": [
+    {
+      "id": "A1",
+      "name": "flow entry",
+      "verdict": "PASS",
+      "detail": "created shape present; 8 pack file(s) read"
+    },
+    {
+      "id": "A2",
+      "name": "terminal plan conformance",
+      "verdict": "PASS",
+      "detail": "conformance checker exit 0"
+    },
+    {
+      "id": "A3",
+      "name": "defect actually fixed",
+      "verdict": "PASS",
+      "detail": "overdraw raises ValueError and records nothing"
+    },
+    {
+      "id": "A4",
+      "name": "a test encodes the fixed behavior",
+      "verdict": "PASS",
+      "detail": "suite fails with the fix reverted and passes with it restored"
+    },
+    {
+      "id": "A5",
+      "name": "terminal state coherent",
+      "verdict": "PASS",
+      "detail": "3 task(s) completed with passing gate records"
+    },
+    {
+      "id": "A6",
+      "name": "completion was a transaction",
+      "verdict": "FAIL",
+      "detail": "no FINALIZATION.json receipt — completion was not a transaction"
+    },
+    {
+      "id": "A7",
+      "name": "resume repeated nothing",
+      "verdict": "PASS",
+      "detail": "3 commit(s), none repeated"
+    },
+    {
+      "id": "A8",
+      "name": "run was unattended",
+      "verdict": "PASS",
+      "detail": "no question asked"
+    }
+  ],
+  "commits": [
+    "b6ba3b7 test(ledger): cover the transfer boundary and refusal atomicity - Task 2 of PLAN_refuse_overdrawn_transfer",
+    "7769df4 fix(ledger): refuse an overdrawing transfer atomically - Task 1 of PLAN_refuse_overdrawn_transfer",
+    "d93488a chore: workload baseline"
+  ],
+  "pack_files_read": [
+    {
+      "path": "skills/deepworkplan/SKILL.md",
+      "bytes": 12109,
+      "read": "full (router, t0)"
+    },
+    {
+      "path": "skills/deepworkplan/resume/SKILL.md",
+      "bytes": 19038,
+      "read": "full (the routed flow)"
+    },
+    {
+      "path": "skills/deepworkplan/execute/SKILL.md",
+      "bytes": 39064,
+      "read": "full (resume conditional tier: Step 5 resumes into the execution loop)"
+    },
+    {
+      "path": "skills/deepworkplan/create/addon-augmentations.md",
+      "bytes": 4376,
+      "read": "full (trigger: the Final Review's required local-review pass, loaded even though the reviewer is absent so the missing-install finding path was available)"
+    },
+    {
+      "path": "skills/deepworkplan/guide/execution.md",
+      "bytes": 19810,
+      "read": "partial - a header grep, then lines 72-125 (section 6.1, trigger: the Final Review task began) and lines 341-400 (Verified plan publication, trigger: the guarded publication step)"
+    },
+    {
+      "path": "skills/deepworkplan/shared/finalize_plan.py",
+      "bytes": 6973,
+      "read": "partial - lines 1-175 (effectively the whole file) plus an AST analysis of validate(); read only AFTER it crashed, to diagnose the UnboundLocalError and confirm the plan artifacts were not at fault"
+    },
+    {
+      "path": "skills/deepworkplan/shared/state_contract.py",
+      "bytes": 9947,
+      "read": "partial - a grep for the error string, then lines 170-215; read only after update-state.py refused the candidate with 'completed state requires terminal checkpoint', because the accepted form of that checkpoint is documented nowhere in the pack's prose"
+    },
+    {
+      "path": "skills/deepworkplan/verify/plan_contract.py",
+      "bytes": 39504,
+      "read": "partial - a targeted grep for FINALIZATION/finalizing only (to establish whether a completed plan must carry the receipt); the module was otherwise imported and called, not read"
+    }
+  ],
+  "pack_bytes_read": 150821,
+  "commands_run": 54,
+  "questions_asked": [],
+  "stopped_early": false,
+  "notes": "OUTCOME: plan PLAN_refuse_overdrawn_transfer is complete, 3/3, and `bash verify/conformance.sh --plan PLAN_refuse_overdrawn_transfer` reports CONFORMANT (11 passed, 1 advisory), exit 0. Final test result: `python3 -m unittest discover -s tests -t . -v` -> OK, 10 tests, 0 failures, 0 errors, exit 0, on the final state (b6ba3b7, clean tree). One new commit this session: b6ba3b7 (Task 2). Task 3 has no commit - see gap 3.\n\nPROCEDURE GAPS AND SURPRISES (verbatim):\n\n1. **BLOCKING DEFECT IN THE SHIPPED PACK - the guarded plan publication is unreachable for every Full-format plan.** `python3 shared/update-state.py <plan>/state.json --task 3 --status completed ...` crashed with:\n\n```\nTraceback (most recent call last):\n  File \"<pack>/shared/update-state.py\", line 287, in <module>\n    main()\n  File \"<pack>/shared/update-state.py\", line 254, in main\n    publish(Path(args.state).parent, state, hashlib.sha256(original).hexdigest())\n  File \"<pack>/shared/finalize_plan.py\", line 114, in publish\n    validate(plan, candidate)\n  File \"<pack>/shared/finalize_plan.py\", line 68, in validate\n    elif re.search(r'(?im)^\\s*(?:\\*\\*)?status(?:\\*\\*)?\\s*:?\\s*(?:\\*\\*)?\\s*pending\\b', log):\n         ^^\nUnboundLocalError: cannot access local variable 're' where it is not associated with a value\n```\n\nCause, confirmed by reading the source and by an AST pass over `validate()`: the function carries a **function-local `import re` at line 49**, inside the `if loc['kind'] == 'inline':` branch. Python binds `re` as a local name for the entire function, shadowing the module-level `import re` at line 12. In a **Full** plan every locator has `kind == 'file'`, so the inline branch never executes and `re` is never bound; the first task with a readable `Completion & Log` reaches the `elif re.search(...)` at line 68 and dies. Perverse property: the failure is *caused by the artifacts being correct* - a task whose log is unreadable takes the `if not log:` branch and never touches `re`, so a badly authored plan fails more gracefully than a well authored one. Lite plans are unaffected (the inline branch binds the local on the first task). Compounding defect: `finalize_plan.main()` catches only `(OSError, ValueError, KeyError, TypeError)`, so `UnboundLocalError` (a `NameError` subclass) escapes as a raw traceback instead of the designed `finalize-plan: NOT COMPLETED: <reason>` line - the operator sees a stack trace, not a diagnosis. Recovery state was clean: the crash happened inside `validate()` before the `.finalizing.json` marker is written, and `publish()`'s `finally: lock.rmdir()` removed the lock, so no marker and no `state.json.lock` were left behind and `state.json` was untouched (verified). Nothing needed `--recover`.\n\n   **What I did about it.** I did not patch the pack (read-only by instruction) and I did not fabricate the receipt. I ran the pack's OWN validators directly, read-only, over the exact completion candidate - `state_contract.state_errors(candidate, strict=True, plan_dir=plan)` -> no errors; `plan_contract.check(plan, state_override=candidate)` -> `failed=False` with 11 checks passing; and the three per-task publishability checks `validate()` intends (readable `Completion & Log`, status line not `pending`, `Skills disposition:` present, `Documentation decision:` present) -> YES for tasks 1, 2 and 3. Every assertion the guarded path makes therefore holds; only the crashing wrapper was unavailable. I then wrote `state.json` through the **documented fallback** (`execute/SKILL.md` Step 5 rule 6: 'A whole-file rewrite of state.json remains the documented fallback when scripting is genuinely unavailable') as a single atomic temp+rename. **`analysis_results/FINALIZATION.json` does not exist** and I deliberately did not write one: it is the receipt of a guarded run that did not happen, and a hand-written `\"result\": \"verified\"` would assert an external verification this plan never received. Its absence is recorded in Task 3's Completion & Log, in PROGRESS.md, and here. Note the read-only checker does not require it - `verify/` references only the `.finalizing.json` marker, never `FINALIZATION.json` - so a plan can be CONFORMANT while missing the receipt its Final Review task lists as a required Output. That mismatch is itself worth a decision upstream.\n\n2. **The terminal checkpoint's required literal value is documented nowhere.** Before the crash above, the same command was refused with `update-state: invalid candidate: completed state requires terminal checkpoint` (exit 1) because I had passed `--checkpoint-step 'plan:complete'`. `shared/state_contract.py:199` requires `checkpoint.step` to equal the literal string `'done'` on the last task id. I grepped for that literal in `spec/PLAN_STATE.md`, `spec/schema/plan-state-v5.schema.json`, `execute/SKILL.md`, `resume/SKILL.md`, `create/SKILL.md` and `guide/execution.md`: **zero matches**. The error message names the requirement but not the accepted form, `--help` does not mention it, and the JSON schema does not constrain it, so the only way to learn it is to read the validator's source - which the tiered read rules explicitly tell the agent not to do by default. Every other checkpoint step in this plan's lifecycle was free-form (`task2:not_started`, `task3:security_pass` were all accepted), which actively teaches the wrong convention. Recommendation: state the `step: done` terminal form in `spec/PLAN_STATE.md` §4.4 and in `execute/SKILL.md` Step 5 rule 6, or have the error say `expected checkpoint {task: <last>, step: \"done\"}`.\n\n3. **A review-only Final Review cannot satisfy its own generated commit step.** `3.task_final_review.md` checklist item 11 prescribes `git commit -m \"chore(plan): final review - Task 3 of PLAN_refuse_overdrawn_transfer\"`. But the Final Review's entire output (SECURITY_REVIEW.md, the gate log, FINALIZATION.json, and all four plan projections) lands under `.dwp/`, which `.gitignore` line 1 excludes, and this review made no fix to any tracked file - so `git status --porcelain` was empty and the commit could only have been empty or a force-add of ignored plan state. The execute contract commits 'validated, owned **source** changes', of which there were none, so I recorded the commit as not applicable with the reason in the task log rather than manufacturing one. This is a `create`-flow authoring issue (the generated Final Review template hands the executing agent a step that is unsatisfiable whenever the review finds nothing to fix), not an execute-flow one. Worth making the template say 'commit only if the review changed a tracked file'.\n\n4. **`resume/SKILL.md` Step 2.5's boundary table has no row for the commonest interruption: a clean task boundary.** All six rows describe *partial* work (mid-implementation, gate-then-crash, commit-then-crash, and so on). A plan interrupted exactly between two fully closed tasks - which is what a well behaved unattended run leaves behind, and what the pack's own 'handoff artifact' section describes as the ideal - matches no row. Step 2.5's instruction is 'decide which single step is missing and do only that', and the answer here is 'none'. I classified it as a clean boundary and proceeded to Step 5 with only the Step 2.6 takeover and the Step 2.7 smoke test. That is clearly the intended behavior, but the table reads as exhaustive and a more literal agent could hunt for a repair that does not exist. A 'no partial work / clean boundary -> nothing to repair; go to Step 2.6' row would close it.\n\n5. **Minor: `git check-ignore` and the Step 2.2 evidence commands were fine, but two detection commands legitimately exit non-zero and could read as failures in a report.** `ls` on the four absent AI-Diff-Reviewer paths exits 2, and `ls docs` exits 2 - both are the *expected* outcome (the reviewer really is not installed; there really is no docs/ tree) and both are recorded above with their true exit codes rather than being smoothed to 0.\n\n6. **Pre-existing state of the environment, for the record.** The pack repository at <repo> already had modified tracked files before this session began (including `skills/deepworkplan/shared/finalize_plan.py` and `verify/plan_contract.py`, plus the `.agents/` mirrors, `docs/` and `skills-lock.json`) - session 1's report records the same. I wrote nothing there. My runs of `update-state.py` created `skills/deepworkplan/shared/__pycache__/finalize_plan.cpython-313.pyc`; I deleted that `__pycache__` directory before finishing, and re-ran `find` to confirm no `__pycache__` remains anywhere under `skills/`. One `__pycache__` exists at `.agents/skills/deepworkplan/verify/` - a tree I never invoked anything from, so I left it alone rather than delete something I did not create. All my own Python runs used `PYTHONDONTWRITEBYTECODE=1` and `sys.dont_write_bytecode = True`.\n\n7. **What the resume flow got right, since gaps alone would be a misleading picture.** The handoff session 1 left on disk was sufficient on its own: PROGRESS.md's 'NEXT ACTION (exact)' named the file, the checklist step to start from, and - crucially - the two implementation facts Task 2's assertions had to match (the guard raises ValueError before any add(), and a non-int cents raises TypeError first), so I never had to guess at Task 1's choices or re-derive them from the diff. The compact-index-first rule meant I read four artifacts (README, PROGRESS Active context, state.json, plan_contract output) before touching any task file, and the pointer discipline meant I read Task 1's full log once, at the moment Task 2's 'Read Before Starting' demanded it, rather than replaying the plan's history. No conversation context was needed at any point.",
+  "interruption_boundary": "Classified as a CLEAN TASK BOUNDARY - not any of the six partial-work rows in resume/SKILL.md Step 2.5. Evidence: Task 1's whole closure order had completed (Completion & Log filled, README [x] + 'Plan Status: 1/3 completed', PROGRESS.md Active context rewritten with an exact next action, commit 7769df4 present in git log, state.json task 1 'completed' with its gate record and commit hash), git rev-parse HEAD == 7769df4 == the hash the checkpoint named, git status --porcelain empty, and Task 2's surface untouched (tests/test_ledger.py carried only Task 1's two tests; AGENTS.md still carried 'Known defect (the work)'). So no repair row applied and there was nothing to replay. The single step I did about it was the Step 2.6 TAKEOVER: I was a fresh context taking over another session's checkpoint, so I verified the checkpoint pointer against the files it names (HEAD, cleanliness, README/state agreement, untouched Task 2 surface), ran plan_contract.py read-only (exit 0, no findings), ran the Step 2.7 smoke test (python3 -m unittest tests.test_ledger -v -> OK 6/6) to confirm the world still worked before building on it, and recorded a dated 'Takeover log' entry in PROGRESS.md naming who/what, the revision and everything verified. Then I opened the first unchecked task, Task 2, at step 1 of its Execution Checklist.",
+  "work_not_repeated": "Task 1 in full - the solvency + type guard in src/ledger.py, its two tests, its gate runs, its commit and its log. I did not re-run its gate, did not re-touch src/ledger.py, and did not amend or re-create commit 7769df4. Verification that the record was true rather than merely claimed: (1) git show --stat 7769df4 shows exactly src/ledger.py (+12/-4) and tests/test_ledger.py (+16/-0), matching the task log's 'Files changed'; (2) git rev-parse HEAD equals that commit, so nothing landed after it; (3) git status --porcelain is empty, so no half-applied Task 1 work was waiting to be replayed; (4) reading src/ledger.py showed the guard physically present and placed before the first add() call, exactly as the log describes, so the summary is not ahead of the tree; (5) python3 verify/plan_contract.py exited 0 including 'task gate evidence supports every completed task'; (6) the smoke test re-proved the world at 6/6 without me re-running Task 1's gate as a gate. Task 1's recorded gate evidence was reused as history, never re-earned. I also did not re-create any plan artifact session 1 authored (manifest.json, PLAN_ANALYSIS.md, the three task files, PROMPTS.md, SKILLS_CANDIDATES.md) and did not touch Task 1's gate logs t1-before.log / t1.log."
+}

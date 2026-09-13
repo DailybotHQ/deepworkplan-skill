@@ -138,5 +138,146 @@ setup() {
 }
 
 doc_has() {
-    tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"
+    sed 's/^[[:space:]]*>[[:space:]]\{0,1\}//' "$1" | tr '\n' ' ' | tr -s ' ' | grep -qF -- "$2"
+}
+
+@test "the Lite anatomy teaches a field label the checker actually parses" {
+    # Found by the L1 acceptance run: the sketch showed bare `**Goal**` in
+    # prose, the agent wrote `**Goal.**`, and the checker reported one "lacks
+    # Goal" issue per task for zero content reasons. The sketch now states the
+    # accepted forms and says why they are load-bearing.
+    local cr="$SK/create/SKILL.md"
+    doc_has "$cr" "The label form is load-bearing, not styling."
+    doc_has "$cr" 'Write each field label as `**Goal:**` or `**Goal**` — those two, exactly.'
+    doc_has "$cr" "makes the field invisible to it"
+    # And the claim must stay true: those two forms are what the parser accepts.
+    grep -q "label_pattern" "$SK/verify/plan_contract.py"
+    grep -qF "r'\\*\\*(?:'+label+r')\\s*:?\\*\\*" "$SK/verify/plan_contract.py"
+}
+
+@test "a missing testing registry has a documented resolution, not a dead read" {
+    # Found by the L1 acceptance run: create declares the target's
+    # docs/TESTING_GUIDE.md compulsory, but the workspace had none while
+    # AGENTS.md documented both a full and a scoped command — a case the
+    # procedure did not cover.
+    local cr="$SK/create/SKILL.md"
+    doc_has "$cr" "When the target has no \`docs/TESTING_GUIDE.md\`"
+    doc_has "$cr" "the gate is derived from the real commands found there"
+    doc_has "$cr" "never a reason to invent a command the repository does not have"
+}
+
+@test "the trust promise admits the one place the pack is written to" {
+    # Found by the L2 acceptance run: importing a pack helper leaves a
+    # __pycache__ inside the installed pack, which the install-time promise
+    # said never happens. The claim is narrowed to the truth rather than the
+    # observation being ignored.
+    doc_has "$SK/TRUST.md" "one honest exception that is CPython's behavior rather than ours"
+    doc_has "$SK/TRUST.md" "safe to delete"
+    # The shipped helpers must actually set the flag the promise cites.
+    for helper in shared/update-state.py shared/finalize_plan.py; do
+        grep -q "sys.dont_write_bytecode = True" "$SK/$helper" || {
+            echo "$helper does not set dont_write_bytecode"; return 1
+        }
+    done
+}
+
+@test "the label rule covers Full task files, not only Lite records" {
+    # Found by the R2-L2 acceptance run: the "labels are load-bearing" callout
+    # existed only on the Lite path, while plan_contract.py parses Full task
+    # files identically. An agent authoring a Full plan had to read the checker
+    # to learn the accepted forms.
+    doc_has "$SK/guide/authoring.md" "Section headings and field labels are load-bearing, not styling."
+    doc_has "$SK/guide/authoring.md" "applies to **Full task files exactly as it does to Lite inline records**"
+    doc_has "$SK/guide/authoring.md" "makes the field invisible to the checker"
+}
+
+@test "create does not present an execute-time helper as a create-time step" {
+    # Found by the R2-L2 acceptance run: Step 4.5 told create to "include
+    # verified plan publication from shared/finalize_plan.py", but at create
+    # time there is no candidate and no completed log for it to validate.
+    doc_has "$SK/create/SKILL.md" "is an **execute-time** helper"
+    doc_has "$SK/create/SKILL.md" "do not try to run it here"
+    doc_has "$SK/create/SKILL.md" "What create owes is the Final Review **task text**"
+    # And the checker invocation must not be given in a form no flow can run.
+    doc_has "$SK/create/SKILL.md" "written relative to this file, not to any flow's working directory"
+}
+
+@test "a Full plan records its Format Decision" {
+    # Found by the R2-L2 acceptance run: the Format Decision record was
+    # specified only in the Lite anatomy, so an explicit full preference that
+    # overrode the rubric left no audit trail.
+    doc_has "$SK/create/SKILL.md" "the **Format Decision** record — the observed signals and why this plan is Full"
+    doc_has "$SK/create/SKILL.md" "overrode the rubric, so the choice is auditable"
+}
+
+@test "the Lite anatomy is valid markdown and DWP_DIR is described correctly" {
+    # Both found by the R2-L1 acceptance run. The anatomy block collapsed three
+    # '##' headings onto one line — copied literally it is not markdown and
+    # defeats the checker's own Goal/Context detection. And Step 4.5 called
+    # DWP_DIR "the actual plan root", while every other pack file defines it as
+    # the .dwp directory that CONTAINS plans/; following it literally points
+    # the checker at a tree with no plans/ in it.
+    local cr="$SK/create/SKILL.md"
+    if grep -qE '^## [0-9]+\. [A-Za-z ]+ +## [0-9]+\.' "$cr"; then
+        echo "the anatomy block again collapses headings onto one line:"
+        grep -nE '^## [0-9]+\. [A-Za-z ]+ +## [0-9]+\.' "$cr"
+        return 1
+    fi
+    if grep -q "DWP_DIR pointing to the actual plan root" "$cr"; then
+        echo "Step 4.5 again misdescribes DWP_DIR"; return 1
+    fi
+    doc_has "$cr" "the \`.dwp\` directory that contains \`plans/\`** — not at the plan folder itself"
+    # The claim must agree with the definition the shared reference gives.
+    doc_has "$SK/shared/dwp-paths.md" "DWP_DIR"
+}
+
+@test "the guide teaches how to address a cited section" {
+    # Found by the R3-L2 acceptance run: both create and execute cite
+    # "guide/execution.md §6.1", but that file's heading is `## 6.1.` — the
+    # index requires top-level sections in its map, so a subsection sits at the
+    # same level as its parent. An agent extracting `### 6.1` reads EMPTY and
+    # exits ZERO: a silent no-read, the worst failure mode for a tiered path.
+    doc_has "$SK/guide/GUIDE.md" "Addressing a section: by its number, not by a heading level."
+    doc_has "$SK/guide/GUIDE.md" "would match nothing, exit **zero**, and read **empty**"
+    doc_has "$SK/guide/GUIDE.md" "comes back empty, that is a defect to report"
+    # And the citation gate must be real: every cited §N.M has to resolve.
+    grep -q "cited section does not exist" "$REPO_ROOT/scripts/check-guide-migration.py"
+}
+
+@test "the citation gate actually catches a broken section reference" {
+    # Injected-failure control: a gate that never fails proves nothing.
+    local work
+    work="$(mktemp -d)"
+    cp -R "$SK" "$work/deepworkplan"
+    printf '\nSee `../guide/execution.md` §99.99 for details.\n' >> "$work/deepworkplan/create/SKILL.md"
+    run python3 "$REPO_ROOT/scripts/check-guide-migration.py" --pack "$work/deepworkplan"
+    rm -rf "$work"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"cited section does not exist"* ]]
+}
+
+@test "closing the last task documents the terminal checkpoint it requires" {
+    # Found by the R3-L2 acceptance run: the `--checkpoint-step done` literal
+    # lived only in spec/PLAN_STATE.md §4.4, which the execute tier does not
+    # load for a normal close. An agent reading the refusal as "the transaction
+    # cannot run" hand-closes and leaves no receipt — exactly the failure this
+    # evaluation's round 2 produced (oracle A6).
+    doc_has "$SK/execute/SKILL.md" "Closing the LAST task additionally requires \`--checkpoint-step done\`"
+    doc_has "$SK/execute/SKILL.md" "correctable input error, not a broken transaction"
+    doc_has "$SK/execute/SKILL.md" "Never read it as permission to close the plan by hand"
+    # And the rule must be where the spec says it is.
+    doc_has "$SK/spec/PLAN_STATE.md" "The terminal checkpoint is the one fixed value."
+    grep -q 'completed state requires terminal checkpoint' "$SK/shared/state_contract.py"
+    grep -q '"step": "done"' "$SK/shared/state_contract.py"
+}
+
+@test "create does not generate a checklist step execute forbids" {
+    # Found by the R3-L2 acceptance run: the generated Final Review checklist
+    # hard-coded a commit, while execute forbids manufacturing a cosmetic one
+    # for a review whose whole output is gitignored. The executing agent was
+    # forced to choose which contract to disobey.
+    doc_has "$SK/create/SKILL.md" "a **review-only** outcome is a legitimate close"
+    doc_has "$SK/create/SKILL.md" "Do not emit a checklist line that hard-codes a commit"
+    doc_has "$SK/execute/SKILL.md" "A review-only Final Review may close with no commit."
+    doc_has "$SK/execute/SKILL.md" "Never manufacture an empty or cosmetic commit"
 }
