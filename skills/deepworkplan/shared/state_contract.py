@@ -25,6 +25,28 @@ def invalidated(gate):
     return str(gate.get('evidence', '')).strip().lower().startswith(INVALIDATED_PREFIX)
 
 
+# Gate evidence cites its recoverable log with a compact `log=` pointer
+# (PLAN_STATE.md §4.2). A passing record whose pointer dangles certifies
+# nothing a resuming session can inspect, so the pointer must resolve inside
+# the plan folder. Checked only when the caller supplies the plan directory.
+LOG_POINTER = re.compile(r'\blog=([^\s;]+)')
+
+
+def log_pointer_errors(task, gate, plan_dir):
+    """Dangling or escaping `log=` pointers in one latest passing record."""
+    findings = []
+    for match in LOG_POINTER.finditer(str(gate.get('evidence', ''))):
+        rel = match.group(1)
+        target = Path(rel)
+        if target.is_absolute() or '..' in target.parts:
+            findings.append(f'gate {gate.get("command")!r} of task {task.get("id")} cites '
+                            f'log {rel!r} outside the plan folder')
+        elif plan_dir is not None and not (plan_dir/target).exists():
+            findings.append(f'gate {gate.get("command")!r} of task {task.get("id")} cites log '
+                            f'{rel!r} that is missing — evidence must stay recoverable')
+    return findings
+
+
 def shape_errors(value, rule, schema, path='$'):
     if '$ref' in rule:
         target = schema
@@ -73,7 +95,7 @@ def shape_errors(value, rule, schema, path='$'):
     return errors
 
 
-def gate_findings(tasks, state_layer):
+def gate_findings(tasks, state_layer, plan_dir=None):
     """Execution evidence, identical in both eras (PLAN_STATE.md §7).
 
     A record missing the documented `passes` boolean is malformed, not failing:
@@ -104,6 +126,7 @@ def gate_findings(tasks, state_layer):
             elif NON_EXECUTION.search(str(gate.get('evidence', ''))):
                 errors.append(f'passing gate {gate.get("command")!r} has evidence that '
                               f'admits the check never ran — record an amendment instead')
+            errors.extend(log_pointer_errors(task, gate, plan_dir))
         if task.get('status') == 'completed':
             if any(not g['passes'] or g.get('exit_code', 0) != 0 for g in latest.values()):
                 errors.append(f'completed task {task.get("id")} has a failing gate without a '
@@ -132,7 +155,7 @@ def derive_status(state):
     return 'pending'
 
 
-def state_errors(state, strict=False):
+def state_errors(state, strict=False, plan_dir=None):
     if not isinstance(state, dict):
         return ['state must be an object']
     url = state.get('schema', '')
@@ -161,7 +184,7 @@ def state_errors(state, strict=False):
                 errors.append('locator disagrees with task identity')
             if loc['kind'] != ('inline' if state['format'] == 'lite' else 'file'):
                 errors.append('locator disagrees with plan format')
-    errors.extend(gate_findings(tasks, True))
+    errors.extend(gate_findings(tasks, True, plan_dir))
     blocker = state.get('blocked')
     if blocker and (blocker['task'] not in ids or tasks[blocker['task']-1]['status'] != 'blocked'):
         errors.append('active blocker does not identify a blocked task')

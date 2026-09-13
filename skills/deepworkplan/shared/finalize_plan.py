@@ -32,7 +32,7 @@ def atomic(path, data):
 
 
 def validate(plan, candidate):
-    errors = state_errors(candidate, strict=True)
+    errors = state_errors(candidate, strict=True, plan_dir=plan)
     if candidate.get('status') != 'completed':
         errors.append('candidate is not completed')
     if errors:

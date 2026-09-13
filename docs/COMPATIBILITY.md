@@ -85,6 +85,11 @@ The installed directory must work without this repository's `tests/`,
   prose, not navigation.
 - Bash 3.2 compatibility is preserved (no `mapfile`, associative arrays, or
   `${var^^}` in shipped scripts); CI runs the installer on macOS and Linux.
+- `shared/context.sh` emits JSON that survives **hostile-but-valid paths** —
+  spaces, shell metacharacters, and embedded quotes or backslashes in the
+  repository path or `DWP_DIR` are escaped, so the single-line output stays
+  parseable (`tests/resume-integrity.bats` round-trips such paths through a
+  JSON parser).
 
 ## Agent behavior
 

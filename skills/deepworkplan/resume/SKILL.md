@@ -10,9 +10,11 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 # DeepWorkPlan — Resume
 
 Safely continue an interrupted plan from where it stopped — no duplicated work,
-strict order, continuing from the first `[ ]` task — from **repository
-artifacts alone**: a different session, agent, model or harness must be able to
-pick the plan up without the previous conversation.
+strict order, continuing from the first `[ ]` task — from **durable workspace
+artifacts alone** (the plan folder on disk, gitignored `.dwp/` included): a
+different session, agent, model or harness must be able to pick the plan up
+without the previous conversation. A fresh clone without `.dwp/` has nothing
+to resume — see *Persistence* below.
 
 ## Shared resources (read at their moment, not upfront)
 
@@ -146,6 +148,13 @@ pointer**, never by replaying everything.
    current revision.
 3. **Reconcile Markdown, JSON and the workspace — before any work.** The
    markdown wins every disagreement (`../spec/PLAN_STATE.md` §5):
+   - Where `state.json` exists, gather machine evidence first: run
+     `python3 ../verify/plan_contract.py <plan-dir>` (read-only) and surface
+     every finding — failed gates, `invalidated by refine` reliance, evidence
+     admitting non-execution, dangling `log=` pointers — in `PROGRESS.md`.
+     Markdown wins a **status** disagreement; it never lets a summary override
+     a failed gate, admitted non-execution, invalidated evidence or an
+     implementation the tree does not show.
    - `state.json` vs README checkboxes disagree → regenerate `state.json` from the
      README (and git log), note the reconciliation in `PROGRESS.md`, continue.
    - `state.json.blocked` is set → surface it: that is why the plan stopped.
@@ -167,17 +176,23 @@ pointer**, never by replaying everything.
    | Interrupted… | Evidence to check | Then |
    |---|---|---|
    | before the gate ran | uncommitted changes; no gate record | finish the implementation if incomplete; run the gate **once** |
-   | after the gate, before the commit | gate record present, `passes: true`, and inputs unchanged (fingerprint) | reuse the passing gate result; commit **once** |
+   | after the gate, before the commit | gate record present, `passes: true`, and the recorded `fp=` still matches the world — same revision (`git rev-parse HEAD`), same dirty/generated files (`git status --porcelain`), same environment; any difference invalidates reuse | rerun the gate, record the fresh result, then commit **once** |
    | after the commit, before the README/log update | commit exists in `git log`; README still `[ ]` | complete log → README → PROGRESS → `state.json`; do **not** re-commit |
    | between Markdown and `state.json` updates | README `[x]`, state stale | regenerate `state.json`; nothing else |
-   | after an external action (report, push, PR, message) | the action's own evidence (report id, remote branch, PR URL in the log) | do **not** repeat it; record that it already happened |
+   | after an external action (report, push, PR, message) | the action's own evidence (report id, remote branch, PR URL in the log) | do **not** repeat it; record that it already happened — a missing receipt is investigated against the service's actual state, never guessed or re-sent |
    | mid-implementation with no checkpoint note | dirty tree only | review the diff against the task; incorporate valid partial progress, finish the rest |
 
    Changed inputs since a recorded gate (a later edit, a `refine`, a new
    revision) invalidate that gate → rerun it. Where the table resumes the
    tail of the update order, the `state.json` step may use the shipped
    updater (`../shared/update-state.py`) as a targeted, atomic mutation;
-   only the reconcile-from-markdown row regenerates the whole file.
+   only the reconcile-from-markdown row regenerates the whole file. Retain
+   the original review baseline: when the interruption landed mid-review, the
+   diff and criteria under review at the halt are the baseline resumed —
+   rebuild nothing the checkpoint already records. An interrupted completion
+   publication leaves a `.finalizing.json` marker in the plan folder: inspect
+   it and recover via `python3 ../shared/finalize_plan.py <plan-dir>
+   --candidate <candidate.json> --recover` before any other plan action.
 6. **Takeover from another agent or model.** If the checkpoint, log or
    `PROGRESS.md` was written by a different agent/model (`state.json.updated_by`,
    the log's wording) or the session is a fresh context: read the checkpoint
@@ -255,6 +270,26 @@ checkboxes, the `PROGRESS.md` **Active context** block with the exact next
 action and the evidence pointers, and `state.json` (`checkpoint` `{task, step,
 at, note}` or `blocked`). That is the whole handoff: a fresh agent, another
 model, or another harness resumes from these files with Step 2.
+
+## Persistence: same workspace, new machine, or nothing to resume
+
+- **Same workspace:** the handoff artifacts above are already on disk; Step 2
+  is the whole recovery.
+- **New machine / fresh clone:** `.dwp/` is gitignored by design, so a fresh
+  `git clone` carries **no** plan data — report that honestly, never
+  fabricate progress from commits. Transfer is explicit and manual
+  (`../shared/dwp-paths.md`, "Workspace persistence and transfer"): copy the
+  **whole plan folder** — README, task files, `PROGRESS.md`, `manifest.json`,
+  `state.json`, and `analysis_results/` with every cited gate log — check out
+  the recorded repository revision, and re-create the dirty work the
+  checkpoint names. The minimum handoff manifest: the complete plan folder,
+  evidence pointers, repository revision(s), and required dirty work.
+- **Missing artifacts** (no plan folder, absent state, dangling `log=` pointer):
+  report what is missing and stop at that boundary; never reconstruct history
+  from memory. No daemon, auto-upload, or automatic unignoring of `.dwp/`
+  exists — persistence is a deliberate copy. Tests simulate external-action
+  receipts as local deterministic files; a live service is never duplicated
+  just to exercise a fixture.
 
 ## Important Notes
 - Trust the task list (`[x]` done / `[ ]` pending); verify with git; read the

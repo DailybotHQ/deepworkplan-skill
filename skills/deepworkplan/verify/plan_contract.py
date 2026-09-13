@@ -380,7 +380,7 @@ def current(plan, state, manifest, report):
     if report.failed == before:
         report.ok('Lite task anchors, records and Final Review are valid' if lite else
                   'Full task files, records and Final Review are valid')
-    report.extend(gate_findings(tasks, True), 'task gate evidence supports every completed task')
+    report.extend(gate_findings(tasks, True, plan), 'task gate evidence supports every completed task')
     report.verdict(state['status'] == derive_status(state), 'task/blocker status is coherent', 'task/blocker status is incoherent')
     if state.get('blocked') and (state['blocked']['task'] not in ids or tasks[state['blocked']['task']-1]['status'] != 'blocked'):
         report.bad('active blocker does not identify a blocked task')
@@ -683,7 +683,7 @@ def legacy_state(plan, state, clean, files, ids, report):
     summary = re.search(r'Plan Status: *(\d+)\s*/\s*(\d+)', clean)
     if summary and (int(summary[1]), int(summary[2])) != (sum(checks.values()), len(files)):
         report.bad('README Plan Status count disagrees with task checkboxes/files' + stale)
-    for problem in gate_findings(tasks, False):
+    for problem in gate_findings(tasks, False, plan):
         report.bad(problem)
     if report.failed == before:
         report.ok('state.json task entries and statuses match README and task files')

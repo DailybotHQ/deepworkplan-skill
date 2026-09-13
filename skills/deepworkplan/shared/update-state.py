@@ -139,7 +139,7 @@ def main():
     original = Path(args.state).read_bytes()
     if args.expected_sha256 and hashlib.sha256(original).hexdigest() != args.expected_sha256:
         die("stale state snapshot")
-    errors = state_errors(state)
+    errors = state_errors(state, plan_dir=Path(args.state).parent)
     if errors:
         die("invalid input: " + "; ".join(errors))
     if state.get("materialization", "ready") != "ready" or state.get("promotion"):
@@ -245,7 +245,7 @@ def main():
     if not 0 <= state["completed_count"] <= state.get("task_count", len(tasks)):
         die("completed_count out of range")
 
-    errors = state_errors(state, strict=True)
+    errors = state_errors(state, strict=True, plan_dir=Path(args.state).parent)
     if errors:
         die("invalid candidate: " + "; ".join(errors))
     if state['status'] == 'completed':

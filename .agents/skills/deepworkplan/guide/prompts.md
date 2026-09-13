@@ -224,4 +224,31 @@ When resuming a plan, the agent should:
 - [ ] 9. Continue execution following normal rules
 - [ ] 10. Never skip or duplicate tasks
 
+### 9.6. Resuming on a New Machine or After a Fresh Clone
+
+`.dwp/` is gitignored, so a fresh clone has **no** plan data — the plan folder
+must be transferred explicitly (see `../shared/dwp-paths.md`, "Workspace
+persistence and transfer"). When handing a plan to a new machine or session,
+provide the minimum handoff manifest and this prompt:
+
+> **Transfer resume prompt to the agent:**
+>
+> RESUME the deep work plan transferred to `.dwp/plans/PLAN_{plan_title}/`.
+>
+> Handoff manifest provided:
+>
+> 1. The complete plan folder (README, task files, PROGRESS.md, manifest.json,
+>    state.json, analysis_results/ with every cited gate log)
+> 2. Repository revision to check out: `{commit_sha}`
+> 3. Required dirty work (if any): `{description or patch}`
+>
+> Instructions:
+>
+> 1. Verify the folder is complete; if any cited gate log or artifact is
+>    missing, report exactly what is missing and stop — do not reconstruct it.
+> 2. Check out the recorded revision and re-create the listed dirty work.
+> 3. Run the read-only plan checker before resuming; surface every finding.
+> 4. Then follow the standard resume instructions (section 9.2) from the first
+>    unchecked `[ ]` task.
+
 ---

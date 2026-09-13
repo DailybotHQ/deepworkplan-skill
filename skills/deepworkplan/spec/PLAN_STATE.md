@@ -312,6 +312,21 @@ Conforms to [`schema/plan-state.schema.json`](schema/plan-state.schema.json)
   the affected gate records even when the checkbox is already set; the agent
   **MUST** rerun those gates and update the records before marking or
   re-marking the task complete.
+- **Evidence reuse requires an unchanged world.** Before reusing a recorded
+  pass after an interruption, the agent **MUST** compare the recorded
+  fingerprint (`fp=` in the gate evidence: revision plus dirty state) with the
+  current `git rev-parse HEAD` and `git status --porcelain`; a changed
+  revision, changed dirty/generated files, or a changed environment
+  invalidate reuse — the gate is rerun instead. A `log=` pointer inside gate
+  evidence that does not resolve within the plan folder is a conformance
+  finding (the writer refuses closure on it; the checker reports it), never
+  silently reusable evidence.
+- **External-action receipts.** An outward-facing action (report, push, PR,
+  message) is evidenced by its own receipt — id, URL, or remote branch —
+  recorded in the task log at action time. Deterministic tests simulate
+  receipts as local files; a genuinely missing receipt on resume is
+  investigated against the service's actual state, never guessed at and never
+  re-sent on assumption.
 - **Pointers, not history.** `checkpoint.step` and `checkpoint.note` **SHOULD**
   point at the exact instruction and the last durable artifact, so a fresh agent
   resumes from the pointer rather than from a transcript. Unknown or stale

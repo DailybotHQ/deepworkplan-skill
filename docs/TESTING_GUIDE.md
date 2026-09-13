@@ -77,3 +77,15 @@ says pending, and refine-invalidated evidence that must be rerun before
 closure. Its last case is a labeled contract-presence check on the docs. Widen
 to full Bats for any change to `shared/state_contract.py`, `update-state.py`
 or `verify/plan_contract.py`.
+
+## Resume integrity and workspace persistence
+
+`bats tests/resume-integrity.bats` runs hostile-but-valid paths (spaces,
+metacharacters, quotes, backslashes) through `shared/context.sh` and a JSON
+parser, exercises a fresh `git clone` without the gitignored `.dwp/` against
+a complete transferred plan folder, and refuses dangling or escaping `log=`
+evidence pointers at both the guarded writer and the read-only checker. The
+state-replacement desync boundary is asserted in both directions; the last
+case is a labeled contract-presence check on the resume flow, `dwp-paths.md`
+and the specs. Widen to full Bats for any change to `shared/context.sh`,
+`shared/state_contract.py` or the resume flow.

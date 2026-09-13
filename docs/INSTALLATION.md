@@ -192,7 +192,11 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
   `.dwp/` to your `.gitignore`.
 - **Plans** land under a gitignored `.dwp/` directory at the repo root
   (`.dwp/plans/PLAN_<slug>/`), overridable via the `DWP_DIR`
-  environment variable.
+  environment variable. Because that directory is ignored, a fresh clone has
+  no plan data: moving a plan to a new machine is an explicit transfer of the
+  whole plan folder (see
+  [`../skills/deepworkplan/shared/dwp-paths.md`](../skills/deepworkplan/shared/dwp-paths.md),
+  "Workspace persistence and transfer").
 
 ---
 
