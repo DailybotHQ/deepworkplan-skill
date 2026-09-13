@@ -32,6 +32,7 @@ The runtime validator must still work without third-party Python packages.
 | Read tiers | `bats tests/execute-read-contract.bats tests/resume-read-contract.bats tests/context-accounting.bats` | measurement, authoring, final review |
 | Instruction accounting | `bats tests/context-accounting.bats` + `bash tests/efficiency/measure-instruction-load.sh` | the read tiers of every flow, `tests/efficiency/paths.tsv`, the published evidence record |
 | Activation / routing surface | `bats tests/activation-contract.bats` | router, onboard flow, delegator templates, generated command kits, capability docs |
+| Claims / version stamps / helper inventory | `bats tests/claims-consistency.bats` | TRUST.md, spec footers, contributor docs, the published claim table |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 
 Repository example: a change to `shared/update-state.py` starts with the
@@ -128,3 +129,20 @@ naming a nonexistent file and requires a nonzero exit — a broken reference
 must never measure as zero bytes. Widen to full Bats for any change to a
 flow's read tiers, the measurement script or the manifest. Results and their
 limits: `docs/evaluations/v5-reliability.md`.
+
+## Claims consistency
+
+`bats tests/claims-consistency.bats` pins the statements the pack makes about
+itself to the pack itself: the quoted sub-skill count is counted from the tree,
+the helper inventory in `TRUST.md` is derived from the shipped `*.py`/`*.sh`
+files, and every spec document's methodology footer is compared against the
+standard the checker enforces (`SUPPORTED_SPEC` in `verify/plan_contract.py`) —
+so a superseded stamp fails rather than lingering. It also asserts that
+documentation closure is stated as **one** policy (current inside the task that
+touched the surface; swept, not deferred, by the Final Review) and that the
+retired absolutes do not return: guaranteed local/CI output parity, and the
+two adaptation ratios that were quoted as if measured (the suite carries the
+exact patterns; naming them again here would trip its own scan). Finally it requires every row of the published
+claim table in `docs/evaluations/v5-reliability.md` to carry an explicit
+limitation. Widen to full Bats for any change to the spec documents, `TRUST.md`
+or the closure rules in `execute/SKILL.md`.

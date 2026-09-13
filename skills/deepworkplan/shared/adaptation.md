@@ -7,11 +7,14 @@
 
 When a flow generates AI-first structure (`AGENTS.md`, `docs/`, per-module docs,
 `.agents/`, validation commands, example plans) for a target repo, it **MUST
-reason about that repo** rather than copy-pasting a fixed template. Audits across
-six repositories showed the structure is **~90% identical** and **~10%
-repo-specific** — and that 10% (the validation commands, paths, primary stack,
-stack-specific skills, and example plans) is exactly the part that must be
-**reasoned per repo**.
+reason about that repo** rather than copy-pasting a fixed template. The split
+comes from an audit of six Dailybot repositories (`../spec/README.md`): **most
+of the AI-first structure was common across them, and a small remainder was
+repo-specific** — the validation commands, paths, primary stack,
+stack-specific skills and example plans. That remainder is exactly the part
+that must be **reasoned per repo**. The proportion is an observation about six
+repositories, not a measured constant; treat it as direction, never as a
+figure to quote.
 
 Concretely, before writing anything, a flow **MUST** discover:
 
@@ -25,18 +28,18 @@ Concretely, before writing anything, a flow **MUST** discover:
 - Any **existing** AI-first setup, so generation **reconciles** with it rather
   than clobbering it (approval required before destructive changes).
 
-The fixed ~90% (the baseline shape — `AGENTS.md` as index + rules + quick
+The common part (the baseline shape — `AGENTS.md` as index + rules + quick
 commands, the `docs/` categories, `.agents/` with the `.claude → .agents` and `.cursor → .agents`
-symlinks, the `.dwp/` output convention) is applied as-is; the variable ~10% is
-filled by reasoning.
+symlinks, the `.dwp/` output convention) is applied as-is; the repo-specific
+part is filled by reasoning.
 
 ## The two archetypes
 
 Adaptation also forks on the repository archetype (see Task 2's
 `../spec/ARCHETYPES.md`):
 
-- **Individual repo (the 99% case)** — one primary stack. The lean path:
-  classify → reason about the stack-specific 10% → generate the baseline.
+- **Individual repo (the common case)** — one primary stack. The lean path:
+  classify → reason about the stack-specific part → generate the baseline.
 - **Orchestrator hub** — a coordination repo orchestrating multiple
   sub-repositories. The additive path: baseline first, then layer hub-only
   structure (sub-project navigation index, `ECOSYSTEM_CONTEXT.md`, cross-project

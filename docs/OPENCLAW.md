@@ -7,7 +7,7 @@
   `<workspace>/skills/deepworkplan/` (or `~/.openclaw/skills/deepworkplan/`).
 
 The runnable skill is the `skills/deepworkplan/` directory inside this repo — the
-router `SKILL.md` plus the six sub-skills, the spec, the shared helpers, and the
+router `SKILL.md` plus the nine sub-skills, the spec, the shared helpers, and the
 opt-in addons. There is no separate API document to fetch; DeepWorkPlan is
 markdown-first and makes no network calls.
 

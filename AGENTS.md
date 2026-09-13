@@ -117,7 +117,7 @@ deepworkplan-skill/
 └── skills/deepworkplan/                        ← THE INSTALLED ARTIFACT — only this ships
     ├── SKILL.md                                ← router (version source of truth)
     ├── spec/                                   ← the 5 RFC-2119 normative docs (the standard; ships)
-    ├── shared/                                 ← context.sh, dwp-paths.md, adaptation.md, troubleshooting.md, update-state.py
+    ├── shared/                                 ← context.sh, dwp-paths.md, adaptation.md, troubleshooting.md, install-verification.md, update-state.py, state_contract.py, finalize_plan.py
     ├── create/SKILL.md                         ← create a Deep Work Plan
     ├── execute/SKILL.md                        ← execute a plan task-by-task
     ├── refine/SKILL.md                         ← modify a plan / promote Lite to Full
@@ -216,7 +216,7 @@ The `auto-release.yml` workflow runs on every merge to `main` and:
  - `feat(scope)!:` or `BREAKING CHANGE:` in body → **MAJOR**
  - `feat(scope):` → **MINOR**
  - everything else (`fix:`, `chore:`, no prefix, etc.) → **PATCH**
-4. Bumps `version:` in **all** SKILL.md files in sync (router + six sub-skills
+4. Bumps `version:` in **all** SKILL.md files in sync (router + nine sub-skills
  + addons), prepends a section to `CHANGELOG.md`, commits as
  `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and pushes.
 5. **Smoke-tests the just-published tag** — runs `npx skills add
@@ -294,7 +294,8 @@ Co-Authored-By: <agent name + version> <noreply@anthropic.com>
 
 **Scopes:** `skill` (general pack/router), `create` / `execute` / `refine` /
 `resume` / `status` / `onboard` (specific sub-skill), `addon` (an addon under
-`addons/`), `shared` (context.sh, dwp-paths.md, adaptation.md, update-state.py), `setup`
+`addons/`), `shared` (context.sh, dwp-paths.md, adaptation.md, update-state.py,
+state_contract.py, finalize_plan.py), `setup`
 (setup.sh), `ci` (.github/), `docs` (docs/, README, guide), `release`
 (versioning, CHANGELOG).
 
@@ -446,8 +447,11 @@ concrete plan.
   bootstrap `.review/extension.md` (required for SR detection), and run
   the local review pre-push. No CI Action, no GitHub secret.
 - **Flow B — dual-surface.** Vendor the skill AND install `pr-review.yml`.
-  Local ↔ CI parity is guaranteed because both read the same `prompt.md`
-  and the same `.review/extension.md`.
+  Local and CI read the **same inputs** — the same `prompt.md` and the same
+  `.review/extension.md` — so the review criteria are identical by
+  construction. The findings a model returns on a given diff are not
+  guaranteed to be identical run to run; input parity is the claim, output
+  equality is not.
 
 **Five sub-skills** the addon defers to (all live in the upstream
 `ai-diff-reviewer` repo — the DWP addon does NOT re-implement them):

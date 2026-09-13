@@ -348,9 +348,16 @@ Rules (strict):
    - **Reconcile the documentation decision** the same way: every doc the
      Touched Surface names is current with the actual diff — including files
      the implementation touched that the plan did not name — or the log
-     records why not (`../spec/DWP_SPECIFICATION.md` §6.6). Stale docs do not
-     invalidate the code gate; they are recorded and swept by the Final
-     Review's documentation reconciliation.
+     records why not (`../spec/DWP_SPECIFICATION.md` §6.6). One policy, two
+     halves: a stale doc does not **invalidate a passing code gate** — a doc
+     fix needs no rerun unless it changes an input the gate validated — but it
+     does **block this task's closure**, because §6.6 decides documentation
+     currency inside the task that touched the surface and forbids deferring
+     it to a final catch-up. The only exception is a miss the task genuinely
+     cannot resolve in its own scope: record it in the log as an explicit
+     miss, with the reason and the owning doc, so the Final Review's
+     documentation reconciliation fixes it — never as a silent carry-forward,
+     and never as a reason to close with the docs stale.
    - **Complete the log**, then the projections, in this order
      (`../spec/PLAN_STATE.md` §5.1): the task's Completion & Log (status,
      timestamp, summary, files changed, gate records, skills disposition,

@@ -302,4 +302,4 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

@@ -90,7 +90,7 @@ documentation example as a live repository command.
 
 ## Archetype note (orchestrator hub)
 
-Presets describe **individual-repo** stacks (the 99% case). If Phase 2 classifies
+Presets describe **individual-repo** stacks (the common case). If Phase 2 classifies
 the target as an **orchestrator hub** (a coordination repo over multiple
 sub-repos — `repositories/` folder, mostly-markdown root, sub-repos tracked
 separately, root `AGENTS.md` indexing other repos' `AGENTS.md`), do **not** apply

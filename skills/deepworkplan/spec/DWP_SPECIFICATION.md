@@ -815,7 +815,7 @@ catch-up task.
 
 ## 7. Archetype Behavior in Plans
 
-- For the **individual repo** (99% case), a plan operates entirely within one
+- For the **individual repo** (the common case), a plan operates entirely within one
   repository; all validation, commits, and outputs stay in that repo.
 - For the **orchestrator hub**, a plan **MAY** be an orchestrator plan (§8) that
   spawns child DWPs in sub-repos. The hub plan **MUST NOT** commit sub-project code
@@ -931,7 +931,7 @@ tier, declared in the manifest's `rigor` field when the state layer is present:
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
 
 ### Verified plan publication
 

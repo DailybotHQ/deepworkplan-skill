@@ -21,10 +21,12 @@ work reliably without per-session human hand-holding.
 > value is that you **inspect the actual target repo** — its real languages,
 > frameworks, package manager, build/test/lint commands, folder layout, test
 > convention, deployment shape — and then **generate artifacts adapted to that
-> repo**. The *shape* of the output is fixed (the ~90%: `AGENTS.md`, the `docs/`
+> repo**. The *shape* of the output is fixed (`AGENTS.md`, the `docs/`
 > categories, per-module docs, `.agents/`, the symlinks, `.dwp/`); the *content*
-> is reasoned per repo (the ~10%: validation commands, paths, stack-specific
-> skills, example plans).
+> is reasoned per repo (validation commands, paths, stack-specific skills,
+> example plans). Most of a generated artifact is the fixed shape and the
+> remainder is reasoned — a direction, not a ratio to quote
+> (`../shared/adaptation.md`).
 >
 > **An empty doc, a generic stub, a placeholder command, or a doc copied
 > verbatim from this skill or another repo is a FAILURE.** Never write
@@ -336,7 +338,7 @@ Classify the repo using `../spec/ARCHETYPES.md` signals (summarized in
 | Cross-project standards, a repo navigation index, or orchestrator manifests | moderate |
 | Root `AGENTS.md` indexes *other repos'* `AGENTS.md` | moderate |
 
-- **Default to `individual repo`** (the 99% case) unless a clear majority of
+- **Default to `individual repo`** (the common case) unless a clear majority of
   signals say hub.
 - A monorepo with **one** build/stack is an **individual repo with modules**
   (handled by per-module docs), **not** a hub.

@@ -269,4 +269,4 @@ an explicit, manual step: no daemon, auto-upload, or automatic unignoring of
 
 ---
 
-*Part of the DeepWorkPlan methodology v2.3.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

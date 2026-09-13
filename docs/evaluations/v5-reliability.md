@@ -153,3 +153,42 @@ EXP=$(mktemp -d)
 git archive 6bf7830 skills/deepworkplan tests/efficiency | tar -x -C "$EXP"
 bash "$EXP/tests/efficiency/measure-instruction-load.sh" "$EXP"
 ```
+
+## Claims, mechanisms and evidence
+
+Every active reliability claim this skill makes, the mechanism that implements
+it, and the **kind** of evidence behind it. The kinds are not interchangeable:
+
+- **Implemented behavior** — a runtime helper or flow rule that executes.
+- **Automated evidence** — a test that runs in CI over real artifacts.
+- **Contract presence** — a test that asserts the instruction text teaches a
+  rule. It proves the contract is taught; it is *never* evidence that a model
+  obeys it.
+- **Observed agent behavior** — a recorded live run, per harness.
+- **Limitation** — the boundary the claim does not cross.
+
+"Unknown" is never listed as supported. Where a row's strongest evidence is
+contract presence, the row says so.
+
+| Claim | Mechanism | Evidence | Kind | Limitation |
+|---|---|---|---|---|
+| A plan's state cannot silently contradict its Markdown | `shared/state_contract.py` guards the writer; the checker refuses contradictory transitions | `bats tests/state-transitions.bats tests/state-evidence.bats tests/state-updater.bats` | Implemented + automated | Guards the writer and the checker. An agent that hand-edits `state.json` with an editor bypasses both; the README remains the authority that exposes it |
+| A task cannot be marked complete on evidence that admits non-execution | Five evidence states; `NON_EXECUTION` / `invalidated` rules in `state_contract.py` | `bats tests/scope-evidence.bats` (sanitized from the historical false-completion case) | Implemented + automated | Detects contradictions it can read — a gate record that lies about a command it never ran is caught, a command that ran and reported a false result is not |
+| Plan completion is a recoverable transaction, not a status flip | `shared/finalize_plan.py` publish/recover with a `FINALIZATION.json` receipt and a `.finalizing.json` failure marker | `bats tests/completion-transaction.bats`, incl. before/after-publication fault injection | Implemented + automated | Covers interruption between publication steps. A filesystem that reorders or loses a completed `rename` is out of scope |
+| Evidence pointers stay resolvable after a handoff | `log=` pointers are validated at the guarded writer **and** the read-only checker; dangling or escaping paths are refused | `bats tests/resume-integrity.bats` (hostile paths, fresh clone without the gitignored `.dwp/`) | Implemented + automated | Validates the pointer, not the content it points at |
+| An interrupted plan resumes at its exact interruption boundary | The resume protocol's boundary table, checker-driven reconciliation, the smoke test | `bats tests/resume-integrity.bats` + `bats tests/resume-read-contract.bats`; the boundary table itself is contract presence | Implemented + **contract presence** for the classification step | The table tells the agent which single step is missing; whether a given model classifies correctly is observed behavior, not proven here |
+| Any agent can activate the flows from a repository's own kit | `onboard` Phase 3 installs the intent-to-flow routing block and the `dwp-*` delegators; Phase 8 verifies them | `bats tests/activation-contract.bats` — oracles over the real generated kit; the intent-mapping cases are labeled contract presence | Implemented + automated (artifacts) + **contract presence** (routing) | Not evidence that a model routes a fresh request reliably. Live routing evidence is recorded per harness in [`../COMPATIBILITY.md`](../COMPATIBILITY.md) |
+| A plan written by one agent resumes correctly in another | The plan folder is the whole handoff artifact — nothing required lives only in a conversation | [`cross-agent-handoff.md`](cross-agent-handoff.md) — bidirectional Claude Code ↔ Codex CLI | **Observed agent behavior** | Two harnesses. The other supported agents have installation coverage only |
+| The instruction surface is measured honestly | Entry bundle and end-to-end paths measured separately, with repeats, triggers and exclusions published | `bash tests/efficiency/measure-instruction-load.sh` + `bats tests/context-accounting.bats` | Implemented + automated | Filesystem bytes of pack files. **Not a cap on a run**, not tokens, not a live-session saving |
+| The documented claims match the shipped pack | Version stamps, helper inventory, sub-skill count and absolute-claim wording are pinned to the filesystem | `bats tests/claims-consistency.bats` (counts derived from the tree, never hardcoded prose) | Automated | Catches drift in the specific statements it pins. It cannot judge whether a new claim is true |
+| The core methodology makes no network calls | No runtime helper opens a socket; onboarding Phase 7a's pinned install is the single consent-gated exception | The runnable self-audit in [`../../skills/deepworkplan/TRUST.md`](../../skills/deepworkplan/TRUST.md) | Implemented + automated (self-audit) | Covers the shipped pack. What *your* agent harness does over the network is outside this skill's control |
+
+### Claims deliberately not made
+
+- No comparison against v2, another methodology, or a no-DWP baseline.
+- No "quality percentage", completion rate, or "works with any model".
+- No token, billing or latency saving — the one attempt at a paired live
+  comparison is recorded as **incomplete** in
+  [`token-efficiency.md`](token-efficiency.md) rather than as a result.
+- No claim that a plan cannot fail. The guarantees are about what the
+  repository records and recovers, not about model infallibility.

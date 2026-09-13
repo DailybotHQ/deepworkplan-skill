@@ -424,7 +424,7 @@ task correspondence and the meaning of validation results.
 
 ---
 
-*Part of the DeepWorkPlan methodology v4.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
 
 ## Guarded state updates
 
