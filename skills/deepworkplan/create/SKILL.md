@@ -206,7 +206,9 @@ materializes a **Lite plan folder** — no draft file is written.
 
 **Writes:** plan artifacts under the gitignored `.dwp/` directory only —
 `.dwp/plans/PLAN_{name}/` for the
-materialized plan (README, task files, analysis outputs, state layer). "Trust
+materialized plan (README, task files, analysis outputs, state layer). Analysis
+outputs go inside that plan's own `analysis_results/`, never the repository root
+(`../spec/DWP_SPECIFICATION.md` §5). "Trust
 mode" skips intermediate confirmations of **plan content**, not of the write
 boundary, and grants no permission the plan does not list.
 

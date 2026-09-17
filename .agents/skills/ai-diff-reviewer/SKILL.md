@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer
-description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer on GitHub, "AI Diff Reviewer" on the Marketplace). Router for five capabilities — (1) run a local review of the current branch's diff using the SAME methodology as the CI action, (2) generate a repo-tailored `.review/extension.md` via the `generate-extension` sub-skill, (3) install and configure the GitHub Action itself in a repo that doesn't have it yet via the `setup` sub-skill (also doubles as the reference manual for every `action.yml` input), (4) author a well-documented pull request from the current branch's diff (Conventional-Commits title inference, structured body, PR-template merge, `gh pr create`/`edit`) via the `open-pr` sub-skill, (5) read the AI review the CI Action posted back on the current branch's open PR, present findings in the same format as the local review, and optionally walk the developer through each finding to apply/defer/skip (multi-leg-aware, per-finding consent, no commits/pushes) via the `apply-review` sub-skill. Auto-detects `.review/extension.md` (or `.github/ai-diff-reviewer/extension.md` as fallback) and layers it on top of the shipped default prompt for full local↔CI parity. Use when the developer wants a local pre-flight review before pushing, asks "run a code review on my current changes", wants to customize the reviewer to this repo, asks "how do I set up ai diff reviewer?", asks a reference-style question about any of the action's inputs, asks to "open a PR", "create the pull request", or "write the PR body" for the current branch, or asks "what did the CI review say?", "apply the AI review's fixes", or "walk me through the review findings".
-version: "2.0.1"
+description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for five capabilities — (1) review the current branch's diff locally with the same methodology as the CI action; (2) generate a repo-tailored .review/extension.md (generate-extension); (3) install and configure the Action, and answer reference questions about any action.yml input (setup); (4) author a well-documented pull request from the branch's diff, syncing the branch with the remote base first (open-pr); (5) read the review CI posted on the open PR and walk through each finding to apply, defer or skip (apply-review). Auto-detects .review/extension.md and layers it on the shipped default prompt for local-CI parity. Use when the developer asks to review current changes or pre-flight before pushing, to customize the reviewer for this repo, how to set up AI Diff Reviewer or what an input does, to open, create or rewrite a PR, or what the CI review said and how to address its findings.
+version: "2.3.0"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔍","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -14,7 +14,8 @@ The [**AI Diff Reviewer**](https://github.com/marketplace/actions/ai-diff-review
 is a GitHub Action that runs an LLM review on every pull request in
 CI. **This skill is its local counterpart** — the same reviewer,
 driven by your coding agent (Cursor, Claude Code, Codex, Gemini,
-Copilot, Cline, Windsurf), on the branch you're editing right now. It
+Copilot, Cline, Windsurf, Grok CLI, Pi, OpenCode), on the branch
+you're editing right now. It
 also installs and configures the CI Action itself when your repo
 doesn't have it yet.
 
@@ -49,7 +50,7 @@ the action source.
 **Version parity.** The [`prompt.md`](prompt.md) in this skill is
 byte-identical to the one the Action ships in the same tagged release
 (enforced by CI's `Skills — prompt-sync invariant` job). Pinning
-`@v2.0.0` on both surfaces guarantees the same methodology and severity
+`@v2.1.0` on both surfaces guarantees the same methodology and severity
 model (CI may additionally dedupe on round 2+ via Iteration-Aware
 Review; local reviews stay a full pass).
 
@@ -81,8 +82,11 @@ omits `prompt-extension-file` and you get base-prompt parity only —
 you can add the input manually later, or re-run `setup` and accept
 the handoff.
 
-**CI-only surfaces (not mirrored locally).** Two Action capabilities
-run only in GitHub Actions, not in this skill's local review flow:
+**CI-only surfaces (not mirrored locally).** Three Action capabilities
+run only in GitHub Actions, not in this skill's local review flow
+(locally the review runs on whatever model your coding agent already
+uses — the Action's provider/`api-base` choice and its usage telemetry
+do not apply):
 
 1. **Iteration-Aware Review (IAR)** — content-anchored dedup across
    rounds, four convergence policies (default
@@ -101,6 +105,13 @@ run only in GitHub Actions, not in this skill's local review flow:
    [`docs/TRIGGER_MODES.md` § Emergency-bypass](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/docs/TRIGGER_MODES.md).
    Example:
    [`examples/skip-review-label.yml`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/examples/skip-review-label.yml).
+3. **Incremental follow-up rounds + usage telemetry (v2.1.0+)** — on
+   rounds 2+ CI reviews only what changed since its last review plus
+   its own still-open findings (resolution claims are advisory; a
+   maintainer resolves the thread), and every CI review ends with a
+   `**Usage:**` line (tokens, cache hit rate, turns, cost). A local
+   review is a full pass with no usage line. Spec:
+   [`docs/ITERATION_AWARENESS.md` § 14](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/docs/ITERATION_AWARENESS.md).
 
 The full input reference (including every IAR knob and
 `skip-review-label`) lives in
@@ -126,7 +137,7 @@ distinction only matters at first-time setup.
 npx skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer
 
 # Or pin to a specific tag for reproducibility
-npx skills add DailybotHQ/ai-diff-reviewer@v2.0.0 --skill ai-diff-reviewer
+npx skills add DailybotHQ/ai-diff-reviewer@v2.1.0 --skill ai-diff-reviewer
 ```
 
 This vendors the skill into `.agents/skills/ai-diff-reviewer/` in the
@@ -142,6 +153,10 @@ Bump to the latest with `npx skills update ai-diff-reviewer`.
 ---
 
 ## Activation
+
+The frontmatter `description` carries only the compact routing summary
+(hosts cap it at 1,024 characters); the full trigger catalogue lives
+here and is authoritative for routing.
 
 **Default flow (run a review) — triggers:**
 
@@ -165,6 +180,7 @@ Bump to the latest with `npx skills update ai-diff-reviewer`.
 - "Install the AI Diff Reviewer GitHub Action"
 - "Help me create the pr-review workflow"
 - "How do I add AI Diff Reviewer to this project?"
+- "How do I set up ai diff reviewer?" (any casing)
 - Also fires as the answer to reference-style questions about the
   action — *"what does `strictness` do?"*, *"how do I use
   `label-gate`?"* — via [`setup/reference.md`](setup/reference.md).

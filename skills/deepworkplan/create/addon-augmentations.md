@@ -22,7 +22,13 @@ file; CI round 2+ may surface a shorter finding set under Iteration-Aware
 Review (local stays a full pass — see addon SPEC §4.3). A `critical` finding
 follows the existing security-pass contract
 (blocks completion until fixed or explicitly accepted); `warning` / `info`
-findings are appended and reported but do not block. Degradation is honest,
+findings are appended and reported but do not block. A review that ran but
+**wrote no findings file** is an **incomplete review**, not a clean pass
+(upstream v2.2.0 posts it as one and fails every blocking strictness): record it
+as incomplete, never count it as evidence the diff is clean, and never close the
+Final Review on it (addon SPEC §6.1 item 5). Three states, three handlings —
+absent reviewer, errored invocation, incomplete review — and none of them means
+the diff is clean. Degradation is honest,
 never silent (addon SPEC §6.1, §7): when the vendored skill or the extension
 file is absent, record a `local reviewer not installed` finding in
 `SECURITY_REVIEW.md`. Installation belongs to onboarding (`../onboard/addons.md`

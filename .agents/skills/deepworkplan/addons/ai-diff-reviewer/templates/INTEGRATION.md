@@ -66,7 +66,7 @@ Decision notes:
 
 ## 2. Offer the CI surface separately — do NOT guess
 
-On the CI offer, mirror upstream v2.0.1's own ambiguity tie-break policy:
+On the CI offer, mirror upstream v2.3.0's own ambiguity tie-break policy:
 when the signal is unclear, **ask**. Never default to Flow B (installing the
 workflow unrequested is a much bigger footprint than declining Flow B).
 
@@ -86,7 +86,7 @@ signalling ("Flow A / Flow B" phrases every subsequent request).
 
 ```bash
 # Tag-pinned install (pin whatever tag is current — this is the reproducible form)
-npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.0.1 --skill ai-diff-reviewer -y
+npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.0 --skill ai-diff-reviewer -y
 
 # Verify the vendored version matches the requested tag
 VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
@@ -212,7 +212,7 @@ Reasoning notes:
   bypass — when that label is on the PR the Action short-circuits with a
   successful check and a ⏭️ skipped tracking comment (no LLM). Distinct
   from `full-review-please` (IAR escape: full review once, not skip).
-- **Pin `@v2`** (moving major) or `@v2.0.1` (frozen). Do not pin `@v1` on
+- **Pin `@v2`** (moving major) or `@v2.3.0` (frozen). Do not pin `@v1` on
   new installs — v2 is the current pin surface (IAR + skip-review).
 - **`AI review gate`** is stable-named so branch protection can be
   configured against it once and continue to work when the review-job name

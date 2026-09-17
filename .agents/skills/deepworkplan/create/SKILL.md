@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
 description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
-version: "5.2.0"
+version: "5.3.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -206,7 +206,9 @@ materializes a **Lite plan folder** — no draft file is written.
 
 **Writes:** plan artifacts under the gitignored `.dwp/` directory only —
 `.dwp/plans/PLAN_{name}/` for the
-materialized plan (README, task files, analysis outputs, state layer). "Trust
+materialized plan (README, task files, analysis outputs, state layer). Analysis
+outputs go inside that plan's own `analysis_results/`, never the repository root
+(`../spec/DWP_SPECIFICATION.md` §5). "Trust
 mode" skips intermediate confirmations of **plan content**, not of the write
 boundary, and grants no permission the plan does not list.
 

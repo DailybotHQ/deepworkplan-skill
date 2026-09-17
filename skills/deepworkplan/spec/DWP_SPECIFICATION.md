@@ -253,6 +253,21 @@ mandatory Final Review. See `LITE_PLANS.md` for the authoritative layouts.
 
 - Plan names **MUST** follow `PLAN_{snake_case_name}` (lowercase, underscore-separated, 2–5 words).
 - `README.md`, `PROMPTS.md`, `PROGRESS.md`, and `analysis_results/` **MUST** all be present; `manifest.json` and `analysis_results/PLAN_ANALYSIS.md` **MUST** be present in a plan authored under this version (`PLAN_STATE.md` §2; §3 above).
+- **A plan's temporary and analysis output MUST be written under that plan's own
+  `analysis_results/` directory.** It **MUST NOT** be written to the repository
+  root or to any path outside the plan folder. This covers every artifact a flow
+  produces *about* the plan — the Step 3 analysis, the skills ledger, the
+  security review, gate logs, audit reports, scratch measurements — not just the
+  named files above. When the target repository's own tooling defaults its
+  output path to the working directory (a report writer, a linter with a
+  `--report` file, an audit script), the flow **MUST** pass that tool's explicit
+  output option pointing into the plan's `analysis_results/`; it **MUST NOT**
+  accept the default and leave the artifact at the repository root. A repository
+  **SHOULD** additionally gitignore such a stray path so a missed flag cannot
+  become a commit. Freeform scratch that is *not* about a plan belongs in `tmp/`
+  (`DOCUMENTATION_STANDARD.md` §7); the distinction is that a plan's artifacts
+  are evidence a later session reads back by pointer, and evidence that is not
+  where the plan says it is has been lost.
 - At least one user-defined task plus the Final Review (§6.1) **MUST** be present in a plan authored under this version; the legacy three-task ending is accepted per §6.5.
 
 The plan `README.md` **MUST** contain: title + goal; context; plan variables (if

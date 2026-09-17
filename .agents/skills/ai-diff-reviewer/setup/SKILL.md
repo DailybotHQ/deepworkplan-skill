@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-setup
 description: Interactive installer for the AI Diff Reviewer GitHub Action — walks the developer through 6 key decisions (provider, strictness, trigger mode, external-contributor policy, PR description mode, complexity labels), detects the repo's stack for sensible defaults, and writes a working `.github/workflows/pr-review.yml` tailored to those choices. Also acts as the reference manual for every `action.yml` input any coding agent might be asked about ("what is `strictness`?", "how do I use label-gate?"). Use when the developer says "set up AI Diff Reviewer for this repo", "configure the reviewer action", "install the AI Diff Reviewer action", "help me create the pr-review workflow", or when the local `ai-diff-reviewer` skill is present on a repo that has no `.github/workflows/pr-review.yml` yet.
-version: "2.0.1"
+version: "2.3.0"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"⚙️","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -133,27 +133,72 @@ with defaults" and get the safest workflow in ~30 seconds. Use the
 Discovery data to pre-fill anything you can (e.g. `default_branch`,
 `visibility`).
 
-### Q1 — Provider
+### Q1 — Runner and backend
 
-> **Which LLM provider should run the review?**
+Two short questions. The **runner** is *who drives the review loop*
+(`provider` input); the **backend** is *where the model lives*
+(`api-base` input, empty for the runner's own vendor).
+
+> **Q1a — Which runner should run the review?**
 >
-> - **`anthropic`** (recommended for first setup) — Zero install
->   overhead, uses `ANTHROPIC_API_KEY`. The action calls the
->   chat-completions API directly. Best default unless you already
->   have a specific reason to want a CLI provider.
-> - **`claude-code`** — Runs the Claude Code CLI headlessly. Same
->   Anthropic models, but accepts a subscription OAuth token
->   (`sk-ant-oat…`) via `api-key`, so you can bill against a Claude
->   Pro / Max plan instead of API usage.
-> - **`cursor`** — Runs the Cursor Agent CLI headlessly. Default
->   model `auto` is unlimited on Cursor Pro plans. Best if the team
->   already lives inside Cursor.
-> - **`codex`** — Runs the OpenAI Codex CLI headlessly (GPT models).
->   Best if the team already has OpenAI billing.
+> - **`anthropic`** (recommended for first setup) — in-process, zero
+>   install, bounded loop, prompt caching. Cheapest predictable choice.
+> - **`openai`** — the same in-process loop for OpenAI-compatible
+>   backends (OpenAI, Azure Foundry, xAI, Z.ai via `api-base`).
+> - **`claude-code`** — Claude Code CLI headless. Deeper agentic
+>   review; accepts a subscription OAuth token (`sk-ant-oat…`) to bill a
+>   Claude Pro/Max plan; also the recommended runner for Z.ai GLM.
+> - **`codex`** — OpenAI Codex CLI headless. Best if the team already
+>   has OpenAI or Azure Foundry billing (`api-base` for Azure).
+> - **`grok`** — xAI Grok CLI headless (web search / subagents off,
+>   native turn cap). Best if the team is on xAI credits.
+> - **`cursor`** — Cursor Agent CLI headless; `model: auto` is
+>   unlimited on Cursor Pro. No `api-base` lane.
 
-Record: `PROVIDER`. Also record the corresponding secret name for
-Step 4: `ANTHROPIC_API_KEY` / `CLAUDE_CODE_TOKEN` (or
-`ANTHROPIC_API_KEY`) / `CURSOR_API_KEY` / `OPENAI_API_KEY`.
+> **Q1b — Where does your model live?** *(skip for `cursor`; skip when
+> the answer is "the runner's own vendor")*
+>
+> Anthropic · OpenAI · Azure Foundry · xAI · Z.ai · self-hosted gateway
+
+Resolve the pair into the three values the workflow needs:
+
+| Runner | Backend | `api-base` | Secret name | Suggested `model` |
+|---|---|---|---|---|
+| `anthropic` | Anthropic | *(empty)* | `ANTHROPIC_API_KEY` | `balanced` |
+| `anthropic` | Z.ai | `https://api.z.ai/api/anthropic` | `ZAI_CODING_API_KEY` | `balanced` |
+| `anthropic` | xAI | `https://api.x.ai` | `XAI_API_KEY` | `balanced` |
+| `openai` | OpenAI | *(empty)* | `OPENAI_API_KEY` | `balanced` |
+| `openai` | Azure Foundry | `https://<resource>.services.ai.azure.com/openai/v1` (or `…openai.azure.com/openai/v1`) | `AZURE_OPENAI_API_KEY` | the **deployment name** |
+| `openai` | xAI | `https://api.x.ai/v1` | `XAI_API_KEY` | `balanced` |
+| `openai` | Z.ai | `https://api.z.ai/api/coding/paas/v4` | `ZAI_CODING_API_KEY` | `balanced` |
+| `claude-code` | Anthropic (API key) | *(empty)* | `ANTHROPIC_API_KEY` | `balanced` |
+| `claude-code` | Anthropic (subscription) | *(empty)* | `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) | `balanced` |
+| `claude-code` | Z.ai (recommended for GLM) | `https://api.z.ai/api/anthropic` | `ZAI_CODING_API_KEY` | `balanced` |
+| `codex` | OpenAI | *(empty)* | `OPENAI_API_KEY` | `balanced` |
+| `codex` | Azure Foundry | as for `openai` + Azure | `AZURE_OPENAI_API_KEY` | the **deployment name** |
+| `grok` | xAI | *(empty)* | `XAI_API_KEY` | `balanced` |
+| `cursor` | Cursor | *(none)* | `CURSOR_API_KEY` | `auto` |
+| any in-process runner | self-hosted gateway | `https://<your-gateway>/…` (custom host — the run warns where the key goes) | your gateway's key | the gateway's model id |
+
+Recommendation shortcuts when the developer asks "which one?":
+
+- **Cheapest, predictable, zero install** → `anthropic` (or `openai`).
+- **Deepest review (agentic file exploration)** → `claude-code`
+  (`codex` / `grok` if that vendor is already paid for).
+- **Flat-rate billing** → `cursor` (Pro), `claude-code` + Z.ai Coding
+  Plan, or `claude-code` + a Claude subscription token.
+- **Azure-only shops** → `codex` + Azure Foundry (agentic) or
+  `openai` + Azure Foundry (in-process). Note: Codex on xAI is not
+  usable today (Codex ≥ 0.154 sends a tool type xAI rejects) — use
+  `grok` or `openai` for xAI.
+
+Whatever the pair, suggest `model: balanced` (one word, resolved per
+runner × backend from the dated matrix in `docs/PROVIDERS.md § "Cost-efficient
+defaults matrix"`; `economy` for smoke passes, `deep` for high-risk
+PRs). Azure deployments and custom gateways have no tier rows — pass the
+concrete name.
+
+Record: `PROVIDER`, `API_BASE` (may be empty), `SECRET_NAME`, `MODEL`.
 
 ### Q2 — Strictness
 
@@ -265,7 +310,7 @@ generated so the developer knows which options this file reflects).
 # Source: https://github.com/DailybotHQ/ai-diff-reviewer
 #
 # What's configured here:
-#   - Provider: <PROVIDER>
+#   - Runner: <PROVIDER>  (backend: <BACKEND_HUMAN or "vendor default">)
 #   - Strictness: <STRICTNESS>
 #   - Trigger: <TRIGGER_HUMAN>  (<TRIGGER>)
 #   - External contributors: <AUTHOR_ASSOC or "unrestricted">
@@ -295,12 +340,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0        # required — the action runs `git diff origin/<base>...HEAD`
+          <agent-runners only: persist-credentials: false   # the CLI must never find the GITHUB_TOKEN in .git/config>
 
       - uses: DailybotHQ/ai-diff-reviewer@v2
+        <agent-runners only: if: github.event.pull_request.head.repo.full_name == github.repository   # trusted (non-fork) PRs>
         with:
           provider: <PROVIDER>
           api-key: ${{ secrets.<SECRET_NAME> }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          <optional: api-base: <API_BASE>>          # only when the backend is not the runner's vendor
+          <optional: model: <MODEL>>                # `balanced` recommended; deployment name on Azure
           strictness: <STRICTNESS>
 
           # Only include the lines below when they differ from action defaults.
@@ -328,6 +377,14 @@ jobs:
 5. **`prompt-extension-file`** is not asked in the wizard — it's set
    later, either by the developer or by Step 5's handoff to
    `generate-extension`.
+6. **Agent-runner hardening lines are not optional** for `claude-code`,
+   `cursor`, `codex` and `grok`: emit `persist-credentials: false` on the
+   checkout and the non-fork `if:` on the action step (the CLI runs with
+   broad local access — `docs/SECURITY.md § "Agent-runner providers"`).
+   Omit both for `anthropic` / `openai`.
+7. **`api-base` is emitted only when set**, and `model` only when the
+   developer accepted a tier alias or the backend needs a concrete name
+   (Azure deployment, custom gateway).
 
 Write the file:
 
@@ -351,7 +408,7 @@ Workflow written to `.github/workflows/pr-review.yml`. Next steps:
 1. **Add the API secret.**
    Go to: https://github.com/<OWNER>/<REPO>/settings/secrets/actions/new
    Name: `<SECRET_NAME>`
-   Value: your API key from <PROVIDER_CONSOLE_URL>
+   Value: your key from <BACKEND_CONSOLE_URL>
 
 2. **Commit + test.**
    ```bash
@@ -386,12 +443,19 @@ Workflow written to `.github/workflows/pr-review.yml`. Next steps:
 
 Provider-console URLs to substitute in the instructions:
 
-| Provider | Console URL for API key |
+| Backend (secret name) | Console URL for the key |
 |---|---|
-| `anthropic` | https://console.anthropic.com/settings/keys |
-| `claude-code` | https://console.anthropic.com/settings/keys OR `claude setup-token` for subscription-mode |
-| `cursor` | https://cursor.com/dashboard → Settings → API Keys |
-| `codex` | https://platform.openai.com/api-keys |
+| Anthropic (`ANTHROPIC_API_KEY`) | https://console.anthropic.com/settings/keys |
+| Anthropic subscription (`CLAUDE_CODE_OAUTH_TOKEN`) | run `claude setup-token` locally and paste the `sk-ant-oat…` token |
+| OpenAI (`OPENAI_API_KEY`) | https://platform.openai.com/api-keys |
+| Azure Foundry (`AZURE_OPENAI_API_KEY`) | Azure portal → your AI Foundry / Azure OpenAI resource → Keys and Endpoint (the endpoint host becomes `api-base`) |
+| xAI (`XAI_API_KEY`) | https://console.x.ai → API keys |
+| Z.ai (`ZAI_CODING_API_KEY`) | https://z.ai/manage-apikey/apikey-list (Coding Plan key) |
+| Cursor (`CURSOR_API_KEY`) | https://cursor.com/dashboard → Settings → API Keys |
+
+When `API_BASE` is set, add one line to step 1 of the instructions: *"The
+key is sent only to `<API_BASE host>`; the action refuses malformed
+endpoints before any call."*
 
 ---
 
