@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-open-pr
 description: Author a well-documented GitHub pull request — title and body — for the current branch, keeping the branch in sync with the remote base first. Fetches the base, merges origin/<base> into the current branch when it is behind, resolves merge conflicts, runs the repo's quick validation and pushes the current branch (never force, never another branch), then reads the diff and commit trail, infers a Conventional Commits (or repo-native) title, drafts a structured body (Summary, Changes, Test plan, Risks, plus conditional sections such as Related issues, Breaking changes and Merge notes), merges with .github/pull_request_template.md when present, previews everything, and executes via gh pr create or gh pr edit. Supports draft PRs, stacked PRs and forks. Use when the developer says "open the PR", "create a pull request", "draft the PR title and description", "write the PR body", "update the PR description", "rewrite the PR body properly", "make a draft PR", or "update my branch with main and open the PR".
-version: "2.3.0"
+version: "2.3.1"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/open-pr/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📝","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git","gh"]}}}

@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-apply-review
 description: Read the most recent AI Diff Reviewer review from the current branch's open PR, present the findings in the parent skill's local-review format (verdict, findings table, per-finding body, recommendation), and - with explicit consent - walk the developer through each finding to apply, defer, or skip. Multi-provider aware — when the repo runs several self-review legs, attributes each finding to its provider label and surfaces cross-leg consensus. Anchors on the latest ai-pr-reviewer-marker tracking comment and filters minimized (collapsed) comments per the repo's PR-review workflow. Read-only by default; source edits need an explicit yes per finding; never commits, never pushes. Use when the developer says "what did the CI review say?", "read the review on this PR", "apply the AI review's fixes", "walk me through the findings", "which findings blocked the merge?", or "show me only the critical findings".
-version: "2.3.0"
+version: "2.3.1"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/apply-review/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔎","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git","gh"]}}}
@@ -485,11 +485,21 @@ value in your working notes: it is the same fingerprint the CI runtime
 uses to de-duplicate and, in incremental follow-up rounds, to carry
 the finding forward and report whether the model still sees it. That
 report is **advisory** by default: the runtime does not resolve review
-threads on the model's word, so an open thread is open until a maintainer
-resolves it — even when the round-2 summary lists the finding as
-resolved. Repos that opted into `prior-findings-resolution: verified`
-see corroborated fixes closed by the runtime (reply + resolve); treat a
-thread that is still open as still open either way.
+threads on the model's word, so a *live* open thread is open until a
+maintainer resolves it — even when the round-2 summary lists the finding
+as resolved. Repos that opted into `prior-findings-resolution: verified`
+see corroborated fixes closed by the runtime (reply + resolve).
+
+**Since v2.3.1** there is one narrow exception under `advisory`: when the
+thread is already **collapsed** (minimized by `collapse-previous`; an
+outdated-but-visible thread does not count) the maintainer-resolves-it path
+is no longer discoverable, so the runtime
+retires the finding if — and only if — it can corroborate the fix (model
+said `resolved`, the fingerprint was not re-emitted this round, and the
+file changed since the finding was raised, or is gone). A finding retired this way stops gating the
+check. Corroboration itself is never weakened, and a finding on a live
+thread keeps the strict behaviour. Either way: **do not infer the check
+result from thread state** — read it from the tracking marker (Step 2f).
 
 For reviews posted **before v2.1.0** the inline comment carries `body`
 only — `findings_to_gh_inline_comments()` did not encode severity —
@@ -563,6 +573,35 @@ The severity attached here is what Step 4's presentation table shows
 and what Step 5's `critical only` / `warnings and up` filters gate on.
 
 ---
+
+### 2f. Read the gate outcome from the tracking marker
+
+**A review body that says `approve` is NOT evidence that the check
+passed.** The recommendation is the model's advisory opinion; the check
+conclusion is decided by the runtime's strictness gate, and under
+incremental review the gate can still be held open by prior findings the
+model believes are fixed.
+
+Before summarizing anything, read the authoritative fields from the most
+recent non-minimized `<!-- ai-pr-reviewer-marker -->` tracking comment:
+
+| Field in the marker | What it tells you |
+|---|---|
+| `**Highest severity:** \`<sev>\`` | The severity the gate actually saw — includes prior findings still outstanding, not just this round's inline comments. |
+| `**Strictness gate:** ✅ …` / `🚫 …` | The check conclusion. `🚫` means the check is **red**. |
+| The H3 status emoji (`✅ done` / `🚫 done`) | Same verdict, at a glance. |
+| `_Iteration-Aware Review: …_` footer | Round/generation and how many findings were surfaced. |
+
+Reviews posted by **v2.3.1+** also carry a runtime-written
+`> **Check status: …**` block at the end of the review body, and the
+runtime rewrites a model `Recommendation: approve` to `request-changes`
+whenever the gate is failing — so on those reviews the body and the
+marker already agree. On **older** reviews they can disagree; when they
+do, the marker wins.
+
+State the check result explicitly in your summary (Step 4), and never
+tell the developer the review "passed" on the strength of the
+recommendation line alone.
 
 ## Step 3 — Attribute per leg
 
@@ -659,6 +698,10 @@ when present, otherwise inferred from the highest-severity finding.>
 - <cross-cutting concerns, from the review body's Notes section>
 
 **Recommendation:** approve / request-changes / comment-only
+_(the model's advisory opinion — not the check result)_
+**Check status:** ✅ passing | 🚫 failing — <the `Strictness gate` line
+from the tracking marker, verbatim; see Step 2f>
+**Highest severity (gate):** <from the tracking marker>
 **Review SHA:** <sha> (matches HEAD ✓ | HEAD is 2 commits newer ⚠️)
 ````
 
