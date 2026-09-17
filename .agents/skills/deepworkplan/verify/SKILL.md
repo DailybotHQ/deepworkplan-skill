@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-verify
 description: Verify that a repository is DeepWorkPlan-conformant (AI-first) and that its plans are well-formed, producing an objective pass/fail report. Use when the developer asks to verify, audit, or check conformance of a repo or a plan.
-version: "5.3.0"
+version: "5.4.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
@@ -21,6 +21,9 @@ normative criteria are defined in the specification's Conformance document
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans live at `.dwp/plans/PLAN_{name}/`.
 - [`conformance.sh`](conformance.sh) — the mechanical conformance layer (run it first).
 - **Guide (essential — read for this flow):** none — the spec is the standard being checked.
+- **Working principles (conditional):** read
+  [`../shared/working-principles.md`](../shared/working-principles.md) when
+  reviewing repository agent rules; no additional read for plan-only checks.
 - **Spec (conditional — read the named sections only when the trigger fires):** [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §4–§6 when interpreting a state-layer finding (desync, takeover, checkpoint evidence) or a declared-standard report — the checker enforces the contract; consult the spec when explaining or adjudicating a finding.
 - **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2 when a naming or layout finding needs the rationale.
 
@@ -119,6 +122,12 @@ test -f .agents/skills/ai-diff-reviewer/SKILL.md && echo "ai-diff-reviewer skill
 
 Then, by reading rather than grepping:
 
+- **Working principles.** Review `AGENTS.md` against
+  `../shared/working-principles.md` and `DOCUMENTATION_STANDARD.md` §2.3.1.
+  Accept equivalent wording under any heading; identify missing behavior or
+  contradictory scope/approval instructions with evidence. Missing principles
+  are an advisory harness-upgrade finding, not a structural failure. Do not
+  rewrite the file in this read-only flow or infer model compliance from text.
 - **Real commands.** Open `AGENTS.md` and confirm the Quick Commands actually correspond to this repo (the real package manager, test, lint, and build commands). Flag any command that could not run here.
 - **Testing toolchain defined.** Open `docs/TESTING_GUIDE.md` and confirm it describes either a **real** test/lint setup (framework, file convention, how to run, coverage expectation) or — for a repo without one — a concrete **proposed** stack-appropriate setup (`../spec/DOCUMENTATION_STANDARD.md` §3.3). An empty file, a generic stub, or "no tests" **fails** this check: the repo then has no objective validation gate for future plans.
 - **Repository standard and harness version.** `AGENTS.md` should carry a `DWP standard: X.Y.Z (…)` provenance line (`../spec/DOCUMENTATION_STANDARD.md` §3.5). A repository that **declares 2.3.0 or later** must have the §3.4 content in `docs/TESTING_GUIDE.md` (full and scoped commands with a repository example, source-to-test mapping, consumer policy, blind spots, escalation, explicit fallback, posture) — missing content **fails**. A repository with no declaration, or an older one, whose guide lacks that content receives a **harness-version finding** naming the upgrade path (run the `onboard` sub-skill in `upgrade` mode) — a finding, never a failure. A declared standard newer than this skill supports fails with an upgrade message.

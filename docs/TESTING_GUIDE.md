@@ -36,6 +36,7 @@ The runtime validator must still work without third-party Python packages.
 | Lifecycle end to end (writer + finalizer + checker) | `bats tests/reliability-acceptance.bats` | every flow that closes a task or publishes a plan; widen to full Bats |
 | CI workflow | `bats tests/ci-guarantees.bats` | every suite CI runs; the installer's sub-skill list; the documented Python floor |
 | Packaging / ship boundary | `bats tests/packaging-reliability.bats` | everything a downstream user installs; the dogfood mirror; the published schemas |
+| Working-principles onboarding / upgrade | `bats tests/packaging-reliability.bats tests/activation-contract.bats` then full Bats | installed resource discovery, routing, contributor `AGENTS.md` budget and links; inspect semantic coverage and reconciliation separately |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 
 Repository example: a change to `shared/update-state.py` starts with the

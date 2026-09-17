@@ -197,3 +197,68 @@ to Full before execution or between tasks, preserving task IDs and evidence. The
 reverse conversion is deliberately absent: collapsing a detailed plan would make
 state recovery and audit history ambiguous. This lets DWP structure a small
 change without making long-horizon rigor optional.
+
+## Vendored agent skills — three dogfood copies under `.agents/skills/`
+
+This repo vendors **three** agent skills under `.agents/skills/`, all tracked
+in git and pinned via [`skills-lock.json`](../skills-lock.json). They give any AI
+agent that clones this repo the toolchain the DWP methodology recommends —
+but they are managed differently on purpose:
+
+| Vendored skill | Upstream | Release auto-refresh | Purpose in this repo |
+|----------------|----------|----------------------|----------------------|
+| `.agents/skills/deepworkplan/` | this repo (`skills/deepworkplan/`) | **No** | Contributor dogfood, kept **byte-identical** to `skills/deepworkplan/` (verified by checksum on every sync). It is excluded from release auto-refresh because that would pull the last published tag instead of this working revision. Sync with `bash scripts/refresh-dogfood-skill.sh`. |
+| `.agents/skills/dailybot/` | [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill) | **Yes** | Powers Dailybot standup reporting for plan lifecycle events (see the Dailybot addon) |
+| `.agents/skills/ai-diff-reviewer/` | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | **Yes** | Powers the local code review (same `prompt.md` used by optional downstream CI integrations) |
+
+**Why deepworkplan is excluded.** Blind `npx skills add --force` of this
+repo's own skill into `.agents/skills/deepworkplan/` would overwrite the
+dogfood copy. The release workflow still **smoke-tests** that
+the published tag installs (into a temp directory); it does not commit that
+install back into the tree. When the shipped pack under `skills/deepworkplan/`
+changes and the dogfood copy should follow, run
+`bash scripts/refresh-dogfood-skill.sh`, review, and commit.
+
+**How addon refresh works.** [`.github/workflows/auto-release.yml`](../.github/workflows/auto-release.yml)
+runs on every merge to `main` and, after cutting the release for this repo,
+resolves the latest published tags of `agent-skill` and `ai-diff-reviewer`
+(via `gh release view`), compares to the vendored `SKILL.md` `version:`, and
+if either moved runs:
+
+```bash
+npx --yes skills add <repo>@<tag> --skill <name> --force -y
+```
+
+Both `--yes` (npm's proceed prompt) AND `-y` (the skills CLI's agent-picker
+prompt) are required in a non-TTY runner — dropping either hangs the workflow
+indefinitely. After each install the workflow asserts that the vendored
+`SKILL.md`'s `version:` equals the requested tag; a mismatch fails the release.
+If any file changes, the workflow commits
+`chore(release): dogfood vendored <skill> to v<tag> [skip release]` and
+pushes. The `[skip release]` marker prevents an infinite auto-release loop.
+
+**Editing policy.**
+- **Do not** hand-edit `.agents/skills/dailybot/` or `.agents/skills/ai-diff-reviewer/`
+  — the next release will overwrite those. Contribute upstream, land a release
+  there, then this repo's auto-release picks them up.
+- **Do** treat `.agents/skills/deepworkplan/` as a generated mirror: refresh it only
+  via `scripts/refresh-dogfood-skill.sh` (or an explicit reviewed edit), never
+  via release dogfood.
+
+**Pinned install commands are NOT auto-refreshed — and are CI-gated.**
+Release dogfood updates the *vendored copy* under `.agents/skills/`. It does
+**not** rewrite the install commands the shipped pack **teaches** under
+`skills/deepworkplan/`, because those live in prose
+(`npx --yes skills add DailybotHQ/ai-diff-reviewer@vX.Y.Z …`). The two drifted
+apart once — the pack taught `@v2.0.0` while the vendored addon was already
+`2.0.1`, so every repository onboarded from it installed a stale reviewer.
+
+The invariant is now a CI gate: **every exact `ai-diff-reviewer@vX.Y.Z` pin in
+`skills/deepworkplan/` must equal the `version:` of the vendored
+`.agents/skills/ai-diff-reviewer/SKILL.md`** (`tests/agents-dogfood.bats`). When
+a release moves the vendored addon, update the documented pins in the same PR —
+`grep -rn 'ai-diff-reviewer@v[0-9]' skills/` finds them all.
+
+`DailybotHQ/ai-diff-reviewer@v2` (no patch) is a different thing: the **GitHub
+Action's floating major tag**, deliberately left floating so patch fixes flow
+automatically. The gate ignores it. Do not pin it to a patch.

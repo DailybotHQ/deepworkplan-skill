@@ -56,6 +56,10 @@ work reliably without per-session human hand-holding.
 - **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2, §10 when Phase 7 scaffolds `.dwp/` beyond the paths `../shared/dwp-paths.md` names or Phase 3b authors the first plan; [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
 - [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins). No optional addon is required for a repository to use DWP.
+- **Working principles (conditional):** read
+  [`../shared/working-principles.md`](../shared/working-principles.md) when
+  Phase 0 assesses an existing harness or Phase 3 writes its agent rules;
+  use it again in Phase 8 to check semantic coverage and reconciliation.
 - [`templates/onboarding-plan.md`](templates/onboarding-plan.md) — the
   **reasoning aid** for the plan-driven path (Phase 2b): the shape of a "finish
   onboarding myself" Deep Work Plan a **large** repo emits instead of generating
@@ -73,7 +77,8 @@ work reliably without per-session human hand-holding.
 
 When this flow finishes, the target repo contains:
 
-1. **`AGENTS.md`** — index + mandatory rules + a Quick Commands block with the
+1. **`AGENTS.md`** — index + mandatory rules + compact working principles for
+   autonomous, precise, verified work + a Quick Commands block with the
    repo's **real, runnable** commands; plus `CLAUDE.md → AGENTS.md`.
 2. **`docs/`** — the standard categories, each filled with **real**
    repo-specific content (real commands, real module names, real test pattern):
@@ -171,13 +176,17 @@ Phase 0 consent; a decline is recorded as a declared exception).
      implements — 2.x and 4.x are historical series,
      `../spec/DWP_SPECIFICATION.md` §6.5), or a
      `docs/TESTING_GUIDE.md` without the scoped-invocation / mapping / posture
-     content of `../spec/DOCUMENTATION_STANDARD.md` §3.4. In this case run the
+     content of `../spec/DOCUMENTATION_STANDARD.md` §3.4, or missing working
+     principles (§2.3.1; assess equivalent rules by meaning, not headings).
+     In this case run the
      **targeted upgrade** (§3.5) instead of a full re-onboarding: recon only what
-     the upgrade needs (Phase 1's testing discovery), then reconcile **only** the
+     the upgrade needs (testing discovery for testing gaps; existing agent
+     rules for a principles-only gap), then reconcile **only** the
      missing or outdated pieces — the §3.4 sections of `TESTING_GUIDE.md`, the
      testing rule and labeled scoped variants in `AGENTS.md` (Phase 3), the
      DWP flow routing block in `AGENTS.md` (Phase 3, role 5 — added when
-     missing, reconciled when present), the scoped variants in
+     missing, reconciled when present), the working principles (Phase 3,
+     role 6 — preserve equivalent rules and add only missing behavior), the scoped variants in
      `DEVELOPMENT_COMMANDS.md`, the `.agents/commands/dwp-*`
      delegators and `skill-create`/`agent-create` (Phase 6, refreshed from
      `command-templates/`), the required AI Diff Reviewer local review (Phase 7a —
@@ -431,7 +440,7 @@ point** (`../spec/DOCUMENTATION_STANDARD.md` §2.4.1): the mandatory constraints
 and quick commands inline, everything else one direct link away in the focused
 `docs/` guide or module doc that owns it. Brevity comes from linking, never from
 dropping an invariant an agent needs to act safely; no word cap hides required
-context. It MUST serve three roles:
+context. It MUST cover these six responsibilities:
 
 1. **Index** — a documentation index table linking every `docs/` file you will
    create (Phase 4), each with a one-line description; plus an annotated
@@ -490,6 +499,17 @@ context. It MUST serve three roles:
    execute/resume requests invoke those flows; status/verify remain
    read-only; ordinary direct edits do not secretly become plans; trust is
    not a flow selector; discovery is local.
+
+6. **Working principles** — apply
+   [`../shared/working-principles.md`](../shared/working-principles.md) inline.
+   Reason from the existing rules: keep equivalent wording, add missing
+   behaviors, and preserve explicit preferences and approval boundaries.
+   Cover ownership, resourcefulness, routine decisions, informed escalation,
+   concrete approvals, recovery, scope, proportionate rigor, direct
+   communication, and evidence-backed completion. These defaults apply to
+   ordinary work as well as plans; they never authorize execution of an
+   analysis request or override plan gates. Keep the block compact and merge
+   equivalent sections instead of appending duplicates.
 
 **Orchestrator-hub additions** (only if Phase 2 said hub): add the sub-project
 navigation index link (e.g. `repositories/README.md`) and each sub-project's
@@ -787,7 +807,11 @@ done.
    with every property intact: explicit planning requests create;
    execute/resume requests invoke those flows; status/verify stay read-only;
    ordinary direct edits never silently become plans; trust is not a flow
-   selector; discovery is local.
+   selector; discovery is local. Review the **working principles** by meaning
+   (Phase 3, role 6; `../shared/working-principles.md`): all ten behaviors must
+   be present without weakening existing scope, approval rules, or gates.
+   Reassess the reconciled file and confirm a second pass needs no edits.
+   Report instruction coverage separately from observed agent behavior.
 2. **`CLAUDE.md` resolves to `AGENTS.md`** — the symlink points at `AGENTS.md`,
    or `CLAUDE.md` contains exactly `@AGENTS.md`.
 3. **`docs/` has the standard categories**, each non-empty and repo-specific

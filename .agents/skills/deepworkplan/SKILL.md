@@ -1,7 +1,7 @@
 ---
 name: deepworkplan
 description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, upgrade, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
-version: "5.3.0"
+version: "5.4.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -56,7 +56,9 @@ the provenance line is from a non-current series (older than the 5.x this skill
 implements — 2.x and 4.x are historical series, `spec/DWP_SPECIFICATION.md`
 §6.5), or
 `docs/TESTING_GUIDE.md` lacks the scoped-invocation and mapping content the
-standard requires — **offer the targeted harness upgrade** before routing.
+standard requires, or its agent rules lack the working principles described
+in `spec/DOCUMENTATION_STANDARD.md` §2.3.1 (equivalent wording counts) —
+**offer the targeted harness upgrade** before routing.
 Say in one line what is out of date, then run
 [`onboard/SKILL.md`](onboard/SKILL.md) in `upgrade` mode (Phase 0), which
 reconciles **only** the missing or outdated pieces, leaves every handwritten
