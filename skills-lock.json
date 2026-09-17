@@ -5,7 +5,7 @@
       "source": "DailybotHQ/ai-diff-reviewer",
       "sourceType": "github",
       "skillPath": "skills/ai-diff-reviewer/SKILL.md",
-      "computedHash": "903e3868c113a67296d924afebdfc2c5f6fed0d6d56387b4c35a591c3ec3b0bf"
+      "computedHash": "d9a9d2f6dbcd10b90bdabd9a4e26eb9791b36e903d6649a6a2c10affad24eab5"
     },
     "dailybot": {
       "source": "DailybotHQ/agent-skill",

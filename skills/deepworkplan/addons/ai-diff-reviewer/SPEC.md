@@ -6,7 +6,7 @@ This document is the **normative specification** of the DeepWorkPlan **AI Diff
 Reviewer addon**: a capability — **required in its local form since standard
 2.3.0, optional in its CI form** — that connects an AI-first repository to
 the **AI Diff Reviewer** (`DailybotHQ/ai-diff-reviewer`, marketplace listing
-"AI Diff Reviewer", pinned **v2.3.0**) so DWP work — the mandatory
+"AI Diff Reviewer", pinned **v2.3.1**) so DWP work — the mandatory
 security pass of the mandatory **Final Review** — is augmented with a structured local review
 (verdict + findings table + severity), and (in **Flow B — dual-surface**,
 optionally) every pull request to the target repo is gated by a CI-side
@@ -33,7 +33,7 @@ CI surface is never required.
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/authoring.md` §5.4 |
 | **License** | MIT |
-| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.3.0 (marketplace: "AI Diff Reviewer") |
+| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.3.1 (marketplace: "AI Diff Reviewer") |
 
 ## 1. Conventions
 
@@ -93,7 +93,7 @@ upstream CI's `Skills — prompt-sync invariant` job).
 
 ## 3. Two Supported Adoption Flows
 
-The upstream skill (pinned v2.3.0) defines two flows explicitly. This addon applies
+The upstream skill (pinned v2.3.1) defines two flows explicitly. This addon applies
 Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
 
 ### 3.1 Flow A — local-only
@@ -149,7 +149,7 @@ acceptance — each reconciled if already present (§8):
 - The addon **MUST** install the vendored skill (the only supported install
   path) unless the developer recorded a declared exception (§2).
   Supported install method:
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.0 --skill ai-diff-reviewer -y`
+  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.1 --skill ai-diff-reviewer -y`
     (**tag-pinned**; both flags are required — `--yes` covers npm's own "Ok to
     proceed?" prompt; the subcommand `-y` covers the `skills` CLI's own "Which
     agents do you want to install to?" picker, which hangs in non-TTY without
@@ -203,7 +203,7 @@ acceptance — each reconciled if already present (§8):
   external-contributor policy / PR-description mode / complexity labels).
 - The workflow **MUST** pin the upstream Action to the **v2** major-line tag
   (`DailybotHQ/ai-diff-reviewer@v2`) so patch-level fixes flow automatically.
-  Pinning to a frozen tag (`@v2.3.0`) is also acceptable — parity with the
+  Pinning to a frozen tag (`@v2.3.1`) is also acceptable — parity with the
   vendored skill's version is what makes local ≡ CI worth it. New installs
   **MUST NOT** pin `@v1`.
 - The workflow **SHOULD** enable the v2 emergency-bypass input
@@ -220,11 +220,15 @@ acceptance — each reconciled if already present (§8):
 - Follow-up rounds review the **actual new diff** and carry outstanding
   findings forward. `prior-findings-resolution` defaults to **`advisory`**
   (upstream v2.2.0): a model's `resolved` verdict is reported, but the
-  finding keeps gating until a maintainer resolves the thread. Opting into
-  `verified` restores runtime-corroborated auto-resolution. The addon
-  **MUST NOT** assume a model's own "resolved" claim retires a finding —
-  under the default it does not, and a Final Review reading a CI round
-  treats an unresolved thread as still open.
+  finding keeps gating until a maintainer resolves the thread. Since
+  upstream v2.3.1, when `collapse-previous` has already minimized that
+  thread, a corroborated fix (finding not re-emitted **and** the file
+  changed since it was raised, or was deleted) retires it so a stuck PR
+  can go green. Opting into `verified` restores runtime-corroborated
+  auto-resolution. The addon **MUST NOT** assume a model's own "resolved"
+  claim retires a finding on a live thread — under the default it does
+  not, and a Final Review reading a CI round treats an unresolved live
+  thread as still open.
 - The addon **MUST NOT** duplicate the wizard, the input reference manual
   ([`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)),
   or the workflow shape into its own templates. `templates/INTEGRATION.md`
@@ -358,6 +362,11 @@ an additional post-existing-checks step:
   doing so would violate the mandatory-final-task rule (a plan ends with the
   single Final Review, and nothing may follow it) and turn a
   developer-invoked convenience into a scheduled plan step.
+- Since upstream v2.3.1 a review body that says `Recommendation: approve`
+  is **not** evidence the check passed. `apply-review` **MUST** read the
+  tracking marker's Highest severity / Strictness gate / Check status
+  block first — the runtime rewrites a model `approve` to
+  `request-changes` whenever the gate is failing.
 
 ---
 
@@ -485,7 +494,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Upstream skill: [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer)
-  — `skills/ai-diff-reviewer/SKILL.md` (documented pin **v2.3.0**), sub-skills:
+  — `skills/ai-diff-reviewer/SKILL.md` (documented pin **v2.3.1**), sub-skills:
   `generate-extension/SKILL.md`, `setup/SKILL.md` +
   [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md),
   `open-pr/SKILL.md`, `apply-review/SKILL.md`.

@@ -525,7 +525,7 @@ Full spec: [docs/ITERATION_AWARENESS.md](../../../docs/ITERATION_AWARENESS.md).
 with a trusted delta (the previously reviewed head is an ancestor of
 HEAD) the model sees only the changed hunks plus its own still-open
 findings, must classify each as resolved / open / regressed, and the
-runtime keeps resolution claims advisory until a maintainer resolves the thread (opt into `prior-findings-resolution: verified` to let corroborated fixes close their threads). Still-open prior findings continue to gate the check even when no duplicate comment is posted. The
+runtime keeps resolution claims advisory until a maintainer resolves the thread (opt into `prior-findings-resolution: verified` to let corroborated fixes close their threads). Still-open prior findings continue to gate the check even when no duplicate comment is posted. Since v2.3.1, when `collapse-previous` has already minimized a finding's thread — so no maintainer can resolve it — `advisory` retires that finding if the runtime can corroborate the fix, which is what lets the check go green after a real fix. The
 `iteration-escape-label` is the per-PR off switch (forces a full pass);
 rebases, force-pushes and the 30% safety net also force full mode.
 
@@ -589,8 +589,18 @@ rebases, force-pushes and the 30% safety net also force full mode.
   the finding keeps counting toward the strictness gate. `verified`: the
   runtime resolves the thread (with a reply) **only** when it can corroborate
   the verdict — fingerprint absent from this round **and** the file changed
-  since the last reviewed head or was deleted; the finding then stops gating.
+  since the finding was raised or was deleted; the finding then stops gating.
   Unverifiable claims stay open under both policies.
+- **v2.3.1 — collapsed-thread escape.** `advisory`'s "a maintainer resolves
+  the thread" path does not exist when `collapse-previous: true` has already
+  minimized that thread (an outdated-but-visible thread does not count). In that case
+  `advisory` applies the **same corroboration test as `verified`** and
+  retires the finding, so a fixed `critical` can no longer hold the check red
+  forever. "The file changed" is measured since the finding was **raised**
+  (the review's head SHA → HEAD), not only since the last review, so a fix
+  from an earlier round — or a same-head re-run — still corroborates.
+  Corroboration is otherwise unchanged; a finding on a live thread still
+  requires the maintainer. New findings are never affected.
 - **Recommendation:** keep `advisory` on public repos and on runners with
   broad local access; use `verified` on trusted repos where the review loop
   should close its own threads.
