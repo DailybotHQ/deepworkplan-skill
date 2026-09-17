@@ -6,8 +6,9 @@
 # Pins the reconciled wording: local install + extension proceed under the
 # onboarding authorization with no second Flow A/B question; the CI surface is
 # a separate offer an unanswered offer does not block or authorize; every pin
-# names the documented version (v2.0.1); parity claims say methodology and
-# severity parity, never identical findings; invocation soft-fail wording.
+# names the documented version (derived from the vendored addon, never
+# hardcoded here); parity claims say methodology and severity parity, never
+# identical findings; invocation soft-fail wording.
 #
 # Run with:  bats tests/
 # Requires:  bats-core
@@ -16,6 +17,14 @@ setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
     ADDON="$REPO_ROOT/skills/deepworkplan/addons/ai-diff-reviewer"
     MECH="$REPO_ROOT/skills/deepworkplan/addons/README.md"
+    # The documented pin is whatever the vendored addon actually is — the same
+    # source of truth `agents-dogfood.bats` compares against. Deriving it here
+    # instead of hardcoding a literal means a version bump updates the docs and
+    # this test agrees automatically, rather than failing until someone
+    # remembers to edit the assertions too.
+    REV_VERSION="$(grep -m1 '^version:' \
+        "$REPO_ROOT/.agents/skills/ai-diff-reviewer/SKILL.md" \
+        | sed -E 's/.*"([^"]+)".*/\1/')"
 }
 
 # Sentence-level assertion that tolerates the source file's own line wrapping.
@@ -43,17 +52,21 @@ rev_doc_has() {
     [ "$status" -ne 0 ]
 }
 
-@test "every pin names the documented version; no stale v2.0.0 pin remains" {
-    rev_doc_has "$ADDON/SKILL.md" "pinned **v2.0.1**"
-    rev_doc_has "$ADDON/SPEC.md" "pinned **v2.0.1**"
-    # The only acceptable v2.0.0 references are the Action's historical tags
-    # in frozen-pin EXAMPLES — there are none left; the example is v2.0.1.
+@test "every pin names the vendored version; no stale pin remains" {
+    [ -n "$REV_VERSION" ]
+    rev_doc_has "$ADDON/SKILL.md" "pinned **v${REV_VERSION}**"
+    rev_doc_has "$ADDON/SPEC.md" "pinned **v${REV_VERSION}**"
     # The mechanism README mirror carries the same pin.
-    rev_doc_has "$MECH" "currently **v2.0.1**"
-    run grep -rn 'v2\.0\.0' "$ADDON" "$MECH"
-    [ "$status" -ne 0 ]
-    # Install commands are tag-pinned to the documented version.
-    grep -qF 'ai-diff-reviewer@v2.0.1' "$ADDON/SKILL.md"
+    rev_doc_has "$MECH" "currently **v${REV_VERSION}**"
+    # Install commands are tag-pinned to that same version.
+    grep -qF "ai-diff-reviewer@v${REV_VERSION}" "$ADDON/SKILL.md"
+    # No exact pin anywhere in the addon or its README mirror names a DIFFERENT
+    # version than the vendored one. `@v2` (the Action's floating major tag) is
+    # deliberately excluded — it must stay floating so patch fixes flow.
+    local stale
+    stale="$(grep -rhoE 'ai-diff-reviewer@v[0-9]+\.[0-9]+\.[0-9]+' "$ADDON" "$MECH" \
+        | sed 's/.*@v//' | sort -u | grep -v "^${REV_VERSION}\$" || true)"
+    [ -z "$stale" ]
 }
 
 @test "parity claims say methodology and severity parity, never identical findings" {

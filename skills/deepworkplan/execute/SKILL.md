@@ -131,7 +131,12 @@ runs long, autonomous, task-by-task sessions — so its boundaries are explicit:
   task's description, Touched Surface and acceptance criteria.
 - Plan working state under `.dwp/` (progress checkmarks, `PROGRESS.md`,
   `state.json`, task notes, `analysis_results/` incl. gate logs) — gitignored by
-  design.
+  design. Every artifact this flow produces *about* the plan lands inside that
+  plan's own `analysis_results/`, never the repository root
+  (`../spec/DWP_SPECIFICATION.md` §5). When a gate's tool writes a report and
+  defaults that path to the working directory, pass its explicit output option
+  pointing into the plan's `analysis_results/` rather than accepting the
+  default.
 - Per-task git commits on the current branch, **only after** the task's
   validation gate passes, and **only** of validated, owned source changes.
 

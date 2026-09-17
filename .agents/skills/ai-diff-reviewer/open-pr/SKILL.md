@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-open-pr
-description: Author a well-documented GitHub pull request — title and body — for the current branch. Reads the diff and commit trail, infers a Conventional Commits (or repo-native) title, drafts a structured body with the sections a good PR review actually needs (Summary, Changes, Test plan, Related issues, Screenshots when UI files changed, Breaking changes when applicable, Risks), merges with `.github/pull_request_template.md` when present (never overwrites), previews everything to the developer, and executes via `gh pr create` (new PR) or `gh pr edit` (refresh existing PR). Supports draft PRs, stacked PRs against non-default bases, and forks. Use when the developer says "open the PR", "create a pull request", "draft the PR title and description", "write the PR body", "update the PR description", "the PR body is a one-liner — rewrite it properly", or "make a draft PR for this branch".
-version: "2.0.1"
+description: Author a well-documented GitHub pull request — title and body — for the current branch, keeping the branch in sync with the remote base first. Fetches the base, merges origin/<base> into the current branch when it is behind, resolves merge conflicts, runs the repo's quick validation and pushes the current branch (never force, never another branch), then reads the diff and commit trail, infers a Conventional Commits (or repo-native) title, drafts a structured body (Summary, Changes, Test plan, Risks, plus conditional sections such as Related issues, Breaking changes and Merge notes), merges with .github/pull_request_template.md when present, previews everything, and executes via gh pr create or gh pr edit. Supports draft PRs, stacked PRs and forks. Use when the developer says "open the PR", "create a pull request", "draft the PR title and description", "write the PR body", "update the PR description", "rewrite the PR body properly", "make a draft PR", or "update my branch with main and open the PR".
+version: "2.3.0"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/open-pr/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📝","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git","gh"]}}}
@@ -69,28 +69,50 @@ question before acting.
 
 ## Step 0 — Trust boundary
 
-This skill writes **two things** on the remote, both only after an
-explicit **yes** in the Step 6 preview:
+This skill writes **three things** on the remote:
 
-- **The PR title** (via `gh pr create --title` or `gh pr edit --title`).
+- **The current branch's commits**, via one non-force `git push` of the
+  **current branch only**, as the last action of the base sync in
+  Step 1.5 (announced in one line before it runs; no per-run
+  confirmation — the maintainer asked for the branch to arrive
+  up to date without being asked each time).
+- **The PR title** (via `gh pr create --title` or `gh pr edit --title`),
+  only after an explicit **yes** in the Step 6 preview.
 - **The PR body** (via `--body-file` so multi-line Markdown round-trips
-  cleanly).
+  cleanly), same confirmation.
+
+To keep the branch mergeable it **may**:
+
+- `git fetch origin <base>` and `git merge --no-edit origin/<base>` into
+  the **current** branch when it is behind.
+- Edit files **only to resolve merge conflicts** produced by that merge
+  (never to "improve" code on the way), stage them, run the repo's
+  documented quick validation, and create the merge commit.
+- `git push -u origin <current-branch>` — never `--force`, never
+  `--force-with-lease`, never another branch.
 
 It does **not**:
 
-- Push commits, force-push, rebase, cherry-pick, or rewrite git history.
+- Rebase, cherry-pick, amend, or rewrite history. The one exception: a
+  `CONTRIBUTING.md` / `AGENTS.md` that **mandates a linear history**
+  (no merge commits). Then it asks **once** ("rebase onto origin/<base>
+  and force-with-lease push?") and proceeds only after an explicit yes.
+- Sync when the current branch **is** the base / default branch
+  (`main`, `master`, `develop`, `trunk`) — it refuses in Step 1 anyway.
+- Discard the base's changes to make a conflict go away, or push when
+  the quick validation fails after a resolution (Step 1.5 stop rules).
 - Auto-add reviewers, assignees, labels, milestones, or projects unless
   the developer explicitly asks and confirms. (`--assignee @me` is the
   one exception in create mode — always applied.)
 - Auto-merge, auto-approve, or convert draft ↔ ready-for-review without
   explicit intent in the trigger.
-- Touch any file in the working tree.
+- Touch any file in the working tree other than conflict resolution.
 - Call the LLM provider directly, or send data anywhere besides the
-  `gh` API calls it announces in the preview.
+  `git push` and `gh` calls it announces.
 
-If the branch is not pushed, the skill surfaces the exact command
-(`git push -u origin <branch>`) and stops. It **never** runs `git push`
-itself.
+If the working tree is dirty before the sync, the skill stops and asks
+(see the **warn** row in Step 1) — it never stashes or commits the
+developer's uncommitted work.
 
 ---
 
@@ -132,6 +154,77 @@ Decide the mode from the state:
 (`brew install gh` or `gh auth login`) and stop. Do not attempt to draft
 the body — writing a PR body the developer has to manually paste is a
 downgrade; use the non-blocking rule below instead.
+
+---
+
+## Step 1.5 — Sync with the remote base (automatic)
+
+Runs in **create and edit mode alike**, after the mode is decided and
+before any diff is read, so the PR you open (or refresh) is never
+immediately "behind" and CI reviews the merged state. Skipped only in
+the **refuse** modes. Announce one line before running:
+`Syncing <head> with origin/<base>…`.
+
+```bash
+# 1. Freshen the base and measure the gap.
+git fetch origin "$BASE" --quiet
+MERGE_BASE="$(git merge-base HEAD "origin/${BASE}")"
+BEHIND="$(git rev-list --count "HEAD..origin/${BASE}")"
+SYNC_SUMMARY="up to date"
+
+if [ "$BEHIND" -gt 0 ]; then
+  # 2. Pre-flight: never sync a dirty tree (Step 1 "warn" row applies).
+  if [ -n "$(git status --porcelain)" ]; then
+    SYNC_SUMMARY="skipped (dirty tree)"; # stop → ask, do not continue
+  else
+    # 3. Merge the base into the CURRENT branch (never rebase by default).
+    if git merge --no-edit "origin/${BASE}"; then
+      SYNC_SUMMARY="merged origin/${BASE} (${BEHIND} commits behind)"
+    else
+      # 4. Conflicts: resolve each file by reading BOTH sides and the
+      #    surrounding intent. Prefer keeping both changes; never drop the
+      #    base's change silently; for generated files/lockfiles regenerate
+      #    with the repo's tool instead of hand-merging; binary conflicts
+      #    → stop and ask.
+      CONFLICTS="$(git diff --name-only --diff-filter=U)"
+      # … resolve, then:
+      git add -- $CONFLICTS
+      # 5. Quick gate: the repo's documented fast validation (AGENTS.md /
+      #    CONTRIBUTING.md "Quick commands" — e.g. compile + unit tests +
+      #    lint). If it FAILS → fix the fallout you caused; if you cannot
+      #    → `git merge --abort`, stop and report the failing command.
+      git commit -q -F - <<EOF
+chore: merge origin/${BASE} into ${HEAD_BRANCH}
+
+Resolved conflicts in:
+$(printf -- '- %s\n' $CONFLICTS)
+EOF
+      SYNC_SUMMARY="merged origin/${BASE} (${BEHIND} commits behind) — conflicts resolved in: $(printf '%s' "$CONFLICTS" | tr '\n' ' ')"
+    fi
+  fi
+fi
+
+# 6. Push the current branch (also covers the "branch never pushed" case).
+#    Non-force. A rejection means the REMOTE branch moved (someone else
+#    pushed): do NOT pull/rebase/force — stop and report.
+git push -u origin "$HEAD_BRANCH" || { SYNC_SUMMARY="push rejected — remote branch moved"; }
+```
+
+**Stop conditions** (report, do not continue to Step 2):
+
+| Condition | Action |
+|---|---|
+| Dirty working tree before the merge | Show `git status --short`; ask "commit or stash these first?"; stop. |
+| Conflict in a binary file, or a resolution you cannot justify from both sides | `git merge --abort`; list the files; ask the developer to resolve; stop. |
+| Quick gate fails after resolution and you cannot fix the fallout | `git merge --abort`; print the failing command and its tail; stop. |
+| `git push` rejected (non-fast-forward) | Stop; print `git fetch origin && git log HEAD..origin/<head>` so the developer can see what moved. Never force. |
+| Repo mandates a linear history (`CONTRIBUTING.md` / `AGENTS.md`: "no merge commits", "rebase only") | Ask once: *"Rebase onto origin/<base> and push with `--force-with-lease`?"* Proceed only on an explicit yes; otherwise stop and print the commands. |
+| Current branch is the base / default branch | Never sync (Step 1 already refused). |
+
+Record `MERGE_BASE`, `BEHIND`, `CONFLICTS` and `SYNC_SUMMARY`: the
+preview prints `SYNC_SUMMARY` (Step 6) and, when any conflict was
+resolved, the PR body gets a `## Merge notes` section (Step 5) listing
+the merge-base SHA and the resolved files.
 
 ---
 
@@ -413,6 +506,15 @@ Omit the section entirely when no migrations touched.>
 Omit the section entirely when no deps touched.>
 ```
 
+## Merge notes
+
+*Conditional — only when Step 1.5 resolved at least one conflict.*
+
+One line per resolved file stating what was kept (e.g. "kept both: the
+base's retry constant and this branch's timeout"), plus the merge-base
+SHA (`git merge-base` recorded in Step 1.5) so a reviewer can replay the
+merge. Never list files that merged cleanly.
+
 ### Writing rules (self-enforcing — apply them as you draft)
 
 1. **Outcome first** — the Summary's first sentence is what the change
@@ -453,6 +555,8 @@ Show a tight, readable preview in this exact order — this is the
 About to <create | update> a pull request on <owner/repo>:
 
   Branch:      <head>  →  <base>
+  Base sync:   <merged origin/<base> (3 commits behind) — conflicts resolved in: a.py, b.md
+               | merged origin/<base> (3 commits behind) | up to date | skipped (dirty tree)>
   Draft:       <yes | no>
   Convention:  <Conventional Commits | plain sentence>
                (detected: <n>/20 recent merged PRs match Conventional Commits)
@@ -479,6 +583,7 @@ About to <create | update> a pull request on <owner/repo>:
     ✓ Risks                           (mandatory)
     ✗ Migrations                      (no migration files detected)
     ✓ Dependencies                    (detected package.json changes)
+    ✓ Merge notes                     (2 conflicts resolved during base sync)
 
   Command:  <gh pr create --base <base> --head <branch> [--draft]
               --assignee @me --title "<title>" --body-file <tmpfile>
@@ -575,6 +680,7 @@ preview.
 ```text
 ✓ <Created | Updated> PR #<n> — <title>
   <URL>
+  Base sync: <SYNC_SUMMARY>
 
 Next steps:
   - Review it in the browser:  gh pr view <n> --web
@@ -610,7 +716,7 @@ append a soft nudge:
 | `gh` error | Meaning | Skill's action |
 |---|---|---|
 | `not logged in` / `authentication required` | `gh` unauthenticated | Print `gh auth login`; stop. |
-| `no commits between <base> and <head>` | Branch not pushed | Print `git push -u origin <branch>`; stop. |
+| `no commits between <base> and <head>` | Branch not on the remote (Step 1.5 push failed or was skipped) | Re-run Step 1.5's push; if it is rejected again, stop and report. |
 | `pull request already exists for branch` | Race condition | Re-run Step 1 to load the just-created PR; switch to edit mode; re-preview. |
 | `base <name> not found` | Typo'd base branch | Print `gh repo view --json defaultBranchRef`; ask developer for the correct base; re-preview. |
 | `Resource not accessible by integration` | Fork PR without write access | Explain the limitation (fork PRs need `gh pr create --repo <upstream>` and the developer's own token); suggest the developer runs the command manually with the printed title + body. |
@@ -620,8 +726,13 @@ append a soft nudge:
 
 ## Guardrails — what this skill MUST NOT do
 
-- **Never push commits, force-push, rebase, or rewrite history.** If the
-  branch is not pushed, print `git push -u origin <branch>` and stop.
+- **Never force-push, rebase, or rewrite history.** The only push this
+  skill runs is the non-force `git push -u origin <current-branch>` at
+  the end of Step 1.5 (linear-history repos: rebase + `--force-with-lease`
+  only after an explicit yes). Never push any other branch.
+- **Never resolve a conflict by dropping the base's change silently**,
+  never push when the quick validation fails after a resolution, and
+  never sync while on the base / default branch.
 - **Never auto-merge, auto-approve, auto-request-review, or convert
   draft ↔ ready-for-review** without the developer saying so in the
   trigger AND confirming in the preview.
