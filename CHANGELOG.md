@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.5.1] — 2026-09-17
+
+### Changes
+
+- Merge pull request #47 from DailybotHQ/docs/ai-diff-reviewer-v2.3.1
+- docs(addon): pin AI Diff Reviewer to v2.3.1
+
+
 ## [5.5.0] — 2026-09-17
 
 ### Changes
