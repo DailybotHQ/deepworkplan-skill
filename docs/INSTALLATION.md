@@ -202,6 +202,19 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
   [`../skills/deepworkplan/shared/dwp-paths.md`](../skills/deepworkplan/shared/dwp-paths.md),
   "Workspace persistence and transfer").
 
+Onboarding also reconciles compact **working principles** inline in
+`AGENTS.md`: agents should investigate before asking, make routine decisions
+within the authorized scope, prepare concrete approval requests, and verify
+outcomes before claiming completion. Equivalent existing rules are retained;
+explicit repository preferences, approval boundaries, and plan gates still
+apply. Installing or updating the skill alone does not edit `AGENTS.md`:
+request a harness upgrade to bring these principles to an existing repository.
+A principles-only upgrade adds missing behavior without rewriting unrelated
+documentation or migrating plans. These are behavioral instructions, not a
+guarantee of model compliance. The
+[authoring reference](../skills/deepworkplan/shared/working-principles.md)
+contains the wording and acceptance criteria.
+
 After onboarding, the repository's `AGENTS.md` carries an intent-to-flow
 routing block: explicit planning requests create a plan, execute/resume
 requests invoke those flows, status/verify stay read-only, and ordinary

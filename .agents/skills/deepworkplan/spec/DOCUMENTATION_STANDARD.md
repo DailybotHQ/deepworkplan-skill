@@ -140,6 +140,25 @@ At minimum it **MUST** cover:
 The test pattern, commit scopes, and validation commands themselves are part of
 the **repo-specific 10%** (§7) and **MUST** be reasoned about per repo, not copied.
 
+### 2.3.1. Working principles
+
+`AGENTS.md` **SHOULD** carry compact working principles for autonomous,
+precise, verified work. Onboarding and an authorized harness upgrade **MUST**
+reconcile these principles using
+[`../shared/working-principles.md`](../shared/working-principles.md): retain
+equivalent instructions, add missing behaviors inline, and preserve explicit
+repository preferences and authority boundaries. The ten behaviors are
+ownership, resourcefulness, independent routine decisions, informed
+escalation, concrete approval requests, recovery, scope discipline,
+proportionate rigor, direct communication, and evidence-backed completion.
+
+The principles apply to ordinary tasks and plans. They **MUST NOT** expand
+authorization, override host permissions or plan gates, or convert analysis
+into execution. Wording and headings **MAY** vary; semantic coverage is a judgment
+check, not a keyword gate. Missing principles in an existing repository are
+an advisory upgrade finding, not a new failure against its declared standard.
+This addition leaves the umbrella standard and plan schemas unchanged.
+
 ### 2.4. Role 3 — Quick Commands
 
 `AGENTS.md` **MUST** contain a quick-commands reference table for the most common
@@ -360,7 +379,10 @@ the onboarding flow **MUST** keep them distinct:
   overwrite: add missing sections, update stale generated content, and leave
   handwritten content, custom skills, and unrelated files intact; ask before
   replacing anything (`AGENT_PROTOCOL.md` §6). Repeating the reconciliation
-  **MUST** produce no further change (idempotent). The reconciliation **MUST**
+  **MUST** produce no further change (idempotent). This includes working
+  principles (§2.3.1), even when the declared standard is already current;
+  equivalent handwritten rules satisfy the requirement without rewriting.
+  The reconciliation **MUST**
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as

@@ -18,6 +18,47 @@ the same instructions other agents do.
 
 ---
 
+## Working principles
+
+Work with autonomy, ownership, and sound judgment. Pursue excellence through
+correctness, clarity, simplicity, and verified completion.
+
+- **Own the outcome.** Carry authorized work through investigation, execution,
+  and appropriate validation. Continue until the requested outcome is complete
+  or a concrete blocker prevents further progress.
+- **Be resourceful before asking.** Inspect available code, documentation,
+  tools, and prior decisions. Resolve questions you can answer through
+  reasonable investigation instead of transferring that work to the user.
+- **Make routine decisions independently.** Choose sensible approaches within
+  the authorized scope. State consequential assumptions. Avoid confirmation
+  requests for routine steps or actions already authorized.
+- **Ask when judgment or authorization is missing.** Consult the user when
+  essential information is unavailable, a material decision cannot be inferred
+  reliably, or an action requires approval not already granted. Bring the
+  investigation, relevant options, and your recommendation.
+- **Make approvals concrete.** Complete authorized preparation before asking
+  for approval. Present a reviewable result and identify the action requiring
+  approval and why it requires it.
+- **Work through obstacles.** Investigate failures and attempt reasonable
+  recovery within scope. Continue independent authorized work when possible.
+  Respect applicable stop conditions; escalate when progress requires user
+  input or an external change.
+- **Respect intent and scope.** Analysis requests remain analysis. Propose
+  broader improvements separately unless already authorized. Preserve the
+  user's existing work, decisions, and repository-specific approval rules.
+- **Apply proportionate rigor.** Address underlying causes and favor
+  maintainable solutions. Match investigation, validation, and polish to the
+  task's impact. Avoid unnecessary complexity and unrelated changes.
+- **Communicate directly and precisely.** Lead with the result or decision.
+  Explain consequential tradeoffs concisely. Distinguish verified facts,
+  assumptions, and unresolved uncertainty.
+- **Verify before declaring completion.** Review the result against the
+  request, perform appropriate checks, and fix issues within scope. Report
+  what was validated and any remaining limitations. Never claim actions,
+  checks, or outcomes that did not occur.
+
+---
+
 ## Detailed Documentation
 
 | Category | Document |
@@ -33,6 +74,7 @@ the same instructions other agents do.
 | v5 reliability evidence: guarantees, guard cost, instruction accounting | [docs/evaluations/v5-reliability.md](docs/evaluations/v5-reliability.md) |
 | Cross-agent handoff trial (Claude Code ↔ Codex, both directions) | [docs/evaluations/cross-agent-handoff.md](docs/evaluations/cross-agent-handoff.md) |
 | Upgrading an existing repository (adoption pilot) | [docs/evaluations/adoption-pilot.md](docs/evaluations/adoption-pilot.md) |
+| Working-principles authoring and reconciliation trial | [docs/evaluations/working-principles.md](docs/evaluations/working-principles.md) |
 | Per-preset onboarding coverage | [docs/PRESET_TESTING_MATRIX.md](docs/PRESET_TESTING_MATRIX.md) |
 | OpenClaw-specific notes | [docs/OPENCLAW.md](docs/OPENCLAW.md) |
 | Adding a new sub-skill (step-by-step) | [docs/SUB_SKILL_GUIDE.md](docs/SUB_SKILL_GUIDE.md) |
@@ -360,68 +402,19 @@ Multiple AI agents may work on this repo simultaneously. They all read this
 
 ## Vendored agent skills — three dogfood copies under `.agents/skills/`
 
-This repo vendors **three** agent skills under `.agents/skills/`, all tracked
-in git and pinned via [`skills-lock.json`](skills-lock.json). They give any AI
-agent that clones this repo the toolchain the DWP methodology recommends —
-but they are managed differently on purpose:
+The tracked copies are pinned in `skills-lock.json`. Treat DeepWorkPlan as a
+**generated mirror** of `skills/deepworkplan/`: refresh only with
+`bash scripts/refresh-dogfood-skill.sh`, review the checksum-verified diff,
+and commit the updated lockfile. Auto-release smoke-tests the published tag
+in a temporary directory; it does not refresh this mirror.
 
-| Vendored skill | Upstream | Release auto-refresh | Purpose in this repo |
-|----------------|----------|----------------------|----------------------|
-| `.agents/skills/deepworkplan/` | this repo (`skills/deepworkplan/`) | **No** | Contributor dogfood, kept **byte-identical** to `skills/deepworkplan/` (verified by checksum on every sync). It is excluded from release auto-refresh because that would pull the last published tag instead of this working revision. Sync with `bash scripts/refresh-dogfood-skill.sh`. |
-| `.agents/skills/dailybot/` | [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill) | **Yes** | Powers Dailybot standup reporting for plan lifecycle events (see the Dailybot addon) |
-| `.agents/skills/ai-diff-reviewer/` | [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer) | **Yes** | Powers the local code review (same `prompt.md` used by optional downstream CI integrations) |
+Do not hand-edit the Dailybot or AI Diff Reviewer copies; contribute upstream.
+Auto-release refreshes those two addons. Every exact `ai-diff-reviewer@vX.Y.Z`
+install pin in the shipped pack must match the vendored reviewer's version
+(`tests/agents-dogfood.bats`). The Action's floating `@v2` pin is exempt.
 
-**Why deepworkplan is excluded.** Blind `npx skills add --force` of this
-repo's own skill into `.agents/skills/deepworkplan/` would overwrite the
-dogfood copy. The release workflow still **smoke-tests** that
-the published tag installs (into a temp directory); it does not commit that
-install back into the tree. When the shipped pack under `skills/deepworkplan/`
-changes and the dogfood copy should follow, run
-`bash scripts/refresh-dogfood-skill.sh`, review, and commit.
-
-**How addon refresh works.** [`.github/workflows/auto-release.yml`](.github/workflows/auto-release.yml)
-runs on every merge to `main` and, after cutting the release for this repo,
-resolves the latest published tags of `agent-skill` and `ai-diff-reviewer`
-(via `gh release view`), compares to the vendored `SKILL.md` `version:`, and
-if either moved runs:
-
-```bash
-npx --yes skills add <repo>@<tag> --skill <name> --force -y
-```
-
-Both `--yes` (npm's proceed prompt) AND `-y` (the skills CLI's agent-picker
-prompt) are required in a non-TTY runner — dropping either hangs the workflow
-indefinitely. After each install the workflow asserts that the vendored
-`SKILL.md`'s `version:` equals the requested tag; a mismatch fails the release.
-If any file changes, the workflow commits
-`chore(release): dogfood vendored <skill> to v<tag> [skip release]` and
-pushes. The `[skip release]` marker prevents an infinite auto-release loop.
-
-**Editing policy.**
-- **Do not** hand-edit `.agents/skills/dailybot/` or `.agents/skills/ai-diff-reviewer/`
-  — the next release will overwrite those. Contribute upstream, land a release
-  there, then this repo's auto-release picks them up.
-- **Do** treat `.agents/skills/deepworkplan/` as a generated mirror: refresh it only
-  via `scripts/refresh-dogfood-skill.sh` (or an explicit reviewed edit), never
-  via release dogfood.
-
-**Pinned install commands are NOT auto-refreshed — and are CI-gated.**
-Release dogfood updates the *vendored copy* under `.agents/skills/`. It does
-**not** rewrite the install commands the shipped pack **teaches** under
-`skills/deepworkplan/`, because those live in prose
-(`npx --yes skills add DailybotHQ/ai-diff-reviewer@vX.Y.Z …`). The two drifted
-apart once — the pack taught `@v2.0.0` while the vendored addon was already
-`2.0.1`, so every repository onboarded from it installed a stale reviewer.
-
-The invariant is now a CI gate: **every exact `ai-diff-reviewer@vX.Y.Z` pin in
-`skills/deepworkplan/` must equal the `version:` of the vendored
-`.agents/skills/ai-diff-reviewer/SKILL.md`** (`tests/agents-dogfood.bats`). When
-a release moves the vendored addon, update the documented pins in the same PR —
-`grep -rn 'ai-diff-reviewer@v[0-9]' skills/` finds them all.
-
-`DailybotHQ/ai-diff-reviewer@v2` (no patch) is a different thing: the **GitHub
-Action's floating major tag**, deliberately left floating so patch fixes flow
-automatically. The gate ignores it. Do not pin it to a patch.
+The full refresh procedure, rationale, and release-loop safeguards are in
+[Design — vendored agent skills](docs/DESIGN.md#vendored-agent-skills--three-dogfood-copies-under-agentsskills).
 
 ## Local AI Diff Reviewer
 

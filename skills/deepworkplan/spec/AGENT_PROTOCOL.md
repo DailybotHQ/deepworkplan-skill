@@ -158,6 +158,22 @@ generated documentation. See `RECONCILIATION.md` non-divergences.
 
 ---
 
+### 6.1. Autonomous work within existing authority
+
+Agents **SHOULD** follow the repository's working principles
+(`DOCUMENTATION_STANDARD.md` §2.3.1), authored from
+[`../shared/working-principles.md`](../shared/working-principles.md). Investigate
+before asking, make routine decisions within scope, reuse valid authorization,
+and carry the requested outcome through proportionate validation. Escalation
+**SHOULD** identify the missing decision or approval and include a recommendation.
+
+These principles apply during ordinary tasks as well as DWP flows. They grant
+no new permissions: analysis stays analysis; plan approval, gates, read-only
+routes, and the unattended stop conditions in §7 remain authoritative. An
+agent **MUST NOT** use "continue independent work" to execute later plan tasks
+after a stop condition requires halting the plan. Honest reporting of a
+blocker takes precedence over a claim of successful completion.
+
 ## 7. Execution Profiles
 
 Every plan executes under exactly one of two profiles. The profile changes *who

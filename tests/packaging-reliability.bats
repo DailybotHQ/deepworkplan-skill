@@ -57,6 +57,46 @@ fixture_plan() {
     [[ "$output" == *"CONFORMANT"* ]]
 }
 
+@test "onboarding and verification resolve their working-principles resource from an export" {
+    run python3 - "$PACK" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+pack = Path(sys.argv[1]).resolve()
+for flow in ('onboard', 'verify'):
+    entry = pack / flow / 'SKILL.md'
+    links = re.findall(r'\]\(([^)]+working-principles\.md)\)', entry.read_text())
+    assert links, f'{flow} cannot discover its working-principles resource'
+    for link in links:
+        target = (entry.parent / link).resolve()
+        assert pack in target.parents, f'{flow} resource escapes the installed pack'
+        assert target.is_file() and target.stat().st_size, f'{flow} resource missing'
+PY
+    echo "$output"
+    [ "$status" -eq 0 ]
+}
+
+@test "the contributor agent entry point stays within budget and its local document links resolve" {
+    run python3 - "$REPO_ROOT" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+repo = Path(sys.argv[1])
+text = (repo / 'AGENTS.md').read_text()
+assert 150 <= len(text.splitlines()) <= 500, 'AGENTS.md exceeds its lean-index budget'
+text = re.sub(r'```.*?```', '', text, flags=re.S)
+for link in re.findall(r'\]\(([^)]+)\)', text):
+    if '://' in link or link.startswith('#'):
+        continue
+    target = repo / link.split('#')[0]
+    assert target.exists(), f'Broken AGENTS.md link: {link}'
+PY
+    echo "$output"
+    [ "$status" -eq 0 ]
+}
+
 @test "the guarded writer and the completion transaction run from an export" {
     local plan; plan="$(fixture_plan)"
     run python3 "$PACK/shared/update-state.py" "$plan/state.json" \

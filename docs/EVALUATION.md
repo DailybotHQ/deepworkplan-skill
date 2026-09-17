@@ -104,6 +104,11 @@ were executed concurrently on a shared host, so their timings are meaningless.
 
 ## Snapshot efficiency results
 
+The [working-principles trial](evaluations/working-principles.md) records an
+independent agent authoring rules in two fixtures and repeating reconciliation.
+It observes file changes and idempotence within that session; it does not
+measure subsequent task behavior or improvements in model performance.
+
 The [efficiency evaluation](evaluations/token-efficiency.md) separates the
 declared mandatory instruction inventory, historical self-reported replays,
 instrumented paired observations and command-only seeded-fault experiments.
