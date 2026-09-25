@@ -9,6 +9,13 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.5.3] — 2026-09-25
+
+### Changes
+
+- ci: grok self-review workflow + vendored ai-diff-reviewer v3.1.1 refresh
+
+
 ## [5.5.2] — 2026-09-25
 
 ### Changes
