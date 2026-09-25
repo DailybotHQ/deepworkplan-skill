@@ -42,7 +42,7 @@ grep -l 'DailybotHQ/ai-diff-reviewer\|DailybotHQ/ai-pr-reviewer' \
   .github/workflows/*.y*ml 2>/dev/null
 
 # Is a provider secret documented?
-grep -l 'CURSOR_API_KEY\|ANTHROPIC_API_KEY\|OPENAI_API_KEY' \
+grep -l 'CURSOR_API_KEY\|ANTHROPIC_API_KEY\|OPENAI_API_KEY\|XAI_API_KEY' \
   AGENTS.md docs/*.md .github/README.md 2>/dev/null
 ```
 
@@ -66,7 +66,7 @@ Decision notes:
 
 ## 2. Offer the CI surface separately — do NOT guess
 
-On the CI offer, mirror upstream v2.3.0's own ambiguity tie-break policy:
+On the CI offer, mirror the upstream skill's own ambiguity tie-break policy:
 when the signal is unclear, **ask**. Never default to Flow B (installing the
 workflow unrequested is a much bigger footprint than declining Flow B).
 
@@ -85,8 +85,10 @@ signalling ("Flow A / Flow B" phrases every subsequent request).
 ## 3. Install the vendored skill (REQUIRED — covered by the onboarding consent; never unpinned)
 
 ```bash
-# Tag-pinned install (pin whatever tag is current — this is the reproducible form)
-npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.1 --skill ai-diff-reviewer -y
+# Tag-pinned install: pin the current published tag at install time (this is
+# the reproducible form; the moving @v3 is the documented default pin for
+# CI workflows).
+npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.1.1 --skill ai-diff-reviewer -y
 
 # Verify the vendored version matches the requested tag
 VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
@@ -151,19 +153,27 @@ upstream `setup` sub-skill's 6-question wizard:
 Invoke: "Set up AI Diff Reviewer for this repo" (or /ai-diff-reviewer-setup)
 ```
 
-The wizard asks:
+The wizard asks (v3):
 
-1. **Provider** (anthropic / claude-code / cursor / codex — pick one, or a
-   matrix).
-2. **Strictness** (block-on-critical / block-on-warning / advisory).
-3. **Trigger mode** (label-gated / on-open / on-synchronize).
-4. **External-contributor policy** (author-association whitelist).
-5. **PR-description mode** (require / skip).
-6. **Complexity labels** (auto-apply / skip).
+1. **Runner and backend** — the runner drives the review loop
+   (`anthropic` / `openai` in-process, or the `claude-code` / `codex` /
+   `grok` / `cursor` CLIs); the backend is where the model lives
+   (`api-base`, the provider secret, and a suggested `model` — `balanced`
+   by default).
+2. **Strictness** (`lenient` / `block-on-critical` / `block-on-warning` /
+   `block-on-any`).
+3. **Trigger mode** (every push to the PR / `trigger-mode: label-once` +
+   `label-gate: ready` — toggle the label off/on to re-run /
+   `label-added-only`).
+4. **External contributors** (author-association whitelist).
+5. **PR-description mode** (`off` / `warn` / `block` / `autocomplete`).
+6. **Complexity labels** (apply / skip).
 
-It writes `.github/workflows/pr-review.yml` adapted to the answers, sets up
+It writes the workflow adapted to the answers — a single review (verifier
+and risk-tiered budgets on by default) or, on request, the RFC-04 ensemble
+matrix (`mode: emit` read-only legs + one `mode: aggregate` job) — sets up
 the label-bootstrap step, and generates the stable-named gate job for
-branch protection. Point at [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)
+branch protection. Consumers on pre-v3 workflows keep working unchanged. Point at [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)
 as the reference manual for every `action.yml` input.
 
 **Fallback (developer wants to skip the wizard).** Prefer the wizard. If you
@@ -183,16 +193,25 @@ or a full copy of the four-job workflow):
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: DailybotHQ/ai-diff-reviewer@v2
+      - uses: DailybotHQ/ai-diff-reviewer@v3
         with:
           provider: <provider>
           api-key: ${{ secrets.<PROVIDER>_API_KEY }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           prompt-extension-file: .review/extension.md
           strictness: block-on-critical
-          # Opt-in emergency bypass (v2). Empty = feature OFF. Protect the
+          # v3 defaults, shown so you know what to change:
+          verifier: 'on'        # verified criticals (BC-07): a critical publishes
+                                # as critical only when the verifier confirms it
+          budget-profile: auto  # risk-tiered budgets — 8/20/30/40 turns (BC-13);
+                                # 'fixed' restores the pre-v3 constants (transition knob)
+          # high-risk-paths: 'glob, list'  # raises the risk tier to critical (raises only)
+          # Opt-in emergency bypass. Empty = feature OFF. Protect the
           # label with a repo ruleset if the AI review is a merge gate.
           skip-review-label: skip-ai-review
+      # Optional ensemble (RFC-04): `mode: emit` read-only legs + one
+      # `mode: aggregate` job that dedups by anchor, verifies once and
+      # publishes one review — see the upstream examples/ensemble-matrix.yml
 ```
 
 The gate job **MUST** map results through `env:` (never embed
@@ -208,18 +227,24 @@ Reasoning notes:
   and the upstream `setup` wizard both set it.
 - **`persist-credentials: false`** on `actions/checkout` is REQUIRED — the
   reviewer runs with broad local access; no credential should persist.
-- **`skip-review-label: skip-ai-review`** (v2) is the opt-in emergency
-  bypass — when that label is on the PR the Action short-circuits with a
-  successful check and a ⏭️ skipped tracking comment (no LLM). Distinct
-  from `full-review-please` (IAR escape: full review once, not skip).
-- **Pin `@v2`** (moving major) or `@v2.3.1` (frozen). Do not pin `@v1` on
-  new installs — v2 is the current pin surface (IAR + skip-review).
+- **`skip-review-label: skip-ai-review`** is the opt-in emergency bypass —
+  when that label is on the PR the Action short-circuits with a successful
+  check and a ⏭️ skipped tracking comment (no LLM). Distinct from the IAR
+  escape label (`iteration-escape-label`, default `full-review-please`),
+  which forces one full review instead of skipping.
+- **Pin `@v3`** (moving major) or a frozen `@v3.x.y`. Do not pin `@v1`/`@v2`
+  on new installs; existing `@v2` pins keep working (frozen maintenance line
+  on `release/v2`, six months of security/catalog fixes).
 - **`AI review gate`** is stable-named so branch protection can be
   configured against it once and continue to work when the review-job name
   changes across provider matrices.
 - **Skipped ≠ Failed for label/author scope only.** A PR without the
   trigger label stays mergeable; a requested review with a missing provider
-  secret MUST fail the gate.
+  secret MUST fail the gate. Since v3, an **`incomplete` or `timeout`
+  review is red under blocking strictness** (BC-04 — it posts partial
+  findings and fails the check), and `block-on-critical` fires on
+  **verified** criticals (BC-07); `strict-unverified-criticals: true`
+  restores claim-based gating during the transition.
 - The wizard version is preferred because it handles multi-provider
   matrices, complexity-label integration, external-contributor policy edge
   cases, and label-bootstrap. Only hand-roll when the developer explicitly
@@ -240,8 +265,8 @@ Add a short note to the repo's DWP execution docs (the generated
 shape to convey:
 
 > **Required — AI Diff Reviewer local review (baseline since standard
-> 2.3.0; criticals still gate SR):** the Final Review's security pass
-> always runs the local review. Invokes the upstream skill's parent
+> 2.3.0; verified criticals still gate SR):** the Final Review's security
+> pass always runs the local review. Invokes the upstream skill's parent
 > default flow ("Review my current branch"), captures verdict + findings
 > table + severity, and appends them to
 > `analysis_results/SECURITY_REVIEW.md` under `## AI Diff Reviewer local
@@ -250,16 +275,29 @@ shape to convey:
 > the completion report — never a silent skip. Installation belongs to
 > onboarding or an explicit addon invocation. Soft-fail
 > (warn once, record, continue) applies only to **invocation errors** of
-> a review that could start. Once a review ran, a `critical` finding
-> blocks completion until fixed or explicitly accepted; `warning` /
-> `info` findings are appended and reported but do not block. In Flow B
-> (opt-in CI surface), an OPTIONAL post-PR companion is available — the
-> `apply-review` sub-skill walks through CI-posted findings per-finding
-> (apply / defer / skip) with explicit consent, read-only by default,
-> never commits or pushes. Since upstream v2.3.1 a body that says
-> `Recommendation: approve` is not evidence the check passed — read the
-> tracking marker's Highest severity / Strictness gate / Check status
-> block first.
+> a review that could start. Once a review ran, a **verified** `critical`
+> finding blocks completion until fixed or explicitly accepted (v3, BC-07:
+> unverified critical claims arrive as annotated warnings — visible and
+> non-blocking unless `strict-unverified-criticals: true`); a review with
+> `status: incomplete` or `timeout` is not a clean pass under blocking
+> strictness (BC-04); `warning` / `info` findings are appended and
+> reported but do not block. In Flow B (opt-in CI surface), an OPTIONAL
+> post-PR companion is available: the `apply-review` sub-skill walks
+> through CI-posted findings per-finding (apply / defer / skip) with
+> explicit consent, read-only by default, never commits or pushes — and
+> the `address-review` sub-skill (new in v3.1.1) is the one-invocation
+> alternative: find the branch's open PR(s), check the review is fresh for
+> the current head, present the findings, then on one yes apply, commit,
+> push and re-arm the reviewer (label-gated → toggle the label;
+> push-triggered → confirm the new run; no workflow → offer the local
+> review). On aggregated (ensemble) reviews it reads the aggregate
+> document and the `ai-pr-reviewer-aggregate` marker. When wiring
+> automation, prefer the structured output (`review-output/3.0`; outputs
+> `structured-output-path` / `-sha256`) over scraping review bodies — the
+> document carries the run record, the findings with verification, and
+> the gate. A body that says `Recommendation: approve` is not evidence
+> the check passed — read the tracking marker's Highest severity /
+> Strictness gate / Check status block first.
 
 Decision notes:
 
@@ -268,10 +306,10 @@ Decision notes:
   is wired. The parity guarantee (`prompt.md` byte-identical between skill
   and Action) is only material in Flow B; in Flow A the local review IS
   the whole reviewer.
-- **`apply-review` is a companion, not a task.** The addon MUST NOT insert
-  an `apply-review` task file into any plan — it's a developer-invoked
-  convenience during `execute`, surfaced when the addon is installed AND
-  Flow B is active AND a PR exists for the plan's branch.
+- **`apply-review` / `address-review` are companions, not tasks.** The
+  addon MUST NOT insert a task file for either into any plan — they are
+  developer-invoked conveniences during `execute`, surfaced when the addon
+  is installed AND Flow B is active AND a PR exists for the plan's branch.
 - **Reconcile:** if the repo's DWP docs already mention a review step,
   correct or keep it; do not duplicate.
 
@@ -285,8 +323,8 @@ Decision notes:
   never default to Flow B.
 - **Defer to upstream:** never reimplement the `setup` wizard, the
   `generate-extension` Discovery, the `open-pr` inference, the
-  `apply-review` walkthrough, or the review methodology. Point at the
-  vendored sub-skills.
+  `apply-review` walkthrough, the `address-review` loop, or the review
+  methodology. Point at the vendored sub-skills.
 - **Verified install only:** never recommend piping a remote installer to
   a shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
   `skills-lock.json` content-hash verification is what makes the install
@@ -296,9 +334,10 @@ Decision notes:
   warn-once-record-and-continue — no retries, no diagnostic loop. An absent
   skill or extension file is a recorded `local reviewer not installed`
   finding, carried into the completion report, never a silent skip. Installation
-  belongs to onboarding or an explicit addon invocation. Once a review **ran**, `critical` findings
-  follow the existing Final Review contract (block until fixed or
-  explicitly accepted) — do not mark SR `[x]` anyway. An unset CI provider
+  belongs to onboarding or an explicit addon invocation. Once a review **ran**, **verified** `critical`
+  findings follow the existing Final Review contract (block until fixed or
+  explicitly accepted); unverified critical claims arrive as annotated
+  warnings (BC-07) — do not mark SR `[x]` anyway. An unset CI provider
   secret is a Flow B CI/gate warning only — it MUST NOT suppress the local
   security pass (Flow A needs no secret).
 - **Vendor-neutral:** DWP never requires a commercial service, CI provider

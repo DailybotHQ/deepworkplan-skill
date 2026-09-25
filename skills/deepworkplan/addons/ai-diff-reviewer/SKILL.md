@@ -12,7 +12,7 @@ metadata: {"openclaw":{"emoji":"🔍","homepage":"https://deepworkplan.com","req
 
 Connect the target repo to the **[AI Diff Reviewer](https://github.com/DailybotHQ/ai-diff-reviewer)**
 (GitHub repo `DailybotHQ/ai-diff-reviewer`, marketplace listing **"AI Diff
-Reviewer"**, pinned **v2.3.1**) so DWP work — the mandatory security pass of
+Reviewer"**, pinned **v3.1.1**, moving `@v3` for workflows) so DWP work — the mandatory security pass of
 the mandatory **Final Review** — runs a structured local review (verdict +
 findings table + severity), and (in Flow B, optionally) every pull request is
 gated by the same review in CI. Since standard 2.3.0 the **local review is part
@@ -21,11 +21,12 @@ reconciles it, and every Final Review runs it. Only the CI surface is opt-in.
 
 > ## The rule that overrides everything: this addon DEFERS, it does not reinvent
 >
-> The upstream **`DailybotHQ/ai-diff-reviewer`** skill (pinned **v2.3.1**)
-> already owns install, review methodology, the CI-workflow wizard, the
-> extension-file authoring flow, the PR-body drafting flow, and the post-CI
-> apply-review walkthrough — as five coordinated sub-skills (parent default
-> flow, `generate-extension`, `setup`, `open-pr`, `apply-review`). **This
+> The upstream **`DailybotHQ/ai-diff-reviewer`** skill (pinned **v3.1.1**;
+> moving `@v3` for workflows) already owns install, review methodology, the
+> CI-workflow wizard, the extension-file authoring flow, the PR-body drafting
+> flow, and the post-CI review walkthroughs — as six coordinated sub-skills
+> (parent default flow, `generate-extension`, `setup`, `open-pr`,
+> `apply-review`, `address-review`). **This
 > addon's job is narrow**: (1) **install** the vendored skill, pinned, under
 > the onboarding consent (a decline is a recorded declared exception), (2)
 > **apply** Flow A (local-only) as the baseline and **offer** Flow B
@@ -33,8 +34,9 @@ reconciles it, and every Final Review runs it. Only the CI surface is opt-in.
 > unrequested, (3) if Flow B, defer to the
 > upstream `setup` sub-skill for the CI workflow, and (4) **wire** the parent
 > default flow into DWP `create`/`execute` so the Final Review's security pass is
-> augmented with a local review pass, plus (Flow B only) surface `apply-review`
-> as an available companion for post-CI walkthrough. It MUST NOT duplicate,
+> augmented with a local review pass, plus (Flow B only) surface
+> `apply-review` / `address-review` as available companions for post-CI
+> walkthrough. It MUST NOT duplicate,
 > bypass, or weaken any upstream consent, auth, wizard, or review flow — it
 > points at them. (Normative source: [`SPEC.md`](SPEC.md).)
 
@@ -55,14 +57,14 @@ A repo with **zero optional addons** is fully conformant.
 
 ## Two officially-supported adoption flows
 
-The upstream skill (v2.3.1+, the documented pin) defines **two flows**. This addon applies Flow A
+The upstream skill (v3.1.1, the documented pin; moving `@v3` for workflows) defines **two flows**. This addon applies Flow A
 as the baseline every onboarded repo gets and offers Flow B as an explicit
 opt-in; it MUST NOT install the CI surface unrequested.
 
 | Flow | Use when | Sub-skills used | Sub-skills skipped |
 |------|----------|-----------------|--------------------|
-| **A — local-only** | Personal repos, experimental repos, or teams not (yet) ready for automated PR review. The vendored skill runs locally; the CI Action is NOT installed. | parent default flow (security-pass augmentation) + **`generate-extension` (required for SR detection)** + optionally `open-pr` | `setup` (would install the workflow), `apply-review` (nothing to apply back — no CI review posts) |
-| **B — dual-surface** | Team repos, production-facing repos, and anything where automated PR review is wanted. Skill + CI Action, both wired to the same `.review/extension.md` for byte-identical parity. Recommended for team repos. | All five: parent + `generate-extension` + `setup` + `open-pr` + `apply-review` | Nothing — all capabilities are used across the plan lifecycle |
+| **A — local-only** | Personal repos, experimental repos, or teams not (yet) ready for automated PR review. The vendored skill runs locally; the CI Action is NOT installed. | parent default flow (security-pass augmentation) + **`generate-extension` (required for SR detection)** + optionally `open-pr` | `setup` (would install the workflow), `apply-review` and `address-review` (nothing to apply back — no CI review posts) |
+| **B — dual-surface** | Team repos, production-facing repos, and anything where automated PR review is wanted. Skill + CI Action, both wired to the same `.review/extension.md` for byte-identical parity. Recommended for team repos. | All six: parent + `generate-extension` + `setup` + `open-pr` + `apply-review` + `address-review` | Nothing — all capabilities are used across the plan lifecycle |
 
 **Parity guarantee (Flow B).** The upstream skill's `prompt.md` is
 **byte-identical** to the Action's shipped `prompts/default.md` at the same
@@ -149,8 +151,8 @@ happen.
 - `git commit` / `git push` as part of the addon flow (those belong to the
   surrounding DWP `execute` / maintainer workflow).
 - Edit source files under the consumer's application tree — review findings
-  are applied (if at all) by the upstream `apply-review` sub-skill under its
-  own per-finding consent contract, not by this addon.
+  are applied (if at all) by the upstream `apply-review` / `address-review`
+  sub-skills under their own consent contracts, not by this addon.
 
 ### Supply-chain trust (what a "yes" actually installs)
 
@@ -159,8 +161,8 @@ explicitly rather than implied:
 
 | Artifact | Source | How it is verified |
 |----------|--------|--------------------|
-| Vendored skill (five sub-skills) | `DailybotHQ/ai-diff-reviewer` at a **published tag** (documented pin `v2.3.1`) | `skills` CLI records source + content hash in the repo's `skills-lock.json`; a restore re-verifies the hash. Installs are consent-gated (Step 1) and always tag-pinned — never a moving branch. |
-| CI Action (Flow B only) | `DailybotHQ/ai-diff-reviewer` GitHub Action, referenced by an explicitly chosen exact tag or its moving `@v2` major line | Each Action release in the `@v2` line ships a `prompt.md` **byte-identical** to the skill's at the matching skill tag — an upstream CI invariant. The skill side is pinned to an exact tag; the Action follows its major line, so reviews stay compatible while picking up patch fixes. |
+| Vendored skill (six sub-skills) | `DailybotHQ/ai-diff-reviewer` at a **published tag** (documented pin `v3.1.1`) | `skills` CLI records source + content hash in the repo's `skills-lock.json`; a restore re-verifies the hash. Installs are consent-gated (Step 1) and always tag-pinned — never a moving branch. |
+| CI Action (Flow B only) | `DailybotHQ/ai-diff-reviewer` GitHub Action, referenced by an explicitly chosen exact tag or its moving `@v3` major line | Each Action release in the `@v3` line ships a `prompt.md` **byte-identical** to the skill's at the matching skill tag — an upstream CI invariant. The skill side is pinned to an exact tag; the Action follows its major line, so reviews stay compatible while picking up patch fixes. |
 | Extension file | Generated **locally** by `generate-extension` from the repo's own diff | Never downloaded; reviewed by the developer like any other tracked file. |
 | Provider secret (Flow B only) | The maintainer's selected provider credential, configured through upstream setup | This addon never reads, stores, echoes, or commits provider secrets. |
 
@@ -207,9 +209,10 @@ for is the consent-gated, tag-pinned `skills add`/`skills update` above.
 Run the pinned install unless the developer explicitly declined in Step 0
 (declared exception). **Never run an unpinned installer.**
 
-- **Vendored coding-agent skill** (recommended — brings the five-sub-skill
-  router and the byte-identical prompt parity guarantee; pinned **v2.3.1**):
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.1 --skill ai-diff-reviewer -y`
+- **Vendored coding-agent skill** (recommended — brings the six-sub-skill
+  router and the byte-identical prompt parity guarantee; pinned **v3.1.1**;
+  the moving `@v3` is the documented default pin for CI workflows):
+  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.1.1 --skill ai-diff-reviewer -y`
     (**pinned to a published tag**; vendors into
     `.agents/skills/ai-diff-reviewer/` and records source + content hash in
     `skills-lock.json`; both `--yes` and `-y` are required — `--yes` covers
@@ -250,9 +253,9 @@ an onboarding concern, not a side effect of the Final Review.
 Do **not** hand-roll `.github/workflows/pr-review.yml`, do **not** prompt for
 API keys, and do **not** store any credential. When the developer chose
 Flow B, hand off to the upstream `setup` sub-skill — its 6-question wizard
-produces a workflow tuned to the consumer's choices (provider / strictness /
-trigger mode / external-contributor policy / PR-description mode /
-complexity labels), and [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)
+produces a workflow tuned to the consumer's choices (runner and backend /
+strictness / trigger mode / external-contributor policy / PR-description
+mode / complexity labels), and [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)
 doubles as the reference manual for every `action.yml` input.
 
 - Point at the vendored skill: `.agents/skills/ai-diff-reviewer/setup/SKILL.md`.
@@ -283,9 +286,15 @@ This is the integration value. Reasoning guidance is in
      parent default flow ("Review my current branch"). Capture verdict +
      findings table + per-finding body + notes + recommendation. Append to
      `analysis_results/SECURITY_REVIEW.md` under a dedicated
-     `## AI Diff Reviewer local review` heading. A `critical` finding
-     follows the existing SR contract — blocks completion until fixed or
-     explicitly accepted. `warning` / `info` findings are appended and
+     `## AI Diff Reviewer local review` heading. Since v3 (BC-07) a
+     `critical` finding means a **verified** critical — the verifier
+     (default `on`) confirmed it with a second, code-grounded call.
+     Verified criticals follow the existing SR contract and block
+     completion until fixed or explicitly accepted; unverified critical
+     claims arrive as annotated warnings unless
+     `strict-unverified-criticals: true`. A review with
+     `status: incomplete` or `timeout` is not a clean pass under blocking
+     strictness (BC-04). `warning` / `info` findings are appended and
      reported but do not block.
 
   2. **Optional post-CI walkthrough companion (Flow B only)** — after the
@@ -294,12 +303,21 @@ This is the integration value. Reasoning guidance is in
      `execute` session to walk through CI findings per-finding (apply /
      defer / skip) with explicit consent. `apply-review` is **read-only by
      default**; source-file edits require an explicit yes per finding; it
-     **never commits and never pushes**. Since upstream v2.3.1 a body that
-     says `Recommendation: approve` is not evidence the check passed —
-     read the tracking marker's Highest severity / Strictness gate /
-     Check status block first. This is surfaced as an *available
-     option*, not a new plan task file — the addon **MUST NOT** insert an
-     `apply-review` task into any plan.
+     **never commits and never pushes**. The `address-review` sub-skill
+     (new in v3.1.1) is the one-invocation alternative: find the branch's
+     open PR(s), check the review is fresh for the current head, present
+     the findings, then on one yes apply, commit, push, and re-arm the
+     reviewer (label-gated → toggle the label; push-triggered → confirm
+     the new run; no workflow → offer the local review) — unlike
+     `apply-review` it commits and pushes, and the never-block rule plus
+     the no-plan-task boundary apply identically. When wiring automation,
+     prefer the structured output (`review-output/3.0`; outputs
+     `structured-output-path` / `-sha256`) over scraping review bodies. A
+     body that says `Recommendation: approve` is not evidence the check
+     passed — read the tracking marker's Highest severity / Strictness
+     gate / Check status block first. These are surfaced as *available
+     options*, not new plan task files — the addon **MUST NOT** insert an
+     `apply-review` or `address-review` task into any plan.
 
 - The local review is **required, with honest degradation**: it runs whenever
   the vendored skill is present **and** an extension file is detected. When
@@ -322,7 +340,7 @@ This is the integration value. Reasoning guidance is in
 Run the validation checklist and report: whether the vendored skill is
 present with the correct version, whether an extension file is present at
 one of the three recognized paths, whether (Flow B) the workflow file is
-present with the upstream Action pinned to `@v2`, whether the provider
+present with the upstream Action pinned to `@v3`, whether the provider
 secret is documented in AGENTS.md, whether the stable-named gate job (if
 Flow B) is `AI review gate` for branch protection, and any deferred items.
 If nothing could be installed here (sandbox/CI), say why — do not silently
@@ -336,13 +354,15 @@ skip, and do not fail the onboarding.
   addon invocation. A
   declined install is a recorded declared exception that `verify` keeps
   reporting. A local review invocation error is warn-once-record-and-continue.
-  Once a local review **ran**, open `critical`
-  findings still block Final Review completion until fixed or
-  explicitly accepted (SPEC §6.1 / §7). An unset CI provider secret does
+  Once a local review **ran**, **verified** `critical` findings still
+  block Final Review completion until fixed or explicitly accepted
+  (BC-07; unverified critical claims arrive as annotated warnings), and
+  an `incomplete`/`timeout` review is never a clean pass (BC-04)
+  (SPEC §6.1 / §7). An unset CI provider secret does
   not skip the local security pass (Flow B CI/gate only).
 - **Defer to upstream.** No wizard reimplementation, no review-methodology
-  reimplementation, no apply-review reimplementation. Point at the vendored
-  sub-skills.
+  reimplementation, no `apply-review`/`address-review` reimplementation.
+  Point at the vendored sub-skills.
 - **Verified install only.** Never recommend piping a remote installer to a
   shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
   `skills-lock.json` content-hash verification is what makes the install

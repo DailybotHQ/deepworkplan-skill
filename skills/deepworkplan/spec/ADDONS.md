@@ -271,7 +271,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.1 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.1.1 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
@@ -280,16 +280,19 @@ form**; only its CI surface is optional.
   missing. The security pass of the mandatory DWP **Final Review** **MUST** run
   the upstream parent default flow ("Review my current branch") as a
   local-review pass and append its output to
-  `analysis_results/SECURITY_REVIEW.md`; `critical` findings from a completed
-  pass block completion until fixed or explicitly accepted. The local review
+  `analysis_results/SECURITY_REVIEW.md`; **verified** `critical` findings from a
+  completed pass block completion until fixed or explicitly accepted (v3
+  BC-07 — unverified critical claims arrive as annotated warnings, and an
+  `incomplete`/`timeout` review is not a clean pass, BC-04). The local review
   runs through the developer's own coding agent — no CI provider, no secret,
   no external service.
 - **Optional CI surface (Flow B).** Installing the CI Action
   (`.github/workflows/pr-review.yml`) stays an **explicit opt-in**: the addon
   offers it, never installs it unrequested, never defaults to it, and defers
   the workflow authoring to the upstream `setup` sub-skill (never inventing
-  provider secrets). In Flow B it also surfaces `apply-review` as an optional
-  developer-invoked companion during `execute`.
+  provider secrets). In Flow B it also surfaces the `apply-review` / `address-review`
+  companions as optional developer-invoked conveniences during `execute`
+  (never plan tasks; `address-review`, new in v3.1.1, commits and pushes).
 - **Honest degradation, never a silent skip.** When the vendored skill or the
   extension file is missing at execution time, the security pass records a
   `local reviewer not installed` finding and names it in the completion report.

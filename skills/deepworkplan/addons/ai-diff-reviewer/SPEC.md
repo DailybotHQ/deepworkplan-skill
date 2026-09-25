@@ -6,7 +6,7 @@ This document is the **normative specification** of the DeepWorkPlan **AI Diff
 Reviewer addon**: a capability — **required in its local form since standard
 2.3.0, optional in its CI form** — that connects an AI-first repository to
 the **AI Diff Reviewer** (`DailybotHQ/ai-diff-reviewer`, marketplace listing
-"AI Diff Reviewer", pinned **v2.3.1**) so DWP work — the mandatory
+"AI Diff Reviewer", pinned **v3.1.1**, moving `@v3` for workflows) so DWP work — the mandatory
 security pass of the mandatory **Final Review** — is augmented with a structured local review
 (verdict + findings table + severity), and (in **Flow B — dual-surface**,
 optionally) every pull request to the target repo is gated by a CI-side
@@ -15,8 +15,8 @@ and severity parity, not identical findings. It defines the
 **two officially-supported adoption flows** (§3), **what the addon
 installs/configures** (local review required, CI surface opt-in, §4), how it **defers authentication and
 wizard orchestration** to the upstream skill's own consent flows (§5), how
-the **security-pass augmentation** and the optional **`apply-review`
-post-CI companion** are wired into DWP execution (§6), the **never-block**
+the **security-pass augmentation** and the optional **`apply-review` /
+`address-review` post-CI companions** are wired into DWP execution (§6), the **never-block**
 rule (§7), the **reconcile-don't-clobber** behavior (§8), the **validation
 checklist** (§9), and the **archetype compatibility** notes (§10).
 
@@ -29,11 +29,11 @@ CI surface is never required.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 2.16.3 |
+| **Version** | 3.0.0 |
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/authoring.md` §5.4 |
 | **License** | MIT |
-| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v2.3.1 (marketplace: "AI Diff Reviewer") |
+| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v3.1.1 (marketplace: "AI Diff Reviewer"); workflows pin the moving `@v3` |
 
 ## 1. Conventions
 
@@ -43,7 +43,7 @@ The RFC 2119 keywords (**MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**,
 
 Throughout, the **upstream skill** is the vendored coding-agent skill
 ([`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer)),
-a **router with five coordinated sub-skills**:
+a **router with six coordinated sub-skills**:
 
 1. **Parent default flow** — run the local review on the current branch.
 2. **`generate-extension`** — author repo-tailored `.review/extension.md`.
@@ -54,9 +54,18 @@ a **router with five coordinated sub-skills**:
    branch's PR and walk through findings per-finding (apply / defer / skip)
    with explicit consent. Read-only by default; edits require per-finding
    yes; never commits or pushes.
+6. **`address-review`** (new in v3.1.1) — the one-invocation loop: find the
+   branch's open PR(s), check the review is fresh for the current head
+   (marker SHA or the `review-output/3.0` artifact), present the findings
+   with an apply / defer / skip plan, then — on one yes — apply, commit
+   (small Conventional Commits batches), push, and re-arm the reviewer the
+   way the repo triggers it (label-gated → toggle the label off/on or add
+   it; push-triggered → confirm the new run; no workflow → offer the local
+   review). Unlike `apply-review` it commits and pushes — that is the
+   loop's point.
 
 The **CI Action** is the GitHub Marketplace listing "AI Diff Reviewer"
-([`DailybotHQ/ai-diff-reviewer@v2`](https://github.com/marketplace/actions/ai-diff-reviewer)),
+([`DailybotHQ/ai-diff-reviewer@v3`](https://github.com/marketplace/actions/ai-diff-reviewer)),
 same repository as the skill. The skill's `prompt.md` is **byte-identical**
 to the Action's shipped `prompts/default.md` at the same tag (enforced by
 upstream CI's `Skills — prompt-sync invariant` job).
@@ -93,7 +102,7 @@ upstream CI's `Skills — prompt-sync invariant` job).
 
 ## 3. Two Supported Adoption Flows
 
-The upstream skill (pinned v2.3.1) defines two flows explicitly. This addon applies
+The upstream skill (pinned v3.1.1; the moving `@v3` for workflows) defines two flows explicitly. This addon applies
 Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
 
 ### 3.1 Flow A — local-only
@@ -106,8 +115,9 @@ Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
   `.review/.skip-bootstrap` opt-out, which means the local SR pass will not
   fire). Skill-only install is incomplete for SR detection (§6.1).
 - Sub-skills skipped: `setup` (would install the workflow, opting the repo
-  into Flow B against the developer's intent), `apply-review` (no CI review
-  posts back to any PR without the Action installed).
+  into Flow B against the developer's intent), `apply-review` and
+  `address-review` (no CI review posts back to any PR without the Action
+  installed — neither has anything to consume in Flow A).
 - Suitable for: personal repos, experimental repos, or teams not (yet) ready
   for automated PR review.
 
@@ -115,8 +125,8 @@ Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
 
 - Vendored skill installed + `setup` sub-skill runs the wizard to write
   `.github/workflows/pr-review.yml` referencing `.review/extension.md`.
-- Sub-skills used: **all five** — parent + `generate-extension` + `setup` +
-  `open-pr` + `apply-review`.
+- Sub-skills used: **all six** — parent + `generate-extension` + `setup` +
+  `open-pr` + `apply-review` + `address-review`.
 - Suitable for: team repos, production-facing repos, and anything where an
   automated PR merge gate is wanted.
 
@@ -127,7 +137,7 @@ Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
   unrequested.
 - When the developer's signal about Flow B is ambiguous, the addon **MUST**
   ask or stay on Flow A; it **MUST NOT** infer Flow B. The ambiguity
-  resolution mirrors upstream v2.3.0's own policy: unrelated
+  resolution mirrors the upstream skill's own policy: unrelated
   workflows (CI tests, deploy pipelines, dependency bots) are **NOT**
   evidence of Flow B — only an existing ai-diff-reviewer workflow is.
 - The addon **SHOULD** surface the concrete Flow-A-vs-B tradeoff at consent
@@ -149,13 +159,14 @@ acceptance — each reconciled if already present (§8):
 - The addon **MUST** install the vendored skill (the only supported install
   path) unless the developer recorded a declared exception (§2).
   Supported install method:
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.1 --skill ai-diff-reviewer -y`
+  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.1.1 --skill ai-diff-reviewer -y`
     (**tag-pinned**; both flags are required — `--yes` covers npm's own "Ok to
     proceed?" prompt; the subcommand `-y` covers the `skills` CLI's own "Which
     agents do you want to install to?" picker, which hangs in non-TTY without
-    it — upstream fixed this bug in v1.7.0. Pin whatever tag is current at
-    install time; the pin is what makes the install verifiable and the
-    local↔CI parity guarantee exact.)
+    it — upstream fixed this bug in v1.7.0. Pin the current published tag at
+    install time (here `@v3.1.1`); the moving `@v3` is the documented default
+    pin for CI workflows. The pin is what makes the install verifiable and
+    the local↔CI parity guarantee exact.)
   - Bump to the latest published tag: `npx --yes skills update ai-diff-reviewer -y`.
 - The vendored skill lands at `.agents/skills/ai-diff-reviewer/`. Its
   source + content hash are recorded in `skills-lock.json` for reproducible
@@ -199,36 +210,46 @@ acceptance — each reconciled if already present (§8):
 - When the developer chose Flow B, the addon **MUST** hand off to the
   upstream `setup` sub-skill's 6-question wizard rather than hand-rolling
   the workflow file. The wizard produces `.github/workflows/pr-review.yml`
-  adapted to the consumer's answers (provider / strictness / trigger mode /
-  external-contributor policy / PR-description mode / complexity labels).
-- The workflow **MUST** pin the upstream Action to the **v2** major-line tag
-  (`DailybotHQ/ai-diff-reviewer@v2`) so patch-level fixes flow automatically.
-  Pinning to a frozen tag (`@v2.3.1`) is also acceptable — parity with the
+  adapted to the consumer's answers (runner and backend / strictness /
+  trigger mode / external-contributor policy / PR-description mode /
+  complexity labels). It can scaffold the v3 topology — a single review
+  with the verifier and risk-tiered budgets on by default, or the RFC-04
+  ensemble matrix (`mode: emit` read-only legs + one `mode: aggregate`
+  job); consumers on pre-v3 workflows keep working.
+- The workflow **MUST** pin the upstream Action to the **v3** major-line tag
+  (`DailybotHQ/ai-diff-reviewer@v3`) so patch-level fixes flow automatically.
+  Pinning to a frozen tag (`@v3.x.y`) is also acceptable — parity with the
   vendored skill's version is what makes local ≡ CI worth it. New installs
-  **MUST NOT** pin `@v1`.
-- The workflow **SHOULD** enable the v2 emergency-bypass input
+  **MUST NOT** pin `@v1`/`@v2`; existing `@v2` pins keep working (frozen
+  maintenance line on `release/v2`, six months of security/catalog fixes).
+- The workflow **SHOULD** enable the emergency-bypass input
   `skip-review-label: skip-ai-review` (opt-in; empty means the feature is
   OFF). Document that anyone who can apply that label can bypass the LLM
   review — protect it with a repository ruleset when the AI review is a
-  merge gate. This is distinct from `full-review-please` (IAR escape: one
-  full review, not a skip).
-- CI reviews under v2 run **Iteration-Aware Review (IAR)** by default
+  merge gate. This is distinct from the IAR escape label
+  (`iteration-escape-label`, default `full-review-please`: one full review,
+  not a skip).
+- CI reviews run **Iteration-Aware Review (IAR)** by default
   (`convergence-policy: first-pass-exhaustive`). Local skill reviews remain
   a full pass (no IAR dedup). Soften "local ≡ CI" claims accordingly —
-  shared `prompt.md` + extension still align methodology/severity; round 2+
-  CI may be shorter.
+  shared `prompt.md` + extension still align methodology/severity (the
+  prompt-sync byte-identity holds at the same tag); round 2+ CI may be
+  shorter, and since v3 the budget follows the change's deterministic risk
+  tier (`budget-profile: auto`, 8/20/30/40 turns; a no-code-change push
+  runs a verifier-only round). `budget-profile: fixed` restores the
+  pre-v3 constants during the transition.
 - Follow-up rounds review the **actual new diff** and carry outstanding
-  findings forward. `prior-findings-resolution` defaults to **`advisory`**
-  (upstream v2.2.0): a model's `resolved` verdict is reported, but the
-  finding keeps gating until a maintainer resolves the thread. Since
-  upstream v2.3.1, when `collapse-previous` has already minimized that
-  thread, a corroborated fix (finding not re-emitted **and** the file
-  changed since it was raised, or was deleted) retires it so a stuck PR
-  can go green. Opting into `verified` restores runtime-corroborated
-  auto-resolution. The addon **MUST NOT** assume a model's own "resolved"
-  claim retires a finding on a live thread — under the default it does
-  not, and a Final Review reading a CI round treats an unresolved live
-  thread as still open.
+  findings forward. `prior-findings-resolution` defaults to **`advisory`**:
+  a model's `resolved` verdict is reported, but the finding keeps gating
+  until a maintainer resolves the thread. Since v3 (BC-08), retiring a
+  prior finding requires re-reading the finding's anchor at the new head —
+  an edited file alone no longer retires anything. When the anchor re-read
+  corroborates the fix on a `collapse-previous`-minimized thread, the
+  finding retires so a stuck PR can go green. Opting into `verified`
+  restores runtime-corroborated auto-resolution. The addon **MUST NOT**
+  assume a model's own "resolved" claim retires a finding on a live thread
+  — under the default it does not, and a Final Review reading a CI round
+  treats an unresolved live thread as still open.
 - The addon **MUST NOT** duplicate the wizard, the input reference manual
   ([`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md)),
   or the workflow shape into its own templates. `templates/INTEGRATION.md`
@@ -296,8 +317,13 @@ an additional post-existing-checks step:
 3. Append the output to `analysis_results/SECURITY_REVIEW.md` under a
    dedicated `## AI Diff Reviewer local review` heading — so a reader can
    see the manual SR findings and the AI-augmented findings side by side.
-4. Severity handling: `critical` findings follow the existing SR contract
-   and block completion until fixed or explicitly accepted. `warning` and
+4. Severity handling: since v3 (BC-07) a `critical` finding means a
+   **verified** critical — the verifier (default `on`; `verifier-model`
+   resolves the backend's `economy` alias) confirmed it with a second,
+   short, code-grounded call. Verified criticals follow the existing SR
+   contract and block completion until fixed or explicitly accepted;
+   unverified critical claims arrive as annotated warnings — visible and
+   non-blocking unless `strict-unverified-criticals: true`. `warning` and
    `info` findings are appended and reported but do not block.
 5. **Incomplete review — a fourth state, distinct from a clean pass
    (upstream v2.2.0).** A run that started and exited **without writing a
@@ -308,7 +334,11 @@ an additional post-existing-checks step:
    the same way — record it in `SECURITY_REVIEW.md` as an incomplete review,
    **MUST NOT** count it as evidence that the diff is clean, and **MUST NOT**
    close the Final Review on it. Re-run once; if it recurs, carry it into the
-   completion report as an open finding. The distinction is load-bearing:
+   completion report as an open finding. Under v3 (BC-04) the same red-gate
+   treatment covers every unfinished review: a run stopped at its turn cap
+   posts `status: incomplete`, a wall-clock-capped run posts `timeout`, and
+   both fail blocking strictness — an unfinished review is never counted as
+   a clean pass. The distinction is load-bearing:
    without it, "no findings" cannot be told apart from "never looked", and a
    plan could close on a review that did not happen.
 
@@ -341,9 +371,11 @@ an additional post-existing-checks step:
 - **Skipped ≠ Failed.** A PR without the trigger label reports the gate as
   Skipped (green-adjacent grey), which the branch-protection rule treats as
   passing. This is the designed idle behavior — MUST NOT be interpreted as
-  a bug.
+  a bug. Under v3 (BC-04), label/author scope skips are the only
+  non-blocking skips — an `incomplete` or `timeout` review is red under
+  blocking strictness.
 
-### 6.3 Post-CI apply-review companion (Flow B only, OPTIONAL)
+### 6.3 Post-CI review companions — `apply-review` / `address-review` (Flow B only, OPTIONAL)
 
 - When a plan's PR has been pushed and CI has posted its review, the
   developer **MAY** invoke the upstream `apply-review` sub-skill from within
@@ -352,21 +384,44 @@ an additional post-existing-checks step:
 - `apply-review` is **read-only by default**. Source-file edits require an
   explicit yes per finding. It **never commits and never pushes** — commit +
   push remains the developer's judgment call.
-- Multi-provider awareness: if consumers change the workflow to a matrix
-  (e.g. `self-reviewed:anthropic`, `-cursor`, `-codex`, `-claude-code`),
+- The `address-review` sub-skill (new in v3.1.1) is the one-invocation
+  alternative with the same availability rules — MAY-invoke, never a plan
+  task — but it **commits and pushes**: it finds the branch's open PR(s),
+  checks the review is fresh for the current head, presents the findings
+  with an apply / defer / skip plan, then on one yes applies, commits
+  (small Conventional Commits batches), pushes, and re-arms the reviewer
+  adaptively (label-gated → toggle the label off/on, or add it when
+  missing; push-triggered → confirm the new run started; no reviewer
+  workflow → says so and offers the local review). The never-block rule
+  (§7) and the mandatory-final-task boundary apply identically.
+- Multi-leg awareness: if consumers change the workflow to a matrix (e.g.
+  an RFC-04 ensemble of `mode: emit` legs plus one `mode: aggregate` job),
   `apply-review` attributes each finding to its leg and surfaces cross-leg
-  consensus automatically.
-- The addon **MUST** describe `apply-review` in the target repo's docs as
-  an *available option* during `execute` — never as a mandatory extra task.
-  The addon **MUST NOT** materialize `apply-review` as a plan task file —
-  doing so would violate the mandatory-final-task rule (a plan ends with the
-  single Final Review, and nothing may follow it) and turn a
-  developer-invoked convenience into a scheduled plan step.
-- Since upstream v2.3.1 a review body that says `Recommendation: approve`
+  consensus automatically (BC-09); on aggregated reviews the companions
+  read the aggregate document and the `ai-pr-reviewer-aggregate` marker.
+- The addon **MUST** describe both companions in the target repo's docs as
+  *available options* during `execute` — never as mandatory extra tasks.
+  The addon **MUST NOT** materialize `apply-review` or `address-review` as
+  a plan task file — doing so would violate the mandatory-final-task rule
+  (a plan ends with the single Final Review, and nothing may follow it) and
+  turn a developer-invoked convenience into a scheduled plan step.
+- A review body that says `Recommendation: approve`
   is **not** evidence the check passed. `apply-review` **MUST** read the
   tracking marker's Highest severity / Strictness gate / Check status
   block first — the runtime rewrites a model `approve` to
   `request-changes` whenever the gate is failing.
+
+### 6.4 Structured output — the machine path (Flow B, v3)
+
+- Automation wired by consumers or agents **SHOULD** read the structured
+  output instead of scraping review bodies: the `review-output/3.0`
+  document (`.aiprr/review-output.json`, uploaded as the
+  `ai-diff-reviewer-<head12>-<provider>-<kind>-<model>` artifact) carries
+  the run record, the change inventory, findings with typed evidence and
+  verification results, refuted findings, the prior-findings ledger, the
+  generated summary, and the gate (BC-11). The step outputs
+  `structured-output-path` / `-sha256` / `-artifact` locate it; the
+  tracking marker + threads remain the human fallback.
 
 ---
 
@@ -374,8 +429,9 @@ an additional post-existing-checks step:
 
 Soft-fail applies to **invocation** of the local review pass only — not to
 the Final Review's gate results after a review completed. Post-run severity
-is governed by §6.1 (item 4): `critical` findings block the Final Review's
-completion until fixed or explicitly accepted.
+is governed by §6.1 (item 4): **verified** `critical` findings block the
+Final Review's completion until fixed or explicitly accepted; unverified
+critical claims are annotated warnings (BC-07).
 
 - **Local augmentation — invocation soft-fail (Flow A and Flow B):** if the
   network is **down** or any upstream skill invocation **errors**, the
@@ -454,7 +510,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
   (§6.1), invocation errors soft-fail (§7); `critical` findings from a
    **completed** pass still follow the SR contract (§6.1 / §7).
 5. (Flow B only) `.github/workflows/pr-review.yml` exists with the upstream
-   Action pinned to `@v2` (or a specific tag), the stable-named gate job
+   Action pinned to `@v3` (or a specific tag), the stable-named gate job
    is present for branch protection, the provider secret is documented in
    AGENTS.md, and the label-gate + author-association policies match what
    the maintainer chose during the `setup` wizard.
@@ -486,6 +542,21 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
   each sub-repo's own installation (or don't, if the sub-repo declined
   the addon) — the hub-level plan does not need to know.
 
+### 10.3 v2 → v3 for existing addon installs
+
+- Nothing breaks for `@v2` pins: the v2 line is frozen on `release/v2`
+  with six months of security/catalog maintenance. Adopting v3 is
+  `npx --yes skills update ai-diff-reviewer -y` plus, optionally, a re-run
+  of the upstream `setup` wizard; the `.review/extension.md` file carries
+  over unchanged.
+- Behavior deltas to communicate to developers (the must-change rows of
+  the upstream `docs/MIGRATION_v3.md`): BC-04 (an `incomplete`/`timeout`
+  review is red under blocking strictness), BC-07 (a `critical` publishes
+  — and gates — only when the verifier confirms it;
+  `strict-unverified-criticals` restores claim-based gating), and BC-13
+  (risk-tiered budgets; `budget-profile: fixed` restores the pre-v3
+  constants). The latter inputs are one-minor-cycle transition knobs.
+
 ---
 
 ## 11. References
@@ -494,10 +565,11 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Upstream skill: [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer)
-  — `skills/ai-diff-reviewer/SKILL.md` (documented pin **v2.3.1**), sub-skills:
-  `generate-extension/SKILL.md`, `setup/SKILL.md` +
+  — `skills/ai-diff-reviewer/SKILL.md` (documented pin **v3.1.1**; workflows
+  use the moving `@v3`), sub-skills: `generate-extension/SKILL.md`,
+  `setup/SKILL.md` +
   [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md),
-  `open-pr/SKILL.md`, `apply-review/SKILL.md`.
+  `open-pr/SKILL.md`, `apply-review/SKILL.md`, `address-review/SKILL.md`.
 - Marketplace listing: ["AI Diff Reviewer"](https://github.com/marketplace/actions/ai-diff-reviewer).
 - [`../../create/SKILL.md`](../../create/SKILL.md) Step 4.4 (“Local review step (required)”) — where the Final Review local-review wiring is authored into every 2.3.0 plan.
 - [`../../guide/authoring.md`](../../guide/authoring.md) §5.4 — the canonical security-discipline rules the Final Review's security pass applies.
