@@ -103,7 +103,7 @@ correctness, clarity, simplicity, and verified completion.
 | AI Diff Reviewer addon (required local review, optional CI surface) | [skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md) |
 | Dependency Upgrade addon (opt-in) | [skills/deepworkplan/addons/dependency-upgrade/SKILL.md](skills/deepworkplan/addons/dependency-upgrade/SKILL.md) |
 | Design System addon (opt-in) | [skills/deepworkplan/addons/design-system/SKILL.md](skills/deepworkplan/addons/design-system/SKILL.md) |
-| Workflows reference (`auto-release`, `ci`, `pr-review`) | [.github/docs/WORKFLOWS.md](.github/docs/WORKFLOWS.md) |
+| Workflows reference (`auto-release`, `ci`, `self-review`) | [.github/docs/WORKFLOWS.md](.github/docs/WORKFLOWS.md) |
 
 ## Project Overview
 
@@ -419,10 +419,14 @@ The full refresh procedure, rationale, and release-loop safeguards are in
 ## Local AI Diff Reviewer
 
 The vendored `ai-diff-reviewer` skill remains available for local reviews
-during Deep Work Plan Final Reviews. This repository does not ship or run an
-AI Reviewer GitHub Actions workflow, so no CI reviewer secret or review labels
-are required. The repository-specific `.review/extension.md` continues to
-configure the local review.
+during Deep Work Plan Final Reviews. The repository also runs a CI
+self-review (`.github/workflows/self-review.yml`): a single `grok` leg via
+`DailybotHQ/ai-diff-reviewer@v3`, label-gated on `ready` (case-insensitive,
+run-once per application — remove and re-add the label to re-run), with an
+honest skip when `XAI_API_KEY` is not configured. That secret is required
+only for the CI leg; the local review never needs it. The
+repository-specific `.review/extension.md` configures both the local and
+the CI review.
 
 ## The `ai-diff-reviewer` addon (required local review, optional CI surface)
 

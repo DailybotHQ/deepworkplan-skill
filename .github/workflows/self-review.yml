@@ -1,0 +1,110 @@
+name: Self-review
+
+# Dogfood: review PRs to `main` with the AI Diff Reviewer Action — a single
+# grok leg (the maintainer's review provider), following the design of the
+# upstream `DailybotHQ/ai-diff-reviewer` `.github/workflows/self-review.yml`.
+# NOT wired as a required merge check.
+#
+#   1. LABEL-GATED, RUN-ONCE — runs only when the `ready` label is applied
+#      (case-insensitive), exactly once per application: fires on `labeled`
+#      (only when the added label is `ready`) and on `opened` when the PR
+#      already carries `ready`. Deliberately NOT `synchronize` — pushes do
+#      not re-review. To re-run a review, remove and re-add the `ready`
+#      label.
+#   2. HONEST STATUS — when `XAI_API_KEY` is not configured the review leg
+#      skips (grey), never a fake green; when `ready` is applied without
+#      the secret, `scope` records the reason as an error annotation.
+#
+# The reviewer is never inserted into plans or task files (addon boundary).
+
+on:
+  pull_request:
+    branches: [main]
+    # `labeled` (re-)adding `ready` re-triggers; `opened` catches a PR created
+    # with `ready` already on it. No `synchronize` — run-once semantics.
+    types: [opened, labeled]
+
+concurrency:
+  group: self-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    name: 'Decide self-review scope'
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.decide.outputs.run }}
+    steps:
+      - name: Decide whether this event asks for a review
+        id: decide
+        shell: bash
+        env:
+          EVENT_ACTION: ${{ github.event.action }}
+          EVENT_LABEL: ${{ github.event.label.name }}
+          LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          # Presence only — the secret VALUE never enters the shell.
+          HAS_XAI: ${{ secrets.XAI_API_KEY != '' }}
+        run: |
+          set -euo pipefail
+          lc() { tr '[:upper:]' '[:lower:]'; }
+
+          ready_present=false
+          if printf '%s' "$LABELS_JSON" | lc | grep -qE '"ready"'; then
+            ready_present=true
+          fi
+          should_run=false
+          case "$EVENT_ACTION" in
+            labeled)
+              [ "$(printf '%s' "$EVENT_LABEL" | lc)" = "ready" ] && should_run=true ;;
+            opened)
+              [ "$ready_present" = "true" ] && should_run=true ;;
+          esac
+          if [ "$should_run" != "true" ]; then
+            echo "::notice::Self-review skipped — apply the 'ready' label to run it (remove + re-add to re-run)."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$HAS_XAI" != "true" ]; then
+            echo "::error::'ready' applied but XAI_API_KEY is not configured. Add it under Repo Settings > Secrets and variables > Actions so the grok self-review can run, then toggle the label."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+  self-review:
+    name: 'Self-review (grok)'
+    needs: scope
+    if: needs.scope.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          # The CLI leg runs with broad local access; never persist git
+          # credentials into .git/config (residual exfiltration surface).
+          persist-credentials: false
+
+      - name: Run AI Diff Reviewer (provider=grok)
+        uses: DailybotHQ/ai-diff-reviewer@v3 # moving major — the documented default pin for workflows
+        with:
+          provider: grok
+          api-key: ${{ secrets.XAI_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Defense in depth: the scope job already gated on `ready`.
+          label-gate: ready
+          trigger-mode: label-once
+          strictness: block-on-critical
+          # v3 defaults, explicit as living documentation:
+          verifier: 'on' # verified criticals (BC-07): a critical publishes only when confirmed
+          budget-profile: auto # risk-tiered budgets 8/20/30/40 turns (BC-13)
+          prompt-extension-file: .review/extension.md
+          # Opt-in emergency bypass; protect with a ruleset if this ever
+          # becomes a required merge check.
+          skip-review-label: skip-ai-review

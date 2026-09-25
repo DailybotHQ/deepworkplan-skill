@@ -106,15 +106,42 @@ suite, give it the same two guards.
 
 ---
 
+## 3. self-review.yml — grok self-review (label-gated, run-once)
+
+| Property | Value |
+|----------|-------|
+| **Trigger** | `pull_request` to `main`, `types: [opened, labeled]` only — deliberately no `synchronize` (pushes never re-review) |
+| **Concurrency** | Per-PR, cancel in-progress |
+| **Permissions** | `contents: read` default; the review job adds `pull-requests: write` to publish the review |
+| **Action pin** | `DailybotHQ/ai-diff-reviewer@v3` (the documented moving-major default for workflows) |
+
+### Jobs
+
+| Job | Purpose |
+|-----|---------|
+| `scope` | Run-once `ready` label gate (case-insensitive): runs only on a `labeled` event whose label is `ready`, or on `opened` when the PR already carries it. Also checks `XAI_API_KEY` presence — when `ready` is applied but the secret is unset, the job records a `::error::` annotation and the review leg skips (honest status, never a fake green) |
+| `self-review` | One grok leg: `provider: grok`, `strictness: block-on-critical`, the v3 defaults explicit (`verifier: 'on'`, `budget-profile: auto`), `.review/extension.md` as the extension, `label-gate: ready` + `trigger-mode: label-once` as defense in depth, and the opt-in `skip-review-label: skip-ai-review` emergency bypass |
+
+### Failure semantics
+
+- **No `ready` label (or an unrelated label event)** → `scope` skips everything; the checks are Skipped (grey), never red.
+- **`ready` applied, `XAI_API_KEY` unset** → `scope` posts an error annotation and the review leg is Skipped. Add the secret, then toggle the label to run.
+- **Review posts a verified `critical` finding** → the check fails under `block-on-critical` (BC-07: only verified criticals gate).
+- **Re-run** → remove and re-add the `ready` label. Pushes do not re-trigger.
+
+Not wired as a required merge check. Design source: `DailybotHQ/ai-diff-reviewer` `.github/workflows/self-review.yml`.
+
+---
+
 ## Workflow interactions
 
 ```
 push to main               pull_request
       │                          │
       ▼                          ▼
- auto-release                  ci.yml               pr-review.yml
-   (release +               (validate +           (scope → labels-bootstrap
-    temp smoke +               smoke)              → review → gate)
+ auto-release                  ci.yml               self-review.yml
+   (release +               (validate +           (scope → review (grok),
+    temp smoke +               smoke)              label-gated, run-once)
     addon dogfood)
       │
       ▼
@@ -123,7 +150,7 @@ GitHub Release (with dogfood commits in the notes)
 
 - `auto-release.yml` and `ci.yml` do **not** depend on each other — a merge
   to `main` triggers both, and `ci.yml` also runs on every PR.
-- `pr-review.yml` is scoped to PRs only and runs independently of the
+- `self-review.yml` is scoped to PRs only and runs independently of the
   release pipeline.
 - The `[skip ci]` marker on release commits and the `[skip release]` marker
   on dogfood commits together prevent auto-release loops without silencing
@@ -135,10 +162,10 @@ GitHub Release (with dogfood commits in the notes)
 
 | Action | Version | Used in |
 |--------|---------|---------|
-| `actions/checkout@v4` / `@v5` | v4 / v5 | ci.yml (v4), auto-release.yml (v5), pr-review.yml (v4) |
-| `actions/setup-python@v5` | v5 | ci.yml (frontmatter-validation) |
+| `actions/checkout@v7` | v7 | ci.yml (v7), auto-release.yml (v7), self-review.yml (v7) |
+| `actions/setup-python@v7` | v7 | ci.yml (frontmatter-validation) |
 | `gaurav-nelson/github-action-markdown-link-check@v1` | v1 | ci.yml (markdown-links) |
-| `DailybotHQ/ai-diff-reviewer@v2` | v2 | pr-review.yml (review job) |
+| `DailybotHQ/ai-diff-reviewer@v3` | v3 | self-review.yml (review job) |
 
 ---
 
@@ -147,4 +174,4 @@ GitHub Release (with dogfood commits in the notes)
 | Secret | Required by | Where to configure |
 |--------|-------------|---------------------|
 | `AUTOMATION_GITHUB_TOKEN` | `auto-release.yml` (push to protected `main`) | Repo settings — org's bot user PAT |
-| `CURSOR_API_KEY` | `pr-review.yml` (Cursor provider) | Repo Settings > Secrets and variables > Actions |
+| `XAI_API_KEY` | `self-review.yml` (grok provider — CI leg only; the local review never needs it) | Repo Settings > Secrets and variables > Actions |

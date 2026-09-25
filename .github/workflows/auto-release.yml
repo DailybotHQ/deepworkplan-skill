@@ -51,7 +51,7 @@ jobs:
         && !contains(github.event.head_commit.message, '[skip release]')
       }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           # Uses `AUTOMATION_GITHUB_TOKEN` (the org convention) so the bot
