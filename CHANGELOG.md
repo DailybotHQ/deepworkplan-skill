@@ -9,6 +9,13 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.5.4] — 2026-09-25
+
+### Changes
+
+- ci: do not cancel an in-flight grok review when another label lands
+
+
 ## [5.5.3] — 2026-09-25
 
 ### Changes

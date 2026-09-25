@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-resume
 description: Resume interrupted Lite or Full Deep Work Plans from durable Markdown and state, including safe recovery of promotions without duplicating completed work or gates.
-version: "5.5.3"
+version: "5.5.4"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
