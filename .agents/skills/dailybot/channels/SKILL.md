@@ -1,7 +1,7 @@
 ---
 name: dailybot-channels
 description: Discover the report channels (Slack/Teams/Discord/Google Chat) available to you via Dailybot, so their UUIDs can be attached to forms and check-ins with --report-channel. Use when the developer needs a channel UUID for form/check-in authoring.
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📣","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

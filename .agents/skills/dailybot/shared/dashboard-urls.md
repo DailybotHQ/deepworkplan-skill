@@ -97,6 +97,24 @@ standalone page (no sidebar navigation).
 
 ---
 
+### Tasks — no dashboard route is published
+
+**There is deliberately no Tasks section in this catalog, and you must not invent one.**
+
+The web app owns its Tasks path shapes and they are not published; they also moved recently.
+The API confirms it: a task payload carries 29 fields and **none** of them is `url`,
+`web_url`, `permalink` or `app_url`.
+
+So for boards, tasks, projects, goals and milestones:
+
+- hand the developer the **API self-link** the CLI prints
+  (`/v1/tasks/tasks/<uuid>/`, `/v1/tasks/boards/<uuid>/board/`);
+- do **not** build a dashboard URL by analogy with the Forms or Check-ins routes above;
+- if a future API response starts carrying a `url` field, that still is not a licence to
+  print it until the route shapes are published here.
+
+A dead link handed to a human is worse than no link.
+
 ## 3. Building full URLs
 
 Combine the base URL + path. When the API returns a `url` field (e.g. in

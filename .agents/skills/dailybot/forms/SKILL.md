@@ -1,7 +1,7 @@
 ---
 name: dailybot-forms
 description: List, inspect, submit, update, and transition form responses via Dailybot — including forms with workflow states and audience-scoped permissions. Also authors forms — create and configure a form (workflow states, permissions, anonymous/public/approval, ChatOps command) and manage its questions (types, report titles, variations, conditional logic). Use when the developer wants to see available forms, fill out a survey, continue an in-progress response, move a response between states, read prior responses, or create/configure a form. Do not use for daily check-ins — those go through dailybot-checkin.
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📋","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

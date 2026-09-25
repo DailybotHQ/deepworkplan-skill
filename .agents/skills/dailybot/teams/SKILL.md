@@ -1,7 +1,7 @@
 ---
 name: dailybot-teams
 description: Read and resolve teams visible to the authenticated user. Use when the developer references a team by name (for kudos targeting, member lookup, or routing context) and an agent needs to obtain its UUID. Other Dailybot skills (kudos, messages) delegate team-name resolution to this skill rather than duplicating the logic.
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"👥","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
