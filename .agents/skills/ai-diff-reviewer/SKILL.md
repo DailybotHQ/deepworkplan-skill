@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer
-description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for five capabilities — (1) review the current branch's diff locally with the same methodology as the CI action; (2) generate a repo-tailored .review/extension.md (generate-extension); (3) install and configure the Action, and answer reference questions about any action.yml input (setup); (4) author a well-documented pull request from the branch's diff, syncing the branch with the remote base first (open-pr); (5) read the review CI posted on the open PR and walk through each finding to apply, defer or skip (apply-review). Auto-detects .review/extension.md and layers it on the shipped default prompt for local-CI parity. Use when the developer asks to review current changes or pre-flight before pushing, to customize the reviewer for this repo, how to set up AI Diff Reviewer or what an input does, to open, create or rewrite a PR, or what the CI review said and how to address its findings.
-version: "2.3.1"
+description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for six capabilities — (1) review the current branch diff locally (same methodology as CI); (2) generate repo-tailored .review/extension.md overrides (generate-extension); (3) install and configure the Action, and answer any action.yml input question (setup); (4) author a documented pull request from the branch diff (open-pr); (5) read the CI review on the PR and walk findings to apply, defer or skip — read-only (apply-review); (6) close the loop in one invocation — wait for the CI review on the current head, resolve its findings (commits and pushes), and re-arm the reviewer per the repo label configuration (address-review). Auto-detects .review/extension.md. Use when the developer asks to review changes, customize the reviewer, set up the Action, open a PR, read the CI review, or resolve the reviewer comments and re-trigger the review.
+version: "3.1.1"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔍","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -32,7 +32,7 @@ doesn't have it yet.
   you're ready — helps you install the Action in CI with sensible
   defaults for strictness, triggers, and external-contributor policy.
 
-**Five coordinated capabilities**, routed by intent:
+**Six coordinated capabilities**, routed by intent:
 
 | # | Capability | Sub-skill | Surface |
 |---|---|---|---|
@@ -40,7 +40,8 @@ doesn't have it yet.
 | 2 | Author repo-specific overrides (`.review/extension.md`) | [`generate-extension`](generate-extension/SKILL.md) | 🖥️ Local **+** ☁️ CI (shared file) |
 | 3 | Install the GitHub Action + write `pr-review.yml` | [`setup`](setup/SKILL.md) | ☁️ CI |
 | 4 | Draft the PR title + body from the diff | [`open-pr`](open-pr/SKILL.md) | 🖥️ Local → GitHub |
-| 5 | Read the CI review on the PR + walk through findings to apply/defer/skip | [`apply-review`](apply-review/SKILL.md) | ☁️ CI → 🖥️ Local |
+| 5 | Read the CI review on the PR (the v3 structured-output artifact first, review threads as the fallback) + walk through findings to apply/defer/skip | [`apply-review`](apply-review/SKILL.md) | ☁️ CI → 🖥️ Local |
+| 6 | Close the loop in one invocation: wait for the review on the current head, resolve its findings (apply → commit → push), and re-arm the reviewer the way this repo triggers it (label toggle or push) | [`address-review`](address-review/SKILL.md) | ☁️ CI → 🖥️ Local → ☁️ CI |
 
 Sub-skill 3 (`setup`) also doubles as the **reference manual** for
 every `action.yml` input via [`setup/reference.md`](setup/reference.md)
@@ -60,7 +61,7 @@ Source: <https://github.com/DailybotHQ/ai-diff-reviewer> · License: MIT
 
 ## Two supported flows: local-only or dual-surface
 
-The five sub-skills are **independent**. There is no ordering
+The six sub-skills are **independent**. There is no ordering
 requirement, and installing the CI GitHub Action is **NOT** a
 prerequisite for using this skill locally. Every consumer repo falls
 into one of two flows — pick the one that matches the repo's use case:
@@ -68,7 +69,7 @@ into one of two flows — pick the one that matches the repo's use case:
 | Flow | Use when | Sub-skills to run | Sub-skills to skip |
 |---|---|---|---|
 | **A. Local-only** | You want your coding agent to run the same review methodology on the branch you're working on right now, but you do NOT want the review to fire in CI on every PR. Common for personal repos, experimental repos, repos where the team hasn't opted into automated PR review yet. | **Optional but recommended:** `generate-extension` (once, to tailor `.review/extension.md`). Then the parent `run a local review` flow on every branch — works with or without an extension file (falls back to the shipped base prompt if Step 2.5 is declined). Optionally `open-pr` at the end. | `setup` — do NOT run it. It writes `.github/workflows/pr-review.yml`, which activates the CI Action. `apply-review` — nothing to apply (no CI review posts back to the PR without the Action installed). |
-| **B. Dual-surface** | You want both: pre-flight local review before pushing AND a full CI review on every PR, sharing the same methodology and severity model on both surfaces (CI may additionally dedup on round 2+ via IAR — see below). Recommended for team repos and anything production-facing. | `setup` (once, installs the CI Action + accepts the Step 5 handoff to `generate-extension`), then the parent `run a local review` flow on every branch. `open-pr` when the PR is ready. After push, once CI has posted its review, `apply-review` closes the loop (read the CI findings, walk through them, apply fixes). | Nothing — all five capabilities are used across the lifecycle. |
+| **B. Dual-surface** | You want both: pre-flight local review before pushing AND a full CI review on every PR, sharing the same methodology and severity model on both surfaces (CI may additionally dedup on round 2+ via IAR — see below). Recommended for team repos and anything production-facing. | `setup` (once, installs the CI Action + accepts the Step 5 handoff to `generate-extension`), then the parent `run a local review` flow on every branch. `open-pr` when the PR is ready. After push, once CI has posted its review, `apply-review` reads the findings, and `address-review` closes the whole loop (resolve them, commit, push, re-trigger the reviewer). | Nothing — all five capabilities are used across the lifecycle. |
 
 **Parity guarantee (Flow B).** When `setup` writes the workflow with
 `prompt-extension-file: .review/extension.md` wired in (default when
@@ -139,7 +140,7 @@ distinction only matters at first-time setup.
 npx skills add DailybotHQ/ai-diff-reviewer --skill ai-diff-reviewer
 
 # Or pin to a specific tag for reproducibility
-npx skills add DailybotHQ/ai-diff-reviewer@v2.1.0 --skill ai-diff-reviewer
+npx skills add DailybotHQ/ai-diff-reviewer@v3.1.0 --skill ai-diff-reviewer
 ```
 
 This vendors the skill into `.agents/skills/ai-diff-reviewer/` in the
@@ -257,7 +258,7 @@ four sibling sub-skills have their own procedures in their respective
 - [`generate-extension/SKILL.md`](generate-extension/SKILL.md) — author `.review/extension.md`
 - [`setup/SKILL.md`](setup/SKILL.md) — install the GitHub Action
 - [`open-pr/SKILL.md`](open-pr/SKILL.md) — author the PR title + body
-- [`apply-review/SKILL.md`](apply-review/SKILL.md) — read + apply the CI review posted on the PR
+- [`apply-review/SKILL.md`](apply-review/SKILL.md) — read + apply the CI review posted on the PR (artifact-first since v3: the `review-output/3.0` document carries findings, verification, refuted findings and the prior ledger; threads are the fallback)
 
 ---
 
@@ -540,7 +541,7 @@ The **same file** should be referenced from your CI workflow's
 
 ```yaml
 # .github/workflows/pr-review.yml
-- uses: DailybotHQ/ai-diff-reviewer@v2
+- uses: DailybotHQ/ai-diff-reviewer@v3
   with:
     api-key: ${{ secrets.ANTHROPIC_API_KEY }}
     github-token: ${{ secrets.GITHUB_TOKEN }}

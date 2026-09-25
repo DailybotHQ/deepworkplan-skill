@@ -23,8 +23,8 @@ jobs:
     name: SKILL.md frontmatter validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - run: pip install pyyaml
@@ -34,7 +34,7 @@ jobs:
     name: shellcheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run shellcheck on shipped + repo-dev scripts
         run: |
           # setup.sh is the only repo-root script; the shipped runtime scripts
@@ -54,7 +54,7 @@ jobs:
     name: context.sh smoke
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Emits valid single-line JSON in a regular directory
         run: |
@@ -86,8 +86,8 @@ jobs:
     name: bats unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - name: Install test-only Python dependencies
@@ -129,7 +129,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Confirm bash version
         run: bash --version
       - name: setup.sh --help runs cleanly
@@ -160,8 +160,8 @@ jobs:
     name: State-layer schema/contract + guide migration checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - run: pip install jsonschema
@@ -176,8 +176,8 @@ jobs:
     name: Runtime helpers on the Python 3.9 floor
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.9'
       - name: The shipped helpers must run stdlib-only on the documented floor
@@ -214,7 +214,7 @@ jobs:
     name: Markdown link check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
           config-file: '.github/markdown-link-check.json'
