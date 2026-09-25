@@ -1,7 +1,7 @@
 ---
 name: dailybot-workflow
 description: List, inspect, and trigger Dailybot workflows — enumerate the workflows configured for the organization, read one workflow's configuration, and fire API-triggerable workflows on demand. Use when the developer asks "list my workflows", "show workflows", "what's in the release workflow?", "trigger the deploy workflow", or "fire automation X". Creating/editing workflows is done in the Dailybot web app. Plan-gated feature.
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔀","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

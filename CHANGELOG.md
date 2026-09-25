@@ -9,6 +9,13 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [5.5.2] — 2026-09-25
+
+### Changes
+
+- docs(addon): bring the AI Diff Reviewer addon documents to v3 (v3.1.1)
+
+
 ## [5.5.1] — 2026-09-17
 
 ### Changes

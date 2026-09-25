@@ -1,7 +1,7 @@
 ---
 name: dailybot-ask
 description: Ask the Dailybot AI a question from the terminal and read the answer, non-interactively. Runs headless — a single `dailybot ask "<question>"` prints the assistant's reply to stdout (or structured JSON with `--json`), so an autonomous agent (Claude Code, CI, a bot) can query the Dailybot AI with only an API key. Use when the developer or agent says "ask Dailybot ...", "query the Dailybot AI", "what does Dailybot say about ...", or wants a one-shot answer from Dailybot's assistant. Distinct from dailybot-chat (bot messages to Slack/Teams) and dailybot-report (progress to the dashboard).
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🤖","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

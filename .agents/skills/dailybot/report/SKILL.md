@@ -1,7 +1,7 @@
 ---
 name: dailybot-report
 description: Report work progress to Dailybot. Activate after completing a discrete task or subtask, or after any batch of edits that modifies 3 or more files. Compose a standup-style update describing what changed and why.
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📡","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

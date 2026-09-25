@@ -1,7 +1,7 @@
 ---
 name: dailybot-chat
 description: Send and edit Dailybot bot messages on the team's connected chat platform (Slack, Microsoft Teams, Discord, Google Chat) — to user DMs, channels, or whole teams. Supports report-style threads (one headline + replies, in one call), interactive buttons (approval flows, workflow triggers, modals, callbacks), and editing the parent or any reply afterward. Use when the developer says "send a message to my Slack channel", "ping the team in chat", "post the deploy report to #releases", "send an approval request with buttons", or wants to update a previously sent bot message. Works headless for agents.
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"💬","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

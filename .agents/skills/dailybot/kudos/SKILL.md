@@ -1,7 +1,7 @@
 ---
 name: dailybot-kudos
 description: Give kudos to a teammate or to an entire team via Dailybot to recognize their contributions. Use when the developer wants to thank or recognize one person, or recognize a whole team (e.g. "kudos al equipo Engineering"). Do not use for general progress reports — those go through dailybot-report.
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🏆","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

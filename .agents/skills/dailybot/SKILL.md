@@ -1,7 +1,7 @@
 ---
 name: dailybot
-description: Official Dailybot agent skill pack — report progress, check messages, send emails, announce agent status, complete check-ins, give kudos (to users or teams), resolve teams, run the full forms lifecycle (list, submit, update, transition between workflow states), **author check-ins and forms from scratch** (create/configure questions, workflow states, permissions, reminders, scheduling, AI settings, sharing), send/edit chat messages on the team's Slack/Teams/Discord/Google Chat (including report-style threads, sending as a user's identity, and interactive buttons with approval flows, workflow triggers, modals, and callbacks), open (or reuse) a Slack group DM with the bot and post a report to it, ask the Dailybot AI a question headlessly, **browse/read/trigger the workspace** (`me` / `org` / `user get`, kudos browsing, workflows), **manage organization Labels** (`dailybot label` CRUD + assign/batch on forms, check-ins, workflows) and **private Featured stars**, and **manage per-repo API keys** through `.dailybot/env.json` (pack baseline `dailybot-cli >= 3.9.0`). Routes to the right sub-skill based on intent. Use when the developer mentions Dailybot or wants to interact with their team.
-version: "3.13.0"
+description: Official Dailybot agent skill pack — report progress, check messages, send emails, announce agent status, complete check-ins, give kudos (to users or teams), resolve teams, run the full forms lifecycle (list, submit, update, transition between workflow states), **author check-ins and forms from scratch** (create/configure questions, workflow states, permissions, reminders, scheduling, AI settings, sharing), send/edit chat messages on the team's Slack/Teams/Discord/Google Chat (including report-style threads, sending as a user's identity, and interactive buttons with approval flows, workflow triggers, modals, and callbacks), open (or reuse) a Slack group DM with the bot and post a report to it, ask the Dailybot AI a question headlessly, **browse/read/trigger the workspace** (`me` / `org` / `user get`, kudos browsing, workflows), **manage organization Labels** (`dailybot label` CRUD + assign/batch on forms, check-ins, workflows) and **private Featured stars**, **manage Tasks** (boards, backlog, sprint/kanban columns, project updates, milestones — `dailybot tasks` for the workspace and `dailybot task` for one task), and **manage per-repo API keys** through `.dailybot/env.json` (pack baseline `dailybot-cli >= 3.9.0`). Routes to the right sub-skill based on intent. Use when the developer mentions Dailybot or wants to interact with their team.
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📡","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -31,7 +31,8 @@ no network fetch is required** to know what to do. Run first-run setup in order:
    [`shared/auth.md`](shared/auth.md) — it proposes the checksum-verified
    installer and installs **only after the developer confirms**. Confirm with
    `dailybot --version` (minimum `>= 3.9.0` — the skill-pack baseline for
-   every sub-skill).
+   every sub-skill; **`dailybot-tasks` needs `>= 3.12.0`**, which is the release
+   that ships the Tasks commands).
 2. **Authenticate.** `dailybot login` (email OTP) **or** set `DAILYBOT_API_KEY` —
    see [`shared/auth.md`](shared/auth.md). Credentials are stored owner-only
    (`0600`) and masked in all output.
@@ -45,13 +46,20 @@ no network fetch is required** to know what to do. Run first-run setup in order:
    so non-commit work (research, analysis, design docs, plans) is nudged sooner —
    see [`report/hooks.md`](report/hooks.md) § Per-repo controls.
 
-Then route by intent (below). What this skill will and will **not** do on your
+Then route by intent (below).
+
+> **One credential note that spans sub-skills:** some Tasks verbs answer only for a
+> signed-in person — `tasks mine` / `counts` / `inbox`, participant and member writes, and
+> board/project/goal creation. An organization API key is refused there, and so is an
+> organization **admin's** own key: the scope involved cannot be stored on a key at all.
+> If you hold only `DAILYBOT_API_KEY`, do not start a flow that ends in one of those verbs.
+> The list is in [`tasks/SKILL.md`](tasks/SKILL.md). What this skill will and will **not** do on your
 machine — permissions, consent guarantees, and a self-audit you can run — is in
 [`TRUST.md`](TRUST.md).
 
 ## What it does
 
-Sixteen coordinated capabilities, with smart routing between them:
+Seventeen coordinated capabilities, with smart routing between them:
 
 | Capability | Sub-skill | When it fires |
 |------------|-----------|---------------|
@@ -71,6 +79,7 @@ Sixteen coordinated capabilities, with smart routing between them:
 | **Per-repo API keys** | `dailybot-env` | Configure `.dailybot/env.json` — an **opt-in, gitignored** file that carries API keys + URLs for one or more environments (live, local, staging) so the developer can be "logged into different orgs in different repos". `dailybot env add / use / show / list / remove / off / on`. Pack baseline (`>= 3.9.0`) |
 | **Organization Labels** | `dailybot-labels` | Full org Labels lifecycle (`dailybot label entitlement/list/get/create/update/archive/delete/assign/batch`) — shared taxonomy for forms, check-ins, and workflows/automations; web chip-picker parity. Requires CLI `>= 3.9.0` |
 | **Featured stars** | `dailybot-featured` | Private per-user stars on Forms, Automations, Check-ins (`dailybot featured …`) |
+| **Tasks** | `dailybot-tasks` | Boards, tasks, projects, goals and milestones. Read the workspace (`tasks status`, search, `board snapshot`), poll what changed since a cursor (`tasks changes`), create / move / assign / comment, apply bulk operations, archive with a server-previewed consequence, and **post project updates** so the team sees what an agent did. Some doors need `dailybot login` — see the sub-skill's credential table |
 
 ## Install
 

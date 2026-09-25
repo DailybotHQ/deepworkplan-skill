@@ -1,7 +1,7 @@
 ---
 name: dailybot-featured
 description: Manage private Featured stars via the Dailybot CLI — list, set, and batch feature/unfeature Forms, Automations, and Check-ins for the authenticated user. Use when the developer asks to star/unstar dashboards items or manage Featured state. Not for organization Labels (use dailybot-labels).
-version: "3.13.0"
+version: "3.14.0"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"⭐","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
