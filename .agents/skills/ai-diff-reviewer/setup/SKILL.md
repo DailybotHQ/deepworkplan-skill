@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer-setup
 description: Interactive installer for the AI Diff Reviewer GitHub Action — walks the developer through 6 key decisions (provider, strictness, trigger mode, external-contributor policy, PR description mode, complexity labels), detects the repo's stack for sensible defaults, and writes a working `.github/workflows/pr-review.yml` tailored to those choices. Also acts as the reference manual for every `action.yml` input any coding agent might be asked about ("what is `strictness`?", "how do I use label-gate?"). Use when the developer says "set up AI Diff Reviewer for this repo", "configure the reviewer action", "install the AI Diff Reviewer action", "help me create the pr-review workflow", or when the local `ai-diff-reviewer` skill is present on a repo that has no `.github/workflows/pr-review.yml` yet.
-version: "2.3.1"
+version: "3.1.1"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"⚙️","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -342,7 +342,7 @@ jobs:
           fetch-depth: 0        # required — the action runs `git diff origin/<base>...HEAD`
           <agent-runners only: persist-credentials: false   # the CLI must never find the GITHUB_TOKEN in .git/config>
 
-      - uses: DailybotHQ/ai-diff-reviewer@v2
+      - uses: DailybotHQ/ai-diff-reviewer@v3
         <agent-runners only: if: github.event.pull_request.head.repo.full_name == github.repository   # trusted (non-fork) PRs>
         with:
           provider: <PROVIDER>

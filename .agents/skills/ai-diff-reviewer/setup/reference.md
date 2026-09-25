@@ -22,7 +22,13 @@ Every workflow using AI Diff Reviewer sets these two.
 
 ### `api-key`
 
-- **Required.**
+- **Required** — except where the lane has environment credentials (v3
+  rule, RFC-07 BC-16). Today that is the AWS Bedrock lane (`provider:
+  anthropic` + a `bedrock-runtime.{region}.amazonaws.com` `api-base`): it may
+  stay empty; the runtime signs with the AWS credentials from the
+  environment (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` /
+  `AWS_SESSION_TOKEN`, as exported by the OIDC credential step). Future
+  OIDC lanes follow the same rule.
 - **What it is:** API key (or subscription OAuth token) for the chosen
   provider.
 - **Where to get it, by provider:**
@@ -62,10 +68,14 @@ Every workflow using AI Diff Reviewer sets these two.
 - **Choices:** `anthropic` | `openai` | `claude-code` | `cursor` | `codex` | `grok`
 - **Behavior:**
   - `anthropic` — chat-completions API. Zero install overhead. Sonnet-tier
-    default model. Best baseline.
+    default model. Best baseline. With `api-base` the same runner covers AWS
+    Bedrock (v2.5.0+, SigV4-signed InvokeModel on the regional
+    `bedrock-runtime` endpoint) and the Anthropic-compatible gateways.
   - `openai` — OpenAI-compatible chat-completions API, in-process (zero
     install, bounded turns). With `api-base` the same runner covers Azure
-    Foundry, xAI and Z.ai. `gpt-5.6-luna` default.
+    Foundry, xAI, Z.ai and — since v2.4.0 — DeepSeek, Moonshot/Kimi,
+    MiniMax, Qwen (DashScope), Google Gemini and OpenRouter.
+    `gpt-5.6-luna` default.
   - `claude-code` — Claude Code CLI, headless agent mode. Same Anthropic
     models; accepts subscription token via `api-key` (see above).
   - `cursor` — Cursor Agent CLI, headless. `model: auto` is unlimited on
@@ -86,8 +96,10 @@ Every workflow using AI Diff Reviewer sets these two.
 - **Provider-specific defaults (empty `model`):**
   - `anthropic` → `claude-sonnet-4-6`
   - `openai` → `gpt-5.6-luna` (same reasoning as Codex; on a non-default
-    `api-base` pin the backend's own id — `grok-4.5`, `glm-5.3`, or an
-    Azure deployment name).
+    `api-base` pin the backend's own id — `grok-4.5`, `glm-5.3`, a DeepSeek /
+    Kimi / Gemini / OpenRouter id, or an Azure deployment name — or use a
+    tier alias: DeepSeek, Moonshot/Kimi, MiniMax, Qwen, Gemini and OpenRouter
+    have dated tier rows since v2.4.0).
   - `claude-code` → `claude-sonnet-4-6` (quality/price sweet spot; NEVER
     `auto`, which can silently be Opus; use `claude-haiku-4-5` for a
     cheaper/shallower smoke review).
@@ -108,8 +120,10 @@ Every workflow using AI Diff Reviewer sets these two.
 
 ### `api-base`
 
-- **Default:** `''` (empty — the provider's default endpoint; behaviour
-  identical to releases before `api-base` existed).
+- **Default:** `''` (empty — the provider's default endpoint; request shape
+  unchanged from before `api-base` existed, except that since v2.4.0 the
+  default profiles pin deterministic sampling — see the CHANGELOG
+  "Changed" notes).
 - **What it is:** the backend base URL for the chosen provider (runner).
   The `provider` input says *who runs the review loop*; `api-base` says
   *where the model lives*. The host of the URL selects an endpoint
@@ -118,6 +132,26 @@ Every workflow using AI Diff Reviewer sets these two.
 - **Well-known values:**
   - Z.ai GLM (Anthropic-compatible) → `https://api.z.ai/api/anthropic`
     with `provider: claude-code` (recommended for GLM) or `anthropic`.
+  - DeepSeek (v2.4.0+) → `https://api.deepseek.com` with
+    `provider: openai` (chat-completions only; Codex cannot reach it).
+  - Moonshot/Kimi (v2.4.0+) → `https://api.moonshot.ai/v1`
+    (OpenAI-compatible, for `openai`) or
+    `https://api.moonshot.ai/anthropic` (for `anthropic` / `claude-code`).
+  - MiniMax (v2.4.0+) → `https://api.minimax.io/v1` (OpenAI-compatible,
+    for `openai`)
+    or `https://api.minimax.io/anthropic` (Anthropic-compatible).
+  - Qwen / DashScope (v2.4.0+) →
+    `https://dashscope.aliyuncs.com/compatible-mode/v1`.
+  - Google Gemini (v2.4.0+) →
+    `https://generativelanguage.googleapis.com/v1beta/openai` with
+    `provider: openai`; the runtime omits `seed` (the endpoint rejects it).
+  - OpenRouter (v2.4.0+) → `https://openrouter.ai/api/v1`; model ids are
+    vendor-prefixed (`vendor/model`).
+  - AWS Bedrock (v2.5.0+) → `https://bedrock-runtime.{region}.amazonaws.com`
+    with `provider: anthropic`; `model` is a Bedrock model id or inference
+    profile (`us.anthropic.claude-sonnet-5`).
+    Credentials: the AWS environment (OIDC — `api-key` may stay empty on
+    this lane) or the packed `api-key` `KEY:SECRET[:SESSION]` format.
   - xAI Grok → `https://api.x.ai` (Anthropic-compatible, for
     `anthropic` / `claude-code`) or `https://api.x.ai/v1`
     (OpenAI-compatible, for `codex` / `openai`).
@@ -335,12 +369,18 @@ Every workflow using AI Diff Reviewer sets these two.
     blocked. Recommended for the first 1–2 weeks of calibration.
   - `block-on-critical` — fail if any inline comment is severity
     `critical` (security, data loss, breaking API). Recommended
-    steady-state default.
+    steady-state default. v3: only a **verified** critical blocks —
+    an unverified claim publishes as an annotated `warning`
+    (`strict-unverified-criticals: true` restores v2 gating).
   - `block-on-warning` — fail if any inline comment is `critical` OR
     `warning`. Aggressive.
   - `block-on-any` — fail if ANY inline comment was posted (including
     `info`). Zero-tolerance mode for security-critical or regulated
     stacks.
+- **Unfinished reviews (v3):** a review that ends `incomplete` (turn
+  cap without `submit_review`) or `timeout` posts its partial findings
+  with a note and fails the check under `block-on-critical` and
+  stricter; `lenient` stays green.
 - **Severity source:** the model decides per comment via the
   `severity` tool argument, guided by the bundled default prompt
   (`prompts/default.md` in the action repo).
@@ -382,6 +422,129 @@ Every workflow using AI Diff Reviewer sets these two.
   `autocomplete` modes; ignored when `pr-description-mode: off`.
 - **Common values:** `50` (default), `100` (stricter), `200` (much
   stricter — usually paired with a template).
+
+### `verifier`
+
+- **Default:** `on`
+- **What it is:** v3 verification pass (RFC-03). Every finding the model
+  claims `critical` — plus a deterministic 30 % sample of warnings — gets a
+  second, short, read-only check by a separate model call on the same
+  checkout (anchor read, callers, base version, instruction file). A
+  critical publishes as `critical` only when the verifier confirms it;
+  otherwise it stays visible as an annotated warning (`Claimed critical;
+  verifier found: …`). Refuted findings are never posted inline; they are
+  listed in the structured output. The verifier fails open: an error, a
+  timeout or a missing backend never blocks and never hides.
+- **When to change:** set `off` to skip the second call (claimed criticals
+  then publish as annotated warnings — pair with
+  `strict-unverified-criticals: true` if you want v2 gating).
+
+### `verifier-model`
+
+- **Default:** `''` (empty = the `economy` tier alias of the lane's backend;
+  `balanced` where no cheaper tier reviews reliably, e.g. xAI)
+- **What it is:** the model used by the verifier. A tier alias or an
+  explicit model id. CLI lanes verify runtime-side on the in-process
+  runner of the same backend with the same credential: `grok` → the xAI
+  OpenAI-compatible API, `claude-code` → the configured Anthropic-compatible
+  base (Z.ai or default), `codex` → the configured OpenAI base. `cursor` has
+  no in-process equivalent, so its claimed criticals publish as annotated
+  warnings.
+- **When to change:** you want a stronger verifier on a high-risk repo
+  (`balanced` / `deep`) or a specific deployment id on Azure / custom.
+
+### `strict-unverified-criticals`
+
+- **Default:** `false`
+- **What it is:** transition knob (RFC-07 BC-18, removed in v3.1.0). When
+  `true`, a claimed `critical` gates the check under `block-on-critical`
+  even when the verifier did not verify it — the v2 behaviour. The
+  annotation is still added.
+- **When to enable:** you migrate from v2 and want the gate unchanged while
+  you evaluate the verifier.
+
+### `mode`
+
+- **Default:** `review`
+- **What it is:** the step's role (v3, RFC-04). `review` — run and
+  publish, the single-leg flow. `emit` — run the review, write the
+  `review-output/3.0` document and upload it as an artifact, and perform
+  **no** GitHub write: no review, no comment, no label. An emit leg needs
+  only `contents: read` + `pull-requests: read`; it exits 0 (the gate is
+  recorded in the outputs and the document, and enforced by the aggregate
+  job). `aggregate` — download the emitted legs for this head, consolidate,
+  verify once and publish one review (Phase 2 of v3).
+- **When to change:** you run a provider matrix and want one consolidated
+  review instead of one per leg: `mode: emit` on every leg, one
+  `mode: aggregate` job after them. With `emit` and no `expected-legs`
+  one note is posted on the PR so a forgotten aggregate job cannot
+  silently review nothing.
+
+### `expected-legs`
+
+- **Default:** `''`
+- **What it is:** comma- or newline-separated leg ids
+  (`<provider>|<endpoint_kind>|<model>`, as in each leg's run record) the
+  aggregate job waits for. On an `emit` leg, setting it suppresses the
+  note above.
+- **When to change:** always set it on the aggregate job of a matrix; set
+  it on the emit legs of the same matrix to keep the PR free of notes.
+
+### `min-agreement`
+
+- **Default:** `1`
+- **What it is:** aggregate only (v3, RFC-04 § Gating policy). A `warning`
+  counts toward `block-on-warning` / `block-on-any` only when at least this
+  many legs reported it; criticals ignore the knob — a verified critical
+  from one leg still gates. Warnings below the threshold are still posted
+  and marked with their agreement.
+- **When to change:** matrices of three or more legs where lone warnings
+  are noise: `2`.
+
+### `require-all-legs`
+
+- **Default:** `false`
+- **What it is:** aggregate only. `true` fails the check when an expected
+  leg is missing, failed or timed out; `false` publishes with the delivered
+  legs and names the missing one in the review and the job summary.
+- **When to change:** every lane is mandatory in your process.
+
+### `budget-profile`
+
+- **Default:** `auto`
+- **What it is:** v3 (RFC-06). With `auto` the review budget follows the
+  deterministic risk tier of the change, classified from the inventory
+  (paths, statuses, sizes — never the PR title or body): `low` (docs /
+  tests / generated only, ≤ 300 lines) 8 turns, 60 kB of patches,
+  criticals-only verifier; `standard` (code) 20 turns, 120 kB, 30 % of
+  warnings verified; `elevated` (prompts / policy, workflows, dependencies,
+  mode changes, incomplete inventory, > 1 500 lines) 30 turns, 200 kB, all
+  warnings; `critical` (policy or CI files together with code, unknown
+  files, or a `high-risk-paths` match) 40 turns — the only raise — with the
+  `deep` alias where the backend has one. `fixed` restores today's
+  constants for every tier. An explicit `max-turns` (other than the
+  default) is a ceiling a tier never exceeds.
+- **When to change:** `fixed` only while you calibrate; removed in v3.1.0.
+- **Native CLI cap:** on `grok`, when `agent-max-turns` is unset, the tier row's turns (8 / 20 / 30 / 40) are passed as the CLI's `--max-turns` — `max-turns` does not reach a CLI; a CLI stopped at its cap posts an incomplete review. `fixed` leaves the CLI uncapped (pre-v3 behaviour).
+
+### `high-risk-paths`
+
+- **Default:** `''`
+- **What it is:** globs (comma- or newline-separated, e.g. `auth/**`,
+  `**/migrations/**`) that raise the tier to `critical` when a changed file
+  matches. Raises only.
+- **When to change:** your repository has directories where every change
+  deserves the deepest review.
+
+### `complexity-source`
+
+- **Default:** `model`
+- **What it is:** where the `complexity:*` label comes from. `model`: the
+  model's `set_pr_complexity` / findings-file level, as before.
+  `inventory`: derived from the risk tier (low → low, standard → medium,
+  elevated and critical → high); the model's level becomes telemetry. In
+  both modes the model's level never influences the budget.
+- **When to change:** you route on the label and want it deterministic.
 
 ### `complexity-labels-enabled`
 
@@ -627,6 +790,23 @@ downstream steps to consume.
 | `iteration-cost-vs-baseline-estimate` | Coarse cost-delta heuristic (cap expansion + addendum flag). Always `"0%"` or `"+N%"` today — silenced-finding savings are not yet modelled. Empty if the IAR pipeline crashed. |
 
 ---
+
+### `structured-output-path` / `structured-output-sha256` / `structured-output-artifact` (v3)
+
+The `review-output/3.0` document every run writes to `.aiprr/review-output.json` (run record, change inventory, findings with evidence and verification, refuted findings, prior-findings ledger, generated summary whose `rendered_markdown` is the posted body, gate, usage, cost), its SHA-256, and the name of the workflow artifact that carries it (`ai-diff-reviewer-<head12>-<provider>-<kind>-<model>`, 90 days). Written on every exit path — success, skip, failure. Read the file (verify the digest) instead of scraping review threads; the `apply-review` sub-skill does so when the artifact exists, and the `address-review` sub-skill consumes it to close the loop (resolve findings → commit → push → re-arm the reviewer).
+
+
+### `legs-expected` / `legs-delivered` / `duplicates-removed` / `agreement-histogram` (v3, aggregate)
+
+- **What they are:** set by a `mode: aggregate` step (RFC-04); empty
+  strings on review / emit runs. `legs-expected` — comma-separated leg ids
+  the aggregate waited for; `legs-delivered` — the ones that delivered a
+  complete document for this head; `duplicates-removed` — findings merged
+  away by the dedup key; `agreement-histogram` — JSON
+  `{"<legs reporting>": <findings>}` over the consolidated findings.
+- **Typical use:** a follow-up step that fails the workflow when
+  `legs-delivered` is shorter than `legs-expected`, or that posts the
+  histogram to a dashboard.
 
 ## Related docs (in the action repo)
 
