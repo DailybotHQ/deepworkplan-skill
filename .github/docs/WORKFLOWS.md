@@ -162,8 +162,8 @@ GitHub Release (with dogfood commits in the notes)
 
 | Action | Version | Used in |
 |--------|---------|---------|
-| `actions/checkout@v4` / `@v5` | v4 / v5 | ci.yml (v4), auto-release.yml (v5), self-review.yml (v4) |
-| `actions/setup-python@v5` | v5 | ci.yml (frontmatter-validation) |
+| `actions/checkout@v7` | v7 | ci.yml (v7), auto-release.yml (v7), self-review.yml (v7) |
+| `actions/setup-python@v7` | v7 | ci.yml (frontmatter-validation) |
 | `gaurav-nelson/github-action-markdown-link-check@v1` | v1 | ci.yml (markdown-links) |
 | `DailybotHQ/ai-diff-reviewer@v3` | v3 | self-review.yml (review job) |
 
