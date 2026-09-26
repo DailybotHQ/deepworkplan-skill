@@ -66,6 +66,7 @@ CALIBRATIONS = [
     {"id": "service-SC5", "family": "service",
      "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc5",
      "variants": {"pristine": None, "broken": "sabotage_sc5"},
+     "sabotage_fn": "sabotage_sc5",
      "expected": {"pristine": "PASS", "broken": "FAIL"}},
     {"id": "service-SC10", "family": "service",
      "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc10"},
