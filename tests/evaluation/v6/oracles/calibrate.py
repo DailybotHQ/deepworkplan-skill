@@ -54,9 +54,11 @@ CALIBRATIONS = [
     {"id": "astro-AC5", "family": "astro",
      "score_module": "cases/astro_ac5.py"},
     {"id": "legacy-LC1b", "family": "legacy",
-     "score_module": "cases/legacy_lc1_lc2.py", "score_fn": "score_lc1"},
+     "score_module": "cases/legacy_lc1_lc2.py", "score_fn": "score_lc1",
+     "apply_fn": "apply_lc1", "sabotage_fn": "sabotage_lc1"},
     {"id": "legacy-LC2", "family": "legacy",
-     "score_module": "cases/legacy_lc1_lc2.py", "score_fn": "score_lc2"},
+     "score_module": "cases/legacy_lc1_lc2.py", "score_fn": "score_lc2",
+     "apply_fn": "apply_lc2", "sabotage_fn": "sabotage_lc2"},
     {"id": "legacy-LC6", "family": "legacy",
      "score_module": "cases/legacy_lc6.py"},
     {"id": "astro-AC3", "family": "astro",
@@ -117,8 +119,10 @@ def run_case(case, results):
             shutil.copytree(seed, work, symlinks=False)
             if op is None:
                 pass  # pristine: no variant applied
+            elif op == "apply":
+                getattr(reference, case.get("apply_fn", "apply"))(work)
             else:
-                getattr(reference, op)(work)
+                getattr(reference, case.get("sabotage_fn", "sabotage"))(work)
             result = score(work, seed)
             matrix[variant] = result
     expected = case.get("expected",
