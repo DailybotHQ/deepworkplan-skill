@@ -59,6 +59,14 @@ CALIBRATIONS = [
      "expected": {"pristine": "PASS", "broken": "FAIL"}},
     {"id": "service-SC10", "family": "service",
      "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc10"},
+    {"id": "service-SC2", "family": "service",
+     "score_module": "cases/service_sc2_sc4.py", "score_fn": "score_sc2",
+     "variants": {"pristine": None, "broken": "sabotage_sc2"},
+     "expected": {"pristine": "PASS", "broken": "FAIL"}},
+    {"id": "service-SC4", "family": "service",
+     "score_module": "cases/service_sc2_sc4.py", "score_fn": "score_sc4",
+     "variants": {"pristine": None, "broken": "sabotage_sc4"},
+     "expected": {"pristine": "PASS", "broken": "FAIL"}},
 ]
 
 
