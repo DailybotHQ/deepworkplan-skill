@@ -111,8 +111,8 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Five addons ship today. Four are **optional** and **never required** — a repository
-is fully conformant with **zero optional addons** installed. Of those four, the
+Six addons ship today. Five are **optional** and **never required** — a repository
+is fully conformant with **zero optional addons** installed. Of those five, the
 **dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
 with declared dependencies, with its **inert** `/lib-upgrade` delegator
 installed under the onboarding consent **unless explicitly declined** (an
@@ -323,6 +323,32 @@ form**; only its CI surface is optional.
 > addon's implementation.
 
 ---
+
+
+### 6.6 Herdr Mesh (sixth addon — optional environment capability)
+
+An optional addon teaching an executing agent to discover, launch and
+orchestrate a **Herdr agent mesh** (`skills/deepworkplan/addons/herdr/`):
+`SKILL.md` (router, detection, launch), `SPEC.md` (normative),
+`protocol.md` (address, discovery, send, grant/reply stamps, stop rules,
+escalation), `orchestration.md` (delegation discipline, one writer per
+path, join on the plan), `movement.md` (inside-Herdr detection and the
+safe command subset), `templates.md` (grant/reply stamps, launch brief).
+
+Placement decision (recorded per the addon contract): INSIDE DeepWorkPlan,
+not a separate repository — its only consumer is an agent executing or
+coordinating a plan, and it must stay in lockstep with the plan autonomy
+rules; it has no second surface (no CI Action, no marketplace) to justify
+a split. Generic by contract: it names `herdr` on PATH (or a detected
+wrapper taking the same address) and never a product or vendor.
+
+Identity is `(machine_id, pane_id)`; labels and row numbers are never
+addresses. Every delegation body carries the reply grant
+(`[herdr-mesh]` stamp); return hops are marked and never answered. The
+addon is an optional environment capability: never part of the AI-first
+baseline, never a conformance gate, never blocking — a repository with no
+Herdr runs single-agent and stays fully conformant, and a launch failure
+is recorded and continued with available peers.
 
 ## 7. References
 
