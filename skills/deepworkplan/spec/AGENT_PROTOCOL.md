@@ -316,7 +316,7 @@ Every refusal names its rule; the names are stable strings a test pins.
 | `record-invalid` | The journal does not validate — tampered or corrupt records stop dispatch. |
 | `approval-missing` | No `approval` event cites the live contract (D3-7/D2-3): materialization approval precedes every proposal. A contract revision is a new identity and needs a fresh approval — enforced here, not by convention. |
 | `invariant-failed` / `invariant-stale` / `invariant-unevaluated` | See §8.3. |
-| `envelope-exceeded` | See §8.4. |
+| `envelope-exceeded` | See §8.4. The resource layer's reserve-adjusted `limit-exhausted` refusal, the `LIMIT:` exhaustion grammar and the `RESERVATION:` settlement grammar are defined in [V6_RESOURCES.md](V6_RESOURCES.md) (closed refusal names stay stable: a test pins each). |
 | `unknown-task` / `task-complete` | Selecting work that is not in the contract, or re-selecting completed work (new work on the same surface is a new task or a revision). |
 | `prerequisite-open` | A prerequisite lacks in-window accepted evidence. A prerequisite whose criteria carry only stale evidence is **not** complete — deferral disguised as completion is refused here. |
 | `surface-serialization` | The task's `touched_surface` overlaps a task currently in progress: intra-plan parallelism on overlapping surfaces is serialized (A8); independent in-scope work stays selectable. |
@@ -356,6 +356,14 @@ affecting incomplete work, matched to limits by unit — plus the proposal's
 own declared impact. Two sequential proposals that individually fit but
 jointly overshoot are therefore both refused at the second one: the
 commitment is counted when authorized, not when spent.
+
+The resource layer ([V6_RESOURCES.md](V6_RESOURCES.md)) composes this
+accounting: a limit's optional `reserve` lowers the dispatchable ceiling to
+`limit - reserve` (verification, retry and resume cannot be starved by
+ordinary work), journal-observable counters enforce with no host ability at
+all, and host-metered counters require the negotiated `meter_*` ability —
+a metered host with no observed sample still enforces the pending side
+exactly as this section states.
 
 ### 8.5. Caps, defaults, handoff
 

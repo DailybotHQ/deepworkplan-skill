@@ -193,6 +193,19 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
     contract_mutant("unsupported capability", lambda d: d["permissions"]["granted"].append("time_travel"))
     contract_mutant("negative resource limit", lambda d: d["resource_envelope"]["limits"][0].update(limit=-1))
     contract_mutant("enforced limit without metering source", lambda d: d["resource_envelope"]["limits"][0].pop("metering_source"))
+    # section 8 reserves: optional additive field. A VALID reserve passes
+    # both halves (optionality proof); a non-numeric reserve fails both;
+    # the reserve<=limit ceiling is runtime-only (it depends on the
+    # sibling field's value, which draft 2020-12 cannot express).
+    reserved = copy.deepcopy(contract)
+    reserved["resource_envelope"]["limits"][0]["reserve"] = 500
+    # the fixture is identity-stamped: adding a field changes the canonical
+    # bytes, so the probe re-stamps exactly as a new revision would
+    reserved["contract_id"] = c6.compute_contract_id(reserved)
+    both_ok(reserved, cs, c6.contract_errors(reserved), "valid reserve accepted", True)
+    contract_mutant("reserve as a string", lambda d: d["resource_envelope"]["limits"][0].update(reserve="5"))
+    contract_mutant("reserve above the limit", lambda d: d["resource_envelope"]["limits"][0].update(reserve=5000), runtime_only=True)
+    contract_mutant("negative reserve", lambda d: d["resource_envelope"]["limits"][0].update(reserve=-1))
     contract_mutant("dangling prerequisite", lambda d: d["tasks"][1]["prerequisites"].append("T-missing"), runtime_only=True)
     contract_mutant("duplicate criterion id", lambda d: d["acceptance"]["criteria"].append(copy.deepcopy(d["acceptance"]["criteria"][0])), runtime_only=True)
     contract_mutant("prerequisite cycle", lambda d: d["tasks"][0]["prerequisites"].append("T-ship-validator"), runtime_only=True)
@@ -205,7 +218,9 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
     contract_mutant("negative retry cap", lambda d: d["scheduling"].update(max_retries_per_gate=-1))
     contract_mutant("scheduling with an unknown field", lambda d: d["scheduling"].update(mode="auto"))
     contract_mutant("empty handoff condition", lambda d: d["scheduling"].update(handoff={"fresh_context": ""}))
-    notes.append("v6: contract mutants rejected (schema: era / closed object / capability / resource / scheduling; runtime-only: graph integrity)")
+    notes.append("v6: contract mutants rejected (schema: era / closed object / capability / resource / scheduling / reserve; runtime-only: graph integrity, reserve ceiling)")
+    if "model_routing" not in cs["$defs"]["capability"]["enum"]:
+        problems.append("v6: model_routing missing from the schema capability enum (section 8 routing authority)")
 
     def event_mutant(label, mutate):
         doc = copy.deepcopy(events[0])

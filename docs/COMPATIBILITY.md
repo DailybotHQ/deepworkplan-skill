@@ -163,3 +163,12 @@ the `claude` CLI and the `codex` CLI headless launches (see
 sources). This section is **Documented** level — the probes and bounded
 canaries discover actual counter exposure at execution time; it is not
 behavior-tested evidence about the pack itself.
+
+At runtime a v6 host additionally states its **abilities** through the
+closed negotiation set of `shared/resources.py`
+(`stop_agent`, `meter_spend`, `meter_tokens`, `meter_wall_clock`,
+`cancel_children`, `model_routing`, `subagents`, `telemetry`); the
+all-False floor is the documented minimal host and every ability it lacks
+degrades the matching limits to advisory with the reason named — never to
+a silent or invented enforcement. `spec/V6_RESOURCES.md` is the normative
+contract; `bats tests/v6-budget.bats` is the behavior-tested evidence.

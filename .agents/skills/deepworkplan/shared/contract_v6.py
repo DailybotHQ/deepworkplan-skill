@@ -49,7 +49,8 @@ INTERVENTION_CATEGORIES = ('missing_intent', 'new_authority',
 # unsupported capabilities and are refused.
 CAPABILITIES = ('gate_command_exec', 'fs_write_plan_scope',
                 'fs_write_repo_scope', 'git_operations', 'network_access',
-                'host_adapter_metering', 'agent_delegation', 'context_export')
+                'host_adapter_metering', 'agent_delegation', 'context_export',
+                'model_routing')
 
 # Section 4.5 trust labels.
 TRUST_LABELS = ('observed', 'imported', 'asserted')
@@ -496,7 +497,7 @@ def _envelope_errors(doc, errors):
             errors.append('%s: expected an object' % path)
             continue
         _closed(limit, {'id', 'limit', 'unit', 'enforcement',
-                        'metering_source'}, path, errors)
+                        'metering_source', 'reserve'}, path, errors)
         lid = _field(limit, 'id', 'str?', path, errors)
         if lid is not None:
             if not LIMIT_ID.match(lid):
@@ -512,6 +513,17 @@ def _envelope_errors(doc, errors):
             errors.append('%s.limit (id %r): expected a number >= 0 (got '
                           '%r)' % (path, lid, value))
         _field(limit, 'unit', 'str', path, errors)
+        if 'reserve' in limit:
+            reserve = limit['reserve']
+            if not _is_num(reserve) or reserve < 0:
+                errors.append('%s.reserve (id %r): expected a number >= 0 '
+                              '(got %r)' % (path, lid, reserve))
+            elif _is_num(value) and reserve > value:
+                errors.append('%s.reserve (id %r): reserve %s exceeds the '
+                              'limit %s - a reserve larger than its limit '
+                              'can never dispatch and is refused at '
+                              'declaration (section 8)' %
+                              (path, lid, reserve, value))
         enforcement = _field(limit, 'enforcement', 'str?', path, errors)
         if enforcement is not None and enforcement not in ('enforced',
                                                            'advisory'):

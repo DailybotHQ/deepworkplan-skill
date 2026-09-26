@@ -350,6 +350,11 @@
                 "type": "string",
                 "minLength": 1,
                 "description": "REQUIRED iff enforcement=enforced (A5): a host adapter reading real provider meters. authorize() never enforces on asserted meter data - an asserted meter degrades the limit to advisory and the record says so."
+              },
+              "reserve": {
+                "type": "number",
+                "minimum": 0,
+                "description": "OPTIONAL (section 8): budget held back from dispatch for verification, retry and resume. 0 <= reserve <= limit (the semantic validator enforces the ceiling and names the limit id); the dispatchable ceiling is limit - reserve."
               }
             },
             "allOf": [
@@ -486,9 +491,10 @@
         "network_access",
         "host_adapter_metering",
         "agent_delegation",
-        "context_export"
+        "context_export",
+        "model_routing"
       ],
-      "description": "Closed capability set (section 3.2 Permissions). gate_command_exec: run DECLARED gate commands through the core's runner. fs_write_plan_scope / fs_write_repo_scope: writes inside the plan folder / inside allowed repo paths. git_operations: commits and fingerprinting. network_access: outbound fetch to named dependencies. host_adapter_metering: read real provider meters through an adapter. agent_delegation: sibling-plan fan-out under section 9's declared file ownership. context_export: the section-4.3 durability export command. Names outside this set are unsupported capabilities and are refused."
+      "description": "Closed capability set (section 3.2 Permissions). gate_command_exec: run DECLARED gate commands through the core's runner. fs_write_plan_scope / fs_write_repo_scope: writes inside the plan folder / inside allowed repo paths. git_operations: commits and fingerprinting. network_access: outbound fetch to named dependencies. host_adapter_metering: read real provider meters through an adapter. agent_delegation: sibling-plan fan-out under section 9's declared file ownership. context_export: the section-4.3 durability export command. model_routing: switch model tiers mid-plan (section 8) - an authority GRANT only; switching additionally requires the host ability of the same name, so the default posture stays fixed-model. Names outside this set are unsupported capabilities and are refused."
     }
   }
 }

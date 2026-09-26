@@ -13,7 +13,7 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Ten Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Eleven Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check,
 `shared/update-state.py`, `shared/state_contract.py` and
@@ -38,7 +38,12 @@ executes through the ledger's control executor — never on its own — and
 `shared/context_manifest.py`, the v6 context-selection helper: a read-only
 derivation of the per-task context manifest, dead-end digest, freshness
 verdict and four-quantity accounting from the plan's own records (it takes
-no lock and writes nothing unless you pass `--out`). They
+no lock and writes nothing unless you pass `--out`); and
+`shared/resources.py`, the v6 resource helper: it composes the
+scheduler's envelope accounting and the ledger's record discipline to
+negotiate host abilities, apply reserves, record exhaustion and settle
+cancellations — the only events it writes are journal observations
+through the ledger writer, and it never mints observed trust. They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
 ours: importing a Python helper can leave a `__pycache__/` bytecode cache
