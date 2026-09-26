@@ -1,0 +1,793 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/journal-event/v6.json",
+  "description": "Deep Work Plan journal event, v6 line (RFC draft-4 section 4). One closed JSON object per line of journal.ndjson, the append-only event log; events are never edited or deleted and a correction is a later event. The full catalog is finalized here (RFC 14.1): the eleven section-4.1 types plus task_start (the protocol point that fixes each task's starting journal position, D2-9b), refusal (section 5: every refusal is itself a recorded event), and selection (the section-5 starvation priority boost). The 'approval' event is the section-3.1 materialization-time approval record; the guarded writer's first-task-start refusal scans for it by type (D3-7). Trust labels (section 4.5) exist only on evidence-carrying types - gate_run, observation, resource_sample, control_pair - and 'observed' means a shipped helper itself executed the check (A1); the semantic validator refuses observed on a mediating actor. Journal timestamps are the scheduler's clock (A11).",
+  "type": "object",
+  "required": [
+    "schema",
+    "type",
+    "seq",
+    "ts",
+    "plan",
+    "contract_id",
+    "actor"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/journal-event/v6.json"
+    },
+    "type": {
+      "enum": [
+        "task_start",
+        "approval",
+        "gate_run",
+        "observation",
+        "adaptation",
+        "amendment",
+        "intervention",
+        "resource_sample",
+        "control_pair",
+        "selection",
+        "refusal",
+        "view_render",
+        "reconciliation",
+        "journal_repair"
+      ]
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Position in the journal; strictly increasing across the file. Rolls may not truncate below snapshot-cited positions (A12)."
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The scheduler's clock (A11) - the aging clock for starvation protection."
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$"
+    },
+    "contract_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Every record produced under a contract cites its id (section 3.1)."
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "identity"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "helper",
+            "agent",
+            "host_adapter",
+            "human"
+          ]
+        },
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      }
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/task_start"
+    },
+    {
+      "$ref": "#/$defs/approval"
+    },
+    {
+      "$ref": "#/$defs/gate_run"
+    },
+    {
+      "$ref": "#/$defs/observation"
+    },
+    {
+      "$ref": "#/$defs/adaptation"
+    },
+    {
+      "$ref": "#/$defs/amendment"
+    },
+    {
+      "$ref": "#/$defs/intervention"
+    },
+    {
+      "$ref": "#/$defs/resource_sample"
+    },
+    {
+      "$ref": "#/$defs/control_pair"
+    },
+    {
+      "$ref": "#/$defs/selection"
+    },
+    {
+      "$ref": "#/$defs/refusal"
+    },
+    {
+      "$ref": "#/$defs/view_render"
+    },
+    {
+      "$ref": "#/$defs/reconciliation"
+    },
+    {
+      "$ref": "#/$defs/journal_repair"
+    }
+  ],
+  "$defs": {
+    "task_start": {
+      "properties": {
+        "type": {
+          "const": "task_start"
+        },
+        "task": {
+          "type": "string",
+          "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+        }
+      },
+      "required": [
+        "type",
+        "task"
+      ]
+    },
+    "approval": {
+      "properties": {
+        "type": {
+          "const": "approval"
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mechanism": {
+          "enum": [
+            "plan_authorship",
+            "pre_authorization"
+          ],
+          "description": "Exactly the section-3.1 mechanisms; migration re-uses pre_authorization (D3-2), there is no third value."
+        },
+        "plan_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Digest of the consented artifact: the reviewed plan markdown (plan_authorship) or the recorded pre-authorization (pre_authorization)."
+        }
+      },
+      "required": [
+        "type",
+        "authority",
+        "mechanism",
+        "plan_digest"
+      ],
+      "description": "The section-3.1 approval record {authority, mechanism, contract_id, plan digest}; contract_id rides the envelope, which is how the event cites it."
+    },
+    "gate_run": {
+      "properties": {
+        "type": {
+          "const": "gate_run"
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "cwd": {
+          "type": "string",
+          "minLength": 1
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "exit_code": {
+          "type": "integer"
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
+        "evidence_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Recoverable pointer to captured outputs; REQUIRED when trust is observed or imported."
+        },
+        "criterion": {
+          "type": "string",
+          "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+        }
+      },
+      "required": [
+        "type",
+        "command",
+        "cwd",
+        "timeout_seconds",
+        "exit_code",
+        "trust"
+      ]
+    },
+    "observation": {
+      "properties": {
+        "type": {
+          "const": "observation"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
+        "evidence_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "statement",
+        "trust"
+      ]
+    },
+    "adaptation": {
+      "properties": {
+        "type": {
+          "const": "adaptation"
+        },
+        "kind": {
+          "enum": [
+            "split",
+            "reorder",
+            "insert",
+            "change_strategy",
+            "retry"
+          ],
+          "description": "The closed section-3.3 enumeration. Anything outside it is refused by the authorization core; this object has NO field that can carry criterion content - a substituted check is an amendment, never an adaptation."
+        },
+        "trigger_observation": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Journal seq of the observation that triggered the proposal."
+        },
+        "evidence_artifact": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hypothesis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "affected_tasks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+          }
+        },
+        "affected_criteria": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+          }
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_invalidated": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_preserved": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "resource_impact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "declared",
+            "unit"
+          ],
+          "properties": {
+            "declared": {
+              "type": "number",
+              "minimum": 0,
+              "description": "The D2-9a pending contribution: a pending proposal contributes its declared impact, or the last measured cost of the same task shape when undeclared."
+            },
+            "unit": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "decision": {
+          "enum": [
+            "authorized",
+            "refused"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "REQUIRED when decision=refused; the refusal ledger view reads it (U3/B1)."
+        }
+      },
+      "required": [
+        "type",
+        "kind",
+        "trigger_observation",
+        "evidence_artifact",
+        "hypothesis",
+        "action",
+        "rationale",
+        "affected_tasks",
+        "affected_criteria",
+        "authority",
+        "evidence_invalidated",
+        "evidence_preserved",
+        "decision"
+      ]
+    },
+    "amendment": {
+      "properties": {
+        "type": {
+          "const": "amendment"
+        },
+        "original_criterion": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Verbatim, never paraphrased."
+        },
+        "observed_finding": {
+          "type": "string",
+          "minLength": 1
+        },
+        "disposition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revised_criterion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Recorded user or developer authority (section 3.4); an unmeetable mandatory criterion is a blocker, never completed work."
+        },
+        "affected_tasks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+          }
+        },
+        "evidence_invalidated": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_preserved": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "type",
+        "original_criterion",
+        "observed_finding",
+        "disposition",
+        "revised_criterion",
+        "reason",
+        "authority",
+        "affected_tasks",
+        "evidence_invalidated",
+        "evidence_preserved"
+      ]
+    },
+    "intervention": {
+      "properties": {
+        "type": {
+          "const": "intervention"
+        },
+        "category": {
+          "enum": [
+            "missing_intent",
+            "new_authority",
+            "environment_repair",
+            "engineering_rescue"
+          ],
+          "description": "Closed taxonomy, source of record docs/evaluations/v6/TELEMETRY.md (D3-11); campaign extraction and product records share this one enumeration (A13)."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The required authorization question asked of the human."
+        },
+        "resolution": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "category",
+        "description",
+        "question"
+      ]
+    },
+    "resource_sample": {
+      "properties": {
+        "type": {
+          "const": "resource_sample"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The metering source named by the enforced limit (A5): a host adapter reading real meters, or an asserted sample."
+        },
+        "limit_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "value": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
+        "evidence_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "source",
+        "value",
+        "unit",
+        "trust"
+      ]
+    },
+    "control_pair": {
+      "properties": {
+        "type": {
+          "const": "control_pair"
+        },
+        "criterion": {
+          "type": "string",
+          "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "check_artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "The D3-4 declaration: exactly these listed files travel back to the old leg's worktree; product files stay at their starting state. A v6-only surface - the v5 gate object has no such field."
+        },
+        "starting_fingerprint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "revision",
+            "dirty"
+          ],
+          "properties": {
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dirty": {
+              "type": "string",
+              "description": "Empty string means clean. A NON-EMPTY dirty component means the old leg cannot be materialized faithfully and the pair records control=unavailable (D3-3)."
+            }
+          }
+        },
+        "old_leg": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "available"
+          ],
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "outcome": {
+              "enum": [
+                "PASS",
+                "FAIL"
+              ],
+              "description": "Present iff available=true."
+            },
+            "log": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "available": {
+                    "const": true
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "outcome"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "available": {
+                    "const": false
+                  }
+                }
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "outcome"
+                  ]
+                },
+                "description": "An unavailable leg carries no outcome (D2-6/D3-3)."
+              }
+            }
+          ]
+        },
+        "new_leg": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "outcome",
+            "log"
+          ],
+          "properties": {
+            "outcome": {
+              "enum": [
+                "PASS",
+                "FAIL"
+              ]
+            },
+            "log": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "verdict": {
+          "enum": [
+            "discriminating",
+            "non_discriminating",
+            "control_unavailable"
+          ],
+          "description": "Only (old FAIL, new PASS) is discriminating (A6/U2). (PASS, PASS) is recorded non-discriminating, never rounded up; (FAIL, FAIL) records non-discriminating with new_leg.outcome=FAIL preserved - the pair proves nothing about the control and the criterion still fails. Any unavailable leg or dirty starting fingerprint is control_unavailable."
+        },
+        "trust": {
+          "$ref": "#/$defs/trust"
+        },
+        "evidence_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "criterion",
+        "check_artifacts",
+        "starting_fingerprint",
+        "old_leg",
+        "new_leg",
+        "verdict",
+        "trust"
+      ]
+    },
+    "selection": {
+      "properties": {
+        "type": {
+          "const": "selection"
+        },
+        "task": {
+          "type": "string",
+          "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "priority_boost": {
+          "type": "boolean",
+          "description": "The section-5 starvation protection action, itself a journal event (A11)."
+        },
+        "aging": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "waiting_since_seq",
+            "threshold"
+          ],
+          "properties": {
+            "waiting_since_seq": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Journal position where the task became ready-but-blocked; the clock is journal timestamps."
+            },
+            "threshold": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The contract-declared aging threshold that fired."
+            }
+          }
+        }
+      },
+      "required": [
+        "type",
+        "task",
+        "priority_boost"
+      ]
+    },
+    "refusal": {
+      "properties": {
+        "type": {
+          "const": "refusal"
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What was refused: a task id, or a pointer to the refused proposal."
+        },
+        "stage": {
+          "enum": [
+            "task_start",
+            "authorize",
+            "dispatch",
+            "gate"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "proposal": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Journal seq of the refused adaptation proposal, when the subject is one."
+        }
+      },
+      "required": [
+        "type",
+        "subject",
+        "stage",
+        "reason"
+      ]
+    },
+    "view_render": {
+      "properties": {
+        "type": {
+          "const": "view_render"
+        },
+        "view": {
+          "type": "string",
+          "minLength": 1
+        },
+        "snapshot_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Digest of the source snapshot the view rendered from (section 4.4 discipline)."
+        }
+      },
+      "required": [
+        "type",
+        "view",
+        "snapshot_digest"
+      ]
+    },
+    "reconciliation": {
+      "properties": {
+        "type": {
+          "const": "reconciliation"
+        },
+        "trigger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "editor": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Whose change won - the human document, not a mechanism label."
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The section-3.2 authority under which reconciled closures close (D2-4); without it a criterion downgrades to blocked, never reconciled."
+        }
+      },
+      "required": [
+        "type",
+        "trigger",
+        "editor",
+        "authority"
+      ]
+    },
+    "journal_repair": {
+      "properties": {
+        "type": {
+          "const": "journal_repair"
+        },
+        "byte_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Where the torn tail was truncated; the append-only rule binds complete events only."
+        },
+        "cause": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "byte_offset",
+        "cause"
+      ]
+    },
+    "trust": {
+      "enum": [
+        "observed",
+        "imported",
+        "asserted"
+      ],
+      "description": "Section 4.5: observed = a shipped helper itself executed the check; imported = matched external source with provenance; asserted = stated without independent establishment."
+    }
+  },
+  "unevaluatedProperties": false
+}

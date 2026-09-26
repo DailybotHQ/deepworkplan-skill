@@ -15,10 +15,12 @@ agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
 `shared/context.sh` for repo/branch/`.dwp/` detection. Four Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
-`verify/plan_contract.py` for the read-only conformance check, and
+`verify/plan_contract.py` for the read-only conformance check,
 `shared/update-state.py`, `shared/state_contract.py` and
 `shared/finalize_plan.py` for the guarded state, evidence and completion
-transactions. They read and write only your repository and its `.dwp/`
+transactions, and `shared/contract_v6.py` validating the v6 outcome
+contract and journal records (identity, graph and verdict semantics; it
+never executes gates). They read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
 ours: importing a Python helper can leave a `__pycache__/` bytecode cache
 beside it inside the installed pack. The shipped flows set

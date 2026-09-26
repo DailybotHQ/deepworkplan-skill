@@ -26,6 +26,7 @@ orchestrator hub, and agent workspace — are addressed throughout.
 | [`ARCHETYPES.md`](ARCHETYPES.md) | The three archetypes (individual repo, orchestrator hub, agent workspace), the classification heuristic, and how onboarding differs. |
 | [`PLAN_STATE.md`](PLAN_STATE.md) | The machine-readable plan state layer: `manifest.json` + `state.json`, gate records, outcome records, checkpoint/blocked state, reconciliation rules, and the published [JSON Schemas](schema/). |
 | [`LITE_PLANS.md`](LITE_PLANS.md) | Lite and Full representations, creation grammar, promotion and v2 schema contracts. |
+| [`V6_CONTRACT.md`](V6_CONTRACT.md) | **v6 line** normative surfaces: the outcome/authority `contract.json` (content-addressed identity, revisions, closed adaptation enumeration) and the append-only `journal.ndjson` event catalog with trust labels; published as `schema/plan-contract-v6` + `schema/journal-event-v6`. Binds v6 new plans only — the v5 standard is untouched. |
 | [`V7_ROADMAP.md`](V7_ROADMAP.md) | **Non-normative** planning record for the next version: the two optional super addons (Herdr mesh wiring, DeepWorkPlan Vim), the `[herdr-mesh]` grant/stop protocol core, and the never-a-conformance-gate posture. Nothing here gates the current standard. |
 | [`ADDONS.md`](ADDONS.md) | The addon mechanism + contract (reconcile-don't-clobber); four opt-in addons plus the AI Diff Reviewer local review, required in the baseline since 2.3.0 (§6.5). |
 

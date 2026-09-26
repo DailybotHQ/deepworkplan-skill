@@ -1,0 +1,455 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-contract/v6.json",
+  "description": "Deep Work Plan outcome and authority contract, v6 line (RFC draft-4 section 3). One contract.json per plan, next to state.json; immutable once execution starts. Identity: contract_id is the SHA-256 of the canonical bytes (json.dumps(sort_keys=True, separators=(',', ':')) over the object WITHOUT the contract_id field, encoded UTF-8). A changed contract is a new revision file under contracts/ citing parent_contract_id - never an in-place edit. The materialization-time approval citation is the journal 'approval' event of section 3.1, never contract content (D3-1). Published v1/v2/v5 schemas stay byte-unchanged; this is a new generation, not a mutation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "spec_version",
+    "plan",
+    "revision",
+    "created_at",
+    "outcome",
+    "acceptance",
+    "invariants",
+    "scope",
+    "authorization",
+    "permissions",
+    "dependencies",
+    "resource_envelope",
+    "tasks"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/plan-contract/v6.json"
+    },
+    "spec_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "contract_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "parent_contract_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "statement",
+        "success_definition",
+        "out_of_scope"
+      ],
+      "properties": {
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "success_definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "out_of_scope": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "criteria"
+      ],
+      "properties": {
+        "criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "statement",
+              "observable_check",
+              "accepted_evidence"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+              },
+              "statement": {
+                "type": "string",
+                "minLength": 1
+              },
+              "observable_check": {
+                "type": "string",
+                "minLength": 1,
+                "description": "An observable check: behavior, interface, or stored state - never a narration claim."
+              },
+              "accepted_evidence": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "enum": [
+                    "observed",
+                    "imported",
+                    "asserted"
+                  ]
+                },
+                "uniqueItems": true,
+                "description": "Which section-4.5 trust classes may close this criterion. A criterion that does not accept 'asserted' never inherits completion from migration (A7/D3-5)."
+              },
+              "control": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "rationale"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "regression",
+                      "discrimination",
+                      "exempt"
+                    ]
+                  },
+                  "rationale": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "description": "The negative control decided at contract authoring (section 6); 'exempt' is for minor prose/cosmetic criteria and says why."
+              }
+            }
+          }
+        }
+      }
+    },
+    "invariants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "statement"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^INV-[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "description": "Global conditions that must hold at every boundary; violation is a stop, not an adaptation."
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_paths",
+        "allowed_command_classes",
+        "forbidden_operations"
+      ],
+      "properties": {
+        "allowed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allowed_command_classes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true,
+          "description": "Decidable only for declared gate commands the core validates and executes (section 8); arbitrary shell is detection-plus-reporting, never prevention."
+        },
+        "forbidden_operations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Destructive and outward-facing operations, named explicitly."
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mechanism",
+        "authority",
+        "timestamp",
+        "boundaries",
+        "consent_checkpoints"
+      ],
+      "properties": {
+        "mechanism": {
+          "enum": [
+            "plan_authorship",
+            "pre_authorization"
+          ],
+          "description": "The binding mechanism ONLY (D3-1). plan_authorship = interactive git plans (the reviewed plan markdown is the consented artifact; authority = the session user). pre_authorization = unattended/non-git plans AND migration (the recorded pre-authorization is the migration request, D3-2). No third value exists. The citing record is the materialization-time journal 'approval' event - a record inside the contract cannot cite the contract's own content-addressed contract_id."
+        },
+        "authority": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who or what approved - an identity, never a model's confidence."
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "boundaries": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Boundaries of the pre-approval: what it does and does not cover."
+        },
+        "consent_checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Carried verbatim from the plan; never paraphrased."
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "granted",
+        "not_granted"
+      ],
+      "properties": {
+        "granted": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capability"
+          },
+          "uniqueItems": true
+        },
+        "not_granted": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capability"
+          },
+          "uniqueItems": true,
+          "description": "Explicitly those NOT granted - the negative list is content, not filler."
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "kind",
+          "detail"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "external_system",
+              "credential",
+              "pinned_input"
+            ]
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1,
+            "description": "For credentials: names only, never secrets."
+          }
+        }
+      }
+    },
+    "resource_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "limits"
+      ],
+      "properties": {
+        "limits": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "limit",
+              "unit",
+              "enforcement"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "limit": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Malformed values (negative, non-numeric) are invalid; the semantic validator rejects them with the offending id named."
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1
+              },
+              "enforcement": {
+                "enum": [
+                  "enforced",
+                  "advisory"
+                ],
+                "description": "enforced = a host adapter can actually stop the agent; advisory = instructed and reported only. Enforcement parity across hosts is never claimed (section 8)."
+              },
+              "metering_source": {
+                "type": "string",
+                "minLength": 1,
+                "description": "REQUIRED iff enforcement=enforced (A5): a host adapter reading real provider meters. authorize() never enforces on asserted meter data - an asserted meter degrades the limit to advisory and the record says so."
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "enforcement": {
+                      "const": "enforced"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "metering_source"
+                  ],
+                  "description": "A5: an enforced limit names its metering source."
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "prerequisites",
+          "touched_surface",
+          "gate_intent"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "prerequisites": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "uniqueItems": true,
+            "description": "Stable task IDs whose outcomes must hold first. The semantic validator rejects dangling references and prerequisite cycles."
+          },
+          "touched_surface": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "gate_intent": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "criterion",
+                "check"
+              ],
+              "properties": {
+                "criterion": {
+                  "type": "string",
+                  "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+                },
+                "check": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "description": "Selected gate intent: which acceptance criterion each declared gate serves."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "enum": [
+        "gate_command_exec",
+        "fs_write_plan_scope",
+        "fs_write_repo_scope",
+        "git_operations",
+        "network_access",
+        "host_adapter_metering",
+        "agent_delegation",
+        "context_export"
+      ],
+      "description": "Closed capability set (section 3.2 Permissions). gate_command_exec: run DECLARED gate commands through the core's runner. fs_write_plan_scope / fs_write_repo_scope: writes inside the plan folder / inside allowed repo paths. git_operations: commits and fingerprinting. network_access: outbound fetch to named dependencies. host_adapter_metering: read real provider meters through an adapter. agent_delegation: sibling-plan fan-out under section 9's declared file ownership. context_export: the section-4.3 durability export command. Names outside this set are unsupported capabilities and are refused."
+    }
+  }
+}
