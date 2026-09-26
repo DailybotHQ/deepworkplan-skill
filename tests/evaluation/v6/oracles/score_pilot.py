@@ -23,6 +23,11 @@ resolved, and nothing is ever guessed):
   3. `score_<token>` module function (score_sc5, score_lc1, ...)
   4. a module-level `score` when the FILENAME names exactly one case
                                             (astro_ac2.py -> AC-2)
+  5. REFERENCE_ORACLES                     a built-in scoring.py oracle for a
+                                            reference-style case (AC-6 ->
+                                            score_astro_ac6, reference
+                                            material in reference/
+                                            astro_ac6_skip_link.py)
 
 A token with no resolution — or two different functions claiming it — is
 listed under unscored_cases and never scored. Case modules that fail to
@@ -76,6 +81,16 @@ DEFAULT_LAB_ROOT = (REPO / ".dwp" / "plans" / "PLAN_v6_verified_autonomy"
                     / "analysis_results" / "lab" / "baseline-pilot-r3")
 FAMILIES = ("astro", "service", "legacy")
 
+# Reference-style oracles (rung 5 of the ladder above): the score function
+# lives in scoring.py while the reference/sabotage material lives in
+# reference/<name>.py. Explicit by design — resolution is never guessed.
+REFERENCE_ORACLES = {
+    "AC-1": ("score_astro_ac1", "reference/astro_ac1_reading_time.py"),
+    "AC-6": ("score_astro_ac6", "reference/astro_ac6_skip_link.py"),
+    "LC-3": ("score_legacy_lc3", "reference/legacy_lc3_k1_fix.py"),
+    "SC-9": ("score_service_sc9", "reference/service_sc9_event_lookup.py"),
+}
+
 TOKEN_RE = re.compile(r"[A-Za-z]+-\d+")
 FILENAME_TOKEN_RE = re.compile(r"([a-z]+)(\d+)")
 
@@ -128,9 +143,38 @@ def _module_entries(path, module):
     return entries
 
 
+def _claim(resolved, problems, token, fn, how):
+    """Merge one (token -> fn) claim with conflict semantics."""
+    if token in resolved and resolved[token][0] is not fn:
+        problems.append(f"case {token} claimed by both "
+                        f"{resolved[token][1]} and {how}; treating as unscored")
+        resolved[token] = (None, "conflict")
+    else:
+        resolved.setdefault(token, (fn, how))
+
+
+def _load_scoring_module(problems):
+    """Import oracles/scoring.py by path, with the same isolation as the
+    case modules (no sys.path games, no import cache)."""
+    path = CASES_DIR.parent / "scoring.py"
+    spec = importlib.util.spec_from_file_location("score_pilot_scoring", path)
+    if spec is None or spec.loader is None:
+        problems.append(f"cannot load scoring module: {path}")
+        return None
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except Exception as exc:
+        problems.append(f"scoring module failed to import: "
+                        f"{exc.__class__.__name__}: {exc}")
+        return None
+    return module
+
+
 def load_registry():
-    """Import every case module and merge their entries. Returns
-    (resolved: {token: (fn, how)}, problems: [str])."""
+    """Import every case module and the built-in reference oracles, and
+    merge their entries. Returns (resolved: {token: (fn, how)},
+    problems: [str])."""
     resolved, problems = {}, []
     for path in sorted(CASES_DIR.glob("*.py")):
         if path.stem == "__init__":
@@ -147,12 +191,18 @@ def load_registry():
                             f"{exc.__class__.__name__}: {exc}")
             continue
         for token, (fn, how) in _module_entries(path, module).items():
-            if token in resolved and resolved[token][0] is not fn:
-                problems.append(f"case {token} claimed by both "
-                                f"{resolved[token][1]} and {how}; treating as unscored")
-                resolved[token] = (None, "conflict")
+            _claim(resolved, problems, token, fn, how)
+
+    scoring = _load_scoring_module(problems)
+    if scoring is not None:
+        for token, (fn_name, ref) in REFERENCE_ORACLES.items():
+            fn = getattr(scoring, fn_name, None)
+            how = f"built-in oracle {fn_name} (reference case {ref})"
+            if callable(fn) and _binds_two_args(fn):
+                _claim(resolved, problems, token, fn, how)
             else:
-                resolved.setdefault(token, (fn, how))
+                problems.append(f"reference oracle {token}: scoring.{fn_name} "
+                                f"is missing or does not bind (root, seed)")
     return resolved, problems
 
 

@@ -48,7 +48,17 @@ CALIBRATIONS = [
     {"id": "astro-AC1", "family": "astro", "score": oracles.score_astro_ac1,
      "reference": "astro_ac1_reading_time"},
     {"id": "astro-AC6", "family": "astro", "score": oracles.score_astro_ac6,
-     "reference": "astro_ac6_skip_link"},
+     "reference": "astro_ac6_skip_link",
+     "variants": {"pristine": None, "known_good": "apply",
+                  "missing_target": "sabotage",
+                  "empty_focus": "stub_empty_focus",
+                  "cosmetic_focus": "stub_cosmetic_focus",
+                  "tabindex": "stub_tabindex",
+                  "display_none": "stub_display_none"},
+     "expected": {"pristine": "FAIL", "known_good": "PASS",
+                  "missing_target": "FAIL", "empty_focus": "FAIL",
+                  "cosmetic_focus": "FAIL", "tabindex": "FAIL",
+                  "display_none": "FAIL"}},
     {"id": "astro-AC2", "family": "astro",
      "score_module": "cases/astro_ac2.py"},
     {"id": "astro-AC5", "family": "astro",
@@ -125,7 +135,15 @@ def run_case(case, results):
             elif op == "apply":
                 getattr(reference, case.get("apply_fn", "apply"))(work)
             else:
-                getattr(reference, case.get("sabotage_fn", "sabotage"))(work)
+                # op names the variant function on the reference/case module
+                # (sabotage, sabotage_sc5, stub_empty_focus, ...). Legacy
+                # behavior is preserved: an op that resolves to nothing on
+                # the module falls back to the registered sabotage_fn.
+                fn = getattr(reference, op, None)
+                if callable(fn):
+                    fn(work)
+                else:
+                    getattr(reference, case.get("sabotage_fn", "sabotage"))(work)
             result = score(work, seed)
             matrix[variant] = result
     expected = case.get("expected",
@@ -143,10 +161,13 @@ def run_case(case, results):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--family")
+    parser.add_argument("--case", help="run a single calibration case id")
     parser.add_argument("--json", dest="json_out")
     args = parser.parse_args()
 
-    cases = [c for c in CALIBRATIONS if not args.family or c["family"] == args.family]
+    cases = [c for c in CALIBRATIONS
+             if (not args.family or c["family"] == args.family)
+             and (not args.case or c["id"] == args.case)]
     if not cases:
         print(f"no calibration cases for family {args.family!r}", file=sys.stderr)
         return 2

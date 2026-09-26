@@ -206,9 +206,63 @@ def _astro_build_and_check(root: Path, reasons: list, env=None, inspect=None) ->
 
 
 
+# Properties that can make an offscreen or clipped skip link reachable and
+# visible on focus. A :focus rule touching only cosmetic properties (color,
+# font-weight, ...) leaves an offscreen link offscreen: that is a stub, not
+# a visible focus style.
+_AC6_VISIBILITY_PROPS = {
+    "position", "inset", "left", "right", "top", "bottom",
+    "transform", "translate", "clip", "clip-path",
+    "opacity", "visibility", "display", "overflow",
+    "width", "height", "max-width", "max-height",
+}
+
+
+def _ac6_skip_link_focus(css_text: str, reasons: list) -> None:
+    """Hardened .skip-link focus check. A substring test ('.skip-link' and
+    ':focus' both appear somewhere) passes cosmetic stubs; this parses the
+    actual rule blocks and demands a :focus rule on .skip-link whose
+    declarations change a visibility or geometry property, and a base state
+    that does not hard-hide the link in a way focus never undoes."""
+    rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css_text)
+    focus_props, base_hard_hidden = set(), False
+    saw_skip_rule = saw_focus_rule = False
+    for selector, decls in rules:
+        if ".skip-link" not in selector:
+            continue
+        saw_skip_rule = True
+        if ":focus" in selector:
+            saw_focus_rule = True
+            for part in decls.split(";"):
+                if ":" in part:
+                    focus_props.add(part.split(":", 1)[0].strip().lower())
+        else:
+            flat = re.sub(r"\s+", "", decls).lower()
+            if "display:none" in flat or "visibility:hidden" in flat:
+                base_hard_hidden = True
+    if not saw_skip_rule:
+        reasons.append("no .skip-link rule in built CSS")
+        return
+    if not saw_focus_rule:
+        reasons.append("no :focus rule selects .skip-link in built CSS")
+        return
+    if not focus_props:
+        reasons.append(".skip-link :focus rule has empty declarations (stub)")
+    elif not focus_props & _AC6_VISIBILITY_PROPS:
+        reasons.append(
+            ".skip-link :focus rule changes no visibility or geometry property "
+            f"(stub; only {sorted(focus_props)})")
+    if base_hard_hidden and not focus_props & {"display", "visibility"}:
+        reasons.append(".skip-link is display:none/visibility:hidden and no "
+                       ":focus rule restores it")
+
+
 def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
     """AC-6: every built page starts its body with a working skip link to an
-    existing #main target, with a visible :focus style in the built CSS."""
+    existing #main target, with a visible :focus style in the built CSS.
+    Hardened against stubs: the :focus rule must really change visibility or
+    geometry, the anchor must carry the skip class, and tabindex=-1 or a
+    hard-hidden base state fails."""
     reasons = []
 
     def inspect(work: Path):
@@ -219,11 +273,21 @@ def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
         for page in pages:
             html = page.read_text(encoding="utf-8", errors="replace")
             body = html.split("<body", 1)[-1]
-            first_anchor = re.search(r'<a\b[^>]*href="([^"]*)"', body)
-            if not first_anchor:
+            first_tag = re.search(r"<a\b[^>]*>", body)
+            if not first_tag:
                 reasons.append(f"{page.name}: no anchor in body")
-            elif first_anchor.group(1) != "#main":
-                reasons.append(f"{page.name}: first focusable link is not the skip link (href={first_anchor.group(1)!r})")
+            else:
+                tag = first_tag.group(0)
+                href = re.search(r'href\s*=\s*["\']([^"\']*)["\']', tag)
+                if not href:
+                    reasons.append(f"{page.name}: first anchor has no href")
+                elif href.group(1) != "#main":
+                    reasons.append(f"{page.name}: first focusable link is not the skip link (href={href.group(1)!r})")
+                cls = re.search(r'class\s*=\s*["\']([^"\']*)["\']', tag)
+                if not cls or "skip" not in cls.group(1).lower():
+                    reasons.append(f"{page.name}: first anchor carries no skip class")
+                if re.search(r'tabindex\s*=\s*["\']?\s*-1', tag):
+                    reasons.append(f"{page.name}: skip link removed from tab order (tabindex=-1)")
             if 'id="main"' not in html:
                 reasons.append(f"{page.name}: missing #main target")
         # Astro inlines small stylesheets into the pages (inlineStylesheets
@@ -234,8 +298,7 @@ def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
             for style in re.findall(r"<style[^>]*>(.*?)</style>",
                                     page.read_text(encoding="utf-8", errors="replace"), re.S):
                 css_text += style
-        if ".skip-link" not in css_text or ":focus" not in css_text:
-            reasons.append("no visible .skip-link focus style in built CSS")
+        _ac6_skip_link_focus(css_text, reasons)
 
     _astro_build_and_check(root, reasons, inspect=inspect)
     return _result(PASS if not reasons else FAIL, reasons)
