@@ -55,6 +55,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 sys.dont_write_bytecode = True  # never leave caches inside an installed pack
@@ -787,6 +788,214 @@ class Writer:
                 'log': os.path.relpath(log_path, self.r.dir),
                 'seq': event['seq']}
 
+    # -- control-pair execution (the second observed executor, U2/A6) -------
+
+    def _run_leg(self, command, cwd, timeout, log_path):
+        """Execute one control leg; returns (exit_code, ran)."""
+        try:
+            proc = subprocess.run(command, shell=isinstance(command, str),
+                                  cwd=cwd, capture_output=True,
+                                  text=True, timeout=timeout)
+            exit_code, out, err = proc.returncode, proc.stdout, proc.stderr
+        except subprocess.TimeoutExpired as exc:
+            exit_code = 124
+            out = (exc.stdout or b'').decode('utf-8', 'replace') \
+                if isinstance(exc.stdout, bytes) else (exc.stdout or '')
+            err = 'timeout after %ss' % timeout
+        except FileNotFoundError:
+            return None, False
+        with open(log_path, 'w', encoding='utf-8') as fh:
+            fh.write('$ %s (cwd %s)\n\n--- stdout ---\n%s\n--- stderr ---'
+                     '\n%s\n--- exit %s ---\n'
+                     % (command, cwd, out, err, exit_code))
+        return exit_code, True
+
+    def _git(self, args, cwd):
+        """Run one git command; returns (stdout, ok)."""
+        try:
+            proc = subprocess.run(['git'] + args, cwd=cwd,
+                                  capture_output=True, text=True, timeout=30)
+            return proc.stdout.strip(), proc.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError,
+                OSError):
+            return '', False
+
+    def start_task(self, task_id, actor=None):
+        """Record task_start WITH the starting fingerprint (D2-6).
+
+        The fingerprint is the task's starting world - current HEAD plus
+        the section-2-row-16 dirty-state comparison string - captured HERE,
+        at task start, while the working tree still IS the starting state.
+        A control pair's old leg materializes this revision later; it
+        cannot be captured at control time, when the tree carries the very
+        work being verified. Hosts without git record revision 'none' and
+        every control on the attempt is honestly unavailable. Content-keyed
+        idempotence: an unchanged world de-duplicates, a changed world is
+        a new task_start (and reopens the evidence window, D2-9b/M4).
+        """
+        self._check_position()
+        task = self._task(task_id)
+        del task  # presence check only; the payload carries the id
+        root = self.repo_root()
+        revision, rev_ok = self._git(['rev-parse', 'HEAD'], root)
+        dirty, _dirty_ok = self._git(['status', '--porcelain'], root)
+        payload = {'task': task_id,
+                   'fingerprint': {'revision': revision if rev_ok
+                                                  and revision else 'none',
+                                   'dirty': dirty or ''}}
+        return self.append('task_start', payload,
+                           actor=actor or {'kind': 'agent',
+                                           'identity': 'caller'},
+                           idempotent=True)
+
+    def run_control(self, task_id, criterion, command, artifacts,
+                    timeout=600):
+        """Execute BOTH legs of a declared control and record the pair.
+
+        Mechanical residency (U2, closing A6): the helper itself executes
+        the old leg (a detached worktree at the recorded starting revision
+        carrying exactly the declared check artifacts, D2-6/D3-4) and the
+        new leg (the working tree), then records the observed
+        ``control_pair`` with the verdict the legs produced:
+
+          * (old FAIL, new PASS) -> discriminating - the only pass;
+          * any other available pair -> non_discriminating, never rounded;
+          * a non-empty dirty starting fingerprint (D3-3), a missing git
+            or a non-repository host -> control_unavailable with
+            old_leg.available=false - never a synthesized old outcome.
+        """
+        self._check_position()
+        task = self._task(task_id)
+        intents = {i.get('criterion')
+                   for i in task.get('gate_intent', [])}
+        if criterion not in intents:
+            raise LedgerError(
+                'control pair refused: criterion %r is not declared in '
+                'task %s gate_intent %s' %
+                (criterion, task_id, sorted(intents)))
+        # the criterion must DECLARE a behavioral control - exempt
+        # criteria close on ordinary evidence, never on a pair
+        declared = None
+        for crit in self.r.contract.get('acceptance', {}).get('criteria',
+                                                              []):
+            if crit.get('id') == criterion:
+                declared = crit
+                break
+        control = (declared or {}).get('control') or {}
+        if control.get('kind') not in ('regression', 'discrimination'):
+            raise LedgerError(
+                'control pair refused: criterion %s declares control '
+                'kind %r - exempt/undeclared criteria close on ordinary '
+                'accepted evidence with the recorded reason, never on a '
+                'pair' % (criterion, control.get('kind')))
+        start_event = None
+        for event in self.events:
+            if event.get('type') == 'task_start' and \
+                    event.get('task') == task_id:
+                if start_event is None or \
+                        event.get('seq', 0) > start_event.get('seq', 0):
+                    start_event = event
+        if start_event is None:
+            raise LedgerError(
+                'control pair refused for %s: the task has no task_start '
+                '- observed evidence exists only inside a task attempt'
+                % task_id)
+        root = self.repo_root()
+        log_dir = os.path.join(self.r.gates_dir, task_id)
+        os.makedirs(log_dir, exist_ok=True)
+        seq = self.last_seq() + 1
+        old_log = os.path.join(log_dir, '%03d-control-%s-old.log'
+                               % (seq, criterion))
+        new_log = os.path.join(log_dir, '%03d-control-%s-new.log'
+                               % (seq, criterion))
+        # D2-6: the old leg materializes the RECORDED starting
+        # fingerprint - captured at task_start, not now. The current tree
+        # may legitimately be dirty with the work being verified (that is
+        # the new leg); what D3-3 refuses is a DIRTY STARTING state,
+        # which no worktree can faithfully replay.
+        fingerprint = start_event.get('fingerprint') or {}
+        revision = fingerprint.get('revision') or 'none'
+        dirty = fingerprint.get('dirty') or ''
+        old_leg = {'available': False}
+        verdict = 'control_unavailable'
+        why = 'old leg unavailable'
+        if not fingerprint:
+            why = ('the attempt recorded no starting fingerprint - the old '
+                   'leg cannot be materialized from a guess')
+        elif revision == 'none':
+            why = ('the attempt started on a non-git host - an old leg '
+                   'cannot be materialized from a fingerprint alone')
+        elif dirty:
+            why = ('starting fingerprint carries a dirty component - the '
+                   'old leg cannot be faithfully materialized (D3-3)')
+        else:
+            worktree = os.path.join(tempfile.mkdtemp(
+                prefix='dwp-control-'), 'old-leg')
+            try:
+                _out, add_ok = self._git(['worktree', 'add', '--detach',
+                                          worktree, revision], root)
+                if add_ok:
+                    # D3-4: exactly the declared check artifacts travel
+                    # back; product files stay at their starting state.
+                    for rel in artifacts:
+                        src = os.path.join(root, rel)
+                        if not os.path.isfile(src):
+                            raise LedgerError(
+                                'declared check artifact %r does not '
+                                'exist in the working tree' % rel)
+                        dst = os.path.join(worktree, rel)
+                        os.makedirs(os.path.dirname(dst) or worktree,
+                                    exist_ok=True)
+                        shutil.copyfile(src, dst)
+                    old_exit, ran = self._run_leg(command, worktree,
+                                                  timeout, old_log)
+                    if not ran:
+                        why = 'old-leg command not found'
+                    else:
+                        old_leg = {'available': True,
+                                   'outcome': 'PASS' if old_exit == 0
+                                              else 'FAIL',
+                                   'log': os.path.relpath(old_log,
+                                                          self.r.dir)}
+                else:
+                    why = 'worktree materialization failed'
+            finally:
+                if os.path.isdir(worktree):
+                    self._git(['worktree', 'remove', '--force', worktree],
+                              root)
+        new_exit, new_ran = self._run_leg(command, root, timeout, new_log)
+        if not new_ran:
+            raise LedgerError('new-leg command not found: %r - no event '
+                              'is recorded for a check that never ran'
+                              % (command,))
+        new_leg = {'outcome': 'PASS' if new_exit == 0 else 'FAIL',
+                   'log': os.path.relpath(new_log, self.r.dir)}
+        if old_leg.get('available'):
+            verdict = ('discriminating'
+                       if old_leg['outcome'] == 'FAIL' and
+                       new_leg['outcome'] == 'PASS'
+                       else 'non_discriminating')
+            why = 'only (old FAIL, new PASS) discriminates (A6/U2)'
+        payload = {'criterion': criterion,
+                   'check_artifacts': list(artifacts),
+                   'starting_fingerprint': {'revision': revision,
+                                            'dirty': dirty},
+                   'old_leg': old_leg,
+                   'new_leg': new_leg,
+                   'verdict': verdict}
+        event = self._append_raw('control_pair', payload,
+                                 actor={'kind': 'helper',
+                                        'identity': LEDGER_IDENTITY},
+                                 ts=_utc_now(), trust='observed',
+                                 evidence_path=os.path.relpath(old_log if
+                                                               old_leg.get(
+                                                                   'available')
+                                                               else new_log,
+                                                               self.r.dir),
+                                 note=why)
+        return {'verdict': verdict, 'old': old_leg, 'new': new_leg,
+                'reason': why, 'seq': event['seq']}
+
     # -- projection ---------------------------------------------------------
 
     def task_start_seq(self, task_id):
@@ -1074,7 +1283,6 @@ def _content_key(etype, payload, actor, contract_id=None):
 
 def self_test():
     """In-memory probes: crash, collision, idempotence, staleness, identity."""
-    import tempfile
     failures = []
     probes = [0]
 
@@ -1129,6 +1337,22 @@ def self_test():
         check('duplicate task_start is idempotent',
               ts1['seq'] == ts2['seq'],
               'seq %r vs %r' % (ts1.get('seq'), ts2.get('seq')))
+        # 2.5 start_task captures the starting fingerprint at task start
+        # (D2-6): no git in this scratch dir -> revision 'none', and the
+        # content key makes a repeat call on the same world a dedup
+        ts3 = writer.start_task('T-implement',
+                                actor={'kind': 'agent',
+                                       'identity': 'selftest'})
+        ts4 = writer.start_task('T-implement',
+                                actor={'kind': 'agent',
+                                       'identity': 'selftest'})
+        check('start_task records a starting fingerprint',
+              (ts3.get('fingerprint') or {}).get('revision') == 'none' and
+              (ts3.get('fingerprint') or {}).get('dirty') == '',
+              repr(ts3.get('fingerprint')))
+        check('start_task on an unchanged world dedups',
+              ts3['seq'] == ts4['seq'],
+              'seq %r vs %r' % (ts3.get('seq'), ts4.get('seq')))
         # 3. B1: append can never mint gate_run records or observed
         # trust outside host-adapter metering
         try:
@@ -1362,7 +1586,7 @@ def _writer_for(args, force=False):
 
 
 def main(argv):
-    usage = ('usage: ledger.py --plan DIR {append|gate|reuse|project|'
+    usage = ('usage: ledger.py --plan DIR {append|start|gate|reuse|project|'
              'complete|export|roll|inspect|self-test} [options]')
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--plan')
@@ -1426,6 +1650,25 @@ def main(argv):
                     trust=args.trust, evidence_path=args.evidence_path)
                 print('OK: appended %s seq %d' % (event['type'],
                                                   event['seq']))
+                return 0
+            finally:
+                lock.release()
+        if args.command == 'start':
+            if not args.task:
+                print('start requires --task')
+                return 2
+            rec, lock, writer = _writer_for(args, args.force)
+            try:
+                event = writer.start_task(
+                    args.task,
+                    actor={'kind': args.actor_kind,
+                           'identity': args.actor_identity})
+                fp = event.get('fingerprint') or {}
+                print('OK: task_start %s at seq %s (starting fingerprint '
+                      '%s, dirty %r)'
+                      % (args.task, event.get('seq'),
+                         (fp.get('revision') or 'none')[:12],
+                         fp.get('dirty', '')))
                 return 0
             finally:
                 lock.release()

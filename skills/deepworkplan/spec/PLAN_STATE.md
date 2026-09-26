@@ -483,8 +483,16 @@ execution, never by declaration. `gate_run` records exist only through
 cwd, timeout and captured logs, bound at execution time to one criterion
 the task's `gate_intent` declares and to a started task; a mediated
 `append` of a `gate_run` is refused outright. Outside the gate executor
-exactly one `observed` path exists: `resource_sample` metering written by
-a `host_adapter` actor citing an evidence artifact that resolves. Every
+exactly two `observed` paths exist: `resource_sample` metering written by
+a `host_adapter` actor citing an evidence artifact that resolves, and the
+control-pair executor — `ledger.py start` captures the task's starting
+fingerprint (revision plus dirty state) on the `task_start` record while
+the working tree still is the starting state, and `run_control` (reached
+through `outcomes.py control`) then executes both legs itself, materializing
+the old leg as a detached worktree at that recorded revision carrying
+exactly the declared check artifacts (D2-6/D3-4); a dirty starting
+fingerprint or a non-git host records `control_unavailable`, never a
+synthesized old outcome (D3-3). Every
 `observed`/`imported` record must cite a pointer that resolves inside the
 plan or the repository. Everything else an agent writes down — including
 invariant evaluations, discoveries and model-reported results — is

@@ -335,6 +335,18 @@ This is the integration value. Reasoning guidance is in
   primary customization surface; consumers who want repo-specific review
   rules author them here.
 
+- **v6 plans — recording review states (no rubric fork).** For a plan on
+  the v6 records, the review's state is recorded as one asserted journal
+  observation through `shared/outcomes.py review` with the closed grammar
+  `REVIEW: <state>[: <finding>]` (state one of `clean` / `critical` /
+  `missing` / `error` / `incomplete`). The failure semantics are the
+  upstream skill's, preserved verbatim: `critical` blocks plan completion;
+  `missing` / `error` / `incomplete` are never a clean pass. A review
+  state never satisfies an acceptance criterion — reviewer cleanliness is
+  not behavioral acceptance — and v6 adds no severity of its own; the
+  upstream rubric and the extension file stay the only review
+  customization surfaces.
+
 ### Step 4 — Validate (SPEC §9 Validation)
 
 Run the validation checklist and report: whether the vendored skill is

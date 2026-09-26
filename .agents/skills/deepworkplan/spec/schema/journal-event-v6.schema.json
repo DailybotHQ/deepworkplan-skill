@@ -134,6 +134,25 @@
         "task": {
           "type": "string",
           "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "fingerprint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "revision",
+            "dirty"
+          ],
+          "properties": {
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "dirty": {
+              "type": "string",
+              "description": "The section-2-row-16 dirty-state comparison string captured AT TASK START; empty means clean. This is the state a control pair's old leg materializes (D2-6); a non-empty dirty component makes every control on the attempt unavailable (D3-3). 'none' when the host had no git at task start."
+            }
+          },
+          "description": "Optional: recorded by the start_task executor. A raw append records none, and a control on a fingerprint-less attempt records control=unavailable - never a guessed old tree."
         }
       },
       "required": [

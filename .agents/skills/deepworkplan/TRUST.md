@@ -13,20 +13,28 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Six Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Nine Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check,
 `shared/update-state.py`, `shared/state_contract.py` and
 `shared/finalize_plan.py` for the guarded state, evidence and completion
-transactions, and `shared/contract_v6.py` validating the v6 outcome
+transactions, `shared/contract_v6.py` validating the v6 outcome
 contract and journal records (identity, graph and verdict semantics; it
 never executes gates), and — for v6 plans — `shared/ledger.py`, the single
-journal writer and gate executor (the only place `observed` evidence is
-produced, by actually running the declared command), with `shared/views.py`
-rendering the deterministic generated views under the human-edit rule, and
+journal writer and gate executor (the only place `observed` gate evidence
+is produced, by actually running the declared command; it also captures
+each task's starting fingerprint at `task_start` and executes both legs of
+a declared control pair, materializing the old leg as a detached worktree
+at that recorded revision), `shared/views.py`
+rendering the deterministic generated views under the human-edit rule,
 `shared/scheduler.py` — the read-only authorization core that turns journal
 records into dispatch/refusal decisions (it never writes and never executes
-anything; every refusal it returns is a decision, not a side effect). They
+anything; every refusal it returns is a decision, not a side effect) — and
+`shared/outcomes.py`, the v6 outcome-verification helper: closure decisions
+and receipts are pure recomputations over the records (a receipt is written
+only to the `--out` path you name), review states are recorded as ordinary
+`asserted` observations through the ledger writer, and a declared control
+executes through the ledger's control executor — never on its own. They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
 ours: importing a Python helper can leave a `__pycache__/` bytecode cache

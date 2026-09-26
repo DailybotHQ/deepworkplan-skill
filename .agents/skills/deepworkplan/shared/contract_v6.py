@@ -759,10 +759,25 @@ def _trust_rules(event, errors):
 
 def _v_task_start(event, errors):
     _closed(event, {'schema', 'type', 'seq', 'ts', 'plan', 'contract_id',
-                    'actor', 'note', 'task'}, 'event', errors)
+                    'actor', 'note', 'task', 'fingerprint'}, 'event', errors)
     tid = _field(event, 'task', 'str?', 'event', errors)
     if tid is not None and not ID_TASK.match(tid):
         errors.append('event.task: expected a T-* id')
+    # D2-6: the starting fingerprint captured at task start - the state a
+    # control pair's old leg materializes. Optional: a raw append records
+    # none, and a control on a fingerprint-less attempt is honestly
+    # unavailable, never guessed.
+    if 'fingerprint' in event:
+        fp = event['fingerprint']
+        fpath = 'event.fingerprint'
+        if not isinstance(fp, dict):
+            errors.append('%s: expected an object' % fpath)
+        else:
+            _closed(fp, {'revision', 'dirty'}, fpath, errors)
+            _field(fp, 'revision', 'str', fpath, errors)
+            if not isinstance(fp.get('dirty'), str):
+                errors.append('%s.dirty: expected a string (empty means '
+                              'clean)' % fpath)
 
 
 def _v_approval(event, errors):
@@ -1286,6 +1301,12 @@ def self_test():
     if contract_errors(sched):
         failures.append('a well-formed scheduling block should be valid: %s'
                         % contract_errors(sched))
+    stamped_start = json.loads(json.dumps(_selftest_events(cid)))
+    stamped_start[0]['fingerprint'] = {'revision': 'r0', 'dirty': ''}
+    if journal_errors(stamped_start, contract=stamped):
+        failures.append('task_start carrying a starting fingerprint should '
+                        'be valid: %s' %
+                        journal_errors(stamped_start, contract=stamped)[:2])
     events = _selftest_events(cid)
     journal = journal_errors(events, contract=stamped)
     if journal:
@@ -1345,6 +1366,13 @@ def self_test():
               accepted_evidence=[]))
     probe('journal: unknown event type',
           None, lambda es: es[0].update(type='time_travel'))
+    probe('journal: task_start fingerprint with a non-string dirty',
+          None, lambda es: es[0].update(
+              fingerprint={'revision': 'r0', 'dirty': 7}))
+    probe('journal: task_start fingerprint with an extra key',
+          None, lambda es: es[0].update(
+              fingerprint={'revision': 'r0', 'dirty': '',
+                           'staged': 'yes'}))
     probe('journal: observed on a mediating agent actor',
           None, lambda es: es[2].update(
               actor={'kind': 'agent', 'identity': 'model'}))

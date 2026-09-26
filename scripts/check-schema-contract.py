@@ -221,7 +221,14 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
     appr = copy.deepcopy(events[1])
     appr["mechanism"] = "migration"
     both_ok(appr, js, c6.journal_event_errors(appr), "third approval mechanism", False)
-    notes.append("v6: journal mutants rejected by both halves (catalog / closed object / D3-3 / D3-2)")
+    startfp = copy.deepcopy(events[0])
+    assert startfp["type"] == "task_start"
+    startfp["fingerprint"] = {"revision": "r0", "dirty": 3}
+    both_ok(startfp, js, c6.journal_event_errors(startfp), "task_start fingerprint with a non-string dirty", False)
+    startfp2 = copy.deepcopy(events[0])
+    startfp2["fingerprint"] = {"revision": "r0", "dirty": "", "staged": "yes"}
+    both_ok(startfp2, js, c6.journal_event_errors(startfp2), "task_start fingerprint with an extra key", False)
+    notes.append("v6: journal mutants rejected by both halves (catalog / closed object / D3-3 / D3-2 / fingerprint shape)")
 
 
 def errors(schema, doc):
