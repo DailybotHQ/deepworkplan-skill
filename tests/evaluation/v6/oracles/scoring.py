@@ -226,8 +226,14 @@ def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
                 reasons.append(f"{page.name}: first focusable link is not the skip link (href={first_anchor.group(1)!r})")
             if 'id="main"' not in html:
                 reasons.append(f"{page.name}: missing #main target")
+        # Astro inlines small stylesheets into the pages (inlineStylesheets
+        # 'auto'): styles live in both .css bundles and inline <style> blocks.
         css_text = "".join(p.read_text(encoding="utf-8", errors="replace")
                            for p in dist.rglob("*.css"))
+        for page in pages:
+            for style in re.findall(r"<style[^>]*>(.*?)</style>",
+                                    page.read_text(encoding="utf-8", errors="replace"), re.S):
+                css_text += style
         if ".skip-link" not in css_text or ":focus" not in css_text:
             reasons.append("no visible .skip-link focus style in built CSS")
 
