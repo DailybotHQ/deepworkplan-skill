@@ -1,0 +1,30 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/campaign/1",
+  "name": "smoke",
+  "paid": false,
+  "requires_enforced_isolation": false,
+  "arms": {
+    "A": null,
+    "B": { "pack": "packs/v5/v5.5.4-2f1c7e62017b6b60" }
+  },
+  "seed": {
+    "path": "tests/evaluation/v6/fixtures/smoke/seed",
+    "family": "smoke"
+  },
+  "tasks": [
+    { "id": "S-1", "prompt": "Produce solution.txt containing 'done' (see task.txt in the workspace)." }
+  ],
+  "strata": [
+    {
+      "name": "fake",
+      "launch": {
+        "mode": "fake",
+        "command": "tests/evaluation/v6/fixtures/smoke/fake_actor.py"
+      }
+    }
+  ],
+  "repeats": 1,
+  "oracles": [
+    { "id": "O1", "kind": "exit_zero_file", "path": "solution.txt" }
+  ]
+}

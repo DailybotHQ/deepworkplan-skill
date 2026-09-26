@@ -40,6 +40,7 @@ The runtime validator must still work without third-party Python packages.
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
 | v6 baseline snapshot integrity | `python3 tests/evaluation/v6/baselines/verify_snapshot.py` | the v6 evaluation lab; every campaign consuming the frozen comparator |
 | v6 preregistration integrity | `python3 tests/evaluation/v6/protocol/cost_calculator.py validate tests/evaluation/v6/protocol/design.json` (+ `self-test`; `gate` refuses unset resource envelopes) | the v6 campaign design; every campaign task consuming arms, partitions, thresholds or the resource envelope |
+| v6 evaluation lab driver | `python3 scripts/evaluation/v6/lab.py self-test` + `python3 -m unittest discover -s tests/evaluation/v6 -p 'test_*.py'` | the v6 campaign runner; every campaign task preparing, running, scoring or analyzing |
 
 Repository example: a change to `shared/update-state.py` starts with the
 state-updater/state-evidence selection above, then runs full Bats because
