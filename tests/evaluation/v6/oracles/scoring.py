@@ -227,8 +227,12 @@ def _ac6_skip_link_focus(css_text: str, reasons: list) -> None:
     rules = re.findall(r"([^{}]+)\{([^{}]*)\}", css_text)
     focus_props, base_hard_hidden = set(), False
     saw_skip_rule = saw_focus_rule = False
+    skip_class_re = re.compile(r"\.[A-Za-z0-9_-]*skip[A-Za-z0-9_-]*", re.I)
     for selector, decls in rules:
-        if ".skip-link" not in selector:
+        # Intent fix: the anchor check accepts any class containing "skip",
+        # so the CSS check must too (e.g. .skip-to-content), not just the
+        # reference's incidental .skip-link literal.
+        if not skip_class_re.search(selector):
             continue
         saw_skip_rule = True
         if ":focus" in selector:
@@ -258,11 +262,13 @@ def _ac6_skip_link_focus(css_text: str, reasons: list) -> None:
 
 
 def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
-    """AC-6: every built page starts its body with a working skip link to an
-    existing #main target, with a visible :focus style in the built CSS.
-    Hardened against stubs: the :focus rule must really change visibility or
-    geometry, the anchor must carry the skip class, and tabindex=-1 or a
-    hard-hidden base state fails."""
+    """AC-6: every built page starts its body with a working skip link to the
+    main landmark, with a visible :focus style in the built CSS. The public
+    contract says "moves focus to main" and names no anchor id, so any
+    fragment resolving to a <main>/role="main" element passes. Hardened
+    against stubs: the :focus rule must really change visibility or geometry,
+    the anchor must carry a skip-named class, and tabindex=-1 or a hard-hidden
+    base state fails."""
     reasons = []
 
     def inspect(work: Path):
@@ -281,15 +287,26 @@ def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
                 href = re.search(r'href\s*=\s*["\']([^"\']*)["\']', tag)
                 if not href:
                     reasons.append(f"{page.name}: first anchor has no href")
-                elif href.group(1) != "#main":
-                    reasons.append(f"{page.name}: first focusable link is not the skip link (href={href.group(1)!r})")
+                elif not href.group(1).startswith("#") or len(href.group(1)) < 2:
+                    reasons.append(f"{page.name}: first focusable link is not an in-page skip link (href={href.group(1)!r})")
+                else:
+                    # Intent fix: the public contract says "moves focus to
+                    # main"; it never names the anchor id. Accept any
+                    # fragment that resolves to the main landmark (a <main>
+                    # element or role="main"), not just #main.
+                    target_id = href.group(1)[1:]
+                    m = re.search(
+                        r"<(\w+)([^>]*?\bid\s*=\s*[\"\']%s[\"\'][^>]*?)>" % re.escape(target_id),
+                        html)
+                    if not m:
+                        reasons.append(f"{page.name}: skip link target #{target_id} not found in page")
+                    elif m.group(1).lower() != "main" and not re.search(r'role\s*=\s*[\"\']main[\"\']', m.group(2)):
+                        reasons.append(f"{page.name}: skip link target #{target_id} is not the main landmark")
                 cls = re.search(r'class\s*=\s*["\']([^"\']*)["\']', tag)
                 if not cls or "skip" not in cls.group(1).lower():
                     reasons.append(f"{page.name}: first anchor carries no skip class")
                 if re.search(r'tabindex\s*=\s*["\']?\s*-1', tag):
                     reasons.append(f"{page.name}: skip link removed from tab order (tabindex=-1)")
-            if 'id="main"' not in html:
-                reasons.append(f"{page.name}: missing #main target")
         # Astro inlines small stylesheets into the pages (inlineStylesheets
         # 'auto'): styles live in both .css bundles and inline <style> blocks.
         css_text = "".join(p.read_text(encoding="utf-8", errors="replace")

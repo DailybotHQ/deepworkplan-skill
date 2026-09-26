@@ -99,6 +99,37 @@ def stub_tabindex(workspace_root):
     raise AssertionError("skip link anchor not found for stub_tabindex")
 
 
+def alt_anchor(workspace_root):
+    """Intent variant (2026-09-26 shakedown): the pilot agents shipped
+    href="#main-content" anchored on <main id="main-content"> — functionally
+    correct under the public contract ("moves focus to main", no id named)
+    but wrongly failed by the oracle's old #main literal. This variant must
+    PASS: any fragment resolving to the main landmark is acceptable."""
+    apply(workspace_root)
+    for astro in sorted(workspace_root.rglob("*.astro")):
+        text = astro.read_text(encoding="utf-8")
+        if 'class="skip-link"' in text:
+            text = text.replace('href="#main"', 'href="#main-content"', 1)
+        text = text.replace('<main id="main">', '<main id="main-content">', 1)
+        astro.write_text(text, encoding="utf-8")
+
+
+def alt_skip_class(workspace_root):
+    """Intent variant: a differently named skip class (.skip-to-content)
+    with a real :focus rule — the CSS check must not demand the reference's
+    .skip-link literal either."""
+    apply(workspace_root)
+    for astro in sorted(workspace_root.rglob("*.astro")):
+        text = astro.read_text(encoding="utf-8")
+        if 'class="skip-link"' in text:
+            text = text.replace('class="skip-link"', 'class="skip-to-content"', 1)
+        astro.write_text(text, encoding="utf-8")
+    css = workspace_root / "src" / "styles" / "global.css"
+    text = css.read_text(encoding="utf-8")
+    text = text.replace(".skip-link", ".skip-to-content")
+    css.write_text(text, encoding="utf-8")
+
+
 def stub_display_none(workspace_root):
     """Stub: base rule hard-hides the link with display:none and the :focus
     rule never restores display — the link can never receive focus."""

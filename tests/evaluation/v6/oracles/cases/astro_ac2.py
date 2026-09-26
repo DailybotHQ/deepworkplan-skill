@@ -63,6 +63,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from urllib.parse import unquote
 
 PASS, FAIL = "PASS", "FAIL"
 
@@ -395,7 +396,7 @@ def _post_slugs(root: Path) -> list:
 
 
 def _hrefs(html: str) -> list:
-    return re.findall(r'href="([^"]+)"', html)
+    return re.findall(r'href=["\']([^"\']+)["\']', html)
 
 
 def _resolve(dist: Path, href: str):
@@ -473,26 +474,54 @@ def score(root: Path, seed_root: Path, env_path=None) -> dict:
             reasons.append("no post declares tags in its frontmatter; the tag-archive feature is absent")
 
         # Built archive pages exist for existing tags and list their posts.
+        # Intent fix: the public contract says "/tags/<tag>/ with stable
+        # URLs" and names no slugification. The workspace may publish a tag
+        # under its raw name or any conventional slug (lowercased,
+        # kebab-cased, lowercased kebab); what matters is that ONE url
+        # exists and that the archives and the post links agree on it.
+        def _tag_candidates(tag: str) -> list:
+            kebab = re.sub(r"\s+", "-", tag.strip())
+            seen, out = set(), []
+            for cand in (tag, tag.lower(), kebab, kebab.lower()):
+                if cand and cand not in seen:
+                    seen.add(cand)
+                    out.append(cand)
+            return out
+
+        tag_urls = {}
         for tag in all_tags:
-            archive = dist / "tags" / tag / "index.html"
-            if not archive.is_file():
-                reasons.append(f"tag archive page missing: /tags/{tag}/")
+            found = None
+            for cand in _tag_candidates(tag):
+                if (dist / "tags" / cand / "index.html").is_file():
+                    found = cand
+                    break
+            if found is None:
+                reasons.append(
+                    f"tag archive page missing for tag {tag!r} "
+                    f"(looked under /tags/ for {(_tag_candidates(tag))})")
                 continue
+            tag_urls[tag] = found
+            archive = dist / "tags" / found / "index.html"
             archive_hrefs = _hrefs(archive.read_text(encoding="utf-8", errors="replace"))
-            archive_targets = {h.rstrip("/") for h in archive_hrefs}
+            archive_targets = {unquote(h).rstrip("/") for h in archive_hrefs}
             for slug, tags in post_tags.items():
                 if tag in tags and f"/blog/{slug}" not in archive_targets:
-                    reasons.append(f"/tags/{tag}/ does not link to its post /blog/{slug}/")
+                    reasons.append(f"/tags/{found}/ does not link to its post /blog/{slug}/")
 
-        # Every post links to the archive of each of its own tags.
+        # Every post links to the archive of each of its own tags (the same
+        # URL the archive was published under; hrefs are unquoted so a
+        # percent-encoded space still matches a raw-name archive).
         for slug, tags in post_tags.items():
             page = dist / "blog" / slug / "index.html"
             if not page.is_file():
                 continue  # already reported as a changed/missing post URL
-            targets = {h.rstrip("/") for h in _hrefs(page.read_text(encoding="utf-8", errors="replace"))}
+            targets = {unquote(h).rstrip("/") for h in _hrefs(page.read_text(encoding="utf-8", errors="replace"))}
             for tag in tags:
-                if f"/tags/{tag}" not in targets:
-                    reasons.append(f"/blog/{slug}/ does not link to its tag archive /tags/{tag}/")
+                if tag not in tag_urls:
+                    continue  # already reported as a missing archive
+                if f"/tags/{tag_urls[tag]}" not in targets:
+                    reasons.append(
+                        f"/blog/{slug}/ does not link to its tag archive /tags/{tag_urls[tag]}/")
 
         # Pagination on /blog/ at 3 posts per page, linked both directions.
         blog_index = dist / "blog" / "index.html"
@@ -645,6 +674,55 @@ def _seed_dir() -> Path:
     return Path(__file__).resolve().parents[5] / "tests" / "evaluation" / "v6" / "fixtures" / "astro" / "seed"
 
 
+# Multi-word tags for the kebab_slug variant: the pilot agents' choice.
+KEBAB_TAGS = {
+    "first-post.md": ["content announcements", "lorem ipsum"],
+    "second-post.md": ["astro basics", "tutorial series"],
+    "third-post.md": ["astro basics", "tutorial series"],
+    "markdown-style-guide.md": ["markdown guides", "tutorial series"],
+    "using-mdx.mdx": ["mdx guides", "tutorial series"],
+}
+
+
+def _kebab(tag: str) -> str:
+    return re.sub(r"\s+", "-", tag.strip()).lower()
+
+
+def kebab_slug(workspace_root: Path) -> None:
+    """Intent variant (2026-09-26 shakedown): publish every tag under its
+    kebab-case slug (/tags/lorem-ipsum/) instead of the raw name. The public
+    contract says "/tags/<tag>/ with stable URLs" and names no slugification;
+    the pilot agents shipped exactly this shape and were wrongly failed by
+    the oracle's raw-literal expectation. This variant must PASS."""
+    apply(workspace_root)
+    # 1. multi-word, mixed-case frontmatter tags
+    for name, tags in KEBAB_TAGS.items():
+        post = workspace_root / "src" / "content" / "blog" / name
+        text = post.read_text(encoding="utf-8")
+        text, n = re.subn(r"^tags:\n(?:[ \t]+-.*\n)*",
+                          "tags: " + str(tags).replace("'", '"'),
+                          text, count=1, flags=re.M)
+        assert n == 1, f"tags line not found in {name}"
+        post.write_text(text, encoding="utf-8")
+    # 2. the archive route publishes and links the kebab slug
+    route = workspace_root / "src" / "pages" / "tags" / "[tag].astro"
+    text = route.read_text(encoding="utf-8")
+    text = text.replace(
+        "\treturn tags.map((tag) => ({\n\t\tparams: { tag },",
+        "\treturn tags.map((tag) => ({\n\t\tparams: { tag: tag.replace(/\\s+/g, '-').toLowerCase() },",
+    )
+    assert "toLowerCase() }," in text, "route params not rewritten for kebab_slug"
+    route.write_text(text, encoding="utf-8")
+    # 3. post tag links use the kebab slug
+    blogpost = workspace_root / "src" / "layouts" / "BlogPost.astro"
+    text = blogpost.read_text(encoding="utf-8")
+    text, n = re.subn(r"<a href=\{`/tags/\$\{t\}/`\}>",
+                      "<a href={`/tags/${t.replace(/\\\\s+/g, '-').toLowerCase()}/`}>",
+                      text, count=1)
+    assert n == 1, "post tag link not rewritten for kebab_slug"
+    blogpost.write_text(text, encoding="utf-8")
+
+
 def run_variant(seed: Path, variant: str, base: Path) -> dict:
     """Materialize one calibration variant and score it."""
     work = base / variant
@@ -653,6 +731,8 @@ def run_variant(seed: Path, variant: str, base: Path) -> dict:
         apply(work)
     elif variant == "broken":
         sabotage(work)
+    elif variant == "kebab_slug":
+        kebab_slug(work)
     return score(work, seed)
 
 
@@ -662,7 +742,8 @@ def main(argv=None) -> int:
     if not seed.is_dir():
         print(f"seed fixture not found: {seed}", file=sys.stderr)
         return 2
-    expected = {"pristine": "FAIL", "known_good": "PASS", "broken": "FAIL"}
+    expected = {"pristine": "FAIL", "known_good": "PASS", "broken": "FAIL",
+                "kebab_slug": "PASS"}
     variants = [v for v in expected if not argv or v in argv]
     results = {}
     with tempfile.TemporaryDirectory(prefix="calib-astro-ac2-") as td:
