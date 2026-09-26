@@ -351,8 +351,21 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     safe_copytree(seed_src, workspace)
     (workspace / ".scratch").mkdir(exist_ok=True)
     # Materialize the task prompt: the actor's contract is the workspace
-    # itself plus this file — nothing else (no plan, no oracles, no labels).
-    (workspace / "TASK.md").write_text(cell["task"]["prompt"] + "\n", encoding="utf-8")
+    # itself plus this file. The base prompt is arm-neutral; the arm overlay
+    # is the TREATMENT and nothing else: pack-carrying arms are told the
+    # mounted pack is their method (its onboarding/create cost belongs to
+    # their arm), pack-less arms get no tooling hint at all.
+    prompt = cell["task"]["prompt"]
+    if (cell["arm_spec"] or {}).get("pack"):
+        prompt += (
+            "\n\n## Available method\n"
+            "A read-only DWP skill pack (v5.5.4) is mounted at the path in the"
+            " environment variable DWP_EVAL_PACK. Start from its SKILL.md and"
+            " follow its flows (onboarding/create/execute as applicable) to"
+            " plan and carry out this task; the time and effort of doing so"
+            " are part of the work."
+        )
+    (workspace / "TASK.md").write_text(prompt + "\n", encoding="utf-8")
     initial = tree_hashes(workspace)
     # Host hazard: a package manifest anywhere above the workspace can make
     # package managers resolve an unrelated workspace root (observed with pnpm
@@ -643,7 +656,8 @@ def cmd_self_test(tmp: Path) -> int:
     inv = [json.loads(l) for l in (out / "attempts.jsonl").read_text().splitlines() if l.strip()]
     assert len(inv) == 3, f"expected 3 cells, got {len(inv)}"
     by_arm = {r["arm"]: r for r in inv}
-    hashes = {r["arm"]: json.dumps(r["initial_hashes"], sort_keys=True) for r in inv}
+    # The arm overlay on TASK.md is the treatment; seed files must be identical.
+    hashes = {r["arm"]: json.dumps({k: v for k, v in r["initial_hashes"].items() if k != "TASK.md"}, sort_keys=True) for r in inv}
     assert len(set(hashes.values())) == 1, "initial source hashes differ across arms"
     assert len({by_arm[a]["workspace"] for a in by_arm}) == 3, "workspaces are not distinct"
     assert all(r["canary_intact"] for r in inv), "canary violated in the clean run"

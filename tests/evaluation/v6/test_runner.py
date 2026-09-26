@@ -86,7 +86,8 @@ class CleanRunTests(LabTestBase):
         lab.run_full(cfg, self.lab_root, out)
         records = self.read_inventory(out)
         self.assertEqual(len(records), 3)
-        fingerprints = {json.dumps(r["initial_hashes"], sort_keys=True) for r in records}
+        # The arm overlay on TASK.md is the treatment; seed files must be identical.
+        fingerprints = {json.dumps({k: v for k, v in r["initial_hashes"].items() if k != "TASK.md"}, sort_keys=True) for r in records}
         self.assertEqual(len(fingerprints), 1, "initial source hashes differ across arms")
         self.assertEqual(len({r["workspace"] for r in records}), 3, "workspaces are not distinct")
         self.assertTrue(all(r["canary_intact"] for r in records))
