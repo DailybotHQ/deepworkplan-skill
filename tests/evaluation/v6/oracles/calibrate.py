@@ -32,7 +32,7 @@ REPO = HERE.parents[3]
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(REPO / "scripts" / "evaluation"))
 
-import oracles  # noqa: E402
+import scoring as oracles  # noqa: E402
 
 SEEDS = {
     "legacy": REPO / "tests/evaluation/v6/fixtures/legacy/seed",
@@ -49,10 +49,14 @@ CALIBRATIONS = [
      "reference": "astro_ac1_reading_time"},
     {"id": "astro-AC6", "family": "astro", "score": oracles.score_astro_ac6,
      "reference": "astro_ac6_skip_link"},
+    {"id": "astro-AC2", "family": "astro",
+     "score_module": "cases/astro_ac2.py"},
     {"id": "astro-AC3", "family": "astro",
      "score_module": "cases/astro_ac3.py"},
     {"id": "service-SC5", "family": "service",
-     "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc5"},
+     "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc5",
+     "variants": {"pristine": None, "broken": "sabotage_sc5"},
+     "expected": {"pristine": "PASS", "broken": "FAIL"}},
     {"id": "service-SC10", "family": "service",
      "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc10"},
 ]
@@ -90,17 +94,19 @@ def run_case(case, results):
     matrix = {}
     with tempfile.TemporaryDirectory(prefix=f"calib-{case['id']}-") as td:
         base = Path(td)
-        variants = {"pristine": None, "known_good": "apply", "broken": "sabotage"}
+        variants = case.get("variants",
+                            {"pristine": None, "known_good": "apply", "broken": "sabotage"})
         for variant, op in variants.items():
             work = base / variant
             shutil.copytree(seed, work, symlinks=False)
-            if op == "apply":
-                reference.apply(work)
-            elif op == "sabotage":
-                reference.sabotage(work)
+            if op is None:
+                pass  # pristine: no variant applied
+            else:
+                getattr(reference, op)(work)
             result = score(work, seed)
             matrix[variant] = result
-    expected = {"pristine": "FAIL", "known_good": "PASS", "broken": "FAIL"}
+    expected = case.get("expected",
+                        {"pristine": "FAIL", "known_good": "PASS", "broken": "FAIL"})
     ok = all(matrix[v]["verdict"] == e for v, e in expected.items())
     results[case["id"]] = {"matrix": matrix, "ok": ok}
     print(f"{'OK  ' if ok else 'FAIL'} {case['id']}: "

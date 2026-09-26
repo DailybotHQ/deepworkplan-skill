@@ -178,7 +178,10 @@ def score_service_sc9(root: Path, seed_root: Path) -> dict:
 
 # -------------------------------------------------------------------- astro
 
-def _astro_build_and_check(root: Path, reasons: list, env=None) -> bool:
+def _astro_build_and_check(root: Path, reasons: list, env=None, inspect=None) -> bool:
+    """Build in a disposable copy; `inspect(work)` runs BEFORE the copy is
+    deleted - a path returned from inside the with-block would point at a
+    removed directory (a defect a peer reviewer caught)."""
     commands = {
         "install": "pnpm install --frozen-lockfile --ignore-scripts",
         "build": "pnpm run build",
@@ -193,20 +196,23 @@ def _astro_build_and_check(root: Path, reasons: list, env=None) -> bool:
                                       text=True, timeout=1200, env=env)
             except subprocess.TimeoutExpired:
                 reasons.append(f"{name} timed out")
-                return False, None
+                return False
             if proc.returncode != 0:
                 reasons.append(f"{name} failed: {(proc.stdout + proc.stderr)[-400:]}")
-                return False, None
-        return True, work
+                return False
+        if inspect:
+            inspect(work)
+    return True
+
 
 
 def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
     """AC-6: every built page starts its body with a working skip link to an
     existing #main target, with a visible :focus style in the built CSS."""
     reasons = []
-    ok, work = _astro_build_and_check(root, reasons)
-    dist = work / "dist" if ok else None
-    if ok:
+
+    def inspect(work: Path):
+        dist = work / "dist"
         pages = sorted(dist.rglob("index.html"))
         if len(pages) < 5:
             reasons.append(f"expected at least 5 built pages, found {len(pages)}")
@@ -224,7 +230,10 @@ def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
                            for p in dist.rglob("*.css"))
         if ".skip-link" not in css_text or ":focus" not in css_text:
             reasons.append("no visible .skip-link focus style in built CSS")
+
+    _astro_build_and_check(root, reasons, inspect=inspect)
     return _result(PASS if not reasons else FAIL, reasons)
+
 
 
 # -------------------------------------------------------------------- astro

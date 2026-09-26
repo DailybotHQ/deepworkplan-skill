@@ -12,8 +12,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(HERE / "oracles"))
 
-import oracles  # noqa: E402
+import scoring as oracles  # noqa: E402
 
 REPO = HERE.parents[2]
 SEEDS = REPO / "tests" / "evaluation" / "v6" / "fixtures"
