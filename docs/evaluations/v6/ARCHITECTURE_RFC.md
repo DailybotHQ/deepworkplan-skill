@@ -2,8 +2,8 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Proposed (reviewed draft; not yet normative) |
-| Version | draft-1 (2026-09-26) |
+| Status | Proposed (red-teamed draft; not yet normative) |
+| Version | draft-2 (2026-09-26) |
 | Elaborates | `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE.md` (planning proposal; a local gitignored planning input — this RFC is its version-controlled successor) |
 | Normative successor | A future `spec/` revision produced by the implementation tasks; this RFC is not normative until that revision exists |
 | Baseline | DWP spec 5.0.0 (the frozen v5 runner; this plan does not migrate itself) |
@@ -11,6 +11,25 @@
 RFC-2119 language is used prospectively: it describes what the v6 specification
 will require. Nothing here changes the installed v5 pack's behavior; the v5
 contracts remain in force for every plan that has not migrated.
+
+Incorporated reviews. draft-1 applied the independent design review
+(`analysis_results/ARCHITECTURE_REVIEW.md`, F1–F11). draft-2 applies the
+adversarial red-team (`analysis_results/ARCHITECTURE_REDTEAM.md`, findings
+A1–A13, buried capabilities B1–B5, upgrades U1–U5):
+
+- **A1** — the core is designated gate executor; `observed` means *executed*, not *mediated* (§4.5, §5).
+- **A2/A3** (via U1) — the contract is REQUIRED for every v6 new plan; approval is bound to content-addressed bytes, scaling by plan mode (§3.1).
+- **A4** — reconciliation-completions close on recorded `reconciled` authority, never silently on evidence classes (§4.4).
+- **A5** — envelope metering source named per limit; commit-plus-pending accounting; command classes rescoped to declared gate commands (§3.2, §5, §8).
+- **A6** (via U2) — negative controls gain mechanical residency: helper-executed counterfactual replay pairs (§6).
+- **A7** — migrated gate records are `asserted`, never `observed`; observed-only criteria do not inherit completion (§9.3).
+- **A8** (via U5) — single-writer is a designed boundary; team agents map onto per-worker child plans; the checker refuses concurrent execute sessions (§4.2, §9).
+- **A9** — invariant evaluation boundaries defined; purity preserved by injecting status through the record (§5).
+- **A10** — journal durability posture: export command, archetype-named single-copy risk, roll constraint (§4.3).
+- **A11** — starvation aging gets clock, threshold and action (§5).
+- **A12** — interlocks specified as implementation requirements (§14).
+- **A13** — `intervention` events adopt the evaluation protocol's category taxonomy (§4.1).
+- **U3/B1/B4** — audit surfaces ship: refusals-and-interventions view and completion profile (§4.4). **U4/B2** — dead-end digest in the context manifest (§7). **B3** — approval diffs (§3.1). **B5** — journal replay against candidate contract revisions (§6).
 
 ## 1. Product outcome and summary
 
@@ -79,9 +98,33 @@ SHA-256 of those bytes, so preview, migration and the helpers all compute the
 same identity. A revision is a **new file** — prior revisions are retained in
 the plan folder under `contracts/` (for example
 `contracts/contract-rev2.json`), each citing its `parent_contract_id` — never
-an in-place edit. Like the v5 state layer, the contract is **REQUIRED** for
-unattended and non-git plans and **RECOMMENDED** for interactive git plans:
-the PLAN_STATE §2.1 optionality matrix, extended.
+an in-place edit.
+
+Unlike the v5 state layer (whose equivalent artifact is optional for interactive
+git plans), the contract is **REQUIRED for every v6 new plan**: the
+authorization core is undefined without one — there is nothing to authorize
+against, no closed adaptation enumeration to check, and the §11 Authorization
+row has no subject. A v6 plan without a contract is a materialization failure,
+not a mode. What scales by plan mode instead is the **approval** record (U1):
+
+- **Interactive git plans** — the plan markdown the developer reviewed is the
+  consented artifact; the contract is its generated projection, and
+  materialization records approval as *plan authorship* (authority: the session
+  user; the contract cites the plan bytes it projects). The execute flow
+  renders the contract in its plan-review step, so a human can compare the
+  projection against the plan before the first task starts — and because
+  identity is content-addressed, any later regeneration that drifts from the
+  approved bytes is a new revision requiring the amendment path (B3).
+- **Unattended and non-git plans** — approval must cite the exact
+  `contract_id` bytes through the recorded pre-authorization (the
+  AGENT_PROTOCOL §7 pattern); the guarded writer refuses the first
+  task-start transition when the approval record is missing or cites
+  different bytes.
+- Contract **revisions** (§3.4) always require explicit recorded authority —
+  plan authorship never carries over to a revision.
+
+The v5 optionality matrix survives unchanged for v5 plans; v6 changes only new
+plans (§9.1–9.2).
 
 ### 3.2 Required content
 
@@ -91,10 +134,10 @@ the PLAN_STATE §2.1 optionality matrix, extended.
 | Acceptance | criteria with stable IDs (`AC-*`), each naming an **observable** check (behavior, interface, stored state) and its evidence class |
 | Invariants | global conditions that must hold at every boundary; violation is a stop, not an adaptation |
 | Scope | allowed paths; allowed command classes; forbidden operations (destructive, outward-facing) |
-| Authorization | source of authority (who/what approved), timestamp, boundaries of pre-approval; consent checkpoints carried verbatim |
+| Authorization | source of authority (who/what approved), timestamp, boundaries of pre-approval; consent checkpoints carried verbatim; the approval record citing the exact `contract_id` bytes (interactive: plan authorship; unattended/non-git: pre-authorization — §3.1) |
 | Permissions | tool/host capabilities granted, and explicitly those NOT granted |
 | Dependencies | external systems, credentials required (names only, never secrets), pinned inputs |
-| Resource envelope | dispatch limits, wall-clock budget, tool-policy limits, and a spend ceiling **only where the host can enforce it** (declared `enforced` or `advisory`, §8) |
+| Resource envelope | dispatch limits, wall-clock budget, tool-policy limits, and a spend ceiling **only where the host can enforce it** (declared `enforced` or `advisory`, §8); each enforced limit names its metering source (host adapter reading real spend — asserted samples are advisory-only, §8) |
 | Tasks | stable IDs (`T-<slug>`), titles, prerequisite outcome IDs, planned touched surface, selected gate intent |
 
 ### 3.3 Allowed adaptations (closed enumeration)
@@ -139,13 +182,20 @@ One authoritative structured record per plan, composed of:
 - **`state.json` (v6 schema URL)** — the deterministic *snapshot* projection:
   task statuses, latest gate records, checkpoint, blocker, resource ledger
   totals, and per-event-type journal sequence positions (the read-only checker
-  uses them to verify that snapshot-cited journal items exist). Same
+  uses them to verify that snapshot-cited journal items exist; after a
+  reconciliation regenerates the snapshot from markdown (§4.4), positions the
+  journal cannot support are recorded as `regenerated`, never fabricated).
+  Same
   closed-object discipline, same guarded-writer rules as v5.
 - **`journal.ndjson`** — the append-only *event log*: one closed JSON object
   per line (`gate_run`, `observation`, `adaptation`, `amendment`,
-  `intervention`, `resource_sample`, `view_render`, `reconciliation`,
-  `journal_repair`; the full catalog is an implementation-task deliverable,
-  §14.1). Events are never edited
+  `intervention`, `resource_sample`, `control_pair`, `view_render`,
+  `reconciliation`, `journal_repair`; the full catalog is an
+  implementation-task deliverable, §14.1). `intervention` events carry the
+  evaluation protocol's four intervention categories as a closed `category`
+  field, so campaign extraction and product records share one taxonomy (A13);
+  `control_pair` events record counterfactual replay legs (§6). Events are
+  never edited
   or deleted; a correction is a later event. Superseded and failed evidence
   stays available; event identity survives task splits and reorders because
   events cite stable task/criterion IDs, never list positions.
@@ -168,6 +218,14 @@ The journal is size-bounded by design: events are one line each, rolls are
 optional at campaign boundaries, and full narrative stays in task logs where
 it belongs today.
 
+The selection's single-writer premise is a **designed boundary, not a silent
+regression** of v5's team agents and orchestrator child plans (spec §8–§9, A8):
+v6 new-plan records are single-writer; the checker refuses concurrent execute
+sessions on one plan (the cooperative lock already detects them); parallel
+work maps onto per-worker **child plans in the v5 §8 orchestrator shape** —
+each worker its own contract and journal, the parent aggregating (U5).
+v5-shaped plans keep v5 team-agent semantics untouched (§9.1–9.2).
+
 ### 4.3 Write discipline
 
 - The snapshot is rewritten only by the guarded updater, atomically, at the
@@ -184,6 +242,13 @@ it belongs today.
   the incomplete tail is truncated and an explicit `journal_repair` event
   records the byte offset and cause — the append-only rule binds *complete*
   events. The snapshot, never the journal, is the recovery root.
+- **Durability posture (A10):** the journal is the plan's memory and `.dwp/`
+  is conventionally gitignored, so the core ships an **export** command
+  (journal + snapshot + contract chain to a destination the operator names),
+  offered at campaign boundaries and at completion; in the agent-workspace
+  archetype (no git) the plan folder is the only copy, and the onboarding
+  text names that risk with the export command beside it. Rolls may not
+  discard snapshot-cited positions (§14).
 - Write order per boundary stays: task log → README → PROGRESS → commit →
   snapshot; journal appends happen at the moment of the observation they
   record, before the snapshot that summarizes them.
@@ -201,13 +266,31 @@ Direct edits to `README.md`/`PROGRESS.md` are reconciled markdown-wins, as in
 v5. Under the journal, reconciliation regenerates the snapshot from the
 markdown and appends a `reconciliation` event; prior journal items are
 retained as history — the journal never discards. The v5 "stale, never ahead"
-property therefore scopes to the journal→snapshot direction.
+property therefore scopes to the journal→snapshot direction. A task that
+reaches `completed` through reconciliation closes with **recorded authority
+`reconciled`** — not with an evidence item: acceptance criteria close either on
+an evidence class or on reconciliation authority, never both silently, and the
+completion profile below shows which (A4).
+
+Generated views include the **audit surfaces** (U3): a
+refusals-and-interventions view (every refused proposal and intervention
+event, by class, with reasons and proposal pointers — the refusal ledger is a
+trust surface, B1) and, at completion, a **completion profile** (per
+criterion: the closing mechanism — the evidence item with its trust label and
+pointer, or `reconciled` authority — B4). Both are pure projections of
+journal and snapshot under the D12 generated-view discipline: labeled records
+of recorded proposals, no aggregation into indices or ratings — "0 refusals"
+records that nothing was proposed, not that nothing would have been refused.
 
 ### 4.5 Trust labels on evidence
 
 Every journal evidence item carries one label:
 
-1. **observed** — produced by the deterministic runner/checker itself;
+1. **observed** — the record was produced by a shipped helper that **itself
+   executed** the command or check (declared cwd, environment, timeout and
+   captured outputs under the core's control, §5); a helper that only writes
+   down a model-reported result mediates a write, not an execution, and the
+   item is `asserted` with the mediation named (A1);
 2. **imported** — from a matched external source (CI run, service log), with provenance;
 3. **asserted** — stated by an agent without independent establishment.
 
@@ -226,6 +309,14 @@ that limit is stated in the record format and must not be papered over.
   checks prerequisite outcomes, scope, permissions, envelope remaining,
   retry/adaptation caps, invariant status, and the closed adaptation
   enumeration. Every refusal is itself a recorded event with the reason.
+  Purity holds because everything it consumes is **in the record** (A9):
+  invariant status is the latest helper-executed invariant evaluation the
+  record carries — invariants are evaluated at defined boundaries (task
+  start, gate run, completion), never inside `authorize()`, and a stale or
+  failed invariant makes `authorize()` refuse (a stop, not an adaptation).
+  Envelope accounting is **commit-plus-pending** (A5): the check totals
+  recorded spend plus dispatched-not-yet-completed work, so two sequentially
+  authorized proposals cannot jointly overshoot an enforced limit.
 - **Measured observations** (gate runs, resource samples) are recorded by the
   deterministic helpers themselves, which stamp `observed` provenance at
   write time (§4.3); agent assertions enter as `asserted`. An acceptance
@@ -233,10 +324,21 @@ that limit is stated in the record format and must not be papered over.
   helper-stamped items; a hand-written line claiming `observed` is a writer
   bypass — reported by the checker where the records allow, and named
   honestly in the format's limits rather than claimed impossible.
+- **The core is the gate executor** (A1): gate commands run through a shipped
+  stdlib runner helper — subprocess with the declared cwd, environment,
+  timeout and captured outputs — which is what makes `observed` mean
+  *executed* rather than *mediated* (§4.5). On hosts where a command cannot
+  run through the runner (interactive-only tooling), the flow records the
+  result as `asserted` with the mediation named; the §11 matrix labels those
+  rows' mode accordingly instead of implying an execution that never
+  happened.
 
 Blocked work may permit safe independent in-scope work; a global invariant
 failure or exhausted envelope stops dispatch. Starvation protection: ready
-task selection uses oldest-blocked-wait aging. Caps: maximum adaptations per
+task selection uses oldest-blocked-wait aging — the clock is journal event
+timestamps, the threshold is contract-declared (with a default), and the
+action is a recorded priority boost in selection, itself a journal event
+(A11). Caps: maximum adaptations per
 task, maximum retries per gate, both declared in the contract. Handoff
 conditions (fresh context, cross-host resume) are explicit contract fields.
 
@@ -247,6 +349,23 @@ conditions (fresh context, cross-host resume) are explicit contract fields.
   rejected invalid input, or an interface-level check that discriminates a
   known-broken implementation. Which negative control applies is decided at
   contract authoring per criterion; minor prose/cosmetic changes are exempt.
+- A declared regression or discrimination control has **mechanical
+  residency** (U2, closing A6): the core executes both legs itself and
+  records the observed `control_pair` — the scoped check against the
+  pre-change tree (reverse-diff worktree, or the recorded starting
+  fingerprint) and against the working tree. The control passes only on
+  (old: FAIL, new: PASS). (PASS, PASS) is recorded as **non-discriminating**,
+  never rounded up to a pass; an unavailable leg records
+  `control=unavailable`. The lab's own calibration matrix
+  (pristine=FAIL / known_good=PASS / broken=FAIL) is exactly this pair
+  check; the AC-6 cosmetic stubs and the AC-2 green-build sabotage are
+  caught by pair discrimination and by nothing weaker. Helper-executed legs
+  carry the `observed` label (§4.5), which anchors A1 for this leg.
+- Because `authorize()` is pure over the record, a journal also **replays
+  against a candidate contract revision with zero execution** (B5): "this
+  amendment would have refused N recorded adaptations" is a projection the
+  amendment path offers, so a developer sees a revision's teeth before
+  approving it.
 - Fresh-context evaluation is used where the host supports it; it reduces
   shared conversational assumptions but does not guarantee statistically
   independent errors — recorded as such, never as independence evidence.
@@ -264,6 +383,14 @@ conditions (fresh context, cross-host resume) are explicit contract fields.
   authorization and repository rules, the task's touched-surface mapping,
   current acceptance and unresolved constraints, valid evidence pointers, and
   the precise next action. History loads by trigger, as in v5 read tiers.
+- The manifest carries a derived **dead-end digest** (U4, surfacing B2):
+  failed gates with causes, refused or abandoned strategy changes, and
+  inserted experiments with their discriminating results — each a recorded
+  event with a pointer, never advice or probabilities. Stale entries age out
+  under the same fingerprint invalidation that governs summaries; the target
+  is the protocol's sustained-completion question (stop retrying known-dead
+  approaches), measured by the interruption increments the lab blueprint
+  already defines.
 - Summaries and stale-able artifacts carry the fingerprint of the inputs they
   summarize; a fingerprint mismatch invalidates the summary (freshness check),
   and missing impact mappings widen inspection rather than guess.
@@ -284,6 +411,15 @@ conditions (fresh context, cross-host resume) are explicit contract fields.
   enforced limits are checked at dispatch; advisory limits are surfaced in
   every checkpoint and completion record. Enforcement parity across hosts is
   never claimed — each host adapter names what it enforces.
+- Each enforced limit names its **metering source** (A5): a host adapter
+  reading real provider meters, or asserted samples. `authorize()` never
+  enforces on asserted meter data — an asserted meter degrades the limit to
+  advisory, and the record says so.
+- "Allowed command classes" are decidable only for **declared gate commands**
+  that the core validates and executes (§5); arbitrary shell (`bash -c`,
+  environment indirection) is undecidable, and is therefore **detection plus
+  reporting, never prevention** — the guarantee matrix labels those rows'
+  mode honestly instead of claiming a boundary no prompt can hold (A5).
 - Host adapters are optional, live under the pack's addon/adapter layout, and
   degrade to advisory when absent. Exhaustion of an enforced limit persists
   incomplete state (checkpoint + blocked record) rather than fabricating
@@ -311,7 +447,11 @@ preserved. The v6 reader accepts v5 plans read-only; it never rewrites them.
 Migration is explicit (`migrate`-style request), one-directional, and
 performs: preview → backup → integrity check → stable-ID and evidence mapping
 (v5 task numbers become `T-*` ids; gate records become journal items with
-provenance "migrated") → interruption recovery at each step, in the shape of
+provenance "migrated" labeled `asserted` — agent-invoked history is a claim,
+not a helper execution, and criteria accepting only `observed` evidence do
+not inherit completion from migration: the preview lists them, and they close
+when new helper-executed evidence lands, A7) → interruption recovery at each
+step, in the shape of
 the existing promotion-recovery contract. A failed or interrupted migration
 leaves the v5 plan recoverable — resume the migration from its recorded
 phase marker or restore the backup — and resumable under v5. Rollback after
@@ -341,15 +481,15 @@ release-bot owned; nothing in this RFC hand-edits them.
 
 | Boundary | Positive control | Negative/fault control | Kind |
 | --- | --- | --- | --- |
-| Authorization | In-scope adaptation accepted | Scope/acceptance/permission expansion refused | Runtime invariant |
+| Authorization | In-scope adaptation accepted | Scope/acceptance/permission expansion refused; first task-start without an approval record citing the live `contract_id` bytes refused | Runtime invariant |
 | Dependency scheduling | Ready task selected | Cycle, missing prerequisite, starvation | Runtime invariant |
 | Evidence validity | Equivalent-input reuse accepted | Dirty input/toolchain change invalidates evidence | Runtime invariant |
-| Test reality | Nonempty passing assertions | Zero tests, truncated output, missing binary | Runtime invariant |
+| Test reality | Nonempty passing assertions | Zero tests, truncated output, missing binary; non-discriminating control pair (PASS, PASS) | Runtime invariant |
 | Completion | Verified outcome closes | Narrative-only claim or missing acceptance refuses | Runtime invariant |
 | Recovery | Resume from durable checkpoint | Crash at each write/publication boundary | Runtime invariant |
 | Persistence | Idempotent replay | Duplicate/concurrent/corrupt submissions | Runtime invariant |
 | Resource limits | Dispatch within supported limit | Exhaustion persists incomplete state | Host control where enforced; instruction contract where advisory |
-| Context | Relevant complete constraints delivered | Stale summaries, deleted files, missing mappings | Runtime invariant + instruction contract |
+| Context | Complete constraints structurally delivered | Stale summaries, deleted files, missing mappings | Runtime invariant (structural presence) + instruction contract (relevance) |
 | Compatibility | Historical plan continues | Silent migration or dropped evidence refused | Runtime invariant |
 | Packaging | Exported pack runs alone | Missing Python reports UNVERIFIED | Runtime invariant |
 
@@ -357,7 +497,10 @@ Runtime invariants are implemented and tested in the deterministic core;
 host controls are enforced only where a host adapter exists; instruction
 contracts are taught in flow text (contract presence, never model obedience);
 empirical claims are made only by the evaluation campaigns, never by this
-RFC.
+RFC. Every row is testable for every v6 new plan because the contract is
+always present (§3.1); a row whose control depends on host metering or on a
+command that cannot run through the core's runner carries that mode in the
+row itself (§5, §8) — no row implies an enforcement the host does not have.
 
 ## 12. Alternatives considered
 
@@ -383,14 +526,26 @@ and compatibility discipline.
 ## 14. Open questions for implementation tasks
 
 1. Exact v6 schema shapes (field-level) — owned by the contract/schema task,
-   including the journal event object catalog.
+   including the journal event object catalog (with `intervention.category`
+   from the evaluation protocol's taxonomy and the `control_pair` shape,
+   §4.1).
 2. Journal roll and truncation policy for very long campaigns — bounded by
    the measurement tasks' data.
 3. Which host adapters ship in the first release vs remain documented
    interfaces — decided by the resource/capability task with the campaigns'
    host evidence.
 4. Deterministic-view file naming and layout inside the plan folder — owned
-   by the ledger task.
+   by the ledger task (including the audit surfaces of §4.4).
+5. Interlocks specified as implementation requirements (A12): `T-*` ids are
+   minted by the guarded writer with collision refusal, never by the
+   scheduler; journal rolls may not truncate below the highest
+   snapshot-cited position (or the snapshot re-cites post-roll); a crash
+   between manifest and contract leaves a plan whose v6-ness is discoverable
+   through the manifest's contract pointer — the writer materializes the
+   contract before the first task and refuses execution without it.
+6. Context-manifest derivation rules — which record fields produce which
+   manifest sections, and the dead-end digest's inclusion window (§7) —
+   owned by the context task.
 
 ## 15. References
 
@@ -407,3 +562,8 @@ and compatibility discipline.
 - `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE_REVIEW.md` (the
   local gitignored record of the independent design review; its findings and
   dispositions are incorporated in this draft-1 text)
+- `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE_REDTEAM.md` (the
+  local gitignored record of the adversarial red-team; its findings A1–A13,
+  capabilities B1–B5 and upgrades U1–U5 are incorporated in this draft-2
+  text, and its own citations of the lab's oracle-calibration evidence are
+  the empirical grounding for §6's control pairs)

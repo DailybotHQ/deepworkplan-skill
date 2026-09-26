@@ -83,3 +83,37 @@ citing its predecessor.
   enforces.
 - **Alternatives.** Uniform advisory reporting (hides real enforcement);
   requiring a specific host to ship (violates portability).
+
+## D13 — Red-team dispositions (draft-2)
+
+- **Context.** The adversarial red-team
+  (`analysis_results/ARCHITECTURE_REDTEAM.md`) found 13 vague or
+  unimplementable points (A1–A13), 5 undersold capabilities (B1–B5) and
+  ranked 5 upgrades (U1–U5). The strongest claims were verified against the
+  draft-1 text before acceptance: no section designates the gate executor
+  (A1), the contract is RECOMMENDED exactly where the authorization row
+  presupposes it (A2), and the single-writer selection silently collides
+  with shipped v5 team agents (A8). A6 is grounded in this plan's own lab:
+  cosmetic-stub and green-build-sabotage cells pass every shape check and
+  fail only hardened behavioral checks.
+- **Decision.** All 13 findings and all 5 upgrades are accepted and
+  incorporated in RFC draft-2. The two structural changes beyond editing:
+  (1) the contract becomes REQUIRED for every v6 new plan, with the approval
+  record — not the contract's existence — scaling by plan mode (U1, closing
+  A2/A3); (2) the core becomes the gate executor, making `observed` mean
+  helper-executed rather than helper-mediated (A1), and negative controls
+  gain mechanical residency as helper-executed counterfactual pairs that
+  pass only on (old FAIL, new PASS) (U2, closing A6).
+- **Consequences.** v6's headline claims ("verified outcomes") become
+  testable per plan rather than per campaign; migration is honest that
+  agent-invoked history is `asserted`; parallelism is a designed boundary
+  (per-worker child plans) instead of a silent regression. Costs: one extra
+  scoped run per controlled criterion (U2), one approval step at
+  materialization (U1).
+- **Alternatives.** Keep the contract RECOMMENDED with a no-contract
+  authorize() fallback (rejected: the §11 Authorization row then has no
+  subject for the majority case); treat migrated gate records as `imported`
+  (rejected: self-authored history is a claim, not a matched external
+  source); defer U3/U4 to post-release (rejected: they are pure projections
+  of already-recorded events and carry the launch bar's guardrail
+  endpoints).
