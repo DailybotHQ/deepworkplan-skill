@@ -1,0 +1,23 @@
+{
+  "family": "legacy",
+  "role": "immutable initial fixture for the v6 evaluation lab (seed source; the lab driver pins and stages it)",
+  "provenance": {
+    "origin": "authored in-repo for this fixture (a plausible legacy repository: staleness and inconsistencies are the workload, authored deliberately)",
+    "toolchain": "Python 3.8+ standard library only; bash 3.2-compatible shell scripts; verified on host CPython 3.13.5",
+    "license": "MIT (this repository)",
+    "seed_defect": "K1: slugify drops non-decomposable non-ASCII characters; README/CHANGELOG falsely claim it was fixed in 0.3.1",
+    "stale_docs": "README documents the removed --format=tab choice and claims K1 fixed; normalize module absent from docs",
+    "user_owned_changes": "USER_NOTES.md + wip/ must survive every case byte-unchanged",
+    "pinned_at": "2026-09-26"
+  },
+  "overlays": [],
+  "commands": {
+    "install": "python3 -c \"print('stdlib-only legacy repo: no dependencies to install')\"",
+    "build": "python3 -m compileall -q csvreport tests",
+    "check": "bash run-checks.sh"
+  },
+  "check_contract": "run-checks.sh must pass on the pristine seed while the K1 detector still fails (known-issue posture). It must refuse when the green suite breaks, when the downstream caller breaks, or when K1 stops reproducing without a docs reconciliation. Maintenance success is observable behavior + stored state + the caller's command line, never DWP artifact adoption.",
+  "cases": "../CASES.md",
+  "migration_fixtures": "plans/lite and plans/full are frozen v5 plan shapes for migration-compatibility testing (lifecycle fixtures only, never shipped to arms)",
+  "notes": "Fixture-local documentation only; shared integration (Task 8) owns cross-fixture indexes."
+}

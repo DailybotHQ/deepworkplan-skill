@@ -1,0 +1,38 @@
+{
+  "schema": "https://deepworkplan.com/schema/plan-state/v5.json",
+  "plan": "PLAN_lite_migration_fixture",
+  "updated_at": "2026-09-26T00:00:00.000Z",
+  "updated_by": { "agent": "legacy-fixture-author", "model": "fixture" },
+  "status": "pending",
+  "completed_count": 0,
+  "task_count": 3,
+  "format": "lite",
+  "materialization": "ready",
+  "approval": "pending",
+  "promotion": null,
+  "checkpoint": null,
+  "blocked": null,
+  "tasks": [
+    {
+      "id": 1,
+      "locator": { "kind": "inline", "value": "#task-1" },
+      "title": "Inventory stale README claims",
+      "status": "pending",
+      "gates": []
+    },
+    {
+      "id": 2,
+      "locator": { "kind": "inline", "value": "#task-2" },
+      "title": "Correct the K1 change-log entry",
+      "status": "pending",
+      "gates": []
+    },
+    {
+      "id": 3,
+      "locator": { "kind": "inline", "value": "#task-3" },
+      "title": "Document normalize_whitespace",
+      "status": "pending",
+      "gates": []
+    }
+  ]
+}
