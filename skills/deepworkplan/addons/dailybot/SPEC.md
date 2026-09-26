@@ -30,9 +30,9 @@ baseline AI-first conformance.
 > machine-readable state layer (`PLAN_STATE.md`). All events remain opt-in,
 > conditional, and non-blocking; the completion milestone is unchanged.
 >
-> **Additive in 2.3.0.** Version gates align with the Dailybot agent skill **3.10.3**
-> and `dailybot-cli` **>= 3.7.0** (unified floor — hooks, chat, authoring, the
-> browse/read surface, and the per-repo `.dailybot/env.json` auth added in CLI 3.7.0 ship together). §3.5 documents the paired skill's full
+> **Additive in 2.3.0.** Version gates align with the Dailybot agent skill **3.16.1**
+> and `dailybot-cli` **>= 3.9.0** (unified floor — hooks, chat, authoring, the
+> browse/read surface, and the per-repo `.dailybot/env.json` auth, which older CLIs ignore, ship together). §3.5 documents the paired skill's full
 > capability surface; this addon still wires only the `report` sub-skill.
 
 ## 1. Conventions
@@ -73,7 +73,7 @@ with explicit acceptance, and each reconciled if already present (§7):
 - The addon **SHOULD** offer the **Dailybot agent skill** as the primary path,
   because it brings its own install/consent/auth flow and the `report`
   sub-skill. Supported install methods (the addon **MUST** offer, not force):
-  - `npx --yes skills add DailybotHQ/agent-skill@v3.10.3 --skill dailybot -y`
+  - `npx --yes skills add DailybotHQ/agent-skill@v3.16.1 --skill dailybot -y`
     (cross-agent, recommended — **pinned to a published tag**; the `skills` CLI
     records source + content hash in `skills-lock.json`), **or**
   - OpenClaw native: `openclaw skills install dailybot` (registry-managed pin).
@@ -89,7 +89,7 @@ with explicit acceptance, and each reconciled if already present (§7):
   **SHOULD NOT** install the CLI separately when the skill is being installed.
 - When the developer explicitly wants the CLI directly, the supported paths
   are, **in preference order**:
-  - `pip install 'dailybot-cli>=3.7.0'` (Python 3.10+), **or**
+  - `pip install 'dailybot-cli>=3.9.0'` (Python 3.10+), **or**
   - `brew install dailybothq/tap/dailybot` (macOS), **or**
   - The Dailybot skill's **verified installer flow** (macOS / Linux /
     Windows) — documented in the skill's `shared/auth.md` as a three-step
@@ -115,8 +115,8 @@ with explicit acceptance, and each reconciled if already present (§7):
 
 ### 3.4 Optional harness hook enforcement
 
-- When `dailybot-cli` is **>= 3.7.0** (the unified floor for the current skill
-  pack, currently **3.10.3**), the addon **SHOULD** offer — and **MAY**, with
+- When `dailybot-cli` is **>= 3.9.0** (the unified floor for the current skill
+  pack, currently **3.16.1**), the addon **SHOULD** offer — and **MAY**, with
   explicit acceptance, commit — repo-level harness hook configs whose entries
   invoke the `dailybot hook` lifecycle commands (`session-start`, `activity`,
   `post-commit`, `stop`, `dismiss`), e.g. Claude Code `.claude/settings.json`
@@ -129,7 +129,7 @@ with explicit acceptance, and each reconciled if already present (§7):
 - The addon **MUST NOT** write hook configs without explicit acceptance, and
   **MUST** merge into existing config files — never overwrite (§7). Existing
   `dailybot hook` entries **MUST** be preserved, not duplicated.
-- When the CLI is below 3.7.0, the addon **MUST** skip this offer (the §5
+- When the CLI is below 3.9.0, the addon **MUST** skip this offer (the §5
   wiring stands alone) and **MAY** suggest `dailybot upgrade` once.
 - The committed `.dailybot/profile.json` **MAY** include
   `"report": {"mode": "continuous"}` for research/docs-heavy repos so non-commit
@@ -137,7 +137,7 @@ with explicit acceptance, and each reconciled if already present (§7):
 
 ### 3.5 Paired Dailybot skill — full capability surface (informational)
 
-The Dailybot agent skill (currently **3.10.3**, source
+The Dailybot agent skill (currently **3.16.1**, source
 [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)) exposes
 **14 coordinated sub-skills**: report, ask, messages, email, chat,
 conversations, health, check-ins (complete + authoring), kudos (give + browse),
@@ -293,10 +293,10 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Dailybot skill: [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)
-  — `SKILL.md` (currently **3.10.3**), `shared/auth.md`, `TRUST.md`,
+  — `SKILL.md` (currently **3.16.1**), `shared/auth.md`, `TRUST.md`,
   `report/SKILL.md`, `report/hooks.md`, `report/triggers.md`
 - Dailybot CLI: [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli), PyPI `dailybot-cli`
-  — minimum **>= 3.7.0**; `docs/AGENT_HOOKS.md` (the `dailybot hook` command group
+  — minimum **>= 3.9.0**; `docs/AGENT_HOOKS.md` (the `dailybot hook` command group
   + report ledger)
 - [`../../spec/PLAN_STATE.md`](../../spec/PLAN_STATE.md) (the state layer the payloads derive from), `../../spec/AGENT_PROTOCOL.md` §7 (unattended profile + stop conditions)
 

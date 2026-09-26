@@ -45,8 +45,12 @@ dailybot task create --title "Deploy v2" --idempotency-key "deploy-2026-09-19-v2
 
 Not every write honours it. Where the server ignores it, the CLI does not send one and
 offers no `--idempotency-key` flag — advertising a guarantee that does not exist is worse
-than having none. Currently: `project update-post`, `milestone complete` / `reopen`, and
-task subscription.
+than having none. Many Tasks doors are like this, for example: editing, restoring or
+reordering columns; creating or updating milestones; updating, restoring, linking or
+unlinking goals; comment edits; board labels; saved views; task subscription. The Tasks
+command reference (`tasks/commands.md`) marks every door that **does** send a key with
+`+key` (among them `project update-post` and `milestone complete` / `reopen`). For any other
+door, a retry can repeat the write, so check the state first.
 
 `POST /v1/tasks/tasks/bulk/` is the opposite: it **requires** the header.
 
@@ -59,7 +63,8 @@ retrying rather than assuming. The CLI says so in the message for exactly this r
 
 The server reports a replay in the `Idempotency-Replayed` **header**, which a caller reading
 only the JSON body cannot see. So every Tasks write body the CLI emits — including under
-`--json` — carries two extra keys:
+`--json` — carries `_idempotency_replayed`, and a write on a `+key` door also carries
+`_idempotency_key`, the key that was actually sent:
 
 ```json
 {"uuid": "…", "_idempotency_replayed": false, "_idempotency_key": "5f2c…"}
@@ -69,12 +74,18 @@ only the JSON body cannot see. So every Tasks write body the CLI emits — inclu
 {"uuid": "…", "_idempotency_replayed": true,  "_idempotency_key": "5f2c…"}
 ```
 
+On a door without `+key` there is no key, only the replay flag:
+
+```json
+{"uuid": "…", "_idempotency_replayed": false}
+```
+
 `_idempotency_replayed` is **always present** and always a boolean — branch on the value, not
 on whether the key exists. `true` means the server returned the original result and wrote
 nothing.
 
-`_idempotency_key` is the key the CLI actually sent. It matters because **the CLI generates a
-fresh uuid4 on every invocation when you do not pass one**: re-running the same command after
+On a `+key` door, `_idempotency_key` is the key the CLI actually sent. It matters because
+**the CLI generates a fresh uuid4 on every invocation when you do not pass one**: re-running the same command after
 a timeout sends a key the server has never seen, and duplicates. Capture this value and pass
 it back with `--idempotency-key` to make that retry safe for the 24h window.
 
@@ -83,8 +94,8 @@ server's own.
 
 ## The timeout is the case that needs the key most
 
-A timed-out write has no response body, so there is no `_idempotency_key` to read. The CLI
-therefore puts it on the **error**: it is printed on the human path, and appears as
+A timed-out write has no response body, so there is no `_idempotency_key` to read. On a
+`+key` door the CLI therefore puts it on the **error**: it is printed on the human path, and appears as
 `idempotency_key` in the `--json` error envelope alongside `code: "transport_error"`.
 
 ```json
@@ -94,3 +105,6 @@ therefore puts it on the **error**: it is printed on the human path, and appears
 Retry that exact call with `--idempotency-key <that value>`. The server either replays the
 write it already committed or performs it once. Retrying without it mints a fresh key the
 server has never seen — which is precisely how a timeout becomes a duplicate.
+
+On a door without `+key`, the error carries no `idempotency_key`, and nothing makes a retry
+safe. Re-read the object's current state, and repeat the write only if it did not land.
