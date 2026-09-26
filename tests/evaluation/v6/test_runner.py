@@ -223,20 +223,20 @@ class OrchestrationTests(LabTestBase):
         self.assertEqual(len(self.read_inventory(out)), before, "resume re-ran completed cells")
 
     def test_prepare_dry_run_writes_nothing(self):
-        cfg = self.make_cfg()
+        seed = self.make_seed()
         before = sorted(p.name for p in self.lab_root.rglob("*"))
-        lab.cmd_prepare(cfg, self.lab_root, "testfamily", dry_run=True)
+        lab.cmd_prepare(self.lab_root, "testfamily", dry_run=True, seed_rel=str(seed))
         after = sorted(p.name for p in self.lab_root.rglob("*"))
         self.assertEqual(before, after, "dry-run wrote to the lab")
 
     def test_prepare_materializes_pinned_manifest_and_refuses_collision(self):
-        cfg = self.make_cfg()
-        lab.cmd_prepare(cfg, self.lab_root, "testfamily", dry_run=False)
+        seed = self.make_seed()
+        lab.cmd_prepare(self.lab_root, "testfamily", dry_run=False, seed_rel=str(seed))
         manifest = lab.load_json(self.lab_root / "seeds" / "testfamily" / "manifest.json")
         self.assertIn("src/app.py", manifest["files"])
         self.assertEqual(len(manifest["files"]["src/app.py"]), 64)
         with self.assertRaises(SystemExit):
-            lab.cmd_prepare(cfg, self.lab_root, "testfamily", dry_run=False)
+            lab.cmd_prepare(self.lab_root, "testfamily", dry_run=False, seed_rel=str(seed))
 
     def test_isolation_posture_is_honest_by_default(self):
         posture = lab.isolation_posture(self.lab_root)

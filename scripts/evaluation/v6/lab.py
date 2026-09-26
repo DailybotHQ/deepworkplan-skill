@@ -35,6 +35,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -210,6 +211,81 @@ def validate_campaign(cfg: dict, lab_root: Path, design_path: Path) -> list:
     return errors
 
 
+def cmd_validate_family(lab_root: Path, family: str, execute_checks: bool) -> int:
+    """Validate a prepared fixture family: static pinned-hash drift check plus,
+    with --execute-checks, a disposable clean install/build/check run.
+
+    Zero-check defense: a check command that reports zero checks, produces no
+    output, or exits nonzero is a failure, never a pass."""
+    staging = lab_root / "seeds" / family
+    manifest_path = staging / "manifest.json"
+    seed = staging / "seed"
+    if not manifest_path.is_file() or not seed.is_dir():
+        die(f"family {family!r} is not prepared: run prepare --family {family} first "
+            f"(expected {manifest_path})")
+    manifest = load_json(manifest_path)
+    pinned = manifest.get("files") or tree_hashes(seed)
+    current = tree_hashes(seed)
+    if pinned != current:
+        die("staged seed drifted from its pinned hashes — re-prepare the family; "
+            "a mutable fixture is refused")
+    commands = manifest.get("commands")
+    if not commands:
+        seed_manifest = seed / "manifest.json"
+        if seed_manifest.is_file():
+            # The fixture's own manifest travels with the seed; the pinned
+            # manifest carries hashes, the fixture manifest carries commands.
+            commands = load_json(seed_manifest).get("commands")
+    commands = commands or {}
+    for key in ("install", "build", "check"):
+        if not commands.get(key):
+            die(f"family manifest is missing commands.{key}")
+    result = {"family": family, "static": "ok", "pinned_files": len(pinned),
+              "executed_checks": False}
+    if not execute_checks:
+        (staging / "validation.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        print(f"OK family {family!r}: staged seed matches {len(pinned)} pinned files; "
+              f"install/build/check declared. Pass --execute-checks to run them.")
+        return 0
+
+    with tempfile.TemporaryDirectory(prefix=f"dwp-v6-family-{family}-") as td:
+        work = Path(td) / "seed"
+        safe_copytree(seed, work)
+        outputs = {}
+        for key in ("install", "build", "check"):
+            try:
+                proc = subprocess.run(commands[key], shell=True, cwd=str(work),
+                                      capture_output=True, text=True, timeout=1800)
+            except subprocess.TimeoutExpired:
+                result.update({"executed_checks": True, "failed_at": key,
+                               "outputs": outputs, "timeout": True})
+                (staging / "validation.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+                print(f"FAIL family {family!r}: {key} timed out", file=sys.stderr)
+                return 1
+            outputs[key] = {"exit_code": proc.returncode,
+                            "output": (proc.stdout + proc.stderr)[-4000:]}
+            if proc.returncode != 0:
+                result.update({"executed_checks": True, "failed_at": key, "outputs": outputs})
+                (staging / "validation.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+                print(f"FAIL family {family!r}: {key} exited {proc.returncode}", file=sys.stderr)
+                print(outputs[key]["output"][-2000:], file=sys.stderr)
+                return 1
+        check_out = outputs["check"]["output"]
+        counts = [int(n) for n in re.findall(r"(\d+) checks", check_out)]
+        if (counts and max(counts) == 0) or not check_out.strip():
+            result.update({"executed_checks": True, "failed_at": "check", "outputs": outputs})
+            (staging / "validation.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+            print(f"FAIL family {family!r}: the check produced no verifiable output "
+                  f"(zero checks is not a pass)", file=sys.stderr)
+            return 1
+        result.update({"executed_checks": True,
+                       "outputs": {k: v["exit_code"] for k, v in outputs.items()}})
+        (staging / "validation.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        last = check_out.strip().splitlines()[-1][:160]
+        print(f"OK family {family!r}: install/build/check all exit 0; check: {last}")
+        return 0
+
+
 def isolation_posture(lab_root: Path) -> dict:
     """Honest capability report: what this host can and cannot enforce."""
     return {
@@ -222,8 +298,8 @@ def isolation_posture(lab_root: Path) -> dict:
 
 # ------------------------------------------------------------------- prepare
 
-def cmd_prepare(cfg: dict, lab_root: Path, family: str, dry_run: bool) -> int:
-    seed_path = repo_root() / cfg["seed"]["path"]
+def cmd_prepare(lab_root: Path, family: str, dry_run: bool, seed_rel: str) -> int:
+    seed_path = repo_root() / seed_rel
     staging = lab_root / "seeds" / family
     print(f"family: {family}")
     print(f"seed source: {seed_path}")
@@ -275,6 +351,14 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     safe_copytree(seed_src, workspace)
     (workspace / ".scratch").mkdir(exist_ok=True)
     initial = tree_hashes(workspace)
+    # Host hazard: a package manifest anywhere above the workspace can make
+    # package managers resolve an unrelated workspace root (observed with pnpm
+    # under /app). Recorded per cell; the real mitigation is host-level.
+    ancestor_workspace_risk = any(
+        (ancestor / marker).is_file()
+        for ancestor in list(workspace.parents)[:12]
+        for marker in ("package.json", "pnpm-workspace.yaml")
+    )
 
     # Actor-invisible items live OUTSIDE the workspace, inside the attempt.
     hidden = attempt_dir / "actor_invisible"
@@ -355,6 +439,7 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
         "initial_hashes": initial,
         "final_hashes": final,
         "produced_change": initial != final,
+        "ancestor_workspace_risk": ancestor_workspace_risk,
         "canary_intact": canary_intact,
         "canary": "actor_invisible/CUSTODIAN_CANARY.secret",
         "env_keys": sorted(env),
@@ -655,17 +740,30 @@ def main() -> int:
     parser.add_argument("--resume")
     parser.add_argument("--lab-root")
     parser.add_argument("--timeout-s", type=int, default=900)
+    parser.add_argument("--execute-checks", action="store_true",
+                        help="family validate: run the manifest's install/build/check in a disposable copy")
+    parser.add_argument("--seed-path", help="prepare: fixture seed directory relative to the repository root")
     args = parser.parse_args()
 
     if args.mode == "self-test":
         with tempfile.TemporaryDirectory(prefix="dwp-v6-lab-selftest-") as td:
             return cmd_self_test(Path(td))
 
+    lab_root = Path(args.lab_root).resolve() if args.lab_root else default_lab_root()
+    design_path = repo_root() / DESIGN_PATH
+
+    if args.mode in ("validate", "prepare") and not args.config:
+        if args.mode == "validate":
+            if args.family == "family":
+                die("validate needs --config <campaign.json> or --family <name>")
+            return cmd_validate_family(lab_root, args.family, args.execute_checks)
+        if not args.seed_path:
+            die("prepare needs --seed-path <path> or --config <campaign.json>")
+        return cmd_prepare(lab_root, args.family, args.dry_run, args.seed_path)
+
     if not args.config:
         die(f"--config is required for {args.mode}")
     cfg = load_json(Path(args.config))
-    lab_root = Path(args.lab_root).resolve() if args.lab_root else default_lab_root()
-    design_path = repo_root() / DESIGN_PATH
 
     if args.mode == "validate":
         errors = validate_campaign(cfg, lab_root, design_path)
@@ -679,7 +777,8 @@ def main() -> int:
         return 0
 
     if args.mode == "prepare":
-        return cmd_prepare(cfg, lab_root, args.family, args.dry_run)
+        return cmd_prepare(lab_root, args.family, args.dry_run,
+                           args.seed_path or load_json(Path(args.config))["seed"]["path"])
 
     if args.mode == "run":
         if not args.output:
