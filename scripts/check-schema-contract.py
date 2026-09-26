@@ -48,27 +48,33 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/plan-state/v2.json": json.load(open(os.path.join(d, "plan-state-v2.schema.json"))),
         "https://deepworkplan.com/schema/plan-contract/v6.json": json.load(open(os.path.join(d, "plan-contract-v6.schema.json"))),
         "https://deepworkplan.com/schema/journal-event/v6.json": json.load(open(os.path.join(d, "journal-event-v6.schema.json"))),
+        "https://deepworkplan.com/schema/plan-snapshot/v6.json": json.load(open(os.path.join(d, "plan-snapshot-v6.schema.json"))),
     }
 
 
-def load_contract_v6(pack):
-    """Import the shipped runtime validator for the two-half drift check.
+def load_pack_module(pack, name):
+    """Import a shipped runtime module for the two-half drift check.
 
     Importing from the pack MUST NOT leave bytecode inside it - a
     __pycache__ under skills/deepworkplan/ fails the pack-purity tests -
     so bytecode writing is disabled for the duration of the import no
-    matter how this script was invoked.
+    matter how this script was invoked. The shared directory goes on
+    sys.path first so plain sibling imports (ledger imports contract_v6)
+    resolve to the shipped files too.
     """
     import importlib.util
-    prior = sys.dont_write_bytecode
+    shared = os.path.join(pack, "shared")
+    prior_dw = sys.dont_write_bytecode
     sys.dont_write_bytecode = True
     try:
+        if shared not in sys.path:
+            sys.path.insert(0, shared)
         spec = importlib.util.spec_from_file_location(
-            "contract_v6", os.path.join(pack, "shared", "contract_v6.py"))
+            name, os.path.join(shared, name + ".py"))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
     finally:
-        sys.dont_write_bytecode = prior
+        sys.dont_write_bytecode = prior_dw
     return module
 
 
@@ -86,6 +92,7 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
     between the two implementations is itself a failure."""
     cs = schemas["https://deepworkplan.com/schema/plan-contract/v6.json"]
     js = schemas["https://deepworkplan.com/schema/journal-event/v6.json"]
+    ss = schemas["https://deepworkplan.com/schema/plan-snapshot/v6.json"]
     v6dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                          "tests", "fixtures", "v6")
     cpath = os.path.join(v6dir, "contract-minimal.json")
@@ -95,7 +102,7 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
         return
     contract = json.load(open(cpath))
     events = [json.loads(l) for l in open(jpath) if l.strip()]
-    c6 = load_contract_v6(pack)
+    c6 = load_pack_module(pack, "contract_v6")
 
     def both_ok(doc, schema, runtime_errors, label, expect_valid,
                 runtime_only=False):
@@ -129,6 +136,50 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
         notes.append("v6: contract_id reproduced by an independent canonicalization")
     if c6.compute_contract_id(contract) != contract.get("contract_id"):
         problems.append("v6: shipped compute_contract_id disagrees with the stamped fixture id")
+
+    # Snapshot: the REAL projector runs over the same fixtures and its output
+    # must validate under the published schema - drift between writer and
+    # schema is caught by construction, not by a hand-maintained fixture.
+    ledger = load_pack_module(pack, "ledger")
+    if "/plan-state/" in ledger.STATE_SCHEMA_URL:
+        problems.append("v6: the snapshot must publish under its own new-generation URL "
+                        "(RFC 9.1), never inside the frozen plan-state v1/v2/v5 shape series")
+    else:
+        notes.append("v6: snapshot URL is a new schema-URL generation, outside the frozen plan-state series")
+    if ledger.STATE_SCHEMA_URL != "https://deepworkplan.com/schema/plan-snapshot/v6.json":
+        problems.append("v6: snapshot URL label does not map to the shipped schema file name")
+    import shutil, tempfile
+    tmp = tempfile.mkdtemp(prefix="dwp-snapshot-check-")
+    plandir = os.path.join(tmp, "PLAN_snapshot_check")
+    try:
+        os.makedirs(plandir)
+        shutil.copyfile(cpath, os.path.join(plandir, "contract.json"))
+        shutil.copyfile(jpath, os.path.join(plandir, "journal.ndjson"))
+        rec = ledger.PlanRecords(plandir)
+        lock = ledger.CooperativeLock(plandir).acquire()
+        try:
+            snapshot = ledger.Writer(rec, lock).project()
+        finally:
+            lock.release()
+        errs = errors(ss, snapshot)
+        if errs:
+            problems.append(f"v6: jsonschema rejects the real projector's snapshot ({errs[0]})")
+        else:
+            notes.append("v6: snapshot produced by the shipped ledger validates under plan-snapshot-v6.schema.json")
+        for label, mutate in (
+            ("mixed-era schema url", lambda d: d.update(schema="https://deepworkplan.com/schema/plan-state/v5.json")),
+            ("extra top-level field", lambda d: d.update(efficiency={"tokens": 1})),
+            ("non-enum trust on satisfied criterion",
+             lambda d: d["tasks"][0]["criteria"][0].update(trust="vibes") if d["tasks"][0]["criteria"] and d["tasks"][0]["criteria"][0].get("satisfied") else d["tasks"][0]["criteria"].insert(0, {"criterion": "AC-valid-contract-shape", "satisfied": True, "via_seq": 3, "trust": "vibes"})),
+            ("fabricated position seq", lambda d: d["positions"].update(gate_run={"seq": 0})),
+        ):
+            doc = copy.deepcopy(snapshot)
+            mutate(doc)
+            if not errors(ss, doc):
+                problems.append(f"v6 snapshot mutant {label}: accepted by the schema")
+        notes.append("v6: snapshot mutants rejected (era const / closed object / trust enum / seq floor)")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
     # Negative probes: every mutant must fail BOTH halves identically.
     def contract_mutant(label, mutate, runtime_only=False):

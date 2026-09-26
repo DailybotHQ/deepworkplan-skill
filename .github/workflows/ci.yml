@@ -193,6 +193,8 @@ jobs:
                         skills/deepworkplan/shared/state_contract.py \
                         skills/deepworkplan/shared/finalize_plan.py \
                         skills/deepworkplan/shared/contract_v6.py \
+                        skills/deepworkplan/shared/ledger.py \
+                        skills/deepworkplan/shared/views.py \
                         skills/deepworkplan/verify/plan_contract.py; do
             python3 -m py_compile "$helper"
             echo "OK: $helper compiles on $(python3 --version)"
@@ -201,6 +203,13 @@ jobs:
           # parse: its self-test is stdlib-only and touches no repository.
           PYTHONDONTWRITEBYTECODE=1 python3 \
             skills/deepworkplan/shared/contract_v6.py self-test
+          # The v6 writer and views helpers likewise: their self-tests are
+          # stdlib-only, run against throwaway temp directories and touch
+          # no repository state.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/ledger.py self-test
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/views.py self-test
           # And they must actually run, not merely parse: the read-only checker
           # over a real fixture plan, with no optional dependency available.
           python3 -c 'import jsonschema' 2>/dev/null && { echo "FAIL: jsonschema present — this job must prove the stdlib-only path"; exit 1; }

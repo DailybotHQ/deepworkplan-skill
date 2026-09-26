@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-snapshot/v6.json",
+  "title": "DWP v6 plan snapshot (state.json projection)",
+  "description": "The deterministic snapshot projection of a v6 plan: rebuilt only by shared/ledger.py (project) from contract + journal.ndjson, atomically (temp + rename + fsync). Every timestamp derives from event ts values, never the wall clock, so replaying the same journal bytes yields a byte-identical snapshot. New schema-URL generation per RFC 9.1: not a mutation of the v5 plan-state shapes. Task statuses are pending/in_progress as emitted today; completion states land with the lifecycle wiring and will widen this enum in the same generation before release.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan",
+    "contract_id",
+    "contract_revision",
+    "generated_by",
+    "updated_at",
+    "tasks",
+    "positions",
+    "resources",
+    "checkpoint",
+    "blocker"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/plan-snapshot/v6.json"
+    },
+    "plan": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^PLAN_[A-Za-z0-9_-]+$"
+    },
+    "contract_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "contract_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "generated_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "The latest event ts the projection covers; empty before the first event."
+    },
+    "tasks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/task" }
+    },
+    "positions": {
+      "type": "object",
+      "description": "Latest journal seq per event type (provenance types excluded). A position the journal cannot support after a markdown-wins reconciliation is recorded regenerated, never fabricated.",
+      "additionalProperties": { "$ref": "#/$defs/position" }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["limits", "latest_samples"],
+      "properties": {
+        "limits": {
+          "type": "array",
+          "description": "The contract's declared resource envelope limits, carried verbatim (the contract schema owns their shape).",
+          "items": true
+        },
+        "latest_samples": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/sample" }
+        }
+      }
+    },
+    "checkpoint": {
+      "type": ["string", "null"],
+      "description": "The latest open question an operator must answer; null when none is recorded."
+    },
+    "blocker": {
+      "type": ["string", "null"],
+      "description": "The recorded blocker statement; null when the plan is not blocked."
+    },
+    "archives": {
+      "type": "array",
+      "description": "Journal roll archives beside the plan (nothing is ever deleted; snapshot-cited positions stay addressable).",
+      "items": { "$ref": "#/$defs/archive" }
+    }
+  },
+  "$defs": {
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "status", "started_seq", "criteria"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "title": { "type": ["string", "null"] },
+        "status": { "enum": ["pending", "in_progress"] },
+        "started_seq": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "The task_start event's journal position; null before the task starts."
+        },
+        "criteria": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/criterion_state" }
+        }
+      }
+    },
+    "criterion_state": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["criterion", "satisfied", "via_seq", "trust"],
+          "properties": {
+            "criterion": { "type": "string", "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$" },
+            "satisfied": { "const": true },
+            "via_seq": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "The in-window evidence event's journal position."
+            },
+            "trust": { "enum": ["observed", "imported", "asserted"] },
+            "evidence_path": {
+              "type": "string",
+              "description": "Recoverable pointer to the evidence log, relative to the plan directory."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["criterion", "satisfied"],
+          "properties": {
+            "criterion": { "type": "string", "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$" },
+            "satisfied": { "const": false },
+            "started_seq": {
+              "type": ["integer", "null"],
+              "minimum": 1
+            },
+            "stale_seqs": {
+              "type": "array",
+              "description": "Pre-start evidence events for this criterion: recorded history that can never satisfy the in-window rule.",
+              "items": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "position": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "seq": { "type": "integer", "minimum": 1 },
+        "regenerated": {
+          "const": true,
+          "description": "The snapshot cites this position but the journal cannot support it (markdown-wins regeneration); ignored for roll bounding."
+        }
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "seq"],
+      "properties": {
+        "value": {
+          "description": "The sampled amount as recorded by the metering source; untyped because limit kinds differ."
+        },
+        "seq": { "type": "integer", "minimum": 1 },
+        "trust": { "enum": ["observed", "imported", "asserted"] }
+      }
+    },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "first_seq", "last_seq"],
+      "properties": {
+        "file": { "type": "string", "pattern": "^journal-archive-[0-9]{6}-[0-9]{6}\\.ndjson$" },
+        "first_seq": { "type": "integer", "minimum": 1 },
+        "last_seq": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

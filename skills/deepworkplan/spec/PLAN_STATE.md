@@ -433,6 +433,94 @@ task correspondence and the meaning of validation results.
 
 *Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
 
+## 8. The v6 record layer: journal, ledger snapshot, generated views
+
+> **Status: v6 line.** This section binds **v6 new plans only**. v1/v2/v5
+> plans keep sections 1–7 as their complete standard; the v6 contract and
+> journal record formats are specified in
+> [`V6_CONTRACT.md`](V6_CONTRACT.md) and validated by the published
+> schemas plus `shared/contract_v6.py`. What this section adds is the
+> **write discipline and projections** around those records.
+
+A v6 plan carries, beside the markdown:
+
+| Artifact | Role | Writer |
+|---|---|---|
+| `contract.json` (or `contracts/` chain) | Outcome + authority contract; content-addressed identity | materialization / revisions (never in-place edits) |
+| `journal.ndjson` | Append-only event log — the plan's **memory** | `shared/ledger.py` only |
+| `state.json` (v6 shape) | Deterministic **snapshot projection** — the recovery root | `shared/ledger.py project` |
+| `evidence.jsonl` | Fingerprint→result cache for equivalent-input reuse | `shared/ledger.py gate` |
+| `gates/<task>/*.log` | Recoverable gate output logs | `shared/ledger.py gate` |
+| `views/*.md` | Generated views (tasks / evidence / audit / completion) | `shared/views.py render` |
+
+**The snapshot's own schema URL.** The v6 snapshot publishes under its own
+new-generation URL — `https://deepworkplan.com/schema/plan-snapshot/v6.json`
+(`spec/schema/plan-snapshot-v6.schema.json`) — never inside the
+`plan-state` label: that label is the frozen v1/v2/v5 **shape** series (v5
+is a generation snapshot of the v2 shape), and the v6 snapshot is a
+different artifact projected from the journal, not a mutation of those
+shapes. The same rule gave v6 the `plan-contract/v6` and
+`journal-event/v6` labels.
+
+**Write discipline.** One writer per plan. A cooperative `.ledger.lock`
+directory serializes writers; a session that finds the journal grown
+behind its own observed byte position refuses to append (the collision is
+reported, never interleaved). A torn final line from a crash mid-append is
+truncated on the next open and a `journal_repair` event records the byte
+offset and cause — the append-only rule binds complete events. The
+snapshot is rewritten only by the projector, atomically (temp + rename +
+fsync). No protection is claimed against editors that bypass the writer;
+read-time checks report what the records can show.
+
+**Trust.** Only `ledger.py gate` produces `observed` records — the helper
+itself executes the command with declared cwd, timeout and captured logs.
+A helper writing down a model-reported result mediates a write and the
+record is `asserted` (A1). Criteria count evidence only when recorded at
+or after the task's `task_start` journal position (D2-9b) with an accepted
+trust label; boundary invariants are evaluated at or after task-start
+(D3-6). Pre-start evidence is carried as stale, never satisfying.
+
+**Determinism.** Every timestamp in the snapshot and the views is derived
+from event `ts` values, never the wall clock: replaying the same journal
+bytes yields byte-identical `state.json` and view files. Positions the
+journal cannot support after a markdown-wins reconciliation are recorded
+`regenerated`, never fabricated (D2-8), and are ignored for roll bounding.
+
+**The human-edit rule (views).** A generated view that differs from what
+render would produce — its identity header proves it was machine-rendered
+— is never silently overwritten. Render reports the divergence and the
+operator reconciles: `human-wins` (the human edit stays; the generated
+output sits beside it as `<name>.generated.md`) or `generated-wins` (the
+human edit is preserved as `<name>.human.md`). Both record a
+`reconciliation` event with the trigger, the editor whose change won, and
+the operator-supplied authority. `README.md` and `PROGRESS.md` remain
+markdown-wins human documents.
+
+**Completion.** A task may only close when every `gate_intent` criterion
+has in-window accepted evidence; `ledger.py complete` refuses otherwise
+(zero-test control) and the refusal is itself a recorded event. The
+completion profile view shows which mechanism closed every criterion
+(evidence + trust + pointer, or reconciled authority) — never a bare
+claim.
+
+**Durability and rolls (Q2, bounded by measurement).** `.dwp/` is
+conventionally gitignored, so the default durability posture is
+**export**: `ledger.py export --dest DIR` copies journal + snapshot +
+contract chain with verified digests. Rolls are OFF by default. When
+used, `ledger.py roll` archives the journal beside the plan (nothing is
+deleted; snapshot-cited positions become archive-addressable) — automatic
+roll-sizing waits for measurement data from the confirmation campaign,
+which is why no automatic policy ships in 6.0.
+
+**View layout (Q4).** Four views ship: `tasks` (task table),
+`evidence` (evidence index with trust labels), `audit` (every refusal and
+intervention, by class, with reasons — a faithful ledger of recorded
+proposals, never an index or rating), and `completion` (rendered at
+completion). All are pure projections under the generated-view discipline
+above.
+
+---
+
 ## Guarded state updates
 
 The installed updater rejects malformed state and completed tasks without passing
