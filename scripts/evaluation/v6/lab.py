@@ -429,6 +429,7 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     log_path.parent.mkdir(parents=True, exist_ok=True)
     status, exit_code, note = "error", None, ""
     started = time.time()
+    adapter_name = cell["stratum"]["launch"]["mode"]
     with log_path.open("w", encoding="utf-8") as log:
         log.write("# argv: " + json.dumps(argv) + "\n")
         log.write("# env keys: " + ", ".join(sorted(env)) + "\n")
@@ -463,13 +464,59 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
             leaked = True
             break
     canary_intact = content_intact and not leaked
-    # Credential hygiene: the scratch HOME held auth files; it must not
-    # survive into artifacts.
+
+    # Metering: extract provider counters BEFORE the scratch HOME (which
+    # holds this cell's session logs) is removed. Per-cell scratch homes
+    # make attribution inherent: a cell's rollouts are only ever its own.
+    counters = {"input_tokens": "unknown", "cached_input_tokens": "unknown",
+                "output_tokens": "unknown", "reasoning_tokens": "unknown"}
+    cost = {"class": "unavailable", "reason": "no meter exposed for this stratum"}
+    meter_source = "unknown"
+    if adapter_name == "claude":
+        try:
+            import re as _re
+            candidates = [m for m in _re.findall(r'\{"duration_api_ms".*', log_text)
+                          if '"total_cost_usd"' in m]
+            if candidates:
+                payload = json.loads(candidates[-1])
+                usage = payload.get("usage") or {}
+                cached = usage.get("cache_read_input_tokens", 0) + usage.get("cache_creation_input_tokens", 0)
+                counters = {"input_tokens": usage.get("input_tokens", "unknown"),
+                            "cached_input_tokens": cached,
+                            "output_tokens": usage.get("output_tokens", "unknown"),
+                            "reasoning_tokens": (usage.get("output_tokens_details") or {}).get("thinking_tokens", "unknown")}
+                cost = {"class": "invoiced", "amount": payload.get("total_cost_usd")}
+                meter_source = "claude JSON result usage block (invoiced)"
+        except Exception as exc:
+            meter_source = f"claude log parse failed: {exc}"
+    elif adapter_name == "codex":
+        try:
+            import importlib.util as _ilu
+            spec = _ilu.spec_from_file_location(
+                "codex_usage", Path(__file__).parent / "adapters" / "codex_usage.py")
+            codex_usage = _ilu.module_from_spec(spec)
+            spec.loader.exec_module(codex_usage)
+            sessions = scratch_home / ".codex" / "sessions"
+            usage = codex_usage.usage_since(sessions, started - 1)
+            if usage["rollout_count"]:
+                counters = usage["counters"]
+                meter_source = ("codex session rollout (per-cell scratch home); "
+                                "input excludes cached reads")
+            else:
+                meter_source = "no rollout found in the cell scratch home"
+        except Exception as exc:
+            meter_source = f"codex extraction failed: {exc}"
+
+    # Credential hygiene: the scratch HOME held auth files and session logs;
+    # it must not survive into artifacts.
     shutil.rmtree(scratch_home, ignore_errors=True)
     final = tree_hashes(workspace)
     record = {
         "cell_id": cell["cell_id"],
         "attempt": attempt_dir.name,
+        "counters": counters,
+        "cost": cost,
+        "meter_source": meter_source,
         "campaign": cfg["name"],
         "arm": cell["arm"],
         "task": cell["task"]["id"],
