@@ -82,6 +82,60 @@ def sha256_path(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def pack_content_digest(pack_dir: Path):
+    """Content digest of an exported pack, REGENERATED from the actual files
+    (never the stored manifest bytes — a mutated file with an intact manifest
+    must not pass). Scheme identical to baselines/verify_snapshot.py:
+    LC_ALL=C sorted "./"-prefixed coreutils-style lines, one trailing
+    newline; the digest is the SHA-256 of that text and the directory name
+    carries its first 16 hex. Returns None when the pack carries no
+    manifest (content unverifiable — validation refuses, D15 F4)."""
+    manifest = pack_dir / "SHA256SUMS"
+    if not manifest.is_file():
+        return None
+    entries = []
+    for path in sorted(pack_dir.rglob("*")):
+        if not path.is_symlink() and path.is_file():
+            rel = path.relative_to(pack_dir).as_posix()
+            if rel == "SHA256SUMS":
+                continue
+            entries.append(rel)
+    entries.sort(key=lambda rel: ("./" + rel).encode("utf-8"))
+    lines = [f"{sha256_path(pack_dir / rel)}  ./{rel}" for rel in entries]
+    return sha256_text("\n".join(lines) + "\n")
+
+
+def verify_inventory_chain(lines: list) -> dict:
+    """D15 F3: each inventory record may carry chain = sha256 of the previous
+    raw line. A chain link that does not reproduce breaks the chain; records
+    before the first chained line are an unanchored prefix (legacy resumes),
+    reported, not refused. Returns {ok, anchored_from, unanchored_prefix,
+    breaks}."""
+    breaks, anchored_from, prev_raw = [], None, None
+    for i, raw in enumerate(lines):
+        try:
+            rec = json.loads(raw)
+        except ValueError:
+            breaks.append(f"line {i + 1}: not JSON")
+            prev_raw = raw
+            continue
+        if "chain" in rec:
+            if anchored_from is None:
+                anchored_from = i
+            expected = sha256_text(prev_raw) if prev_raw is not None else None
+            if rec.get("chain") != expected:
+                breaks.append(f"line {i + 1}: chain does not match line {i}")
+        prev_raw = raw
+    return {"ok": not breaks,
+            "anchored_from": anchored_from,
+            "unanchored_prefix": anchored_from or 0,
+            "breaks": breaks}
+
+
 def tree_hashes(root: Path) -> dict:
     """Sorted file->sha256 map of a tree, excluding nothing (workspaces are small)."""
     out = {}
@@ -161,6 +215,13 @@ def validate_campaign(cfg: dict, lab_root: Path, design_path: Path) -> list:
         name = path.name
         if "-" not in name or not name.rsplit("-", 1)[1].isalnum() or len(name.rsplit("-", 1)[1]) < 12:
             err(f"arm {arm} pack directory name must be <tag>-<digest>: {name} ({DEFAULT_PACK_PATTERN_MSG})")
+            continue
+        digest = pack_content_digest(path)
+        if digest is None:
+            err(f"arm {arm} pack carries no SHA256SUMS manifest — content cannot be verified against the name digest ({DEFAULT_PACK_PATTERN_MSG})")
+            continue
+        if not digest.startswith(name.rsplit("-", 1)[1]):
+            err(f"arm {arm} pack content digest {digest[:16]} does not match name digest {name.rsplit('-', 1)[1]} — the snapshot changed after export; re-export a fresh pack ({DEFAULT_PACK_PATTERN_MSG})")
 
     seed = cfg["seed"]
     seed_path = repo_root() / seed.get("path", "")
@@ -197,6 +258,39 @@ def validate_campaign(cfg: dict, lab_root: Path, design_path: Path) -> list:
             err(f"oracles[{i}].kind must be one of file_contains | file_exists | exit_zero_file")
         if not oracle.get("id"):
             err(f"oracles[{i}] missing id")
+
+    # D15 F1/F6: confirmation-partition campaigns are refused unless the
+    # frozen measurement chain is expressed in the config itself.
+    partition = cfg.get("partition", "development")
+    if partition not in ("development", "confirmation"):
+        err('partition must be "development" or "confirmation"')
+    if partition == "confirmation":
+        quota = cfg.get("quota_protections") or {}
+        if not isinstance(quota.get("max_starts_per_hour"), int) or quota["max_starts_per_hour"] < 1:
+            err("confirmation configs must set quota_protections.max_starts_per_hour (int >= 1) — D15 F6")
+        if not isinstance(quota.get("budget_stop_per_provider"), int) or quota["budget_stop_per_provider"] < 1:
+            err("confirmation configs must set quota_protections.budget_stop_per_provider (max starts per provider, int >= 1) — D15 F6")
+        if not isinstance(quota.get("cooldown_on_quota_minutes"), int) or quota["cooldown_on_quota_minutes"] < 0:
+            err("confirmation configs must set quota_protections.cooldown_on_quota_minutes (int >= 0) — D15 F6")
+        bindings = cfg.get("oracle_bindings")
+        task_ids = {t.get("id") for t in cfg.get("tasks", [])}
+        if not isinstance(bindings, list) or not bindings:
+            err("confirmation configs must carry oracle_bindings [{case, digest}] frozen at the Task 25 freeze — D15 F1")
+        else:
+            seen = set()
+            for j, b in enumerate(bindings):
+                case = b.get("case")
+                digest = b.get("digest")
+                if case in seen:
+                    err(f"oracle_bindings[{j}] duplicates case {case}")
+                seen.add(case)
+                if case not in task_ids:
+                    err(f"oracle_bindings[{j}].case {case!r} matches no task id in this campaign")
+                if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest.lower()):
+                    err(f"oracle_bindings[{j}].digest must be a 64-hex sha256 (score_pilot.py --dump-oracle-commitments)")
+            missing = sorted(task_ids - seen)
+            if missing:
+                err(f"oracle_bindings missing cases present in the campaign: {', '.join(missing)}")
 
     if cfg.get("paid"):
         envelope = design_envelope(design_path)
@@ -350,6 +444,15 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     """Set up one workspace, dispatch one actor, verify canaries; record everything."""
     workspace = attempt_dir / "workspaces" / cell["cell_id"]
     workspace.parent.mkdir(parents=True, exist_ok=True)
+    # Resume-after-kill: a cell being (re-)started may find residue of a
+    # killed predecessor (quota kill, crash) — a half-finished actor tree is
+    # void state and must never leak into a fresh run. Cells with terminal
+    # records are skipped by resume before run_cell, so scored evidence is
+    # never touched. Rebuild from the seed, always.
+    if workspace.is_dir():
+        shutil.rmtree(workspace)
+    elif workspace.exists():
+        workspace.unlink()
     seed_staging = lab_root / "seeds" / cfg["seed"]["family"] / "seed"
     seed_src = seed_staging if seed_staging.is_dir() else repo_root() / cfg["seed"]["path"]
     safe_copytree(seed_src, workspace)
@@ -388,6 +491,10 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     canary.write_text(canary_token + "\n", encoding="utf-8")
 
     scratch_home = attempt_dir / "homes" / cell["cell_id"]
+    if scratch_home.is_dir():
+        shutil.rmtree(scratch_home)
+    elif scratch_home.exists():
+        scratch_home.unlink()
     scratch_home.mkdir(parents=True, exist_ok=True)
     # Actor credentials must travel, but traces must not: copy ONLY auth
     # files into the scratch HOME (never session transcripts or project
@@ -558,6 +665,11 @@ def campaign_cells(cfg: dict, arms: dict) -> list:
 
 
 def cmd_run(cfg: dict, lab_root: Path, output_dir: Path, resume: str, timeout_s: int) -> int:
+    # D15 F4: the pack/config chain is verified at run time too — validation
+    # at validate-time alone does not protect a campaign already in flight.
+    errors = validate_campaign(cfg, lab_root, repo_root() / DESIGN_PATH)
+    if errors:
+        die("campaign config invalid at run time: " + "; ".join(errors))
     inventory = output_dir / "attempts.jsonl"
     if resume:
         attempt_dir = output_dir / resume
@@ -586,15 +698,74 @@ def cmd_run(cfg: dict, lab_root: Path, output_dir: Path, resume: str, timeout_s:
 
     cells = campaign_cells(cfg, cfg["arms"])
     inventory.parent.mkdir(parents=True, exist_ok=True)
+
+    def provider_of(stratum_name: str) -> str:
+        low = stratum_name.lower()
+        if "claude" in low:
+            return "claude"
+        if "codex" in low:
+            return "codex"
+        return stratum_name
+
+    # D15 F3: chain each appended record to its predecessor's raw line.
+    existing_lines = [l for l in inventory.read_text(encoding="utf-8").splitlines() if l.strip()] if inventory.exists() else []
+    prev_raw = existing_lines[-1] if existing_lines else None
+    quota = cfg.get("quota_protections") or {}
+    partition = cfg.get("partition", "development")
     with inventory.open("a", encoding="utf-8") as inv:
         for cell in cells:
             if cell["cell_id"] in done_cells:
                 print(f"skip (already recorded): {cell['cell_id']}")
                 continue
+            if partition == "confirmation":
+                # D15 F6 pacing + budget stop, computed from the inventory the
+                # runner itself maintains (starts-based, never imputed USD).
+                import datetime as _dt
+                now = _dt.datetime.now(_dt.timezone.utc)
+                starts_hour = starts_provider = 0
+                last_quota_at = None
+                for raw in existing_lines:
+                    try:
+                        rec = json.loads(raw)
+                    except ValueError:
+                        continue
+                    ended = rec.get("ended_at")
+                    if ended:
+                        try:
+                            when = _dt.datetime.fromisoformat(ended)
+                        except ValueError:
+                            continue
+                        if (now - when).total_seconds() <= 3600:
+                            starts_hour += 1
+                        if provider_of(rec.get("stratum", "")) == provider_of(cell["stratum"]["name"]):
+                            starts_provider += 1
+                    if rec.get("quota_signature"):
+                        last_quota_at = rec.get("ended_at") or last_quota_at
+                cap = quota.get("max_starts_per_hour")
+                if isinstance(cap, int) and starts_hour >= cap:
+                    die(f"quota_protections.max_starts_per_hour={cap} reached ({starts_hour} starts in the last hour) — resume in the next window (--resume {attempt_id}); D15 F6")
+                budget = quota.get("budget_stop_per_provider")
+                if isinstance(budget, int) and starts_provider >= budget:
+                    die(f"quota_protections.budget_stop_per_provider={budget} reached for provider {provider_of(cell['stratum']['name'])} — resume in the next window; D15 F6")
+                cooldown = quota.get("cooldown_on_quota_minutes")
+                if isinstance(cooldown, int) and cooldown > 0 and last_quota_at:
+                    try:
+                        hot = _dt.datetime.fromisoformat(last_quota_at)
+                        wait_s = cooldown * 60 - (now - hot).total_seconds()
+                        if wait_s > 0:
+                            print(f"quota cooldown: waiting {int(wait_s)}s before {cell['cell_id']} (D15 F6)")
+                            time.sleep(wait_s)
+                    except ValueError:
+                        pass
             print(f"run: {cell['cell_id']}")
             record = run_cell(cell, cfg, attempt_dir, lab_root, timeout_s)
-            inv.write(json.dumps(record) + "\n")
+            record["ended_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            record["chain"] = sha256_text(prev_raw) if prev_raw is not None else None
+            raw = json.dumps(record)
+            inv.write(raw + "\n")
             inv.flush()
+            prev_raw = raw
+            existing_lines.append(raw)
             print(f"  -> {record['status']} (exit={record['exit_code']}, canary_intact={record['canary_intact']})")
     print(f"attempt {attempt_id}: {len(cells)} cells; inventory {inventory}")
     return 0
@@ -661,6 +832,12 @@ def cmd_analyze(cfg: dict, output_dir: Path) -> int:
     scores_path = output_dir / "SCORES.json"
     if not scores_path.is_file():
         die("no SCORES.json — run score first; analyzing absent data cannot pass")
+    inventory = output_dir / "attempts.jsonl"
+    if inventory.is_file():
+        chain = verify_inventory_chain(
+            [l for l in inventory.read_text(encoding="utf-8").splitlines() if l.strip()])
+        if not chain["ok"]:
+            die("inventory chain broken (D15 F3 — tamper-evidence): " + "; ".join(chain["breaks"]))
     scores = load_json(scores_path)
     by_arm = {}
     for cell in scores.values():
@@ -690,9 +867,20 @@ def cmd_self_test(tmp: Path) -> int:
     """End-to-end orchestration proof with fake actors. No network, no provider."""
     lab_root = tmp / "lab"
     packs = lab_root / "packs" / "vtest"
-    for name in ("vT1-aaaaaaaaaaaaaaaa", "vT2-bbbbbbbbbbbbbbbb"):
-        (packs / name).mkdir(parents=True, exist_ok=True)
-        (packs / name / "PACK_MARKER").write_text(name + "\n", encoding="utf-8")
+    pack_names = []
+    for tag in ("vT1", "vT2"):
+        stage = packs / (tag + "-staging")
+        stage.mkdir(parents=True, exist_ok=True)
+        (stage / "PACK_MARKER").write_text(tag + "\n", encoding="utf-8")
+        lines = []
+        for path in sorted(stage.rglob("*")):
+            if path.is_file():
+                lines.append(f"{sha256_path(path)}  ./{path.relative_to(stage).as_posix()}")
+        (stage / "SHA256SUMS").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        digest = sha256_path(stage / "SHA256SUMS")[:16]
+        final = packs / f"{tag}-{digest}"
+        stage.rename(final)
+        pack_names.append(final.name)
     seed = tmp / "seed"
     (seed / "src").mkdir(parents=True)
     (seed / "README.md").write_text("smoke seed\n", encoding="utf-8")
@@ -716,8 +904,8 @@ def cmd_self_test(tmp: Path) -> int:
     )
     cfg = {
         "schema": SCHEMA, "name": "selftest", "paid": False,
-        "arms": {"A": None, "B": {"pack": "packs/vtest/vT1-aaaaaaaaaaaaaaaa"},
-                 "C": {"pack": "packs/vtest/vT2-bbbbbbbbbbbbbbbb"}},
+        "arms": {"A": None, "B": {"pack": f"packs/vtest/{pack_names[0]}"},
+                 "C": {"pack": f"packs/vtest/{pack_names[1]}"}},
         "seed": {"path": str(seed), "family": "selftest"},
         "tasks": [{"id": "S-1", "prompt": "produce solution.txt"}],
         "strata": [{"name": "fake", "launch": {"mode": "fake", "command": str(actor)}}],

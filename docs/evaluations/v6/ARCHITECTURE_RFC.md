@@ -123,10 +123,12 @@ not a mode. What scales by plan mode instead is the **approval** record (U1):
   the create-time approval's authority.
 - **Both modes write the same approval record at materialization** (this is
   what makes the first-task-start refusal rule mode-uniform, D2-3): a
-  journal event `{authority, mechanism, contract_id, plan digest}`, where
-  *mechanism* is `plan_authorship` (interactive: authority = the session
-  user) or `pre_authorization` (unattended/non-git: authority = the
-  recorded pre-authorization). The guarded writer refuses the first
+  journal event of type `approval` (D3-7) carrying `{authority,
+  mechanism, contract_id, plan digest}`, where *mechanism* is
+  `plan_authorship` (interactive: authority = the session user) or
+  `pre_authorization` (unattended/non-git: authority = the recorded
+  pre-authorization); migration re-uses `pre_authorization` — the recorded
+  pre-authorization is the migration request (§9.3, D3-2). The guarded writer refuses the first
   task-start transition when the record is missing or cites bytes other
   than the live `contract_id`. Because identity is content-addressed, any
   later regeneration that drifts from the approved bytes is a new revision
@@ -146,7 +148,7 @@ plans (§9.1–9.2).
 | Acceptance | criteria with stable IDs (`AC-*`), each naming an **observable** check (behavior, interface, stored state) and its evidence class |
 | Invariants | global conditions that must hold at every boundary; violation is a stop, not an adaptation |
 | Scope | allowed paths; allowed command classes; forbidden operations (destructive, outward-facing) |
-| Authorization | source of authority (who/what approved), timestamp, boundaries of pre-approval; consent checkpoints carried verbatim; the approval record citing the exact `contract_id` bytes (interactive: plan authorship; unattended/non-git: pre-authorization — §3.1) |
+| Authorization | source of authority (who/what approved), timestamp, boundaries of pre-approval; consent checkpoints carried verbatim; the binding *mechanism* (`plan_authorship` or `pre_authorization`, §3.1). The citing approval record itself is the materialization-time journal event of §3.1, never contract content — a record inside the contract cannot cite the contract's own content-addressed `contract_id` (D3-1) |
 | Permissions | tool/host capabilities granted, and explicitly those NOT granted |
 | Dependencies | external systems, credentials required (names only, never secrets), pinned inputs |
 | Resource envelope | dispatch limits, wall-clock budget, tool-policy limits, and a spend ceiling **only where the host can enforce it** (declared `enforced` or `advisory`, §8); each enforced limit names its metering source (host adapter reading real spend — asserted samples are advisory-only, §8) |
@@ -200,12 +202,16 @@ One authoritative structured record per plan, composed of:
   Same
   closed-object discipline, same guarded-writer rules as v5.
 - **`journal.ndjson`** — the append-only *event log*: one closed JSON object
-  per line (`gate_run`, `observation`, `adaptation`, `amendment`,
-  `intervention`, `resource_sample`, `control_pair`, `view_render`,
-  `reconciliation`, `journal_repair`; the full catalog is an
-  implementation-task deliverable, §14.1). `intervention` events carry the
+  per line (`gate_run`, `approval`, `observation`, `adaptation`,
+  `amendment`, `intervention`, `resource_sample`, `control_pair`,
+  `view_render`, `reconciliation`, `journal_repair`; the full catalog is an
+  implementation-task deliverable, §14.1). The `approval` event is the
+  §3.1 materialization-time approval record; the guarded writer's
+  first-task-start refusal scans for it by type. `intervention` events carry the
   evaluation protocol's four intervention categories as a closed `category`
-  field, so campaign extraction and product records share one taxonomy (A13);
+  field (`missing_intent`, `new_authority`, `environment_repair`,
+  `engineering_rescue`; TELEMETRY.md is the enumeration's source of record,
+  D3-11), so campaign extraction and product records share one taxonomy (A13);
   `control_pair` events record counterfactual replay legs (§6). Events are
   never edited
   or deleted; a correction is a later event. Superseded and failed evidence
@@ -234,8 +240,12 @@ The selection's single-writer premise is a **designed boundary, not a silent
 regression** of v5's team agents and orchestrator child plans (spec §8–§9, A8):
 v6 new-plan records are single-writer; the checker refuses concurrent execute
 writers on one plan (the cooperative lock detects concurrent writers; concurrent sessions that never write simultaneously are caught at write time by the position check, not by the lock); parallel
-work maps onto per-worker **child plans in the v5 §8 orchestrator shape** —
-each worker its own contract and journal, the parent aggregating (U5).
+work maps onto per-worker **child plans** (U5): intra-repo parallelism
+(the §9 team-agent regression) runs as **sibling plans under the same
+`.dwp/plans/`**, each worker its own contract and journal scoped to §9's
+declared file ownership, the parent aggregating through the §8
+orchestrator tracking-table shape — which otherwise governs the cross-repo
+hub — and never writing the children's paths (D3-8).
 v5-shaped plans keep v5 team-agent semantics untouched (§9.1–9.2).
 
 ### 4.3 Write discipline
@@ -338,7 +348,10 @@ that limit is stated in the record format and must not be papered over.
   failed invariant makes `authorize()` refuse (a stop, not an adaptation).
   *Stale* means: the invariant was last evaluated at a journal position
   earlier than the current task's starting position — the task-start
-  boundary re-evaluates it before authorizing.
+  boundary re-evaluates it before authorizing, and the boundary's own
+  evaluation event is recorded at or after the task-start event (so
+  mid-task proposals never see their own boundary's evaluation as stale;
+  D3-6).
   Envelope accounting is **commit-plus-pending** (A5): the check totals
   recorded spend plus dispatched-not-yet-completed work — each pending
   proposal contributes its declared resource impact, or the last measured
@@ -383,9 +396,16 @@ conditions (fresh context, cross-host resume) are explicit contract fields.
   records the observed `control_pair`. The **old leg is materialized
   deterministically** (D2-6): a worktree at the recorded starting
   fingerprint carrying only the gate's declared check artifacts from the
-  working tree — the new test travels back, product files stay at their
-  starting state, and user dirty state is never reverted (§2 row 16). The
-  new leg runs against the working tree. On non-git hosts the old leg
+  working tree — declared as an explicit `check_artifacts` path list on the
+  v6 gate record's `control_pair` event (the v5 gate object has no such
+  field, so the declaration is v6 surface; D3-4). Exactly the listed files
+  travel back; product files stay at their starting state; and user dirty state is never reverted (§2 row 16). The
+  new leg runs against the working tree. A worktree materializes a
+  revision only, and the fingerprint's dirty component (§2 row 16:
+  revision plus dirty state) is a comparison string, not replayable state —
+  so when the recorded starting fingerprint carries a non-empty dirty
+  component, the pair likewise records `control=unavailable`, never a
+  misrepresented clean old tree (D3-3). On non-git hosts the old leg
   cannot be materialized from a fingerprint alone — the pair records
   `control=unavailable`, never a synthesized old-tree result. The control
   passes only on
@@ -484,8 +504,9 @@ performs: preview → backup → integrity check → **contract synthesis** →
 stable-ID and evidence mapping (v5 task numbers become `T-*` ids; gate
 records become journal items with provenance "migrated" labeled `asserted`
 — agent-invoked history is a claim, not a helper execution, and criteria
-accepting only `observed` evidence do not inherit completion from
-migration: the preview lists them as **re-evidence criteria** together
+that do not accept `asserted` evidence do not inherit completion from
+migration — the migrated label names the bar (the criterion's
+accepted-evidence set), not one specific set (D3-5): the preview lists them as **re-evidence criteria** together
 with the task that will re-run their gates and the envelope those re-runs
 draw on, and they close when new helper-executed evidence lands, A7) →
 interruption recovery at each step, in the shape of
@@ -494,8 +515,9 @@ because §3.1 and §14.5 refuse post-migration execution without a
 contract, the migration itself synthesizes one from the mapped plan —
 outcome, acceptance criteria (with their evidence classes), invariants,
 scope and remaining envelope — and writes the materialization-time
-approval record citing the synthesized `contract_id`, with the migration
-request as the recorded authority. A plan whose completed tasks now hold
+`approval` journal event (§3.1) citing the synthesized `contract_id`, with
+mechanism `pre_authorization` and the migration request as the recorded
+pre-authorization (D3-2). A plan whose completed tasks now hold
 re-evidence criteria is `blocked`-by-default at those criteria, not
 completed; the preview states this. A failed or interrupted migration
 leaves the v5 plan recoverable — resume the migration from its recorded
@@ -575,9 +597,9 @@ and compatibility discipline.
 ## 14. Open questions for implementation tasks
 
 1. Exact v6 schema shapes (field-level) — owned by the contract/schema task,
-   including the journal event object catalog (with `intervention.category`
-   from the evaluation protocol's taxonomy and the `control_pair` shape,
-   §4.1).
+   including the journal event object catalog (with the `approval` event of
+   §3.1, `intervention.category` from TELEMETRY.md's taxonomy, and the
+   `control_pair` shape with its `check_artifacts` declaration, §4.1/§6).
 2. Journal roll and truncation policy for very long campaigns — bounded by
    the measurement tasks' data.
 3. Which host adapters ship in the first release vs remain documented

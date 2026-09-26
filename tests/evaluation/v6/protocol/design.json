@@ -203,7 +203,7 @@
       "endpoint": "critical regressions / false-completion events",
       "kind": "guardrail",
       "practical_target": "zero observed release-blocking events in mandatory confirmation checks",
-      "statistical_condition": "publish the event denominator and the exact Clopper-Pearson upper bound on the event rate (zero observed does not imply zero population risk; the rule-of-three 3/n may be cited only as its approximation) — D15 F11",
+      "statistical_condition": "publish the event denominator and the exact Clopper-Pearson upper bound on the event rate (zero observed does not imply zero population risk; the rule-of-three 3/n may be cited only as its approximation) — D15 F11; unavailable-leg controls rounded up in a completion claim count in the same false-completion class (D3 residual)",
       "limitation": "an unmeetable-looking zero is reported with its denominator, never as proof of absence"
     },
     {
@@ -255,7 +255,7 @@
     "blinding": "subjective raters are blind to arm labels; acceptance requirements stay public while test implementations/variants stay hidden; evaluators are prevented from rewarding DWP terminology or richer self-reports"
   },
   "metrics_and_cost": {
-    "accepted_outcome": "external behavioral acceptance plus required regression/invariant checks passing on the produced artifact; a declared discrimination control whose counterfactual pair returns (PASS, PASS) is non-discriminating and NEVER counts toward acceptance (RFC §6), control-pair discriminance rates are reported per arm as a mechanism metric, and a rounded-up non-discriminating control in a completion claim counts as a false-completion event for the L6 guard (D15 F7); incomplete and infrastructure-ineligible categories reported separately and predeclared into the primary denominator",
+    "accepted_outcome": "external behavioral acceptance plus required regression/invariant checks passing on the produced artifact; a declared discrimination control whose counterfactual pair returns (PASS, PASS) is non-discriminating and NEVER counts toward acceptance (RFC §6), an unavailable old leg (`control=unavailable`) likewise never counts toward acceptance and rounding one up is the same false-completion event class (D3 residual, closing RFC §6's third outcome), control-pair discriminance rates are reported per arm as a mechanism metric, and a rounded-up non-discriminating control in a completion claim counts as a false-completion event for the L6 guard (D15 F7); incomplete and infrastructure-ineligible categories reported separately and predeclared into the primary denominator",
     "cost_per_accepted_outcome": "total attributable actor/reviewer/evaluator/setup/retry/resume cost across the eligible attempted workload divided by accepted outcomes in that same workload; undefined if nothing is accepted, never zero",
     "token_semantics": "provider counters are the source; input/output/cache/reasoning preserved to avoid double counting; missing counters are unknown; filesystem bytes are a separate structural measurement and never converted to tokens or money",
     "monetary_semantics": "figures state invoiced charges vs estimates at dated public rates",

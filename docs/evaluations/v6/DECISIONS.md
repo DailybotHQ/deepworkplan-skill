@@ -221,3 +221,56 @@ citing its predecessor.
   reject F7 as RFC scope creep (rejected: the analysis plan predating the
   RFC's normative control-pair rules is a real desync — the launch bar
   would certify rounded-up controls the L6 guard cannot see).
+
+## D16 — RFC draft-3 delta review (D3-1..D3-11) accepted as draft-4
+
+- **Input.** `ARCHITECTURE_REDTEAM_D3.md` (wN:p3, 2026-09-26; reassigned
+  from the quota-killed wN:p2, whose two confirmed points — the D2-1
+  excision and the D14 mapping — were re-verified and stand). Every quoted
+  claim was checked against the operative RFC/spec text before acceptance:
+  all six MAJOR quotes found (D3-8's carries rendered bold markers), the
+  PLAN_STATE gate object is confirmed closed over
+  `command/passes/exit_code/last_run/evidence` (no check-artifacts field),
+  and the fingerprint is confirmed "revision plus dirty state". 0 BLOCKER,
+  6 MAJOR, 6 NOTE. Root cause, accepted as accurate: draft-3 bound the new
+  rules into their owning sentences without sweeping the other sections
+  those bindings touch.
+- **Dispositions — all accepted, none deferred.**
+  - D3-1: §3.2's Authorization row names the binding *mechanism* only; the
+    citing approval record is the §3.1 materialization-time `approval`
+    journal event, never contract content (self-reference impossibility).
+  - D3-2: migration re-uses `pre_authorization`; the recorded
+    pre-authorization is the migration request (chosen over a third enum
+    value — the enumeration stays closed at two, and a migration request
+    *is* a recorded pre-approval of not-yet-materialized bytes).
+  - D3-3: a non-empty dirty component in the recorded starting fingerprint
+    → the old leg records `control=unavailable` (matches the non-git rule;
+    chosen over replaying a dirty manifest — cheaper and the dirty state is
+    a comparison string, not replayable state).
+  - D3-4: `check_artifacts` is an explicit path list on the v6 gate record's
+    `control_pair` event; exactly the listed files travel back.
+  - D3-5: predicate re-keyed to "criteria that do not accept `asserted`
+    evidence" (names the bar, not one accepted set).
+  - D3-8: intra-repo worker parallelism = sibling plans under the same
+    `.dwp/plans/`, contracts scoped to §9 declared file ownership, §8
+    tracking-table shape as the aggregation surface only.
+  - NOTEs: D3-6 boundary evaluation ordering pinned (recorded at or after
+    the task-start event); D3-7 `approval` named in the §4.1 catalog; D3-9
+    map §5.5→§4.3; D3-10 map row 16 → mode-uniform record; D3-11
+    intervention `category` enum sourced from TELEMETRY.md and copied into
+    §4.1.
+  - §4 residual (D15 line): `control=unavailable` never counts toward
+    acceptance and rounding one up is an L6 false-completion event —
+    **pre-freeze preregistration amendment** to design.json
+    (`accepted_outcome` + L6 clause), disclosed here; the confirmation
+    freeze (Task 25) seals the amended text.
+- **Consequences.** RFC draft-4 is the implementable text for Tasks 11–22;
+  per-task D3 bindings recorded in V6_IMPLEMENTATION_MAP.md. Tasks 11–22
+  are unblocked the moment Task 10 closes.
+- **Alternatives.** Take option A on D3-2 (a third mechanism value
+  `migration_request`; rejected — enum growth for a shape the existing
+  value already covers honestly); take the dirty-manifest-replay option on
+  D3-3 (rejected — recording `unavailable` is honest where synthesis would
+  be theater); defer the NOTEs to release polish (rejected for D3-6/D3-7 —
+  they gate T11/T12 schema choices, exactly the two-defensible-builds
+  class the review exists to close).
