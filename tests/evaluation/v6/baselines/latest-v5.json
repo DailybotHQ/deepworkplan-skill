@@ -1,0 +1,36 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/baseline-freeze/1",
+  "comparator": "latest-v5",
+  "tag": "v5.5.4",
+  "peeled_commit": "7d571cef0bde3955bf5fb9593ab1a209cbe237b3",
+  "upstream": "https://github.com/DailybotHQ/deepworkplan-skill",
+  "resolved_at": "2026-09-26T03:38:46Z",
+  "resolution": "Highest stable published v5 SemVer tag from live upstream refs (git ls-remote origin), prereleases excluded. The local checkout HEAD equaled the tag's peeled commit at resolution time, so the export is the tag content.",
+  "snapshot": {
+    "path": "tmp/repositories/dwp-v6-lab/packs/v5/v5.5.4-2f1c7e62017b6b60",
+    "digest": "2f1c7e62017b6b60fdc082e93e86c2e785aaab02c4f9801be3c99a5fcb91b267",
+    "digest_definition": "SHA-256 of the snapshot's SHA256SUMS manifest; the manifest itself lists every snapshot file with its SHA-256, LC_ALL=C sorted",
+    "files": 131,
+    "manifest": "SHA256SUMS",
+    "export_method": "git archive 7d571cef0bde3955bf5fb9593ab1a209cbe237b3 skills/deepworkplan | tar -x (real copy; live symlinks prohibited)"
+  },
+  "pack": {
+    "path": "pack",
+    "version": "5.5.4"
+  },
+  "reviewer": {
+    "path": "ai-diff-reviewer",
+    "name": "ai-diff-reviewer",
+    "version": "3.1.1"
+  },
+  "extension_input": {
+    "path": "review/extension.md"
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "checker": "tests/evaluation/v6/baselines/verify_snapshot.py",
+    "symlinks_prohibited": true
+  },
+  "policy": "The comparator never changes during a campaign. Recheck the upstream tag list at the confirmation freeze; a newer v5 becomes a new recorded comparator and the affected calibration is redone. The stale vendored dogfood (5.4.0) is never a comparator.",
+  "license": "MIT (source repository LICENSE, copied into the snapshot as LICENSE-repo-root)"
+}

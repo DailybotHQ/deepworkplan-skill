@@ -38,6 +38,7 @@ The runtime validator must still work without third-party Python packages.
 | Packaging / ship boundary | `bats tests/packaging-reliability.bats` | everything a downstream user installs; the dogfood mirror; the published schemas |
 | Working-principles onboarding / upgrade | `bats tests/packaging-reliability.bats tests/activation-contract.bats` then full Bats | installed resource discovery, routing, contributor `AGENTS.md` budget and links; inspect semantic coverage and reconciliation separately |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |
+| v6 baseline snapshot integrity | `python3 tests/evaluation/v6/baselines/verify_snapshot.py` | the v6 evaluation lab; every campaign consuming the frozen comparator |
 
 Repository example: a change to `shared/update-state.py` starts with the
 state-updater/state-evidence selection above, then runs full Bats because
