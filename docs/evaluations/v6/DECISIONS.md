@@ -274,3 +274,47 @@ citing its predecessor.
   be theater); defer the NOTEs to release polish (rejected for D3-6/D3-7 —
   they gate T11/T12 schema choices, exactly the two-defensible-builds
   class the review exists to close).
+
+## D17 — post-D16 peer residuals: draft-4 self-declaration, taxonomy source-of-record, map staleness (2026-09-26)
+
+- **Inputs.** Two independent verification passes arrived after D16 closed:
+  wN:p3's post-D16 verification (confirms draft-4 application and Task 11
+  schema conformance on all five D3 bindings) and wN:p2's post-resume
+  corroboration (no disagreements with any accepted D16 finding, plus
+  residuals). Findings were verified against the operative text before
+  acceptance; all four accepted, none deferred.
+- **Dispositions — all accepted.**
+  - D17-1 (R1, both peers): the RFC never declared itself draft-4 — the
+    Version row said draft-3 and §15/Incorporated-reviews were not extended.
+    Fixed: Version row `draft-4 (2026-09-26)`, Incorporated-reviews records
+    the D16 delta application, §15 lists D3-1–D3-11 alongside D2-1–D2-10.
+  - D17-2 (wN:p3 R2): §3.1's "SHA-256 of those bytes" did not exclude the
+    stamped `contract_id` field, leaving the identity rule implementable
+    two ways (an id hashing itself). Fixed: §3.1 now states the hash is
+    computed over the object WITHOUT its stamped `contract_id` field,
+    matching `compute_contract_id` in `shared/contract_v6.py` (Task 11).
+  - D17-3 (wN:p2 R2): TELEMETRY.md §4.1's source-of-record claim was false
+    in one direction — the prose named label-form categories ("missing
+    intent, …") while the schema and the telemetry adapter freeze
+    snake_case tokens, and design.json carried a third rendering. Fixed by
+    making the source of record say the enum: TELEMETRY.md now states the
+    closed snake_case set with the token→label mapping; design.json's
+    `intervention_categories` aligned to the four tokens as a **disclosed
+    pre-freeze preregistration amendment** (same class as the D16
+    accepted_outcome edit — the freeze at Task 25 seals the amended text).
+    Verified: telemetry unittests 14/14, evaluation-protocol.bats 10/10.
+  - D17-4 (wN:p2 R3): three stale lines in V6_IMPLEMENTATION_MAP.md
+    contradicted draft-4 — the header said draft-2, the cross-cutting
+    invariants cited only draft-2 dispositions, and one bullet said
+    "mode-scaled approval records" against mode-uniform §3.1/D3-10. Fixed:
+    header draft-2→draft-4 (invariants line credits draft-2/draft-3
+    dispositions), bullet re-keyed to the mode-uniform materialization-time
+    approval journal event.
+- **Consequences.** The RFC, TELEMETRY.md, design.json and the
+  implementation map now agree on taxonomy and draft identity; Task 12's
+  ledger consumes the §3.1 identity rule as pinned by D17-2.
+- **Alternatives.** Keep design.json label-form and state the mapping
+  beside the enum only (rejected — the frozen array is machine-read by the
+  campaign validator; tokens are the canonical form everywhere else, so the
+  array was the divergence); defer D17-1 to the next doc commit (rejected —
+  it was a two-line fix and Task 12 evidence cites "draft-4" already).

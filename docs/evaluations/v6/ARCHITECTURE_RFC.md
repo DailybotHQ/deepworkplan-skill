@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Proposed (red-teamed draft; not yet normative) |
-| Version | draft-3 (2026-09-26) |
+| Version | draft-4 (2026-09-26) |
 | Elaborates | `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE.md` (planning proposal; a local gitignored planning input — this RFC is its version-controlled successor) |
 | Normative successor | A future `spec/` revision produced by the implementation tasks; this RFC is not normative until that revision exists |
 | Baseline | DWP spec 5.0.0 (the frozen v5 runner; this plan does not migrate itself) |
@@ -18,7 +18,13 @@ D2 delta review (`analysis_results/ARCHITECTURE_REDTEAM_D2.md`, D2-1–D2-10:
 the draft-1 sentences the A1 fix invalidated are excised, the §11 matrix
 rows carry their modes, approval-record binding, reconciled authority,
 migration contract synthesis and the control-pair old-leg rule are
-specified). draft-2 applied the
+specified). draft-4 applies the D3 delta review
+(`analysis_results/ARCHITECTURE_REDTEAM_D3.md`, D3-1–D3-11, decision
+D16): the Authorization row names the mechanism only, migration re-uses
+`pre_authorization`, a dirty starting fingerprint forces
+`control_unavailable`, `check_artifacts` travel on the control-pair event,
+and every binding those edits touch was swept, not just appended.
+draft-2 applied the
 adversarial red-team (`analysis_results/ARCHITECTURE_REDTEAM.md`, findings
 A1–A13, buried capabilities B1–B5, upgrades U1–U5):
 
@@ -98,9 +104,10 @@ in-place edit — so evidence, invalidation and audit chains survive strategy
 changes. Materialization writes it before the first task, in the same spirit
 as `manifest.json` (written once, provenance forever). The canonical form is
 UTF-8 JSON with sorted keys and no insignificant whitespace
-(`json.dumps(sort_keys=True, separators=(",", ":"))`); `contract_id` is the
-SHA-256 of those bytes, so preview, migration and the helpers all compute the
-same identity. A revision is a **new file** — prior revisions are retained in
+(`json.dumps(sort_keys=True, separators=(",", ":"))`); `contract_id` is
+the SHA-256 of those bytes **computed over the object WITHOUT its stamped
+`contract_id` field** — the id never hashes itself — so preview, migration
+and the helpers all compute the same identity. A revision is a **new file** — prior revisions are retained in
 the plan folder under `contracts/` (for example
 `contracts/contract-rev2.json`), each citing its `parent_contract_id` — never
 an in-place edit.
@@ -639,6 +646,7 @@ and compatibility discipline.
   `ARCHITECTURE_REDTEAM_D2.md` (the local gitignored records of the
   adversarial red-team and its draft-2 delta review; findings A1–A13,
   capabilities B1–B5 and upgrades U1–U5 are incorporated in draft-2, the
-  delta findings D2-1–D2-10 in this draft-3, and the red-team's own
+  delta findings D2-1–D2-10 in draft-3 and D3-1–D3-11 in this draft-4,
+and the red-team's own
   citations of the lab's oracle-calibration evidence are
   the empirical grounding for §6's control pairs)

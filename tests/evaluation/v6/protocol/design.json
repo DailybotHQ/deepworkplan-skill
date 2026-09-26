@@ -277,10 +277,10 @@
     ],
     "latency_rule": "no latency comparison across simultaneously contending processes",
     "intervention_categories": [
-      "missing essential intent",
-      "new authority",
-      "environment repair",
-      "engineering rescue"
+      "missing_intent",
+      "new_authority",
+      "environment_repair",
+      "engineering_rescue"
     ]
   },
   "resource_envelope": {

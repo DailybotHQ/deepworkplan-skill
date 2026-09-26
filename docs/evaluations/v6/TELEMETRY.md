@@ -27,9 +27,13 @@ and reconciles record sums against expected totals with unknowns visible.
   each criterion). Recorded as pointed event lists — never aggregated into
   indices or ratings — and joined at analysis, so mechanism attribution
   (Q4) and the L6 rounded-up-control guard have a data source (D15 F8).
-- **Interventions** by category (missing intent, new authority, environment
-  repair, engineering rescue) and required authorization questions — counted
-  separately from product outcomes.
+- **Interventions** by category and required authorization questions —
+  counted separately from product outcomes. The closed category set (the
+  source of record for the RFC §4.1 `intervention.category` enum, D3-11) is
+  the snake_case form used by the journal-event schema and the telemetry
+  adapter (`INTERVENTION_CATEGORIES`): `missing_intent` (label: "missing
+  essential intent"), `new_authority`, `environment_repair`,
+  `engineering_rescue`.
 - **Final status** for every attempted run: completed / failed / timeout /
   ineligible / blocked.
 
