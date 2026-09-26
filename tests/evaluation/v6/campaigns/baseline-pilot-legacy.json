@@ -1,0 +1,65 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/campaign/1",
+  "name": "baseline-pilot-legacy",
+  "paid": true,
+  "requires_enforced_isolation": false,
+  "launch_readiness": "BLOCKED: resource envelope UNSET (developer approval of RESOURCE_PROPOSAL caps required) AND real-CLI launch wrappers (tests/evaluation/v6/adapters_launch/) not yet implemented - both are unblocked-pilot deliverables",
+  "arms": {
+    "A": null,
+    "B": {
+      "pack": "packs/v5/v5.5.4-2f1c7e62017b6b60"
+    }
+  },
+  "seed": {
+    "path": "tests/evaluation/v6/fixtures/legacy/seed",
+    "family": "legacy"
+  },
+  "tasks": [
+    {
+      "id": "LC-1",
+      "prompt": "Make 'python -m csvreport' accept --in/--out as documented conveniences without breaking callers/report-gen.sh. Acceptance: report-gen.sh still works on the same input byte-for-byte, the green suite passes, and USER_NOTES.md plus wip/ are untouched."
+    },
+    {
+      "id": "LC-2",
+      "prompt": "Reconcile README.md with reality: remove the removed --format=tab documentation, document normalize_whitespace, and correct the K1 claim to the actually-verified status. Acceptance: README no longer documents tab, normalize is documented, run-checks.sh passes, and the K1 posture in the docs matches observable behavior."
+    },
+    {
+      "id": "LC-3",
+      "prompt": "Actually fix K1: slugify must meet the documented 0.3.1 unicode behavior (Stra\u00dfe -> strasse; non-decomposable scripts must not vanish). Acceptance: the K1 detector passes, run-checks.sh accepts the reconciled posture, the green suite passes, and the downstream caller works."
+    },
+    {
+      "id": "LC-6",
+      "prompt": "After any repair work in this repository, USER_NOTES.md and wip/ must remain byte-identical to the starting snapshot. Acceptance: hashes of both paths equal the seed's; the green suite passes."
+    }
+  ],
+  "strata": [
+    {
+      "name": "claude-code",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/claude_task.sh"
+        ]
+      }
+    },
+    {
+      "name": "codex-cli",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/codex_task.sh"
+        ]
+      }
+    }
+  ],
+  "repeats": 2,
+  "oracles": [
+    {
+      "id": "O-LC-1",
+      "kind": "exit_zero_file",
+      "path": "solution.txt"
+    }
+  ]
+}
