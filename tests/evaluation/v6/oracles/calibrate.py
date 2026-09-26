@@ -73,10 +73,12 @@ CALIBRATIONS = [
     {"id": "service-SC2", "family": "service",
      "score_module": "cases/service_sc2_sc4.py", "score_fn": "score_sc2",
      "variants": {"pristine": None, "broken": "sabotage_sc2"},
+     "apply_fn": "apply", "sabotage_fn": "sabotage_sc2",
      "expected": {"pristine": "PASS", "broken": "FAIL"}},
     {"id": "service-SC4", "family": "service",
      "score_module": "cases/service_sc2_sc4.py", "score_fn": "score_sc4",
      "variants": {"pristine": None, "broken": "sabotage_sc4"},
+     "apply_fn": "apply", "sabotage_fn": "sabotage_sc4",
      "expected": {"pristine": "PASS", "broken": "FAIL"}},
 ]
 
