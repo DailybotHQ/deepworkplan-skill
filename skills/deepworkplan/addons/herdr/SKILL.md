@@ -73,7 +73,14 @@ herdr pane current                    # 3. THIS session inside a Herdr pane?
 
 If the mesh is empty and the plan benefits from peers, see §4 (launch).
 
-## 2. Discovery — one row per agent
+## 2. Discovery — list the live mesh
+
+When the person asks for the agents — any phrasing, any language ("list the
+Herdr agents", "lista todos los agentes", "who is available", "show the
+mesh") — **run the listing now and print the live table**. The full
+procedure, the table format, the state glossary, and the unreachable
+diagnoses are [`listing.md`](listing.md): a first-class flow, not a
+description. Quick form:
 
 ```bash
 herdr machine list --json                                   # enabled machines
@@ -83,7 +90,8 @@ herdr --machine <machine_id> agent list                     # per machine
 Present one row per agent: **machine label, machine id, provider, pane id,
 state, title**. `no agents` = the machine answered and nobody is running
 there. `unreachable` = the Herdr client could not complete the call — report
-Herdr's error text and continue with the machines that answered.
+Herdr's error text and continue with the machines that answered. A partial
+mesh is still the mesh.
 
 **Identity is `(machine_id, pane_id)`.** Human labels and short row numbers
 get truncated, renamed, and renumbered when agents appear or disappear: a
@@ -158,8 +166,10 @@ The stamp token is **`[herdr-mesh]`**. First hop: the sender appends the
 grant (which contains the stamp) to the body. Return hop: a body already
 carrying the stamp is a reply — mark it as such and instruct the sender not
 to answer it; the conversation stops. A new question is a **new ask with a
-fresh grant**, never a reply-to-a-reply. Templates:
-[`templates.md`](templates.md).
+fresh grant**, never a reply-to-a-reply. The grant and stop-line texts in
+[`templates.md`](templates.md) §1–§2 are **normative — use them verbatim,
+filling only the sender's machine id and pane id. A mesh message sent
+without the grant is a bug in this addon.**
 
 ## 9. Wiring into the flows
 
