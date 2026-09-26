@@ -1,0 +1,15 @@
+{
+  "basis": "planning estimates at dated public list rates",
+  "rate_date": "2026-09-26",
+  "provenance_note": "Conservative blended per-start figures for planning only: an average agentic task start of this size on a frontier-tier model with typical tool/test loop, valued at public list rates on 2026-09-26. They are NOT observed costs, NOT invoices, and NOT a spending authorization. Real campaigns replace this file with measured per-stratum rates and record their provenance.",
+  "cost_per_start_usd": {
+    "baseline_pilot": 1.5,
+    "confirmation": 1.5,
+    "long_horizon": 4.0,
+    "external_replication": 2.0
+  },
+  "notes": {
+    "long_horizon": "higher per start: six increments plus interruption/resume sessions per campaign",
+    "v6_development_and_ablations": "bounded at run time; recorded against the same rate basis when launched"
+  }
+}

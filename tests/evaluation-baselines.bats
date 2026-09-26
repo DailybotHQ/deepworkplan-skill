@@ -17,8 +17,11 @@ setup() {
   printf -- '---\nname: demo\nversion: "9.9.9"\n---\nbody\n' > "${SNAPSHOT}/pack/SKILL.md"
   printf 'MIT\n' > "${SNAPSHOT}/LICENSE.txt"
   # Freeze the synthetic snapshot with the same procedure the real freeze
-  # used, then record its digest in a baseline record for the checker.
-  ( cd "$SNAPSHOT" && find . -type f | LC_ALL=C sort | xargs sha256sum > SHA256SUMS )
+  # used, then record its digest in a baseline record for the checker. The
+  # manifest is written OUTSIDE the snapshot and moved in, so the enumeration
+  # can never race with the manifest's own creation.
+  ( cd "$SNAPSHOT" && find . -type f ! -name SHA256SUMS | LC_ALL=C sort | xargs sha256sum > "$SCRATCH/manifest.tmp" )
+  mv "$SCRATCH/manifest.tmp" "$SNAPSHOT/SHA256SUMS"
 }
 
 teardown() {
