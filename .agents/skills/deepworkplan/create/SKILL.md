@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
 description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
-version: "5.4.0"
+version: "5.5.4"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -624,8 +624,10 @@ Create:
    with the ecosystem's audit tooling where available); verify `docs/SECURITY.md`
    still reflects reality and update it when the plan changed secrets handling,
    the auth model, or data boundaries; write `analysis_results/SECURITY_REVIEW.md`
-   even when clean; a critical finding blocks completion until fixed or
-   explicitly accepted by the user. **(b) Final-state validation** — run the
+   even when clean; a **verified** critical finding (v3, BC-07) blocks completion
+   until fixed or explicitly accepted by the user — unverified critical claims
+   arrive as annotated warnings, and an `incomplete`/`timeout` review is not a
+   clean pass (BC-04). **(b) Final-state validation** — run the
    repository's complete applicable test, lint, type-check and format suites on
    the final state (§5.1.3); fixes made during review invalidate affected results,
    which are rerun. **(c) Skills reconciliation** — confirm every task log has a
