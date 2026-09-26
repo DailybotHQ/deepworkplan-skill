@@ -26,6 +26,29 @@ it must stay in lockstep with the plan's autonomy rules. Read
 [`movement.md`](movement.md) for the safe-command subset, and
 [`templates.md`](templates.md) for the grant/reply stamp templates.
 
+## 0. Install — if Herdr is missing
+
+On activate, check `command -v herdr` and `herdr --version`; record present
+or absent.
+
+- **Present** → continue to §1 (detection), then orchestrate.
+- **Absent** and the developer wants this addon → give the OFFICIAL install
+  paths, show the command, and STOP there until they install it. **Do not
+  pipe an installer into a shell. Do not run the installer. Point at the
+  docs.** Pick one path; do not mix them:
+
+  | Path | Command (show, do not run) | Updates |
+  | --- | --- | --- |
+  | Docs | `https://herdr.dev/docs/install/` | — |
+  | Stable installer | `curl -fsSL https://herdr.dev/install.sh | sh` (binary lands at `~/.local/bin/herdr`; that directory must be on `PATH`) | `herdr update` |
+  | Homebrew | `brew install herdr` | `brew upgrade herdr` |
+  | mise | `mise use -g herdr` | — |
+  | Releases | `https://github.com/herdrdev/herdr/releases` | — |
+
+  After they install, verify with `herdr --version` and `herdr status`. A
+  missing binary is **not** a conformance failure: the repository keeps
+  running single-agent until Herdr is actually on `PATH`.
+
 ## 1. Detection — is there a mesh?
 
 Run, in order, and stop at the first failure with the recorded outcome
