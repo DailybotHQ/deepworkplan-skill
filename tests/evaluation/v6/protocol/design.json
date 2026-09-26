@@ -80,8 +80,14 @@
   "strata": {
     "definition": "fixed model/host/tool/reasoning-setting configurations held constant within each block; randomized arm order within stratum with a frozen seed",
     "currently_available": [
-      {"name": "claude-code/claude-fable-5-1", "probe": "claude CLI 2.1.283 present"},
-      {"name": "codex-cli/gpt-6", "probe": "codex-cli 0.156.1 present (the plan's creating agent ran on GPT-6)"}
+      {
+        "name": "claude-code/claude-fable-5-1",
+        "probe": "claude CLI 2.1.283 present"
+      },
+      {
+        "name": "codex-cli/gpt-6",
+        "probe": "codex-cli 0.156.1 present (the plan's creating agent ran on GPT-6)"
+      }
     ],
     "pinning_rule": "the operative stratum pair is pinned and recorded in each campaign's META before the first run; a stratum that cannot produce a fresh isolated context is dropped and reported, not silently substituted",
     "routing_note": "a v6-only stronger-model option is a secondary routing experiment, never proof of methodology gains"
@@ -236,19 +242,40 @@
     "cost_per_accepted_outcome": "total attributable actor/reviewer/evaluator/setup/retry/resume cost across the eligible attempted workload divided by accepted outcomes in that same workload; undefined if nothing is accepted, never zero",
     "token_semantics": "provider counters are the source; input/output/cache/reasoning preserved to avoid double counting; missing counters are unknown; filesystem bytes are a separate structural measurement and never converted to tokens or money",
     "monetary_semantics": "figures state invoiced charges vs estimates at dated public rates",
-    "four_quantities_distinct": ["static instruction bytes", "provider tokens", "monetary cost (invoiced or dated-rate estimate)", "wall-clock time"],
-    "other_captures": ["CPU/build/test time", "repeated reads/gates", "retries", "code churn", "interventions by category", "scope violations", "stale evidence", "completion-claim accuracy"],
+    "four_quantities_distinct": [
+      "static instruction bytes",
+      "provider tokens",
+      "monetary cost (invoiced or dated-rate estimate)",
+      "wall-clock time"
+    ],
+    "other_captures": [
+      "CPU/build/test time",
+      "repeated reads/gates",
+      "retries",
+      "code churn",
+      "interventions by category",
+      "scope violations",
+      "stale evidence",
+      "completion-claim accuracy"
+    ],
     "latency_rule": "no latency comparison across simultaneously contending processes",
-    "intervention_categories": ["missing essential intent", "new authority", "environment repair", "engineering rescue"]
+    "intervention_categories": [
+      "missing essential intent",
+      "new authority",
+      "environment repair",
+      "engineering rescue"
+    ]
   },
   "resource_envelope": {
-    "status": "UNSET",
-    "per_run_cap": null,
-    "total_cap": null,
+    "status": "SET",
+    "per_run_cap": 8.0,
+    "total_cap": 4000.0,
     "retry_reserve_fraction": 0.25,
     "launch_rule": "REFUSED — a paid campaign with any null envelope field must be refused by the runner and by the launch gate; deterministic laboratory preparation (Tasks 4-9) precedes any paid trial and needs no envelope",
     "authority_dependency": "the developer approved planning in trust mode but supplied no monetary ceiling; the exact future ask is: approve the numeric per-run and total caps in RESOURCE_PROPOSAL.md (or supply an existing applicable account budget) before Tasks 10+ launch paid campaigns",
-    "no_silent_purchase": "no API account, subscription or paid infrastructure is purchased silently"
+    "no_silent_purchase": "no API account, subscription or paid infrastructure is purchased silently",
+    "authorized_at": "2026-09-26",
+    "authorization": "user (in-session approval of the RESOURCE_PROPOSAL caps: 8.00 USD/start, 4000 USD total; recorded verbatim in PROGRESS.md)"
   },
   "provenance_retention": {
     "per_run_record": "campaign/case/arm/repetition, source/pack/reviewer/oracle hashes, exact host/model config, randomization order, environment lockfiles, permissions, counters, timestamps, caps, artifacts, scores, terminal status",

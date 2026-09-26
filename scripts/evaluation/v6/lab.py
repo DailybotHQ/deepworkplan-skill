@@ -350,6 +350,9 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     seed_src = seed_staging if seed_staging.is_dir() else repo_root() / cfg["seed"]["path"]
     safe_copytree(seed_src, workspace)
     (workspace / ".scratch").mkdir(exist_ok=True)
+    # Materialize the task prompt: the actor's contract is the workspace
+    # itself plus this file — nothing else (no plan, no oracles, no labels).
+    (workspace / "TASK.md").write_text(cell["task"]["prompt"] + "\n", encoding="utf-8")
     initial = tree_hashes(workspace)
     # Host hazard: a package manifest anywhere above the workspace can make
     # package managers resolve an unrelated workspace root (observed with pnpm
