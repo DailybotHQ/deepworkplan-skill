@@ -197,6 +197,7 @@ jobs:
                         skills/deepworkplan/shared/views.py \
                         skills/deepworkplan/shared/scheduler.py \
                         skills/deepworkplan/shared/outcomes.py \
+                        skills/deepworkplan/shared/context_manifest.py \
                         skills/deepworkplan/verify/plan_contract.py; do
             python3 -m py_compile "$helper"
             echo "OK: $helper compiles on $(python3 --version)"
@@ -221,6 +222,11 @@ jobs:
           # and runs against a throwaway plan directory.
           PYTHONDONTWRITEBYTECODE=1 python3 \
             skills/deepworkplan/shared/outcomes.py self-test
+          # The v6 context-selection helper as well: manifest derivation,
+          # dead-end digest, freshness and accounting are pure read-only
+          # recomputations; its self-test builds a throwaway plan in memory.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/context_manifest.py self-test
           # And they must actually run, not merely parse: the read-only checker
           # over a real fixture plan, with no optional dependency available.
           python3 -c 'import jsonschema' 2>/dev/null && { echo "FAIL: jsonschema present — this job must prove the stdlib-only path"; exit 1; }
