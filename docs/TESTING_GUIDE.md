@@ -42,6 +42,7 @@ The runtime validator must still work without third-party Python packages.
 | v6 preregistration integrity | `python3 tests/evaluation/v6/protocol/cost_calculator.py validate tests/evaluation/v6/protocol/design.json` (+ `self-test`; `gate` refuses unset resource envelopes) | the v6 campaign design; every campaign task consuming arms, partitions, thresholds or the resource envelope |
 | v6 evaluation lab driver | `python3 scripts/evaluation/v6/lab.py self-test` + `python3 -m unittest discover -s tests/evaluation/v6 -p 'test_*.py'` | the v6 campaign runner; every campaign task preparing, running, scoring or analyzing |
 | v6 oracle calibration | `python3 tests/evaluation/v6/oracles/calibrate.py` (matrix: pristine FAIL / known-good PASS / sabotage FAIL) | the v6 outcome oracles; every campaign scoring actor work |
+| v6 telemetry metering | `python3 -m unittest discover -s tests/evaluation/v6 -p 'test_telemetry.py'` + `adapters/reconcile.py` (synthetic records vs expected totals; unknowns visible, never zero) | the v6 cost metering and host adapters; every campaign recording run cost |
 
 Repository example: a change to `shared/update-state.py` starts with the
 state-updater/state-evidence selection above, then runs full Bats because

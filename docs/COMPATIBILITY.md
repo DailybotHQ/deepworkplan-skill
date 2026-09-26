@@ -154,3 +154,12 @@ continues to be recorded per harness above.
 See [the handoff record](evaluations/cross-agent-handoff.md) for the
 bidirectional (A→B and B→A) interrupted-plan experiment, its results, and its
 limits.
+
+## v6 evaluation strata (2026-09-26)
+
+For the v6 evaluation campaigns only: the preregistered host/model strata are
+the `claude` CLI and the `codex` CLI headless launches (see
+`docs/evaluations/v6/TELEMETRY.md` for the adapters and their counter
+sources). This section is **Documented** level — the probes and bounded
+canaries discover actual counter exposure at execution time; it is not
+behavior-tested evidence about the pack itself.
