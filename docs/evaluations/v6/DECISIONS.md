@@ -161,3 +161,63 @@ citing its predecessor.
   whole point); let migration skip the contract when no criteria need
   re-evidence (rejected: §14.5's refusal is unconditional and the
   scheduler's authorization core is undefined without a contract).
+
+## D15 — Evaluation-protocol preregistration red-team (F1–F11)
+
+- **Context.** Before the Task 25 freeze, an independent read-only red-team
+  reviewed the operative preregistration — `docs/evaluations/v6/PROTOCOL.md`,
+  `tests/evaluation/v6/protocol/design.json` and companions — against the
+  execution reality of `scripts/evaluation/v6/lab.py` and
+  `tests/evaluation/v6/oracles/score_pilot.py`
+  (`analysis_results/EVALUATION_PROTOCOL_REDTEAM.md`). The review also
+  corrected a scoping assumption: `analysis_results/EVALUATION_PROTOCOL.md`
+  is the planning predecessor; the version-controlled operative protocol is
+  PROTOCOL.md + design.json. Counts: 1 BLOCKER (F1), 7 MAJOR (F2–F8),
+  3 NOTE (F9–F11). Every quoted claim was verified against the code before
+  acceptance (oracle vocabulary at lab.py validate, the single stub oracle
+  in the pilot campaigns, the scorer's resolution ladder, sealed.json's null
+  commitments, zero quota mentions, control pairs absent from every
+  evaluation doc, the Task 24/25 drift, stale readiness prose, unnamed
+  interval method) — all confirmed verbatim.
+- **Decision.** All 11 findings accepted, none rejected. F1 (oracle link of
+  the hash chain did not exist in the execution path) is the blocker the
+  pilot's own legitimate mid-pilot oracle edits prove is real: landed now in
+  the scorer — every oracle's defining sources are SHA-256-stamped into
+  every score record, freezable with `--dump-oracle-commitments`, and
+  `--oracle-commitments` refuses to score on any digest or set mismatch;
+  the campaign-schema side (per-case oracle bindings) lands in lab.py
+  after the in-flight r3 resume completes, together with F3 (inventory
+  chain hash, analyzer refusal) and F4 (pack content re-hash at validate
+  and run — the name pattern alone never vouched for content). The
+  protocol-side fixes landed as data: F2 exclusion rules as six frozen
+  rule objects in design.json `statistics.exclusions`; F6 quota
+  pacing/budget-stop/split-windows in `partitions.confirmation.
+  quota_protections` with required campaign-schema fields for
+  confirmation configs; F7 accepted_outcome now carries the RFC §6
+  control-pair discipline — (PASS, PASS) never counts toward acceptance,
+  discriminance rates reported per arm, rounded-up controls are L6
+  false-completion events; F8 TELEMETRY meter record extended with
+  journal-derived mechanism events (pointed lists, never aggregates); F5
+  mechanism-distinctness attestation added to sealed.json
+  opaque_commitments plus the mechanism-generic review clause in the
+  sealing rule; F9 freeze numbering aligned to Task 25 in both docs; F10
+  stale BLOCKED readiness prose replaced in the three pilot configs and
+  confirmation configs restricted to machine-checked fields; F11 the
+  zero-event interval method named (exact Clopper-Pearson upper bound;
+  rule-of-three as approximation only) and a 60-usable-pilot-cell floor
+  added to the power rule.
+- **Consequences.** The r3 full scoring (post-resume runbook step 2) runs
+  under the hardened scorer and stamps oracle identities into the final
+  SCORES.json — the pilot's provenance becomes retroactively verifiable.
+  The Task 25 freeze now has teeth on the measurement chain, not only on
+  the statistical plan. lab.py changes (F1 schema bindings, F3 chain hash,
+  F4 pack re-hash, F6 required confirmation fields) are sequenced strictly
+  after `PILOT_R3_RESUME_DONE` to avoid disturbing the in-flight resume.
+- **Alternatives.** Land all of F1 in the scorer only (rejected: the
+  campaign config is the artifact the freeze seals — bindings must be
+  expressible there); defer everything to Task 25 (rejected: F2/F6/F7 are
+  exactly the prose a freeze forgets, and F1's scorer half must be in
+  place before the r3 final scoring for the record to carry identities);
+  reject F7 as RFC scope creep (rejected: the analysis plan predating the
+  RFC's normative control-pair rules is a real desync — the launch bar
+  would certify rounded-up controls the L6 guard cannot see).

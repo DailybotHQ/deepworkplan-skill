@@ -6,12 +6,38 @@
   "opaque_commitments": {
     "committed_by": "restricted custodian (once an enforced store exists)",
     "visible_fields": [
-      { "field": "case_counts_per_family", "type": "integer >= preregistered minimums", "value": null },
-      { "field": "mechanism_strata", "type": "subset of each family's public taxonomy", "value": null },
-      { "field": "oracle_hash_commitments", "type": "sha256 of each sealed oracle, pre-committed before runs", "value": null },
-      { "field": "calibration_attestation", "type": "signed statement that sealed oracles passed known-good and failed broken variants", "value": null }
+      {
+        "field": "case_counts_per_family",
+        "type": "integer >= preregistered minimums",
+        "value": null
+      },
+      {
+        "field": "mechanism_strata",
+        "type": "subset of each family's public taxonomy",
+        "value": null
+      },
+      {
+        "field": "oracle_hash_commitments",
+        "type": "sha256 of each sealed oracle, pre-committed before runs",
+        "value": null
+      },
+      {
+        "field": "calibration_attestation",
+        "type": "signed statement that sealed oracles passed known-good and failed broken variants",
+        "value": null
+      },
+      {
+        "field": "mechanism_distinctness_attestation",
+        "type": "custodian-signed statement that every sealed case exercises a behavioral mechanism distinct from every development-partition case in the registry \u2014 not a new seed on a developed solution pattern (D15 F5)",
+        "value": null
+      }
     ],
-    "never_visible_to_implementer": ["task prompts", "hidden checks", "reference solutions", "actor trajectories"]
+    "never_visible_to_implementer": [
+      "task prompts",
+      "hidden checks",
+      "reference solutions",
+      "actor trajectories"
+    ]
   },
   "unblocking_conditions": [
     "an enforced custodian store exists and sentinel/access checks prove the implementer cannot reach it",

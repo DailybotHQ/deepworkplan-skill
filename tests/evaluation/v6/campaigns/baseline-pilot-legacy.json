@@ -3,7 +3,7 @@
   "name": "baseline-pilot-legacy",
   "paid": true,
   "requires_enforced_isolation": false,
-  "launch_readiness": "BLOCKED: resource envelope UNSET (developer approval of RESOURCE_PROPOSAL caps required) AND real-CLI launch wrappers (tests/evaluation/v6/adapters_launch/) not yet implemented - both are unblocked-pilot deliverables",
+  "launch_readiness": "RESOLVED 2026-09-26: resource envelope SET and real-CLI launch wrappers shipped (tests/evaluation/v6/adapters_launch/) \u2014 rounds r1-r3 ran under both. Confirmation-era configs carry machine-checked readiness fields only; readiness prose lives in PILOT.md (D15 F10).",
   "arms": {
     "A": null,
     "B": {

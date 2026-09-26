@@ -4,7 +4,8 @@ Preregistered 2026-09-26 by `PLAN_v6_verified_autonomy` Task 3, **before any
 comparative pilot**. The machine-readable record is
 [`tests/evaluation/v6/protocol/design.json`](../../../tests/evaluation/v6/protocol/design.json);
 this document is its readable companion. Every threshold here is a **target**,
-never a result; the operative bar is frozen by Task 24 before any confirmation
+never a result; the operative bar is frozen by Task 25 (the powered confirmation
+design and candidate freeze) before any confirmation
 outcome exists. This protocol follows the house rule set by
 [`tests/reliability/PROTOCOL.md`](../../../tests/reliability/PROTOCOL.md):
 changing an expectation means changing it here first, with a reason.
@@ -155,8 +156,19 @@ infrastructure is purchased silently.
 Every run records campaign/case/arm/repetition, source/pack/reviewer/oracle
 hashes, exact host/model config, randomization order, environment lockfiles,
 permissions, counters, timestamps, caps, artifacts, scores and terminal
-status. All scheduled attempts are retained, including aborts — deleting an
-inconvenient run is how an evaluation lies. Raw evidence stays in the plan's
+status. Oracle hashes are mechanically enforced, not aspirational: each
+oracle's defining sources are SHA-256-stamped into every score record by
+`score_pilot.py`, frozen at the Task 25 freeze via
+`--dump-oracle-commitments`, and verified with `--oracle-commitments`, which
+refuses to score on any digest or set mismatch (D15 F1). Inventory lines
+carry a predecessor chain hash so post-hoc run deletion or relabeling is
+detectable, and the analyzer refuses inventories that fail the chain
+(D15 F3). All scheduled attempts are retained, including aborts — deleting an
+inconvenient run is how an evaluation lies. Confirmation starts are paced
+across provider windows (per-provider start caps, cooldown on quota
+signature, budget stop) — the r3 quota kill at 96 sequential starts is the
+recorded lesson, frozen in `design.json` `partitions.confirmation.
+quota_protections` (D15 F6). Raw evidence stays in the plan's
 `analysis_results/lab/`; sanitized replayable exports land under contributor
 docs/tests. No secrets, no private model reasoning, no unnecessary personal
 data.

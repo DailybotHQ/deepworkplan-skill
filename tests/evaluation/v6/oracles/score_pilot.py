@@ -45,9 +45,19 @@ is counted in both). ERROR verdicts on ineligible cells do not count toward
 to scored/passed/failed/errors. That is intentional — an oracle that cannot
 run on a disqualified cell is not evidence about the arm.
 
+Oracle identity (D15 F1): every oracle's defining source files are
+SHA-256-hashed at registry build; each score record and the report carry
+{sources: [{path, sha256}], digest} so any post-run oracle edit is visible
+per cell. --oracle-commitments freezes that table: when supplied, the scorer
+verifies every digest BEFORE scoring and refuses (exit 1, nothing written)
+on any mismatch or set difference — an oracle edited after confirmation
+launch gets a new identity and a disclosed full rescore with both versions,
+never a silent partial rescore.
+
 Usage:
     python3 tests/evaluation/v6/oracles/score_pilot.py \
-        [--lab-root DIR] [--families astro,service,legacy] [--list]
+        [--lab-root DIR] [--families astro,service,legacy] [--list] \
+        [--oracle-commitments PATH] [--dump-oracle-commitments PATH]
 
 --list prints the resolved oracle table and the cells that would be scored,
 writes nothing, and runs no oracle. Exit code is 0 when the walk completes
@@ -60,6 +70,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import functools
+import hashlib
 import importlib.util
 import inspect
 import json
@@ -97,6 +108,29 @@ FILENAME_TOKEN_RE = re.compile(r"([a-z]+)(\d+)")
 # Terminal statuses, mirroring lab.py's carry-forward set.
 TERMINAL = ("completed", "ineligible", "timeout")
 
+COMMITMENTS_SCHEMA = "deepworkplan-skill/evaluation/v6/oracle-commitments/1"
+
+
+def _sha256_file(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _source_entry(path):
+    """One provenance source: repo-relative path plus content hash."""
+    try:
+        rel = path.resolve().relative_to(REPO).as_posix()
+    except ValueError:
+        rel = str(path)
+    return {"path": rel, "sha256": _sha256_file(path)}
+
+
+def _provenance(paths):
+    """{sources, digest} for one oracle: the digest binds every defining
+    file's path and content, so a moved or edited oracle is a new identity."""
+    sources = sorted((_source_entry(p) for p in paths), key=lambda s: s["path"])
+    material = "".join(f"{s['path']}:{s['sha256']}\n" for s in sources)
+    return {"sources": sources, "digest": hashlib.sha256(material.encode()).hexdigest()}
+
 
 def _leading_token(text):
     match = TOKEN_RE.search(str(text or ""))
@@ -117,40 +151,41 @@ def _binds_two_args(fn):
 
 
 def _module_entries(path, module):
-    """Registry entries contributed by one case module: token -> (fn, how)."""
+    """Registry entries contributed by one case module: token -> (fn, how, prov)."""
     entries = {}
     how = f"registry in {path.name}"
+    prov = _provenance([path])
     registry = getattr(module, "CASES", None)
     if isinstance(registry, dict):
         for case_id, fn in registry.items():
             if callable(fn):
-                entries[str(case_id).upper()] = (fn, how)
+                entries[str(case_id).upper()] = (fn, how, prov)
     elif isinstance(registry, list):
         for element in registry:
             if isinstance(element, dict) and callable(element.get("score")):
                 token = _leading_token(element.get("case", ""))
                 if token:
-                    entries.setdefault(token, (element["score"], how))
+                    entries.setdefault(token, (element["score"], how, prov))
     for token in _filename_tokens(path.stem):
         fn = getattr(module, f"score_{token.lower().replace('-', '')}", None)
         if callable(fn) and _binds_two_args(fn):
-            entries.setdefault(token, (fn, f"function score_{token.lower().replace('-', '')} in {path.name}"))
+            entries.setdefault(token, (fn, f"function score_{token.lower().replace('-', '')} in {path.name}", prov))
     if len(_filename_tokens(path.stem)) == 1:
         fn = getattr(module, "score", None)
         if callable(fn) and _binds_two_args(fn):
             entries.setdefault(_filename_tokens(path.stem)[0],
-                               (fn, f"single score() in {path.name}"))
+                               (fn, f"single score() in {path.name}", prov))
     return entries
 
 
-def _claim(resolved, problems, token, fn, how):
+def _claim(resolved, problems, token, fn, how, prov):
     """Merge one (token -> fn) claim with conflict semantics."""
     if token in resolved and resolved[token][0] is not fn:
         problems.append(f"case {token} claimed by both "
                         f"{resolved[token][1]} and {how}; treating as unscored")
-        resolved[token] = (None, "conflict")
+        resolved[token] = (None, "conflict", [])
     else:
-        resolved.setdefault(token, (fn, how))
+        resolved.setdefault(token, (fn, how, prov))
 
 
 def _load_scoring_module(problems):
@@ -173,9 +208,10 @@ def _load_scoring_module(problems):
 
 def load_registry():
     """Import every case module and the built-in reference oracles, and
-    merge their entries. Returns (resolved: {token: (fn, how)},
+    merge their entries. Returns (resolved: {token: (fn, how, prov)},
     problems: [str])."""
     resolved, problems = {}, []
+    scoring_path = CASES_DIR.parent / "scoring.py"
     for path in sorted(CASES_DIR.glob("*.py")):
         if path.stem == "__init__":
             continue
@@ -190,16 +226,17 @@ def load_registry():
             problems.append(f"case module {path.name} failed to import: "
                             f"{exc.__class__.__name__}: {exc}")
             continue
-        for token, (fn, how) in _module_entries(path, module).items():
-            _claim(resolved, problems, token, fn, how)
+        for token, (fn, how, prov) in _module_entries(path, module).items():
+            _claim(resolved, problems, token, fn, how, prov)
 
     scoring = _load_scoring_module(problems)
     if scoring is not None:
         for token, (fn_name, ref) in REFERENCE_ORACLES.items():
             fn = getattr(scoring, fn_name, None)
             how = f"built-in oracle {fn_name} (reference case {ref})"
+            prov = _provenance([scoring_path, CASES_DIR.parent / ref])
             if callable(fn) and _binds_two_args(fn):
-                _claim(resolved, problems, token, fn, how)
+                _claim(resolved, problems, token, fn, how, prov)
             else:
                 problems.append(f"reference oracle {token}: scoring.{fn_name} "
                                 f"is missing or does not bind (root, seed)")
@@ -219,7 +256,7 @@ def resolve_workspace(record, family_dir):
 
 def score_cell(record, family_dir, seed_root, oracle):
     """Run one oracle against one recorded workspace; never raises."""
-    token, fn, how = oracle
+    token, fn, how, prov = oracle
     workspace = resolve_workspace(record, family_dir)
     row = {
         "cell_id": record.get("cell_id"),
@@ -233,7 +270,8 @@ def score_cell(record, family_dir, seed_root, oracle):
         "canary_intact": record.get("canary_intact"),
         "workspace": str(workspace),
         "workspace_exists": workspace.is_dir(),
-        "oracle": {"case_file": how, "function": getattr(fn, "__name__", repr(fn))},
+        "oracle": {"case_file": how, "function": getattr(fn, "__name__", repr(fn)),
+                   "sources": prov.get("sources", []), "digest": prov.get("digest")},
     }
     if not workspace.is_dir():
         row["verdict"], row["reasons"] = "ERROR", [f"recorded workspace missing on disk: {workspace}"]
@@ -294,7 +332,8 @@ def _atomic_write_json(path, payload):
     os.replace(tmp, path)
 
 
-def process_family(family, family_dir, seed_root, registry, problems, list_only):
+def process_family(family, family_dir, seed_root, registry, problems, list_only,
+                    commitments=None):
     inventory = family_dir / "attempts.jsonl"
     if not inventory.is_file():
         print(f"[{family}] no inventory at {inventory} — nothing to score")
@@ -314,7 +353,7 @@ def process_family(family, family_dir, seed_root, registry, problems, list_only)
         token = _leading_token(record.get("task"))
         status = record.get("status")
         terminal = status in TERMINAL
-        fn, how = registry.get(token, (None, None)) if token else (None, None)
+        fn, how, prov = registry.get(token, (None, None, None)) if token else (None, None, None)
         row = {
             "cell_id": record.get("cell_id"),
             "arm": record.get("arm"),
@@ -334,9 +373,10 @@ def process_family(family, family_dir, seed_root, registry, problems, list_only)
             unscored_cells.setdefault(token or "(no token)", []).append(row["cell_id"])
         elif list_only:
             row.update({"verdict": "LISTED", "reasons": ["--list: oracle not run"],
-                        "oracle": {"case_file": how, "function": getattr(fn, "__name__", repr(fn))}})
+                        "oracle": {"case_file": how, "function": getattr(fn, "__name__", repr(fn)),
+                                   "sources": prov.get("sources", []), "digest": prov.get("digest")}})
         else:
-            row.update(score_cell(record, family_dir, seed_root, (token, fn, how)))
+            row.update(score_cell(record, family_dir, seed_root, (token, fn, how, prov)))
         rows.append(row)
 
     arms = sorted({str(r["arm"]) for r in rows})
@@ -353,6 +393,12 @@ def process_family(family, family_dir, seed_root, registry, problems, list_only)
                                 .strftime("%Y-%m-%dT%H:%M:%SZ"),
         "unscored_cases": [{"case": token, "cell_ids": ids}
                            for token, ids in sorted(unscored_cells.items())],
+        "oracle_provenance": [{"case": token, **prov}
+                              for token, (fn, how, prov) in sorted(registry.items()) if fn],
+        "oracle_commitments": commitments or {
+            "mode": "stamped",
+            "note": "no frozen commitments supplied; oracle hashes are stamped into "
+                    "every record but not verified against a frozen table"},
         "summary": summary,
         "cells": rows,
     }
@@ -396,6 +442,11 @@ def main() -> int:
                         help=f"comma-separated families to score (default: {','.join(FAMILIES)})")
     parser.add_argument("--list", action="store_true",
                         help="print the oracle resolution and the cells, write nothing")
+    parser.add_argument("--oracle-commitments", type=Path, default=None,
+                        help="frozen oracle-identity table (from --dump-oracle-commitments); "
+                             "verified before scoring — any digest or set mismatch refuses")
+    parser.add_argument("--dump-oracle-commitments", type=Path, default=None,
+                        help="write the current oracle-identity table for freezing, then exit")
     args = parser.parse_args()
 
     families = [f.strip().lower() for f in args.families.split(",") if f.strip()]
@@ -411,10 +462,52 @@ def main() -> int:
     registry, problems = load_registry()
     print("oracle registry:")
     for token in sorted(registry):
-        fn, how = registry[token]
-        print(f"  {token}: {how}" + ("" if fn else "  [CONFLICT — unscored]"))
+        fn, how, prov = registry[token]
+        digest = prov.get("digest", "")
+        print(f"  {token}: {how}" + (f" [{digest[:16]}]" if fn and digest else
+                                     "  [CONFLICT — unscored]"))
     for problem in problems:
         print(f"  ! {problem}")
+
+    live = {token: prov for token, (fn, how, prov) in registry.items() if fn}
+    if args.dump_oracle_commitments is not None:
+        _atomic_write_json(args.dump_oracle_commitments, {
+            "schema": COMMITMENTS_SCHEMA,
+            "generated_at": datetime.datetime.now(datetime.timezone.utc)
+                                    .strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "oracles": live})
+        print(f"oracle commitments written: {args.dump_oracle_commitments} "
+              f"({len(live)} oracles)")
+        return 0
+
+    commitments = None
+    if args.oracle_commitments is not None:
+        frozen_path = args.oracle_commitments
+        if not frozen_path.is_file():
+            print(f"oracle commitments file not found: {frozen_path}", file=sys.stderr)
+            return 1
+        frozen = json.loads(frozen_path.read_text(encoding="utf-8"))
+        frozen_oracles = frozen.get("oracles", {})
+        refusals = []
+        for token, prov in sorted(live.items()):
+            if token not in frozen_oracles:
+                refusals.append(f"oracle {token} absent from the frozen commitments")
+            elif frozen_oracles[token].get("digest") != prov.get("digest"):
+                refusals.append(
+                    f"oracle {token} digest mismatch: frozen "
+                    f"{str(frozen_oracles[token].get('digest'))[:16]} vs live "
+                    f"{str(prov.get('digest'))[:16]} — an edited oracle needs a new "
+                    f"identity and a disclosed full rescore (D15 F1)")
+        for token in sorted(set(frozen_oracles) - set(live)):
+            refusals.append(f"frozen oracle {token} missing from the live registry")
+        if refusals:
+            for refusal in refusals:
+                print(f"! REFUSING TO SCORE: {refusal}", file=sys.stderr)
+            return 1
+        commitments = {"mode": "verified", "source": str(frozen_path),
+                       "oracles": len(live)}
+        print(f"oracle commitments verified against {frozen_path} "
+              f"({len(live)} oracles)")
 
     structural = False
     for family in families:
@@ -424,7 +517,8 @@ def main() -> int:
             problems.append(f"seed fixture missing for family {family}: {seed_root}")
             structural = True
             continue
-        process_family(family, family_dir, seed_root, registry, problems, args.list)
+        process_family(family, family_dir, seed_root, registry, problems, args.list,
+                       commitments)
 
     for problem in problems:
         print(f"! {problem}", file=sys.stderr)

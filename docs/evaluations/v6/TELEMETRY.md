@@ -19,6 +19,14 @@ and reconciles record sums against expected totals with unknowns visible.
   recorded). Bytes are never converted to tokens or money.
 - **Behavior fields**: process time, build/test time, searches, repeated
   reads, repeated gates, workspace edits.
+- **Mechanism events (v6)**: journal-derived event counts with pointers —
+  adaptations proposed/authorized/refused, control pairs
+  (discriminating / non-discriminating / control=unavailable), evidence
+  items by trust class (observed / imported / asserted), interventions by
+  category, and the per-cell completion profile (which mechanism closed
+  each criterion). Recorded as pointed event lists — never aggregated into
+  indices or ratings — and joined at analysis, so mechanism attribution
+  (Q4) and the L6 rounded-up-control guard have a data source (D15 F8).
 - **Interventions** by category (missing intent, new authority, environment
   repair, engineering rescue) and required authorization questions — counted
   separately from product outcomes.

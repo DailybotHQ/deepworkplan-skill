@@ -172,3 +172,69 @@ PY
   run python3 "$SCORER" --lab-root "$BATS_TEST_TMPDIR/empty-lab" --families bogus
   [ "$status" -eq 2 ]
 }
+
+@test "score_pilot: oracle identity — dump, verify, refuse on tamper (D15 F1)" {
+  _build_lab "$BATS_TEST_TMPDIR/lab-id"
+  ID="$BATS_TEST_TMPDIR/id"
+  mkdir -p "$ID"
+
+  # Freeze the current oracle-identity table.
+  run python3 "$SCORER" --dump-oracle-commitments "$ID/commitments.json"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "oracle commitments written"
+  python3 - "$ID/commitments.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d["schema"] == "deepworkplan-skill/evaluation/v6/oracle-commitments/1"
+assert d["oracles"], "empty commitments table"
+for token, prov in d["oracles"].items():
+    assert prov["digest"] and len(prov["digest"]) == 64, token
+    assert all(s["sha256"] and s["path"].endswith(".py") for s in prov["sources"]), token
+print("commitments shape OK")
+PY
+
+  # A clean verification scores normally and stamps identities per record.
+  run python3 "$SCORER" --lab-root "$BATS_TEST_TMPDIR/lab-id" --families service \
+    --oracle-commitments "$ID/commitments.json"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "oracle commitments verified"
+  python3 - "$BATS_TEST_TMPDIR/lab-id/service/SCORES.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d["oracle_commitments"]["mode"] == "verified", d["oracle_commitments"]
+assert d["oracle_provenance"], "no report-level provenance"
+stamped = [c for c in d["cells"] if c.get("oracle", {}).get("digest")]
+assert stamped, "no per-cell oracle digest stamped"
+for cell in stamped:
+    assert len(cell["oracle"]["digest"]) == 64 and cell["oracle"]["sources"]
+print("score records carry oracle identities")
+PY
+
+  # A tampered commitment table refuses before scoring, exit 1, nothing written.
+  python3 - "$ID/commitments.json" "$ID/tampered.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+token = sorted(d["oracles"])[0]
+d["oracles"][token]["digest"] = "0" * 64
+json.dump(d, open(sys.argv[2], "w"))
+PY
+  rm -f "$BATS_TEST_TMPDIR/lab-id/service/SCORES.json" "$BATS_TEST_TMPDIR/lab-id/service/SUMMARY.json"
+  run python3 "$SCORER" --lab-root "$BATS_TEST_TMPDIR/lab-id" --families service \
+    --oracle-commitments "$ID/tampered.json"
+  [ "$status" -eq 1 ]
+  echo "$output" | grep -q "REFUSING TO SCORE"
+  [ ! -e "$BATS_TEST_TMPDIR/lab-id/service/SCORES.json" ]
+  [ ! -e "$BATS_TEST_TMPDIR/lab-id/service/SUMMARY.json" ]
+
+  # A frozen token missing from the live registry also refuses.
+  python3 - "$ID/commitments.json" "$ID/extra.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d["oracles"]["ZZ-0"] = {"digest": "1" * 64, "sources": []}
+json.dump(d, open(sys.argv[2], "w"))
+PY
+  run python3 "$SCORER" --lab-root "$BATS_TEST_TMPDIR/lab-id" --families service \
+    --oracle-commitments "$ID/extra.json"
+  [ "$status" -eq 1 ]
+  echo "$output" | grep -q "missing from the live registry"
+}
