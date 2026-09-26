@@ -389,6 +389,18 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
 
     scratch_home = attempt_dir / "homes" / cell["cell_id"]
     scratch_home.mkdir(parents=True, exist_ok=True)
+    # Actor credentials must travel, but traces must not: copy ONLY auth
+    # files into the scratch HOME (never session transcripts or project
+    # history), and delete the whole scratch HOME after the run so no
+    # credential ever survives in an artifact.
+    home = Path.home()
+    for rel in (".claude.json", ".claude/.credentials.json",
+                ".codex/auth.json", ".codex/config.toml"):
+        src = home / rel
+        if src.is_file():
+            dst = scratch_home / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
     env = scrubbed_env(workspace, scratch_home)
 
     launch = cell["stratum"]["launch"]
@@ -451,6 +463,9 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
             leaked = True
             break
     canary_intact = content_intact and not leaked
+    # Credential hygiene: the scratch HOME held auth files; it must not
+    # survive into artifacts.
+    shutil.rmtree(scratch_home, ignore_errors=True)
     final = tree_hashes(workspace)
     record = {
         "cell_id": cell["cell_id"],

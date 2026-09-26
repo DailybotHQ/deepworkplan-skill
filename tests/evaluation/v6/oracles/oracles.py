@@ -178,6 +178,57 @@ def score_service_sc9(root: Path, seed_root: Path) -> dict:
 
 # -------------------------------------------------------------------- astro
 
+def _astro_build_and_check(root: Path, reasons: list, env=None) -> bool:
+    commands = {
+        "install": "pnpm install --frozen-lockfile --ignore-scripts",
+        "build": "pnpm run build",
+        "check": "pnpm run check",
+    }
+    with tempfile.TemporaryDirectory(prefix="oracle-astro-build-") as td:
+        work = Path(td) / "ws"
+        shutil.copytree(root, work, symlinks=False)
+        for name, cmd in commands.items():
+            try:
+                proc = subprocess.run(cmd, shell=True, cwd=str(work), capture_output=True,
+                                      text=True, timeout=1200, env=env)
+            except subprocess.TimeoutExpired:
+                reasons.append(f"{name} timed out")
+                return False, None
+            if proc.returncode != 0:
+                reasons.append(f"{name} failed: {(proc.stdout + proc.stderr)[-400:]}")
+                return False, None
+        return True, work
+
+
+def score_astro_ac6(root: Path, seed_root: Path, env_path=None) -> dict:
+    """AC-6: every built page starts its body with a working skip link to an
+    existing #main target, with a visible :focus style in the built CSS."""
+    reasons = []
+    ok, work = _astro_build_and_check(root, reasons)
+    dist = work / "dist" if ok else None
+    if ok:
+        pages = sorted(dist.rglob("index.html"))
+        if len(pages) < 5:
+            reasons.append(f"expected at least 5 built pages, found {len(pages)}")
+        for page in pages:
+            html = page.read_text(encoding="utf-8", errors="replace")
+            body = html.split("<body", 1)[-1]
+            first_anchor = re.search(r'<a\b[^>]*href="([^"]*)"', body)
+            if not first_anchor:
+                reasons.append(f"{page.name}: no anchor in body")
+            elif first_anchor.group(1) != "#main":
+                reasons.append(f"{page.name}: first focusable link is not the skip link (href={first_anchor.group(1)!r})")
+            if 'id="main"' not in html:
+                reasons.append(f"{page.name}: missing #main target")
+        css_text = "".join(p.read_text(encoding="utf-8", errors="replace")
+                           for p in dist.rglob("*.css"))
+        if ".skip-link" not in css_text or ":focus" not in css_text:
+            reasons.append("no visible .skip-link focus style in built CSS")
+    return _result(PASS if not reasons else FAIL, reasons)
+
+
+# -------------------------------------------------------------------- astro
+
 def score_astro_ac1(root: Path, seed_root: Path, env_path=None) -> dict:
     """AC-1: clean install/build, the fixture check contract, and the
     reading-time marker rendered on post pages."""
