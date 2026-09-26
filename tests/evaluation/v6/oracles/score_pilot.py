@@ -1,369 +1,384 @@
 #!/usr/bin/env python3
-"""Score a baseline-pilot campaign's attempt inventories with the calibrated
-oracles (stdlib only).
+"""Pilot scorer: run the calibrated case oracles over a baseline-pilot
+inventory (r3) and write per-cell scores plus a per-arm summary next to it.
 
-Walks the append-only inventories of a pilot campaign,
+Read-only on the lab: attempts.jsonl records and the recorded workspaces are
+only ever read; the files this tool writes are SCORES.json and SUMMARY.json
+beside the inventory. Oracles run sequentially (the pilot may be live).
 
-    <lab-root>/<family>/attempts.jsonl            (family-level inventory)
-    <lab-root>/<family>/<attempt>/attempts.jsonl  (per-attempt, also accepted)
+Walk: <lab-root>/<family>/attempts.jsonl (default lab root is the r3 pilot
+directory under the plan's analysis_results). Each record's leading task
+token ("task": "AC-2 ...") selects its oracle from the case modules in
+tests/evaluation/v6/oracles/cases/*.py, and the oracle runs against the
+recorded workspace path (the "workspace" field, resolved against
+<lab-root>/<family>/<attempt>/; fallback: workspaces/<cell_id>).
 
-maps every record's leading task token (the `task` field, e.g. "AC-2",
-"SC-9", "LC-6"; falling back to the leading token of `cell_id`) to its
-calibrated oracle loaded dynamically from tests/evaluation/v6/oracles/cases/
-*.py, runs the oracle against the recorded workspace (the attempt directory
-is named by the record's `attempt` field; `workspace` is relative to it),
-and writes SCORES.json plus a summary table. The inventory is never
-modified.
+Oracle discovery ladder (explicit; every row records how its oracle was
+resolved, and nothing is ever guessed):
 
-Case registry convention: every cases/*.py file exposes
-CASES = {"AC-2": score, ...} — a dict mapping a task token to an oracle
-callable (root, seed_root) -> {"verdict", "reasons"}. A task token whose
-case file does not exist yet is listed as UNSCORED — never guessed. Files
-that fail to load, expose no CASES dict, or duplicate a token are reported
-and skipped.
+  1. `CASES = {case_id: score_fn}`          the registry-dict contract
+  2. `CASES = [{"case": "LC-2", "score": fn, ...}, ...]`
+                                            list-of-dicts registry (matched
+                                            by the leading token of "case")
+  3. `score_<token>` module function (score_sc5, score_lc1, ...)
+  4. a module-level `score` when the FILENAME names exactly one case
+                                            (astro_ac2.py -> AC-2)
 
-House rules honored here: a result is PASS only when every assertion is
-evidenced by the artifact; eligibility mirrors the lab driver
-(scripts/evaluation/v6/lab.py) — an attempt is eligible iff status ==
-"completed", the isolation canary is intact, and its workspace still exists
-on disk. Failed attempts are counted separately and retained, never deleted.
+A token with no resolution — or two different functions claiming it — is
+listed under unscored_cases and never scored. Case modules that fail to
+import are reported and skipped the same way.
+
+Cell model (mirrors scripts/evaluation/v6/lab.py): terminal statuses are
+"completed", "ineligible" and "timeout"; non-terminal cells are listed but
+not scored. A cell is eligible when its status is "completed" and its
+canary_intact is true — the lab's own eligibility rule; scores are still
+recorded for ineligible/timeout cells but only eligible cells count toward
+passed/failed. Ineligible is the umbrella counter for every terminal cell
+that is not eligible; timeout is a detailed break-out of it (a timeout cell
+is counted in both). ERROR verdicts on ineligible cells do not count toward
+`errors`: eligibility precedes bucketing, so only eligible cells contribute
+to scored/passed/failed/errors. That is intentional — an oracle that cannot
+run on a disqualified cell is not evidence about the arm.
 
 Usage:
     python3 tests/evaluation/v6/oracles/score_pilot.py \
-        [--lab-root DIR] [--families astro,service,legacy] [--out FILE]
+        [--lab-root DIR] [--families astro,service,legacy] [--list]
 
-Defaults: --lab-root is this plan's baseline-pilot-r2 campaign directory;
-the report lands under the plan's analysis_results/PILOT_SCORES/ (never
-inside the campaign directory, which is read-only for scoring).
+--list prints the resolved oracle table and the cells that would be scored,
+writes nothing, and runs no oracle. Exit code is 0 when the walk completes
+(failing ORACLES are results, not errors); nonzero on structural problems
+(missing lab root, unreadable inventory, unknown family).
 """
 
 from __future__ import annotations
 
 import argparse
 import datetime
+import functools
 import importlib.util
+import inspect
 import json
 import os
 import re
 import sys
 from pathlib import Path
 
-# Scoring must never leave bytecode behind — not in the scored workspaces,
-# not in the case registry, and never in skills/ (import anything there only
-# with bytecode writing disabled).
+# Progress prints stay visible when stdout is redirected to a run log.
+print = functools.partial(print, flush=True)  # noqa: A001
+
+# Case modules are loaded by path; never leave import caches behind.
 os.environ.setdefault("PYTHONDONTWRITEBYTECODE", "1")
 sys.dont_write_bytecode = True
 
-HERE = Path(__file__).resolve().parent            # tests/evaluation/v6/oracles
-REPO = HERE.parents[3]                            # repository root
-CASES_DIR = HERE / "cases"
-SEEDS_DIR = REPO / "tests" / "evaluation" / "v6" / "fixtures"
+REPO = Path(__file__).resolve().parents[4]
+CASES_DIR = REPO / "tests" / "evaluation" / "v6" / "oracles" / "cases"
 DEFAULT_LAB_ROOT = (REPO / ".dwp" / "plans" / "PLAN_v6_verified_autonomy"
-                    / "analysis_results" / "lab" / "baseline-pilot-r2")
-SCORES_DIR = (REPO / ".dwp" / "plans" / "PLAN_v6_verified_autonomy"
-              / "analysis_results" / "PILOT_SCORES")
+                    / "analysis_results" / "lab" / "baseline-pilot-r3")
 FAMILIES = ("astro", "service", "legacy")
-TASK_TOKEN_RE = re.compile(r"^([A-Za-z]+-\d+)")
 
-# Case files commonly import the shared calibrated oracles (as calibrate.py
-# does); make those imports work however score_pilot itself was invoked.
-sys.path.insert(0, str(HERE))
-sys.path.insert(0, str(REPO / "scripts" / "evaluation"))
+TOKEN_RE = re.compile(r"[A-Za-z]+-\d+")
+FILENAME_TOKEN_RE = re.compile(r"([a-z]+)(\d+)")
+
+# Terminal statuses, mirroring lab.py's carry-forward set.
+TERMINAL = ("completed", "ineligible", "timeout")
 
 
-# ------------------------------------------------------------- case registry
+def _leading_token(text):
+    match = TOKEN_RE.search(str(text or ""))
+    return match.group(0).upper() if match else None
 
-def load_registry(cases_dir: Path = CASES_DIR):
-    """Load every cases/*.py and merge their CASES token -> oracle maps.
 
-    Returns (registry, case_files, errors): registry maps a task token to
-    {"file", "oracle"}; case_files describes what was discovered; errors
-    lists every skipped file with its reason (nothing is ever guessed)."""
-    registry: dict = {}
-    case_files: list = []
-    errors: list = []
-    if not cases_dir.is_dir():
-        errors.append(f"cases directory missing: {cases_dir}")
-        return registry, case_files, errors
-    for path in sorted(cases_dir.glob("*.py")):
-        if path.name.startswith("_"):
+def _filename_tokens(stem):
+    return [f"{letters.upper()}-{digits}"
+            for letters, digits in FILENAME_TOKEN_RE.findall(stem)]
+
+
+def _binds_two_args(fn):
+    try:
+        inspect.signature(fn).bind(None, None)
+        return True
+    except TypeError:
+        return False
+
+
+def _module_entries(path, module):
+    """Registry entries contributed by one case module: token -> (fn, how)."""
+    entries = {}
+    how = f"registry in {path.name}"
+    registry = getattr(module, "CASES", None)
+    if isinstance(registry, dict):
+        for case_id, fn in registry.items():
+            if callable(fn):
+                entries[str(case_id).upper()] = (fn, how)
+    elif isinstance(registry, list):
+        for element in registry:
+            if isinstance(element, dict) and callable(element.get("score")):
+                token = _leading_token(element.get("case", ""))
+                if token:
+                    entries.setdefault(token, (element["score"], how))
+    for token in _filename_tokens(path.stem):
+        fn = getattr(module, f"score_{token.lower().replace('-', '')}", None)
+        if callable(fn) and _binds_two_args(fn):
+            entries.setdefault(token, (fn, f"function score_{token.lower().replace('-', '')} in {path.name}"))
+    if len(_filename_tokens(path.stem)) == 1:
+        fn = getattr(module, "score", None)
+        if callable(fn) and _binds_two_args(fn):
+            entries.setdefault(_filename_tokens(path.stem)[0],
+                               (fn, f"single score() in {path.name}"))
+    return entries
+
+
+def load_registry():
+    """Import every case module and merge their entries. Returns
+    (resolved: {token: (fn, how)}, problems: [str])."""
+    resolved, problems = {}, []
+    for path in sorted(CASES_DIR.glob("*.py")):
+        if path.stem == "__init__":
             continue
-        module_name = f"v6_case_{path.stem}"
+        spec = importlib.util.spec_from_file_location(f"score_pilot_case_{path.stem}", path)
+        if spec is None or spec.loader is None:
+            problems.append(f"cannot load case module: {path.name}")
+            continue
+        module = importlib.util.module_from_spec(spec)
         try:
-            spec = importlib.util.spec_from_file_location(module_name, path)
-            module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
-        except Exception as exc:  # a broken case file must not kill the walk
-            errors.append(f"{path.name}: failed to load: {exc!r}")
+        except Exception as exc:  # a broken case file must not sink the run
+            problems.append(f"case module {path.name} failed to import: "
+                            f"{exc.__class__.__name__}: {exc}")
             continue
-        cases = getattr(module, "CASES", None)
-        if not isinstance(cases, dict) or not cases:
-            errors.append(f"{path.name}: no CASES dict (expected token -> oracle)")
+        for token, (fn, how) in _module_entries(path, module).items():
+            if token in resolved and resolved[token][0] is not fn:
+                problems.append(f"case {token} claimed by both "
+                                f"{resolved[token][1]} and {how}; treating as unscored")
+                resolved[token] = (None, "conflict")
+            else:
+                resolved.setdefault(token, (fn, how))
+    return resolved, problems
+
+
+def resolve_workspace(record, family_dir):
+    """The recorded workspace path, resolved against the attempt directory."""
+    attempt_dir = family_dir / str(record.get("attempt", ""))
+    raw = record.get("workspace")
+    if raw:
+        path = Path(str(raw))
+        return path if path.is_absolute() else attempt_dir / path
+    cell_id = str(record.get("cell_id", ""))
+    return attempt_dir / "workspaces" / cell_id if cell_id else attempt_dir / "workspaces"
+
+
+def score_cell(record, family_dir, seed_root, oracle):
+    """Run one oracle against one recorded workspace; never raises."""
+    token, fn, how = oracle
+    workspace = resolve_workspace(record, family_dir)
+    row = {
+        "cell_id": record.get("cell_id"),
+        "arm": record.get("arm"),
+        "stratum": record.get("stratum"),
+        "repeat": record.get("repeat"),
+        "task": record.get("task"),
+        "case": token,
+        "status": record.get("status"),
+        "exit_code": record.get("exit_code"),
+        "canary_intact": record.get("canary_intact"),
+        "workspace": str(workspace),
+        "workspace_exists": workspace.is_dir(),
+        "oracle": {"case_file": how, "function": getattr(fn, "__name__", repr(fn))},
+    }
+    if not workspace.is_dir():
+        row["verdict"], row["reasons"] = "ERROR", [f"recorded workspace missing on disk: {workspace}"]
+        return row
+    try:
+        result = fn(workspace, seed_root)
+        verdict = result.get("verdict")
+        row["verdict"] = verdict if verdict in ("PASS", "FAIL") else "ERROR"
+        row["reasons"] = [str(r) for r in result.get("reasons", [])]
+        if row["verdict"] == "ERROR":
+            row["reasons"].append(f"oracle returned an out-of-contract verdict: {verdict!r}")
+    except Exception as exc:  # a crashing oracle is an error row, not a crash
+        row["verdict"] = "ERROR"
+        row["reasons"] = [f"oracle raised {exc.__class__.__name__}: {exc}"]
+    return row
+
+
+def empty_tally():
+    return {"cells": 0, "eligible": 0, "ineligible": 0, "timeout": 0,
+            "scored": 0, "passed": 0, "failed": 0, "errors": 0,
+            "not_terminal": 0, "unscored": []}
+
+
+def tally(rows, arm):
+    counts = empty_tally()
+    for row in rows:
+        if row["arm"] != arm:
             continue
-        tokens = []
-        for token, oracle in cases.items():
-            if not callable(oracle):
-                errors.append(f"{path.name}: CASES[{token!r}] is not callable")
-                continue
-            if token in registry:
-                errors.append(f"{path.name}: duplicate token {token!r} "
-                              f"(already provided by {registry[token]['file']})")
-                continue
-            registry[token] = {"file": path.name, "oracle": oracle}
-            tokens.append(token)
-        case_files.append({"file": path.name, "tokens": tokens})
-    return registry, case_files, errors
-
-
-# ---------------------------------------------------------------- inventory
-
-def iter_inventories(lab_root: Path, families):
-    """Yield (family, record) for every record in every inventory found.
-
-    Tolerant of a live campaign: a malformed or half-written trailing line
-    is skipped with a warning, never fatal, and the inventory is read-only."""
-    for family in families:
-        family_dir = lab_root / family
-        inventories = []
-        if (family_dir / "attempts.jsonl").is_file():
-            inventories.append(family_dir / "attempts.jsonl")
-        inventories.extend(sorted(family_dir.glob("*/attempts.jsonl")))
-        seen = set()
-        for inventory in inventories:
-            try:
-                lines = inventory.read_text(encoding="utf-8").splitlines()
-            except OSError as exc:
-                print(f"warn: cannot read {inventory}: {exc}", file=sys.stderr)
-                continue
-            for lineno, line in enumerate(lines, 1):
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    record = json.loads(line)
-                except json.JSONDecodeError as exc:
-                    print(f"warn: {inventory}:{lineno}: skipping malformed record: {exc}",
-                          file=sys.stderr)
-                    continue
-                if not isinstance(record, dict):
-                    continue
-                key = (record.get("cell_id"), record.get("attempt"))
-                if key in seen:  # family-level and per-attempt copies may overlap
-                    continue
-                seen.add(key)
-                yield family, record
-
-
-def seed_for_family(family: str) -> Path:
-    return SEEDS_DIR / family / "seed"
-
-
-def workspace_for(lab_root: Path, family: str, record: dict):
-    """The recorded workspace directory, or None when it no longer exists.
-
-    The attempt directory comes from the record's `attempt` field; the
-    `workspace` value is relative to it (an absolute value is honored)."""
-    attempt, rel = record.get("attempt"), record.get("workspace")
-    if not attempt or not rel:
-        return None
-    path = Path(str(rel))
-    workspace = path if path.is_absolute() else lab_root / family / str(attempt) / path
-    return workspace if workspace.is_dir() else None
-
-
-def task_token(record: dict):
-    token = record.get("task")
-    if token:
-        return str(token)
-    match = TASK_TOKEN_RE.match(str(record.get("cell_id", "")))
-    return match.group(1) if match else None
-
-
-# ------------------------------------------------------------------ scoring
-
-def is_eligible(record: dict, workspace) -> bool:
-    """Eligibility mirrors scripts/evaluation/v6/lab.py: completed, canary
-    intact, and the workspace still on disk."""
-    return (record.get("status") == "completed"
-            and record.get("canary_intact") is True
-            and workspace is not None)
-
-
-def score_campaign(lab_root: Path, families, registry: dict):
-    """Score every eligible cell whose task token has a calibrated oracle.
-
-    Returns (scores, unscored, failed): scored cells with verdicts, eligible
-    cells whose oracle does not exist yet, and failed/ineligible attempts."""
-    scores, unscored, failed = [], [], []
-    for family, record in iter_inventories(lab_root, families):
-        token = task_token(record)
-        base = {
-            "cell_id": str(record.get("cell_id", f"<unnamed:{family}>")),
-            "family": family,
-            "arm": record.get("arm"),
-            "task": token,
-            "attempt": record.get("attempt"),
-            "status": record.get("status"),
-        }
-        workspace = workspace_for(lab_root, family, record)
-        if not is_eligible(record, workspace):
-            why = []
-            if record.get("status") != "completed":
-                why.append(f"status={record.get('status')!r}")
-            if record.get("canary_intact") is not True:
-                why.append("isolation canary violated")
-            if workspace is None:
-                why.append("workspace missing on disk")
-            failed.append({**base, "reason": "; ".join(why)})
+        if not row.get("terminal"):
+            counts["not_terminal"] += 1
             continue
-        seed = seed_for_family(family)
-        if not seed.is_dir():
-            unscored.append({**base, "reason": f"seed fixture missing: {seed}"})
+        counts["cells"] += 1
+        if row.get("unscored_case"):
+            counts["unscored"].append(row["case"])
             continue
-        entry = registry.get(token) if token else None
-        if entry is None:
-            unscored.append({**base,
-                             "reason": f"no calibrated oracle for task token {token!r}"})
+        if row.get("status") == "timeout":
+            counts["timeout"] += 1
+        if not row.get("eligible"):
+            counts["ineligible"] += 1
+            continue
+        counts["eligible"] += 1
+        if row["verdict"] == "LISTED":
+            continue
+        counts["scored"] += 1
+        verdict = row["verdict"]
+        counts["passed" if verdict == "PASS"
+                else "failed" if verdict == "FAIL"
+                else "errors"] += 1
+    counts["unscored"] = sorted(set(counts["unscored"]))
+    return counts
+
+
+def _atomic_write_json(path, payload):
+    """Write a report atomically: a crash mid-write cannot leave a truncated
+    report at the final path."""
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+
+
+def process_family(family, family_dir, seed_root, registry, problems, list_only):
+    inventory = family_dir / "attempts.jsonl"
+    if not inventory.is_file():
+        print(f"[{family}] no inventory at {inventory} — nothing to score")
+        return
+    records = []
+    for number, line in enumerate(inventory.read_text(encoding="utf-8").splitlines(), 1):
+        line = line.strip()
+        if not line:
             continue
         try:
-            result = entry["oracle"](workspace, seed)
-            verdict = str(result.get("verdict", "ERROR"))
-            reasons = [str(r) for r in result.get("reasons", [])]
-        except Exception as exc:  # an oracle crash is a failure, never a pass
-            verdict, reasons = "ERROR", [f"oracle raised: {exc!r}"]
-        scores.append({**base, "oracle_file": entry["file"],
-                       "workspace": str(workspace),
-                       "verdict": verdict, "reasons": reasons})
-    return scores, unscored, failed
+            records.append(json.loads(line))
+        except json.JSONDecodeError as exc:
+            problems.append(f"{inventory}:{number}: malformed record: {exc}")
 
+    rows, unscored_cells = [], {}
+    for record in records:
+        token = _leading_token(record.get("task"))
+        status = record.get("status")
+        terminal = status in TERMINAL
+        fn, how = registry.get(token, (None, None)) if token else (None, None)
+        row = {
+            "cell_id": record.get("cell_id"),
+            "arm": record.get("arm"),
+            "stratum": record.get("stratum"),
+            "repeat": record.get("repeat"),
+            "task": record.get("task"),
+            "case": token,
+            "status": status,
+            "terminal": terminal,
+            "eligible": status == "completed" and record.get("canary_intact") is True,
+        }
+        if not terminal:
+            row.update({"verdict": "SKIPPED", "reasons": [f"status {status!r} is not terminal"]})
+        elif fn is None:
+            row.update({"unscored_case": True, "verdict": "SKIPPED",
+                        "reasons": ["no calibrated oracle is registered for this case"]})
+            unscored_cells.setdefault(token or "(no token)", []).append(row["cell_id"])
+        elif list_only:
+            row.update({"verdict": "LISTED", "reasons": ["--list: oracle not run"],
+                        "oracle": {"case_file": how, "function": getattr(fn, "__name__", repr(fn))}})
+        else:
+            row.update(score_cell(record, family_dir, seed_root, (token, fn, how)))
+        rows.append(row)
 
-def summarize(scores, unscored, failed) -> dict:
-    """Per-arm counts: cells, eligible, passed; unscored and failed attempts
-    counted separately."""
-    arms: dict = {}
+    arms = sorted({str(r["arm"]) for r in rows})
+    summary = {arm: tally(rows, arm) for arm in arms}
+    summary["ALL"] = tally(rows, "ALL") if not arms else {
+        key: (sum(s[key] for s in summary.values()) if isinstance(summary[arms[0]][key], int)
+              else sorted({c for s in summary.values() for c in s[key]}))
+        for key in summary[arms[0]]}
 
-    def bucket(arm):
-        return arms.setdefault(str(arm), {"cells": 0, "eligible": 0, "passed": 0,
-                                          "unscored": 0, "failed": 0,
-                                          "verdicts": {}})
+    report = {
+        "family": family,
+        "inventory": str(inventory),
+        "generated_at": datetime.datetime.now(datetime.timezone.utc)
+                                .strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "unscored_cases": [{"case": token, "cell_ids": ids}
+                           for token, ids in sorted(unscored_cells.items())],
+        "summary": summary,
+        "cells": rows,
+    }
 
-    for row in scores:
-        b = bucket(row["arm"])
-        b["cells"] += 1
-        b["eligible"] += 1
-        b["verdicts"][row["verdict"]] = b["verdicts"].get(row["verdict"], 0) + 1
-        if row["verdict"] == "PASS":
-            b["passed"] += 1
-    for row in unscored:
-        b = bucket(row["arm"])
-        b["cells"] += 1
-        b["unscored"] += 1
-    for row in failed:
-        b = bucket(row["arm"])
-        b["cells"] += 1
-        b["failed"] += 1
-    total = {"cells": sum(b["cells"] for b in arms.values()),
-             "eligible": sum(b["eligible"] for b in arms.values()),
-             "passed": sum(b["passed"] for b in arms.values()),
-             "unscored": sum(b["unscored"] for b in arms.values()),
-             "failed": sum(b["failed"] for b in arms.values())}
-    return {"arms": arms, "all": total}
-
-
-# ------------------------------------------------------------------ output
-
-def render_table(summary: dict) -> list:
-    lines = ["| Arm | Cells | Eligible | Passed | Unscored | Failed |",
-             "| --- | ---: | ---: | ---: | ---: | ---: |"]
-    rows = sorted(summary["arms"].items()) + [("all", summary["all"])]
-    for arm, b in rows:
-        lines.append(f"| {arm} | {b['cells']} | {b['eligible']} | {b['passed']} "
-                     f"| {b['unscored']} | {b['failed']} |")
-    return lines
-
-
-def render_report_text(summary: dict, scores, unscored, failed,
-                       case_files, registry_errors) -> list:
-    lines = render_table(summary)
-    if scores:
-        lines += ["", "Scored cells:"]
-        for row in scores:
-            lines.append(f"  {row['verdict']}  {row['cell_id']} "
-                         f"(family={row['family']}, arm={row['arm']}, "
-                         f"oracle={row['oracle_file']})")
+    print(f"\n[{family}] {len(records)} record(s), "
+          f"{summary['ALL']['cells']} terminal, {summary['ALL']['eligible']} eligible")
+    for arm in arms + ["ALL"]:
+        s = summary[arm]
+        print(f"  arm {arm}: cells={s['cells']} eligible={s['eligible']} "
+              f"passed={s['passed']} failed={s['failed']} errors={s['errors']} "
+              f"not_terminal={s['not_terminal']}"
+              + (f" unscored={','.join(s['unscored'])}" if s["unscored"] else ""))
+    for row in rows:
+        if row["terminal"] and not row.get("unscored_case"):
+            line = (f"  {row['cell_id']}: {row['verdict']} ({row['oracle']['case_file']})")
+            print(line)
             for reason in row["reasons"]:
-                lines.append(f"         {reason}")
-    if unscored:
-        by_token: dict = {}
-        for row in unscored:
-            by_token.setdefault(str(row["task"]), []).append(row)
-        lines += ["", "Unscored task tokens (no cases/<token> oracle yet — listed, never guessed):"]
-        for token in sorted(by_token):
-            rows = by_token[token]
-            lines.append(f"  {token}: {len(rows)} cell(s), e.g. {rows[0]['reason']}")
-    lines += ["", "Failed attempts (retained, never deleted): "
-              + (", ".join(row["cell_id"] for row in failed) if failed else "none")]
-    if case_files:
-        lines += ["", "Case registry: "
-                  + "; ".join(f"{c['file']} -> {', '.join(c['tokens'])}" for c in case_files)]
-    else:
-        lines += ["", "Case registry: empty (no cases/*.py found)"]
-    for error in registry_errors:
-        lines.append(f"  registry note: {error}")
-    return lines
+                print(f"      - {reason}")
+
+    if list_only:
+        print(f"[{family}] --list: SCORES.json/SUMMARY.json not written")
+        return
+
+    for name, payload in (("SCORES.json", report), ("SUMMARY.json", {
+            "family": family,
+            "generated_at": report["generated_at"],
+            "unscored_cases": report["unscored_cases"],
+            "summary": summary})):
+        out = family_dir / name
+        _atomic_write_json(out, payload)
+        print(f"[{family}] wrote {out}")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Score baseline-pilot inventories with the calibrated oracles.")
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--lab-root", type=Path, default=DEFAULT_LAB_ROOT,
-                        help="campaign directory holding <family>/attempts.jsonl")
+                        help=f"lab root containing <family>/attempts.jsonl "
+                             f"(default: {DEFAULT_LAB_ROOT})")
     parser.add_argument("--families", default=",".join(FAMILIES),
-                        help="comma-separated families to score (default: all)")
-    parser.add_argument("--out", type=Path, default=None,
-                        help="report path (default: analysis_results/PILOT_SCORES/"
-                             "<lab-root-name>/SCORES.json)")
+                        help=f"comma-separated families to score (default: {','.join(FAMILIES)})")
+    parser.add_argument("--list", action="store_true",
+                        help="print the oracle resolution and the cells, write nothing")
     args = parser.parse_args()
 
-    lab_root = args.lab_root.resolve()
-    if not lab_root.is_dir():
-        print(f"error: lab root not found: {lab_root}", file=sys.stderr)
-        return 2
-    families = tuple(f.strip() for f in args.families.split(",") if f.strip())
+    families = [f.strip().lower() for f in args.families.split(",") if f.strip()]
     unknown = [f for f in families if f not in FAMILIES]
     if unknown:
-        print(f"error: unknown families {unknown}; known: {', '.join(FAMILIES)}",
+        print(f"unknown family/families: {', '.join(unknown)} (known: {', '.join(FAMILIES)})",
               file=sys.stderr)
         return 2
+    if not args.lab_root.is_dir():
+        print(f"lab root not found: {args.lab_root}", file=sys.stderr)
+        return 2
 
-    registry, case_files, registry_errors = load_registry()
-    scores, unscored, failed = score_campaign(lab_root, families, registry)
-    summary = summarize(scores, unscored, failed)
+    registry, problems = load_registry()
+    print("oracle registry:")
+    for token in sorted(registry):
+        fn, how = registry[token]
+        print(f"  {token}: {how}" + ("" if fn else "  [CONFLICT — unscored]"))
+    for problem in problems:
+        print(f"  ! {problem}")
 
-    out = args.out if args.out is not None else SCORES_DIR / lab_root.name / "SCORES.json"
-    out = out.resolve()
-    out.parent.mkdir(parents=True, exist_ok=True)
-    report = {
-        "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "lab_root": str(lab_root),
-        "families": list(families),
-        "case_files": case_files,
-        "registry_errors": registry_errors,
-        "scores": scores,
-        "unscored": unscored,
-        "failed": failed,
-        "summary": summary,
-    }
-    out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    structural = False
+    for family in families:
+        family_dir = args.lab_root / family
+        seed_root = REPO / "tests" / "evaluation" / "v6" / "fixtures" / family / "seed"
+        if not seed_root.is_dir():
+            problems.append(f"seed fixture missing for family {family}: {seed_root}")
+            structural = True
+            continue
+        process_family(family, family_dir, seed_root, registry, problems, args.list)
 
-    scored = summary["all"]
-    print(f"campaign {lab_root.name}: {scored['eligible']} eligible of {scored['cells']} "
-          f"cells; {len(scores)} scored, {len(unscored)} unscored, {scored['failed']} failed")
-    for line in render_report_text(summary, scores, unscored, failed,
-                                   case_files, registry_errors):
-        print(line)
-    print(f"wrote {out}")
-    return 0
+    for problem in problems:
+        print(f"! {problem}", file=sys.stderr)
+    return 1 if structural else 0
 
 
 if __name__ == "__main__":

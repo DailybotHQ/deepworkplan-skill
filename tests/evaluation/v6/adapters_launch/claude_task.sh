@@ -32,4 +32,4 @@ cd "$WS"
 	echo "TASK.md missing in $WS" >&2
 	exit 2
 }
-exec claude -p "$(cat TASK.md)" --output-format json --dangerously-skip-permissions
+exec claude -p "$(cat TASK.md)" --output-format json --dangerously-skip-permissions < /dev/null

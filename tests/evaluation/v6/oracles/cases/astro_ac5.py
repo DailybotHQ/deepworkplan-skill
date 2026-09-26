@@ -459,6 +459,10 @@ def sabotage(workspace_root):
                          encoding="utf-8")
 
 
+# The CASES dict is score_pilot.py's discovery convention (case_id -> score_fn).
+CASES = {"AC-5": score}
+
+
 # -------------------------------------------------------- self-calibration
 
 
