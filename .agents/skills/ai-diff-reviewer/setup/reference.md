@@ -793,7 +793,7 @@ downstream steps to consume.
 
 ### `structured-output-path` / `structured-output-sha256` / `structured-output-artifact` (v3)
 
-The `review-output/3.0` document every run writes to `.aiprr/review-output.json` (run record, change inventory, findings with evidence and verification, refuted findings, prior-findings ledger, generated summary whose `rendered_markdown` is the posted body, gate, usage, cost), its SHA-256, and the name of the workflow artifact that carries it (`ai-diff-reviewer-<head12>-<provider>-<kind>-<model>`, 90 days). Written on every exit path — success, skip, failure. Read the file (verify the digest) instead of scraping review threads; the `apply-review` sub-skill does so when the artifact exists, and the `address-review` sub-skill consumes it to close the loop (resolve findings → commit → push → re-arm the reviewer).
+The `review-output/3.0` document every run writes to `.aiprr/review-output.json` (run record, change inventory, findings with evidence and verification, refuted findings, prior-findings ledger, generated summary whose `rendered_markdown` is the posted body, gate, usage, cost), its SHA-256, and the name of the workflow artifact that carries it (`ai-diff-reviewer-<head12>-<provider>-<kind>-<model>`, 90 days). Written on every exit path — success, skip, failure. Read the file (verify the digest) instead of scraping review threads; the `apply-review` sub-skill does so when the artifact exists, and the `address-review` sub-skill consumes it to close the loop (survey and repair the PR's other failing workflows → resolve findings → commit → push → re-arm the reviewer).
 
 
 ### `legs-expected` / `legs-delivered` / `duplicates-removed` / `agreement-histogram` (v3, aggregate)

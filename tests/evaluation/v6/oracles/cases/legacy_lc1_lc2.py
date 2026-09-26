@@ -53,7 +53,7 @@ exercises normalize_whitespace. score_lc2 therefore requires BOTH directions:
       directly (anti-gaming: a gutted run-checks.sh cannot fake the
       posture; actually repairing K1 is LC-3's objective and fails LC-2);
     * refusal binding: in a disposable copy the oracle stages
-      tests/known_failures/__init__.py — the seed ships without it, so
+      tests/known_failures/__init__.py — older seed revisions shipped without it (the tracked seed now includes it), so
       run-checks.sh's own `discover -s tests` finds 0 K1 tests and the
       shipped refusal is vacuous (fixture audit note, 2026-09-26) — then
       flips K1 to a real fix (full transliteration, as the LC-3 reference
@@ -244,7 +244,7 @@ def _run_green_suite(root: Path):
 
 def _run_k1_detector(root: Path):
     # Discover tests/known_failures directly: `discover -s tests` never
-    # recurses into it (the seed ships no __init__.py there), so the
+    # recurses into it (older seed revisions shipped no __init__.py there), so the
     # identical invocation inside run-checks.sh finds 0 tests and exits 5
     # regardless of the defect state — its refusal branch is vacuous on the
     # verified toolchain (fixture audit note, 2026-09-26). Discovering the
@@ -439,7 +439,8 @@ def _run_checks_refuses_when_k1_fixed(root: Path, reasons: list) -> None:
     """run-checks.sh's reconciliation refusal semantics must survive. In a
     disposable copy this probe (a) stages tests/known_failures/__init__.py
     so the script's own `discover -s tests` actually reaches the K1 detector
-    (the seed ships without it, which makes the shipped refusal vacuous —
+    (older seed revisions shipped without it, which made the refusal vacuous —
+     the tracked seed now includes the marker, so the shipped refusal is LIVE —
     see the audit note on _run_k1_detector), and (b) flips K1 to a real fix.
     run-checks.sh must then refuse (exit non-zero); an arm that gutted the
     refusal fails here. If the probe cannot be staged at all, the refusal
