@@ -196,7 +196,16 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
     contract_mutant("dangling prerequisite", lambda d: d["tasks"][1]["prerequisites"].append("T-missing"), runtime_only=True)
     contract_mutant("duplicate criterion id", lambda d: d["acceptance"]["criteria"].append(copy.deepcopy(d["acceptance"]["criteria"][0])), runtime_only=True)
     contract_mutant("prerequisite cycle", lambda d: d["tasks"][0]["prerequisites"].append("T-ship-validator"), runtime_only=True)
-    notes.append("v6: contract mutants rejected (schema: era / closed object / capability / resource; runtime-only: graph integrity)")
+    # Scheduling policy (RFC section 5): every bound is optional but never
+    # unbounded when present — both halves reject the same out-of-policy
+    # declarations (starvation floor, negative caps, open objects, empty
+    # handoff conditions).
+    contract_mutant("zero starvation threshold", lambda d: d["scheduling"].update(starvation_threshold_events=0))
+    contract_mutant("negative adaptation cap", lambda d: d["scheduling"].update(max_adaptations_per_task=-1))
+    contract_mutant("negative retry cap", lambda d: d["scheduling"].update(max_retries_per_gate=-1))
+    contract_mutant("scheduling with an unknown field", lambda d: d["scheduling"].update(mode="auto"))
+    contract_mutant("empty handoff condition", lambda d: d["scheduling"].update(handoff={"fresh_context": ""}))
+    notes.append("v6: contract mutants rejected (schema: era / closed object / capability / resource / scheduling; runtime-only: graph integrity)")
 
     def event_mutant(label, mutate):
         doc = copy.deepcopy(events[0])

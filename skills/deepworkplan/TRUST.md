@@ -23,7 +23,10 @@ contract and journal records (identity, graph and verdict semantics; it
 never executes gates), and — for v6 plans — `shared/ledger.py`, the single
 journal writer and gate executor (the only place `observed` evidence is
 produced, by actually running the declared command), with `shared/views.py`
-rendering the deterministic generated views under the human-edit rule. They
+rendering the deterministic generated views under the human-edit rule, and
+`shared/scheduler.py` — the read-only authorization core that turns journal
+records into dispatch/refusal decisions (it never writes and never executes
+anything; every refusal it returns is a decision, not a side effect). They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
 ours: importing a Python helper can leave a `__pycache__/` bytecode cache

@@ -182,7 +182,8 @@ def contract_errors(doc, parents=None):
                   'contract_id', 'parent_contract_id', 'created_at', 'title',
                   'outcome', 'acceptance', 'invariants', 'scope',
                   'authorization', 'permissions', 'dependencies',
-                  'resource_envelope', 'tasks'}, 'contract', errors)
+                  'resource_envelope', 'scheduling', 'tasks'}, 'contract',
+            errors)
     declared = doc.get('schema')
     if declared != CONTRACT_SCHEMA_URL:
         # Mixed-era refusal (section 9.1): v5 and older documents keep their
@@ -258,6 +259,7 @@ def contract_errors(doc, parents=None):
     _permissions_errors(doc, errors)
     _dependencies_errors(doc, errors)
     _envelope_errors(doc, errors)
+    _scheduling_errors(doc, errors)
     _tasks_errors(doc, criteria, errors)
     return errors
 
@@ -519,6 +521,48 @@ def _envelope_errors(doc, errors):
             errors.append('%s: an ENFORCED limit must name its metering '
                           'source - a host adapter reading real spend '
                           '(A5); asserted samples are advisory-only' % path)
+
+
+def _scheduling_errors(doc, errors):
+    """RFC section 5: caps and handoff conditions are CONTRACT-declared.
+
+    The whole block is optional: an absent field means the deterministic
+    core runs its shipped finite default (never unlimited), and a plan can
+    declare tighter or looser bounds per plan. All fields are advisory to
+    the model, binding on :mod:`scheduler` (the authorization core).
+    """
+    if 'scheduling' not in doc:
+        return
+    sched = doc.get('scheduling')
+    if not isinstance(sched, dict):
+        errors.append('contract.scheduling: expected an object')
+        return
+    path = 'contract.scheduling'
+    _closed(sched, {'starvation_threshold_events',
+                    'max_adaptations_per_task', 'max_retries_per_gate',
+                    'handoff'}, path, errors)
+    thresholds = (('starvation_threshold_events', 1),
+                  ('max_adaptations_per_task', 0),
+                  ('max_retries_per_gate', 0))
+    for key, floor in thresholds:
+        if key in sched:
+            value = sched[key]
+            if not _is_int(value) or value < floor:
+                errors.append('%s.%s: expected an integer >= %d (got %r)'
+                              % (path, key, floor, value))
+    if 'handoff' in sched:
+        handoff = sched['handoff']
+        hpath = path + '.handoff'
+        if not isinstance(handoff, dict):
+            errors.append('%s: expected an object' % hpath)
+        else:
+            _closed(handoff, {'fresh_context', 'cross_host_resume'}, hpath,
+                    errors)
+            for key in ('fresh_context', 'cross_host_resume'):
+                if key in handoff and (not isinstance(handoff[key], str) or
+                                       not handoff[key].strip()):
+                    errors.append('%s.%s: expected a non-empty condition '
+                                  'string' % (hpath, key))
 
 
 def _tasks_errors(doc, criteria_ids, errors):
@@ -1233,6 +1277,15 @@ def self_test():
     bad_stamp['contract_id'] = 'c' * 64
     if not contract_errors(bad_stamp):
         failures.append('a mismatched contract_id must fail identity')
+    sched = json.loads(json.dumps(contract))
+    sched['scheduling'] = {
+        'starvation_threshold_events': 25, 'max_adaptations_per_task': 2,
+        'max_retries_per_gate': 1,
+        'handoff': {'fresh_context': 'context corruption is observed',
+                    'cross_host_resume': 'a handoff carries a contract'}}
+    if contract_errors(sched):
+        failures.append('a well-formed scheduling block should be valid: %s'
+                        % contract_errors(sched))
     events = _selftest_events(cid)
     journal = journal_errors(events, contract=stamped)
     if journal:
@@ -1307,6 +1360,15 @@ def self_test():
               dirty='M src/x.py'))
     probe('journal: control pair without the artifact declaration',
           None, lambda es: es[8].pop('check_artifacts'))
+    probe('zero starvation threshold',
+          lambda c: c.update(scheduling={'starvation_threshold_events': 0}))
+    probe('negative adaptation cap',
+          lambda c: c.update(scheduling={'max_adaptations_per_task': -1}))
+    probe('scheduling with an unknown field',
+          lambda c: c.update(scheduling={'aggressiveness': 11}))
+    probe('empty handoff condition',
+          lambda c: c.update(scheduling={'handoff': {
+              'fresh_context': '  '}}))
     probe('journal: refused adaptation without a reason',
           None, lambda es: es[4].pop('reason'))
     probe('journal: adaptation carrying criterion content',

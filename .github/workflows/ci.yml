@@ -195,6 +195,7 @@ jobs:
                         skills/deepworkplan/shared/contract_v6.py \
                         skills/deepworkplan/shared/ledger.py \
                         skills/deepworkplan/shared/views.py \
+                        skills/deepworkplan/shared/scheduler.py \
                         skills/deepworkplan/verify/plan_contract.py; do
             python3 -m py_compile "$helper"
             echo "OK: $helper compiles on $(python3 --version)"
@@ -210,6 +211,10 @@ jobs:
             skills/deepworkplan/shared/ledger.py self-test
           PYTHONDONTWRITEBYTECODE=1 python3 \
             skills/deepworkplan/shared/views.py self-test
+          # The authorization core as well: read-only, stdlib-only, its
+          # self-test exercises the refusal pipeline in memory.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/scheduler.py self-test
           # And they must actually run, not merely parse: the read-only checker
           # over a real fixture plan, with no optional dependency available.
           python3 -c 'import jsonschema' 2>/dev/null && { echo "FAIL: jsonschema present — this job must prove the stdlib-only path"; exit 1; }

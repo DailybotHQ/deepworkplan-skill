@@ -161,5 +161,14 @@
       ]
     }
   ],
-  "contract_id": "1ce682d409b7fc34813498a0b53765a40e11bb22c5e7a531d7b4a705d376cd5c"
+  "contract_id": "36353a47e1cf5fcc86f2c445519ba3a1f5ddb5c863b153c2946e1c09e3607a35",
+  "scheduling": {
+    "starvation_threshold_events": 24,
+    "max_adaptations_per_task": 2,
+    "max_retries_per_gate": 1,
+    "handoff": {
+      "fresh_context": "context pressure at 60%",
+      "cross_host_resume": "custodian seal broken"
+    }
+  }
 }

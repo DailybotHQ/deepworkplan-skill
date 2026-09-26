@@ -373,6 +373,45 @@
         }
       }
     },
+    "scheduling": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Deterministic-authorization policy (RFC section 5), declared in the contract. Every field is optional: an absent field means the authorization core applies its shipped finite default (never unlimited); a plan may declare tighter or looser bounds.",
+      "properties": {
+        "starvation_threshold_events": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Journal-event count a ready-but-unselected task waits before the oldest-blocked-wait priority boost fires (A11; the clock is the journal, never the wall)."
+        },
+        "max_adaptations_per_task": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum authorized adaptations whose affected_tasks include one task; bounded adaptation, loop termination."
+        },
+        "max_retries_per_gate": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum authorized retry adaptations per acceptance criterion; blind retries are refused independently of this cap."
+        },
+        "handoff": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Explicit handoff conditions (RFC section 5): when a fresh context or a cross-host resume is required.",
+          "properties": {
+            "fresh_context": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Condition under which the session must be replaced by a fresh context."
+            },
+            "cross_host_resume": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Condition under which the plan must resume on another host."
+            }
+          }
+        }
+      }
+    },
     "tasks": {
       "type": "array",
       "minItems": 1,
