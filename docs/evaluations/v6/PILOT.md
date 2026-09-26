@@ -34,18 +34,18 @@ envelope refusal — proven in `analysis_results/gates/task10-boundary-gates.log
 `design.json resource_envelope` stays UNSET until the developer approves the
 caps proposed in the owning plan's `RESOURCE_PROPOSAL.md` (8.00 USD/start,
 4,000 USD total) or supplies an applicable existing budget. Additionally, the
-post-freeze launch-preparation work is:
+post-freeze launch-preparation items, as of 2026-09-26:
 
-1. real-CLI launch wrappers (`tests/evaluation/v6/adapters_launch/`) that
-   translate the runner's `--workspace`/`--task` contract into headless
-   claude/codex invocations reading a task prompt file in the workspace;
-2. prompt materialization into workspaces by the lab driver (the driver does
-   not yet write the task prompt file the wrappers will read);
-3. calibration of the remaining pilot oracles (the AC-1/SC-9/LC-3 oracles are
-   calibrated; each additional pilot case's oracle must pass the same matrix
-   before it scores);
-4. codex session-log counter extraction (until then, codex runs carry
-   unknown counters, and cross-stratum cost claims stay blocked).
+1. ~~real-CLI launch wrappers~~ — DONE (`tests/evaluation/v6/adapters_launch/`,
+   proven by real per-CLI canaries);
+2. ~~prompt materialization~~ — DONE (the driver writes TASK.md into each
+   workspace; pack-carrying arms receive the documented method overlay);
+3. calibration of the remaining pilot oracles — IN PROGRESS (AC-1/SC-9/LC-3
+   and AC-6 are calibrated; the other pilot cases are being calibrated to
+   the same matrix before they may score);
+4. ~~codex session-log counter extraction~~ — DONE
+   (`adapters/codex_usage.py`: per-turn records only, totals ignored to
+   avoid double counting; input reported as fresh input, excluding cached).
 
 ## When unblocked, the sequence is
 

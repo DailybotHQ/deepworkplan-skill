@@ -139,11 +139,18 @@ def canary(adapter_name, timeout_s=120):
         return report
     if adapter_name == "codex":
         try:
-            proc = subprocess.run(["codex", "exec", "Reply with exactly: ok"],
-                                  capture_output=True, text=True, timeout=timeout_s)
-            report["canary"] = (f"exit {proc.returncode}; counter extraction from session "
-                                "logs to be implemented against the observed log format")
-            report["raw_usage_excerpt"] = (proc.stdout + proc.stderr)[-400:]
+            started = __import__("time").time()
+            proc = subprocess.run(
+                ["codex", "exec", "--skip-git-repo-check",
+                 "--dangerously-bypass-approvals-and-sandbox", "Reply with exactly: ok"],
+                capture_output=True, text=True, timeout=timeout_s,
+                stdin=__import__("subprocess").DEVNULL)
+            from codex_usage import default_sessions_dir, usage_since
+            usage = usage_since(default_sessions_dir(), started)
+            report["canary"] = f"exit {proc.returncode}; rollouts: {usage['rollout_count']}"
+            report["counters_available"] = bool(usage["counters"]["output_tokens"])
+            report["counter_fields_seen"] = sorted(usage["counters"])
+            report["raw_usage_excerpt"] = usage["counters"]
         except (OSError, subprocess.TimeoutExpired) as exc:
             report["canary"] = f"failed: {str(exc)[:160]}"
         return report
