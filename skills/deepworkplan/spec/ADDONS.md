@@ -350,6 +350,11 @@ baseline, never a conformance gate, never blocking — a repository with no
 Herdr runs single-agent and stays fully conformant, and a launch failure
 is recorded and continued with available peers.
 
+The addon ships **unwired** in the current line: no flow references it.
+The v7 wiring plan (onboard offer, optional execute delegation,
+`parallel-safe` marks, presence-gated verify) is recorded in
+[`V7_ROADMAP.md`](V7_ROADMAP.md) — non-normative.
+
 ## 7. References
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
