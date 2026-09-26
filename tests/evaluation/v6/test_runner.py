@@ -190,6 +190,12 @@ class RefusalTests(LabTestBase):
         errors = lab.validate_campaign(cfg, self.lab_root, self.unset_design())
         self.assertTrue(any("enforced" in e for e in errors), errors)
 
+    def test_exec_script_missing_refused(self):
+        cfg = self.make_cfg()
+        cfg["strata"] = [{"name": "fake", "launch": {"mode": "exec", "argv": ["tests/nope/actor.sh"]}}]
+        errors = lab.validate_campaign(cfg, self.lab_root, self.unset_design())
+        self.assertTrue(any("not found in the repository" in e for e in errors), errors)
+
     def test_campaign_missing_required_key_refused(self):
         cfg = self.make_cfg()
         del cfg["oracles"]

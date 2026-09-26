@@ -184,6 +184,10 @@ def validate_campaign(cfg: dict, lab_root: Path, design_path: Path) -> list:
             err(f"strata[{i}] fake launch requires command (a fixture actor script)")
         if launch.get("mode") == "exec" and not launch.get("argv"):
             err(f"strata[{i}] exec launch requires argv")
+        if launch.get("mode") == "exec" and launch.get("argv"):
+            first = str(launch["argv"][0])
+            if "/" in first and not Path(first).is_absolute() and not (repo_root() / first).exists():
+                err(f"strata[{i}] exec script not found in the repository: {first}")
         if not stratum.get("name"):
             err(f"strata[{i}] missing name")
     if not isinstance(cfg["repeats"], int) or cfg["repeats"] < 1:
@@ -394,7 +398,16 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
         if launch.get("actor_arg"):
             argv.append(launch["actor_arg"])
     else:
-        argv = [str(a) for a in launch["argv"]] + ["--workspace", str(workspace), "--task", cell["task"]["id"]]
+        argv = [str(a) for a in launch["argv"]]
+        # Config paths are repository-relative; the subprocess runs with
+        # cwd=workspace, so resolve existing repo paths to absolute.
+        argv = [
+            str(repo_root() / element) if ("/" in element and not Path(element).is_absolute()
+                                           and (repo_root() / element).exists())
+            else element
+            for element in argv
+        ]
+        argv = argv + ["--workspace", str(workspace), "--task", cell["task"]["id"]]
 
     pack = (cell["arm_spec"] or {}).get("pack")
     if pack:
