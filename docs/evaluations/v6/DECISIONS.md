@@ -117,3 +117,47 @@ citing its predecessor.
   source); defer U3/U4 to post-release (rejected: they are pure projections
   of already-recorded events and carry the launch bar's guardrail
   endpoints).
+
+## D14 — D2 delta-review dispositions (draft-3)
+
+- **Context.** The red-team peer's delta review of draft-2
+  (`analysis_results/ARCHITECTURE_REDTEAM_D2.md`) checked disposition
+  fidelity and hunted defects introduced by the draft-2 edits: 1 BLOCKER
+  (D2-1), 5 MAJOR (D2-2–D2-6), 4 NOTE (D2-7–D2-10). All quotes were
+  verified against the RFC text before acceptance (every cited sentence
+  found verbatim, wrap-normalized).
+- **Decision.** All 10 findings accepted, none rejected. The root cause the
+  review names is real and worth recording: draft-2 was applied
+  additively — new normative sentences were inserted without excising the
+  draft-1 sentences they invalidated. Draft-3 is therefore an
+  *excision-and-binding* pass: (D2-1) §5's stamp-at-write bullet now defers
+  to the executor rule and §4.3 names mediated writes `asserted`;
+  (D2-2) the §11 matrix rows carry their modes; (D2-3) both modes write
+  the same materialization-time approval record
+  `{authority, mechanism, contract_id, plan digest}` making the
+  first-task-start refusal mode-uniform, with the drift comparison at
+  task-start authorization; (D2-4) `reconciliation` events carry §3.2
+  authority (trigger, editor, timestamp, contract_id) and criteria
+  declaring evidence classes close on `reconciled` only under amendment
+  authority — otherwise `blocked`, never silently closed; (D2-5) migration
+  synthesizes the contract and writes its approval record, with
+  re-evidence criteria listed in the preview with their re-verification
+  tasks and envelope; (D2-6) the control-pair old leg is a worktree at the
+  recorded starting fingerprint carrying only the gate's declared check
+  artifacts (user dirty state never reverted; non-git hosts record
+  `control=unavailable`); NOTEs pinned (§15 pointer, regenerated-position
+  roll bound, stale/pending/lock-detection terms, receipt-contract wording
+  and the v5-runner-meets-v6-plan refusal).
+- **Consequences.** Draft-3 is the implementable text for Tasks 11–22; the
+  implementation map (`analysis_results/V6_IMPLEMENTATION_MAP.md`) folds
+  these bindings into the owning tasks. The mode-uniform approval record
+  simplifies the guarded writer (one refusal rule); reconciliation
+  authority closes the markdown-wins completion loophole for
+  evidence-class criteria.
+- **Alternatives.** Fix only D2-1 (rejected: D2-2–D2-6 each leave an
+  implementer two ways to build their owning task's acceptance); treat
+  `reconciled` as an evidence class (rejected: reconciliation restores
+  consistency, it does not manufacture evidence — the A4 disposition's
+  whole point); let migration skip the contract when no criteria need
+  re-evidence (rejected: §14.5's refusal is unconditional and the
+  scheduler's authorization core is undefined without a contract).

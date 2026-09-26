@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | Proposed (red-teamed draft; not yet normative) |
-| Version | draft-2 (2026-09-26) |
+| Version | draft-3 (2026-09-26) |
 | Elaborates | `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE.md` (planning proposal; a local gitignored planning input — this RFC is its version-controlled successor) |
 | Normative successor | A future `spec/` revision produced by the implementation tasks; this RFC is not normative until that revision exists |
 | Baseline | DWP spec 5.0.0 (the frozen v5 runner; this plan does not migrate itself) |
@@ -13,7 +13,12 @@ will require. Nothing here changes the installed v5 pack's behavior; the v5
 contracts remain in force for every plan that has not migrated.
 
 Incorporated reviews. draft-1 applied the independent design review
-(`analysis_results/ARCHITECTURE_REVIEW.md`, F1–F11). draft-2 applies the
+(`analysis_results/ARCHITECTURE_REVIEW.md`, F1–F11). draft-3 applies the
+D2 delta review (`analysis_results/ARCHITECTURE_REDTEAM_D2.md`, D2-1–D2-10:
+the draft-1 sentences the A1 fix invalidated are excised, the §11 matrix
+rows carry their modes, approval-record binding, reconciled authority,
+migration contract synthesis and the control-pair old-leg rule are
+specified). draft-2 applied the
 adversarial red-team (`analysis_results/ARCHITECTURE_REDTEAM.md`, findings
 A1–A13, buried capabilities B1–B5, upgrades U1–U5):
 
@@ -78,7 +83,7 @@ Sources: `spec/PLAN_STATE.md`, `shared/state_contract.py` enforcement,
 | 14 | Dogfood mirror byte-identity and release-bot-owned versions/changelog | **Unchanged repo procedure**; not a runtime contract of the pack itself |
 | 15 | External-action receipts: evidenced by id/URL/branch at action time; never re-sent on assumption; a missing receipt is investigated against the service's actual state (PLAN_STATE §5.1) | **Retained**; receipts enter the journal as `imported` evidence items with provenance |
 | 16 | Evidence reuse requires an unchanged world: recorded fingerprint vs current `HEAD` + dirty/generated state; changed inputs force a rerun (PLAN_STATE §5.1) | **Retained**; the same freshness rule governs generated views and summaries (§7); see the "Evidence validity" row of the guarantee matrix |
-| 17 | Verified publication: completion is a transaction with a `FINALIZATION.json` receipt, a `.finalizing.json` recovery marker, and UNVERIFIED (never completed) without Python (PLAN_STATE "Verified plan publication") | **Retained**; the v6 terminal transition additionally emits journal events, and validates the completed projection exactly as v5 — the receipt contract is unchanged |
+| 17 | Verified publication: completion is a transaction with a `FINALIZATION.json` receipt, a `.finalizing.json` recovery marker, and UNVERIFIED (never completed) without Python (PLAN_STATE "Verified plan publication") | **Retained**; the v6 terminal transition additionally emits journal events, and validates the completed projection under the same receipt contract as v5, extended to the v6 projection (reconciled closures and control_pair evidence the v5 validator does not model) |
 
 ## 3. The outcome and authority contract
 
@@ -108,18 +113,25 @@ row has no subject. A v6 plan without a contract is a materialization failure,
 not a mode. What scales by plan mode instead is the **approval** record (U1):
 
 - **Interactive git plans** — the plan markdown the developer reviewed is the
-  consented artifact; the contract is its generated projection, and
-  materialization records approval as *plan authorship* (authority: the session
-  user; the contract cites the plan bytes it projects). The execute flow
-  renders the contract in its plan-review step, so a human can compare the
-  projection against the plan before the first task starts — and because
-  identity is content-addressed, any later regeneration that drifts from the
-  approved bytes is a new revision requiring the amendment path (B3).
-- **Unattended and non-git plans** — approval must cite the exact
-  `contract_id` bytes through the recorded pre-authorization (the
-  AGENT_PROTOCOL §7 pattern); the guarded writer refuses the first
-  task-start transition when the approval record is missing or cites
-  different bytes.
+  consented artifact; the contract is its generated projection. The execute
+  flow renders the contract in its plan-review step, so a human can compare
+  the projection against the plan before the first task starts.
+- **Unattended and non-git plans** — approval cites the recorded
+  pre-authorization (the AGENT_PROTOCOL §7 pattern). Because a
+  pre-authorization written before materialization cannot name bytes that do
+  not exist yet, the citing record is written **at materialization**, under
+  the create-time approval's authority.
+- **Both modes write the same approval record at materialization** (this is
+  what makes the first-task-start refusal rule mode-uniform, D2-3): a
+  journal event `{authority, mechanism, contract_id, plan digest}`, where
+  *mechanism* is `plan_authorship` (interactive: authority = the session
+  user) or `pre_authorization` (unattended/non-git: authority = the
+  recorded pre-authorization). The guarded writer refuses the first
+  task-start transition when the record is missing or cites bytes other
+  than the live `contract_id`. Because identity is content-addressed, any
+  later regeneration that drifts from the approved bytes is a new revision
+  requiring the amendment path (B3); the drift comparison runs at
+  task-start authorization, where the live `contract_id` is re-derived.
 - Contract **revisions** (§3.4) always require explicit recorded authority —
   plan authorship never carries over to a revision.
 
@@ -221,7 +233,7 @@ it belongs today.
 The selection's single-writer premise is a **designed boundary, not a silent
 regression** of v5's team agents and orchestrator child plans (spec §8–§9, A8):
 v6 new-plan records are single-writer; the checker refuses concurrent execute
-sessions on one plan (the cooperative lock already detects them); parallel
+writers on one plan (the cooperative lock detects concurrent writers; concurrent sessions that never write simultaneously are caught at write time by the position check, not by the lock); parallel
 work maps onto per-worker **child plans in the v5 §8 orchestrator shape** —
 each worker its own contract and journal, the parent aggregating (U5).
 v5-shaped plans keep v5 team-agent semantics untouched (§9.1–9.2).
@@ -235,7 +247,9 @@ v5-shaped plans keep v5 team-agent semantics untouched (§9.1–9.2).
   `update-state.py` pattern: cooperative `.lock` directory, closed event
   objects, and a provenance stamp (helper identity, `contract_id`) applied at
   write time. This makes §4.5's trust labels mechanically meaningful for
-  helper-mediated writes. As with the v5 lock, **no protection is claimed
+  helper-**executed** records; a helper-mediated write — a helper writing
+  down a result it did not execute — carries `asserted`, never `observed`
+  (§4.5). As with the v5 lock, **no protection is claimed
   against editors that bypass the writer**; read-time structural checks and
   the read-only checker report what the records can show.
 - A torn final line (crash mid-append) is repaired on the next writer open:
@@ -268,9 +282,17 @@ markdown and appends a `reconciliation` event; prior journal items are
 retained as history — the journal never discards. The v5 "stale, never ahead"
 property therefore scopes to the journal→snapshot direction. A task that
 reaches `completed` through reconciliation closes with **recorded authority
-`reconciled`** — not with an evidence item: acceptance criteria close either on
-an evidence class or on reconciliation authority, never both silently, and the
-completion profile below shows which (A4).
+`reconciled`** in the §3.2 sense — the `reconciliation` event carries the
+trigger, the editor whose change won, a timestamp and the re-derived
+`contract_id`, not a bare mechanism label. Reconciliation restores record
+consistency; it does not manufacture evidence (D2-4): a criterion that
+declares an evidence class closes on `reconciled` only under amendment
+authority (§3.4) — otherwise the task's criterion downgrades to `blocked`
+with the reconciliation recorded, and the completion profile below shows
+which closure mechanism every criterion used (A4). Snapshot regeneration
+enforces the v5 row-4 gate-completeness check on completed tasks: a
+completed task whose gates did not survive reconciliation is a
+reconciliation case, never a silent pass.
 
 Generated views include the **audit surfaces** (U3): a
 refusals-and-interventions view (every refused proposal and intervention
@@ -314,16 +336,23 @@ that limit is stated in the record format and must not be papered over.
   record carries — invariants are evaluated at defined boundaries (task
   start, gate run, completion), never inside `authorize()`, and a stale or
   failed invariant makes `authorize()` refuse (a stop, not an adaptation).
+  *Stale* means: the invariant was last evaluated at a journal position
+  earlier than the current task's starting position — the task-start
+  boundary re-evaluates it before authorizing.
   Envelope accounting is **commit-plus-pending** (A5): the check totals
-  recorded spend plus dispatched-not-yet-completed work, so two sequentially
+  recorded spend plus dispatched-not-yet-completed work — each pending
+  proposal contributes its declared resource impact, or the last measured
+  cost of the same task shape when undeclared — so two sequentially
   authorized proposals cannot jointly overshoot an enforced limit.
-- **Measured observations** (gate runs, resource samples) are recorded by the
-  deterministic helpers themselves, which stamp `observed` provenance at
-  write time (§4.3); agent assertions enter as `asserted`. An acceptance
-  criterion that requires `observed` evidence is satisfied only by
-  helper-stamped items; a hand-written line claiming `observed` is a writer
-  bypass — reported by the checker where the records allow, and named
-  honestly in the format's limits rather than claimed impossible.
+- **Measured observations** (gate runs, resource samples) are `observed`
+  only when the core's runner **executed** them — the executor rule above
+  (A1, §4.5). A helper writing down a result it did not execute mediates a
+  write, not an execution: that item is `asserted` with the mediation
+  named, exactly like an agent assertion. An acceptance criterion that
+  requires `observed` evidence is satisfied only by runner-executed items;
+  a hand-written line claiming `observed` is a writer bypass — reported by
+  the checker where the records allow, and named honestly in the format's
+  limits rather than claimed impossible.
 - **The core is the gate executor** (A1): gate commands run through a shipped
   stdlib runner helper — subprocess with the declared cwd, environment,
   timeout and captured outputs — which is what makes `observed` mean
@@ -351,9 +380,15 @@ conditions (fresh context, cross-host resume) are explicit contract fields.
   contract authoring per criterion; minor prose/cosmetic changes are exempt.
 - A declared regression or discrimination control has **mechanical
   residency** (U2, closing A6): the core executes both legs itself and
-  records the observed `control_pair` — the scoped check against the
-  pre-change tree (reverse-diff worktree, or the recorded starting
-  fingerprint) and against the working tree. The control passes only on
+  records the observed `control_pair`. The **old leg is materialized
+  deterministically** (D2-6): a worktree at the recorded starting
+  fingerprint carrying only the gate's declared check artifacts from the
+  working tree — the new test travels back, product files stay at their
+  starting state, and user dirty state is never reverted (§2 row 16). The
+  new leg runs against the working tree. On non-git hosts the old leg
+  cannot be materialized from a fingerprint alone — the pair records
+  `control=unavailable`, never a synthesized old-tree result. The control
+  passes only on
   (old: FAIL, new: PASS). (PASS, PASS) is recorded as **non-discriminating**,
   never rounded up to a pass; an unavailable leg records
   `control=unavailable`. The lab's own calibration matrix
@@ -445,18 +480,32 @@ preserved. The v6 reader accepts v5 plans read-only; it never rewrites them.
 ### 9.3 Migration
 
 Migration is explicit (`migrate`-style request), one-directional, and
-performs: preview → backup → integrity check → stable-ID and evidence mapping
-(v5 task numbers become `T-*` ids; gate records become journal items with
-provenance "migrated" labeled `asserted` — agent-invoked history is a claim,
-not a helper execution, and criteria accepting only `observed` evidence do
-not inherit completion from migration: the preview lists them, and they close
-when new helper-executed evidence lands, A7) → interruption recovery at each
-step, in the shape of
-the existing promotion-recovery contract. A failed or interrupted migration
+performs: preview → backup → integrity check → **contract synthesis** →
+stable-ID and evidence mapping (v5 task numbers become `T-*` ids; gate
+records become journal items with provenance "migrated" labeled `asserted`
+— agent-invoked history is a claim, not a helper execution, and criteria
+accepting only `observed` evidence do not inherit completion from
+migration: the preview lists them as **re-evidence criteria** together
+with the task that will re-run their gates and the envelope those re-runs
+draw on, and they close when new helper-executed evidence lands, A7) →
+interruption recovery at each step, in the shape of
+the existing promotion-recovery contract. **Contract synthesis (D2-5):**
+because §3.1 and §14.5 refuse post-migration execution without a
+contract, the migration itself synthesizes one from the mapped plan —
+outcome, acceptance criteria (with their evidence classes), invariants,
+scope and remaining envelope — and writes the materialization-time
+approval record citing the synthesized `contract_id`, with the migration
+request as the recorded authority. A plan whose completed tasks now hold
+re-evidence criteria is `blocked`-by-default at those criteria, not
+completed; the preview states this. A failed or interrupted migration
 leaves the v5 plan recoverable — resume the migration from its recorded
 phase marker or restore the backup — and resumable under v5. Rollback after
 a completed migration means restoring the backup; the journal records the
 migration event either way.
+
+Reverse compatibility, one line (D2-10): a v6 plan opened by a v5 runner is
+**unsupported** and refuses with a clear error naming the contract pointer —
+the spec §6.5 unknown-format pattern, never a guessed legacy parse.
 
 ### 9.4 The major, concretely
 
@@ -481,10 +530,10 @@ release-bot owned; nothing in this RFC hand-edits them.
 
 | Boundary | Positive control | Negative/fault control | Kind |
 | --- | --- | --- | --- |
-| Authorization | In-scope adaptation accepted | Scope/acceptance/permission expansion refused; first task-start without an approval record citing the live `contract_id` bytes refused | Runtime invariant |
+| Authorization | In-scope adaptation accepted | Scope/acceptance/permission expansion refused; first task-start without an approval record citing the live `contract_id` bytes refused | Runtime invariant (mode-uniform approval record, §3.1) |
 | Dependency scheduling | Ready task selected | Cycle, missing prerequisite, starvation | Runtime invariant |
-| Evidence validity | Equivalent-input reuse accepted | Dirty input/toolchain change invalidates evidence | Runtime invariant |
-| Test reality | Nonempty passing assertions | Zero tests, truncated output, missing binary; non-discriminating control pair (PASS, PASS) | Runtime invariant |
+| Evidence validity | Equivalent-input reuse accepted | Dirty input/toolchain change invalidates evidence | Runtime invariant (structural); execution trust follows §4.5 labels |
+| Test reality | Nonempty passing assertions | Zero tests, truncated output, missing binary; non-discriminating control pair (PASS, PASS) | Runtime invariant where the gate command runs through the core's runner; detection + reporting where it cannot (§5) |
 | Completion | Verified outcome closes | Narrative-only claim or missing acceptance refuses | Runtime invariant |
 | Recovery | Resume from durable checkpoint | Crash at each write/publication boundary | Runtime invariant |
 | Persistence | Idempotent replay | Duplicate/concurrent/corrupt submissions | Runtime invariant |
@@ -539,7 +588,9 @@ and compatibility discipline.
 5. Interlocks specified as implementation requirements (A12): `T-*` ids are
    minted by the guarded writer with collision refusal, never by the
    scheduler; journal rolls may not truncate below the highest
-   snapshot-cited position (or the snapshot re-cites post-roll); a crash
+   snapshot-cited position (or the snapshot re-cites post-roll) —
+   `regenerated` positions (§4.1) are views, not journal positions, and are
+   ignored for roll bounding, forcing nothing; a crash
    between manifest and contract leaves a plan whose v6-ness is discoverable
    through the manifest's contract pointer — the writer materializes the
    contract before the first task and refuses execution without it.
@@ -561,9 +612,11 @@ and compatibility discipline.
 - `docs/evaluations/v6/DECISIONS.md` (decision log for this RFC)
 - `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE_REVIEW.md` (the
   local gitignored record of the independent design review; its findings and
-  dispositions are incorporated in this draft-1 text)
-- `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE_REDTEAM.md` (the
-  local gitignored record of the adversarial red-team; its findings A1–A13,
-  capabilities B1–B5 and upgrades U1–U5 are incorporated in this draft-2
-  text, and its own citations of the lab's oracle-calibration evidence are
+  dispositions were incorporated in the draft-1 text)
+- `PLAN_v6_verified_autonomy` `analysis_results/ARCHITECTURE_REDTEAM.md` and
+  `ARCHITECTURE_REDTEAM_D2.md` (the local gitignored records of the
+  adversarial red-team and its draft-2 delta review; findings A1–A13,
+  capabilities B1–B5 and upgrades U1–U5 are incorporated in draft-2, the
+  delta findings D2-1–D2-10 in this draft-3, and the red-team's own
+  citations of the lab's oracle-calibration evidence are
   the empirical grounding for §6's control pairs)
