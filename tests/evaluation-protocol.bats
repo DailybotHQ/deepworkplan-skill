@@ -84,10 +84,17 @@ PYEOF
   [[ "$output" == *"$total"* ]]
 }
 
-@test "the launch gate refuses the unset envelope" {
-  run python3 "$CALC" gate "$DESIGN"
+@test "the launch gate refuses a synthetic unset envelope" {
+  modify_design "d['resource_envelope'].update({'status': 'UNSET', 'per_run_cap': None, 'total_cap': None})"
+  run python3 "$CALC" gate "$SCRATCH/design.json"
   [ "$status" -eq 1 ]
   [[ "$output" == *"LAUNCH REFUSED"* ]]
+}
+
+@test "the launch gate accepts the authorized real envelope" {
+  run python3 "$CALC" gate "$DESIGN"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"envelope set"* ]]
 }
 
 @test "the launch gate accepts a set envelope" {
