@@ -390,15 +390,16 @@ def score_sc4(root: Path, seed_root: Path) -> dict:
 
 
 def sabotage_sc4(workspace_root: Path):
-    """Broken variant for the SC-4 audit: the classic keyset off-by-one —
-    the cursor comparison regresses from `id > ?` to `id >= ?`, so every
-    page after the first re-serves the previous page's last record. The
-    listing still terminates and never loses a record, but the concatenated
-    pages contain boundary duplicates."""
+    """Broken variant for the SC-4 audit (suite-invisible class): cursor
+    pages skip their first record (OFFSET 1), so every page after the first
+    silently loses an event. The listing still terminates, stays sorted and
+    duplicate-free - the standing behavioral suite cannot see the loss;
+    only the oracle's completeness predicate (every seeded id reachable
+    across pages) fires."""
     path = workspace_root / "server.py"
     text = path.read_text(encoding="utf-8")
     old = '" WHERE id > ? ORDER BY id LIMIT ?", (cursor, limit + 1)).fetchall()'
-    new = '" WHERE id >= ? ORDER BY id LIMIT ?", (cursor, limit + 1)).fetchall()'
+    new = '" WHERE id > ? ORDER BY id LIMIT ? OFFSET 1", (cursor, limit + 1)).fetchall()'
     if old not in text:
         if new in text:
             return  # idempotent
