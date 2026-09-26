@@ -32,6 +32,7 @@ state, never by builds or visual output.
 | SC-7 | retry-timeout | medium | Deliveries that retry after failure converge without duplicates or data loss. | Retried deliveries replay; no duplicate rows; response identity stable. |
 | SC-8 | partial-failure | medium | An interrupted transfer sequence leaves balances consistent with the ledger. | Balances always equal ledger-derived values; a refused or partial sequence records nothing. |
 | SC-9 | api-surface | small | Add `GET /events/{id}` returning a single event by id with its payload and schema version. | 404 for unknown ids; 200 with the exact stored payload for known ids; replayed events readable the same way; the existing suite still passes. |
+| SC-10 | pagination | medium | Add `GET /accounts` listing accounts with `limit`/`cursor` keyset pagination in stable id order. | Every page honors `limit`; concatenated pages contain every account exactly once in stable id order; `nextCursor` terminates; account balances are returned with their accounts; `GET /accounts/{id}` and the existing behavioral suite still pass. |
 
 ## Fairness notes
 

@@ -41,28 +41,52 @@ SEEDS = {
 }
 
 CALIBRATIONS = [
-    {"id": "legacy-LC3", "family": "legacy", "score": oracles.score_legacy_lc3},
-    {"id": "service-SC9", "family": "service", "score": oracles.score_service_sc9},
-    {"id": "astro-AC1", "family": "astro", "score": oracles.score_astro_ac1},
+    {"id": "legacy-LC3", "family": "legacy", "score": oracles.score_legacy_lc3,
+     "reference": "legacy_lc3_k1_fix"},
+    {"id": "service-SC9", "family": "service", "score": oracles.score_service_sc9,
+     "reference": "service_sc9_event_lookup"},
+    {"id": "astro-AC1", "family": "astro", "score": oracles.score_astro_ac1,
+     "reference": "astro_ac1_reading_time"},
+    {"id": "astro-AC6", "family": "astro", "score": oracles.score_astro_ac6,
+     "reference": "astro_ac6_skip_link"},
+    {"id": "astro-AC3", "family": "astro",
+     "score_module": "cases/astro_ac3.py"},
+    {"id": "service-SC5", "family": "service",
+     "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc5"},
+    {"id": "service-SC10", "family": "service",
+     "score_module": "cases/service_sc5_sc10.py", "score_fn": "score_sc10"},
 ]
 
 
-def load_reference(family):
-    name = {
-        "legacy": "legacy_lc3_k1_fix",
-        "service": "service_sc9_event_lookup",
-        "astro": "astro_ac1_reading_time",
-    }[family]
+def load_reference(case):
+    if "reference" not in case:
+        # Case-file style: the module itself carries score/apply/sabotage.
+        return load_case_module(case)
+    name = case["reference"]
     spec = importlib.util.spec_from_file_location(f"ref_{name}", HERE / "reference" / f"{name}.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
+def load_case_module(case):
+    rel = case["score_module"]
+    spec = importlib.util.spec_from_file_location(f"case_{case['id']}", HERE / rel)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def run_case(case, results):
-    family, score = case["family"], case["score"]
+    if "score_module" in case:
+        module = load_case_module(case)
+        family = case["family"]
+        score = getattr(module, case.get("score_fn", "score"))
+        reference = module
+    else:
+        family, score = case["family"], case["score"]
+        reference = load_reference(case)
     seed = SEEDS[family]
-    reference = load_reference(family)
     matrix = {}
     with tempfile.TemporaryDirectory(prefix=f"calib-{case['id']}-") as td:
         base = Path(td)
