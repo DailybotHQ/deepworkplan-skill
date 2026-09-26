@@ -31,6 +31,7 @@ state, never by builds or visual output.
 | SC-6 | schema-compat | medium | A schema v2 event with a new optional field is accepted; a v3 marker is rejected with the current version named. | 201 with the optional field stored; 409 naming `current: 2`. |
 | SC-7 | retry-timeout | medium | Deliveries that retry after failure converge without duplicates or data loss. | Retried deliveries replay; no duplicate rows; response identity stable. |
 | SC-8 | partial-failure | medium | An interrupted transfer sequence leaves balances consistent with the ledger. | Balances always equal ledger-derived values; a refused or partial sequence records nothing. |
+| SC-9 | api-surface | small | Add `GET /events/{id}` returning a single event by id with its payload and schema version. | 404 for unknown ids; 200 with the exact stored payload for known ids; replayed events readable the same way; the existing suite still passes. |
 
 ## Fairness notes
 
