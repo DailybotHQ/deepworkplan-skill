@@ -45,6 +45,8 @@ doc = json.load(open(sys.argv[1]))
 doc['plan'] = 'PLAN_ledger_bats'
 for task in doc['tasks']:
     task['touched_surface'] = [os.environ['SRC']]
+doc['scope']['allowed_command_classes'] = [
+    'cat', 'echo', 'true', 'definitely-not-a-command-xyz']
 doc.pop('contract_id', None)
 cid = c6.compute_contract_id(doc)
 json.dump(dict(doc, contract_id=cid), open(os.path.join(
@@ -152,6 +154,7 @@ PY
     --json '{"task": "T-publish-schemas"}' --idempotent
   # array form: exec'd without a shell — a missing binary never ran
   run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape \
     --json '["definitely-not-a-command-xyz"]'
   [ "$status" -eq 1 ]
   grep -q 'no event is recorded' <<<"$output"
@@ -159,6 +162,7 @@ PY
   ! grep -q 'gate_run' <<<"$output"
   # string form runs through a shell: a 127 IS an execution, recorded honestly
   run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape \
     --json '"definitely-not-a-command-xyz"'
   [ "$status" -eq 1 ]
   run python3 "$LEDGER" --plan "$PLAN" inspect
@@ -194,40 +198,209 @@ PY
   [ "$(grep -c 'refusal' <<<"$output")" -eq 1 ]
 }
 
-@test "pre-start evidence is stale and never satisfies" {
+@test "a restart reopens the evidence window: pre-restart evidence is stale (M4)" {
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
     --actor-kind human --actor-identity bats --idempotent
-  # observed without a recoverable pointer is refused at the record level
-  run python3 "$LEDGER" --plan "$PLAN" append --type gate_run \
-    --json '{"command": "cat src/check.txt", "cwd": ".", "timeout_seconds": 30,
-             "exit_code": 0, "criterion": "AC-valid-contract-shape"}' \
-    --actor-kind helper --actor-identity dwp-ledger/6.0 --trust observed
-  [ "$status" -eq 1 ]
-  grep -q 'evidence_path: required' <<<"$output"
-  # gate_run BEFORE task_start with its pointer: recorded (history) but
-  # stale for the task — it can never satisfy an in-window criterion
-  python3 "$LEDGER" --plan "$PLAN" append --type gate_run \
-    --json '{"command": "cat src/check.txt", "cwd": ".", "timeout_seconds": 30,
-             "exit_code": 0, "criterion": "AC-valid-contract-shape"}' \
-    --actor-kind helper --actor-identity dwp-ledger/6.0 \
-    --trust observed --evidence-path 'gates/prestart.log' \
-    --note 'pre-start evidence probe'
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
+  python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape --json '"cat src/check.txt"' >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 0 ]
+  # a SECOND task_start (new session actor) restarts the attempt: the
+  # window anchors on the LATEST task_start, so the first attempt's
+  # observed evidence is stale and can never satisfy the new attempt
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --actor-identity bats-restart \
+    --idempotent
   run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
   [ "$status" -eq 4 ]
   grep -q 'lack in-window accepted evidence' <<<"$output"
-  # the stale event is carried as stale, visible in the projection
   python3 "$LEDGER" --plan "$PLAN" project >/dev/null
   python3 - "$PLAN/state.json" <<'PY'
 import json, sys
 state = json.load(open(sys.argv[1]))
 crit = [c for t in state['tasks'] if t['id'] == 'T-publish-schemas'
         for c in t['criteria']]
-assert crit and crit[0].get('stale_seqs') == [2], crit
+assert crit and crit[0].get('stale_seqs') == [3], crit
+assert crit[0].get('satisfied') is False, crit
 print('stale carried:', crit[0]['stale_seqs'])
+PY
+}
+
+@test "append can never mint gate_run records or observed trust (B1/A1)" {
+  python3 "$LEDGER" --plan "$PLAN" append --type approval \
+    --json '{"authority": "bats", "mechanism": "plan_authorship",
+             "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
+    --actor-kind human --actor-identity bats --idempotent
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  mkdir -p "$PLAN/analysis_results"
+  echo '{"spend_usd": 1.0}' > "$PLAN/analysis_results/meter.json"
+  # a mediated write can never be observed gate evidence
+  run python3 "$LEDGER" --plan "$PLAN" append --type gate_run \
+    --json '{"command": "cat src/check.txt", "cwd": ".", "timeout_seconds": 30,
+             "exit_code": 0, "criterion": "AC-valid-contract-shape",
+             "task": "T-publish-schemas"}' \
+    --actor-kind helper --actor-identity dwp-ledger/6.0 --trust observed \
+    --evidence-path 'gates/x.log'
+  [ "$status" -eq 1 ]
+  grep -q 'produced only by the gate executor' <<<"$output"
+  # observations are agent-mediated claims: asserted, never observed
+  run python3 "$LEDGER" --plan "$PLAN" append --type observation \
+    --json '{"statement": "looks green"}' --actor-kind helper \
+    --actor-identity dwp-ledger/6.0 --trust observed \
+    --evidence-path 'analysis_results/meter.json'
+  [ "$status" -eq 1 ]
+  grep -q 'minted only by execution' <<<"$output"
+  # observed metering requires a host_adapter that read the meter
+  run python3 "$LEDGER" --plan "$PLAN" append --type resource_sample \
+    --json '{"source": "bats-meter", "limit_id": "spend_usd", "value": 1.0,
+             "unit": "USD"}' \
+    --actor-kind agent --actor-identity bats --trust observed \
+    --evidence-path 'analysis_results/meter.json'
+  [ "$status" -eq 1 ]
+  grep -q 'host_adapter' <<<"$output"
+  # and the cited artifact must exist
+  run python3 "$LEDGER" --plan "$PLAN" append --type resource_sample \
+    --json '{"source": "bats-meter", "limit_id": "spend_usd", "value": 1.0,
+             "unit": "USD"}' \
+    --actor-kind host_adapter --actor-identity bats-meter --trust observed \
+    --evidence-path 'analysis_results/nope.json'
+  [ "$status" -eq 1 ]
+  grep -q 'does not resolve' <<<"$output"
+  # the one legal non-gate observed record: host adapter, real artifact
+  run python3 "$LEDGER" --plan "$PLAN" append --type resource_sample \
+    --json '{"source": "bats-meter", "limit_id": "spend_usd", "value": 1.0,
+             "unit": "USD"}' \
+    --actor-kind host_adapter --actor-identity bats-meter --trust observed \
+    --evidence-path 'analysis_results/meter.json'
+  [ "$status" -eq 0 ]
+  # none of the refused appends left a record behind
+  run python3 "$LEDGER" --plan "$PLAN" inspect
+  [ "$(grep -c 'gate_run' <<<"$output")" -eq 0 ]
+  [ "$(grep -c 'resource_sample' <<<"$output")" -eq 1 ]
+}
+
+@test "gate runs bind to declared intent, task start and command class (M5)" {
+  python3 "$LEDGER" --plan "$PLAN" append --type approval \
+    --json '{"authority": "bats", "mechanism": "plan_authorship",
+             "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
+    --actor-kind human --actor-identity bats --idempotent
+  # observed evidence exists only inside an attempt: no task_start, no gate
+  run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape --json '"cat src/check.txt"'
+  [ "$status" -eq 1 ]
+  grep -q 'no task_start' <<<"$output"
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  # the criterion must be one this task declares
+  run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-journal-catalog-closed --json '"cat src/check.txt"'
+  [ "$status" -eq 1 ]
+  grep -q 'not declared in task' <<<"$output"
+  # the command must be inside the declared command classes
+  run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape --json '"grep -c x src/check.txt"'
+  [ "$status" -eq 1 ]
+  grep -q 'outside the contract declared command classes' <<<"$output"
+  # nothing was recorded for the refused runs
+  run python3 "$LEDGER" --plan "$PLAN" inspect
+  ! grep -q 'gate_run' <<<"$output"
+}
+
+@test "a replayed task_start under an unapproved revision is refused (M1)" {
+  python3 "$LEDGER" --plan "$PLAN" append --type approval \
+    --json '{"authority": "bats", "mechanism": "plan_authorship",
+             "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
+    --actor-kind human --actor-identity bats --idempotent
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  # revision 2 exists but carries no approval: the replayed event would
+  # be content-identical to the recorded one — the approval gate runs
+  # BEFORE dedup, so the replay is refused instead of silently accepted
+  python3 - "$PLAN/contract.json" <<'PY'
+import importlib.util, json, os, sys
+spec = importlib.util.spec_from_file_location(
+    'c6', os.path.join(os.getcwd(), 'skills/deepworkplan/shared/contract_v6.py'))
+c6 = importlib.util.module_from_spec(spec); spec.loader.exec_module(c6)
+doc = json.load(open(sys.argv[1]))
+doc['revision'] = 2
+doc['parent_contract_id'] = doc.pop('contract_id')
+doc['tasks'][0]['title'] += ' (revision 2)'
+cid2 = c6.compute_contract_id(doc)
+json.dump(dict(doc, contract_id=cid2), open(sys.argv[1], 'w'),
+          indent=2, sort_keys=True)
+PY
+  run python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  [ "$status" -eq 3 ]
+  grep -q 'no approval event cites the live contract_id' <<<"$output"
+}
+
+@test "a complete final event that lost only its newline is restored (B2)" {
+  python3 "$LEDGER" --plan "$PLAN" append --type approval \
+    --json '{"authority": "bats", "mechanism": "plan_authorship",
+             "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
+    --actor-kind human --actor-identity bats --idempotent
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape --json '"cat src/check.txt"' >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 0 ]
+  # simulate the interrupted append that lost only the framing byte
+  python3 - "$PLAN/journal.ndjson" <<'PY'
+import sys
+raw = open(sys.argv[1], 'rb').read()
+assert raw.endswith(b'\n')
+open(sys.argv[1], 'wb').write(raw[:-1])
+PY
+  python3 "$LEDGER" --plan "$PLAN" append --type observation \
+    --json '{"statement": "post-framing"}' --trust asserted >/dev/null
+  # the complete gate_run event survived; the newline is back
+  run python3 "$LEDGER" --plan "$PLAN" inspect
+  [ "$(grep -c 'gate_run' <<<"$output")" -eq 1 ]
+  grep -q 'framing newline restored' "$PLAN/journal.ndjson"
+  [ "$(tail -c 1 "$PLAN/journal.ndjson" | wc -l)" -eq 1 ]
+  # completion still holds on the preserved evidence
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 0 ]
+  # reopening again is stable: exactly one repair of any kind
+  python3 "$LEDGER" --plan "$PLAN" append --type observation \
+    --json '{"statement": "stability"}' --trust asserted >/dev/null
+  [ "$(grep -c 'journal_repair' "$PLAN/journal.ndjson")" -eq 1 ]
+}
+
+@test "after a roll the plan continues: approval and evidence survive (B3)" {
+  python3 "$LEDGER" --plan "$PLAN" append --type approval \
+    --json '{"authority": "bats", "mechanism": "plan_authorship",
+             "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
+    --actor-kind human --actor-identity bats --idempotent
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape --json '"cat src/check.txt"' >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" roll >/dev/null
+  # the replayed task_start dedups against the archive instead of being
+  # refused as unapproved (the archived approval still binds)
+  run python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  [ "$status" -eq 0 ]
+  # the archived gate evidence still satisfies completion
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 0 ]
+  python3 "$LEDGER" --plan "$PLAN" project >/dev/null
+  python3 - "$PLAN/state.json" <<'PY'
+import json, sys
+state = json.load(open(sys.argv[1]))
+task = [t for t in state['tasks'] if t['id'] == 'T-publish-schemas'][0]
+assert task['status'] == 'in_progress', task
+assert task['started_seq'] == 2, task
+assert task['criteria'][0]['satisfied'] is True, task
+print('post-roll projection intact')
 PY
 }
 
@@ -320,17 +493,25 @@ for t in doc["tasks"]:
   grep -q 'bats operator' "$PLAN/journal.ndjson"
 }
 
-@test "export copies journal, snapshot and contract with verified digests" {
+@test "export copies journal, snapshot, contracts and the evidence chain (A10/M2)" {
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
     --actor-kind human --actor-identity bats --idempotent
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
+    --criterion AC-valid-contract-shape --json '"cat src/check.txt"' >/dev/null
   python3 "$LEDGER" --plan "$PLAN" project >/dev/null
   run python3 "$LEDGER" --plan "$PLAN" export --dest "$TEST_REPO/export"
   [ "$status" -eq 0 ]
   ls "$TEST_REPO/export/journal.ndjson" >/dev/null
   ls "$TEST_REPO/export/state.json" >/dev/null
   ls "$TEST_REPO/export/EXPORT_MANIFEST.json" >/dev/null
+  # M2: the reuse cache and every gates/ log travel too — the exported
+  # snapshot cites evidence that must resolve inside the export
+  ls "$TEST_REPO/export/evidence.jsonl" >/dev/null
+  ls "$TEST_REPO/export"/gates/T-publish-schemas/*.log >/dev/null
   python3 - "$TEST_REPO/export" <<'PY'
 import hashlib, json, os, sys
 d = sys.argv[1]
@@ -338,7 +519,15 @@ m = json.load(open(os.path.join(d, 'EXPORT_MANIFEST.json')))
 for name, digest in m['files'].items():
     raw = open(os.path.join(d, name), 'rb').read()
     assert hashlib.sha256(raw).hexdigest() == digest, name
-print('digests verified')
+# every evidence_path the snapshot cites resolves inside the export
+state = json.load(open(os.path.join(d, 'state.json')))
+for task in state['tasks']:
+    for crit in task['criteria']:
+        path = crit.get('evidence_path')
+        if path:
+            assert os.path.isfile(os.path.join(d, path)), path
+assert 'missing_evidence' not in m, m.get('missing_evidence')
+print('digests and evidence chain verified')
 PY
 }
 

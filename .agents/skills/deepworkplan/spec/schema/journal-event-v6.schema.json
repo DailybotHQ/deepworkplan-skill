@@ -209,6 +209,11 @@
         "criterion": {
           "type": "string",
           "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "task": {
+          "type": "string",
+          "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$",
+          "description": "The task whose declared gate_intent this run executes; bound at execution time, never linked afterwards."
         }
       },
       "required": [
@@ -217,7 +222,9 @@
         "cwd",
         "timeout_seconds",
         "exit_code",
-        "trust"
+        "trust",
+        "task",
+        "criterion"
       ]
     },
     "observation": {
@@ -724,6 +731,14 @@
           "type": "string",
           "pattern": "^[0-9a-f]{64}$",
           "description": "Digest of the source snapshot the view rendered from (section 4.4 discipline)."
+        },
+        "digests": {
+          "type": "object",
+          "description": "Per-view sha256 of the rendered bytes (N3: human edits are detected by comparing on-disk content against the last recorded render, so marker-free edits can never be silently overwritten). Keys are view names; values are 64-hex digests.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
         }
       },
       "required": [

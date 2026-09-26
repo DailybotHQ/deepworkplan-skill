@@ -162,18 +162,24 @@ class PlanRecords:
         return stamped or contract_v6.compute_contract_id(self.contract)
 
     def read_journal(self):
-        """Return (events, torn) where torn is (byte_offset, cause) or None.
+        """Return (events, torn, framing) for the LIVE journal.
 
-        A final line that does not parse — or a file not ending in a
-        newline — is a torn tail from a crash mid-append (section 4.3).
+        torn is (byte_offset, cause) or None: a final line that does not
+        parse or undecodable bytes — a torn tail from a crash mid-append
+        (section 4.3), truncated at the line start on the next open.
+        framing is True when the final line parsed as a complete event
+        but the file lacks its trailing newline: the event is complete
+        and durable — only the framing byte was lost — so the writer
+        restores the newline instead of deleting it (B2).
         """
         if not os.path.exists(self.journal_path):
-            return [], None
+            return [], None, False
         with open(self.journal_path, 'rb') as fh:
             raw = fh.read()
         events = []
         offset = 0
         torn = None
+        framing = False
         for line in raw.split(b'\n'):
             if not line.strip():
                 offset += len(line) + 1
@@ -190,8 +196,34 @@ class PlanRecords:
                 break
             offset += len(line) + 1
         if torn is None and raw and not raw.endswith(b'\n'):
-            torn = (offset - 1, 'journal does not end in a newline')
-        return events, torn
+            framing = True  # the last line parsed: complete, unframed
+        return events, torn, framing
+
+    def archived_events(self):
+        """B3: every retired archive segment's events, in seq order.
+
+        Rolls archive bytes, never history: the approval gate, the
+        evidence window and the projection read the WHOLE plan record,
+        archived plus live. A corrupt archive segment is an error, never
+        silently skipped.
+        """
+        events = []
+        for archive in self.archives():
+            path = os.path.join(self.dir, archive['file'])
+            with open(path, 'rb') as fh:
+                raw = fh.read()
+            for line in raw.split(b'\n'):
+                if not line.strip():
+                    continue
+                try:
+                    events.append(json.loads(line.decode('utf-8')))
+                except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                    raise LedgerError(
+                        'archive segment %s is corrupt (%s) — archived '
+                        'history is never repaired in place; restore the '
+                        'exported copy' % (archive['file'], exc))
+        events.sort(key=lambda e: e.get('seq', 0))
+        return events
 
     def snapshot_digest(self):
         """sha256 of the snapshot bytes, or None before the first project."""
@@ -304,6 +336,76 @@ class CooperativeLock:
         self.release()
 
 
+# ------------------------------------------- pure projection semantics
+# These functions are the plan's satisfaction semantics with no writer, no
+# lock and no filesystem: they consume (contract, events) and return state.
+# Writer delegates to them, and scheduler.py imports them so the model and
+# the deterministic core can never disagree about what "satisfied" means.
+
+def task_start_seq_of(events, task_id):
+    """The seq of the task's latest task_start event, or None."""
+    start = None
+    for event in events:
+        if isinstance(event, dict) and event.get('type') == 'task_start' \
+                and event.get('task') == task_id:
+            seq = event.get('seq', 0)
+            if start is None or seq > start:
+                start = seq
+    return start
+
+
+def criterion_states(contract, events, task_id):
+    """Satisfaction per criterion with in-window accepted evidence.
+
+    D2-9b: only evidence recorded at or after the task's task_start
+    position counts, with a trust label the criterion accepts.
+    D3-6: boundary invariants are likewise evaluated at or after
+    task-start; earlier items are recorded as stale, never satisfying.
+    """
+    task = None
+    for candidate in contract.get('tasks', []):
+        if candidate.get('id') == task_id:
+            task = candidate
+            break
+    if task is None:
+        raise LedgerError('task %r is not in the contract' % task_id)
+    start = task_start_seq_of(events, task_id)
+    accepted_by = {c['id']: c.get('accepted_evidence', [])
+                   for c in contract['acceptance']['criteria']}
+    states = []
+    for intent in task.get('gate_intent', []):
+        cid = intent.get('criterion')
+        wanted = accepted_by.get(cid, [])
+        best = None
+        stale = []
+        for event in events:
+            if not isinstance(event, dict) or \
+                    event.get('type') != 'gate_run' or \
+                    event.get('criterion') != cid or \
+                    event.get('task') != task_id:
+                continue
+            trust = event.get('trust')
+            if start is None or event.get('seq', 0) < start:
+                stale.append(event.get('seq'))
+                continue
+            if trust in wanted and event.get('exit_code') == 0 and \
+                    (best is None or event['seq'] > best['via_seq']):
+                best = {'criterion': cid, 'satisfied': True,
+                        'via_seq': event['seq'], 'trust': trust,
+                        'evidence_path': event.get('evidence_path')}
+        states.append(best or {
+            'criterion': cid, 'satisfied': False,
+            'started_seq': start, 'stale_seqs': stale})
+    return states
+
+
+def task_complete(contract, events, task_id):
+    """True when every gate_intent criterion has in-window accepted
+    evidence (the same zero-test predicate complete_task enforces)."""
+    return all(state.get('satisfied')
+               for state in criterion_states(contract, events, task_id))
+
+
 # ------------------------------------------------------------------ writer
 
 class Writer:
@@ -314,21 +416,49 @@ class Writer:
             raise LedgerError('Writer requires a held lock')
         self.r = records
         self.lock = lock
-        self.events, torn = records.read_journal()
+        self.events, torn, framing = records.read_journal()
         # seq floor: archives may have retired events above anything the
-        # live journal holds — seq is plan-wide and never goes backwards
+        # live journal holds — seq is plan-wide and never goes backwards.
+        # Set BEFORE any repair: repairs append, and appending reads it.
         self._seq_floor = records.archive_top_seq()
+        # position baseline BEFORE repairs: both repair paths append and
+        # each keeps the baseline correct itself (truncate → offset;
+        # framing restore → new size)
         self._end_offset = self._journal_size()
         if torn is not None:
             self._repair_torn_tail(self.events, torn)
-            if self._journal_size() != self._end_offset:
-                raise LedgerError(
-                    'journal repair left the file at %d bytes, expected %d'
-                    % (self._journal_size(), self._end_offset))
+        if framing:
+            self._restore_framing()
+        # B3: archived events stay first-class plan history — approvals,
+        # evidence windows and projections read archived + live together
+        self.events = records.archived_events() + self.events
 
     def _journal_size(self):
         return os.path.getsize(self.r.journal_path) \
             if os.path.exists(self.r.journal_path) else 0
+
+    def _restore_framing(self):
+        """B2: the final event is complete but lost its newline.
+
+        The newline is framing, not content: restore it and record the
+        repair. The complete event itself is never deleted — only a
+        final line that does not parse is treated as a torn append.
+        """
+        size = self._journal_size()
+        with open(self.r.journal_path, 'ab') as fh:
+            fh.write(b'\n')
+            fh.flush()
+            os.fsync(fh.fileno())
+        # the framing byte joins the writer's position baseline; the
+        # repair event appended below then advances it normally
+        self._end_offset = self._journal_size()
+        self._append_raw('journal_repair',
+                         {'byte_offset': size,
+                          'cause': 'final event complete, framing newline '
+                                   'restored after an interrupted append'},
+                         actor={'kind': 'helper', 'identity': LEDGER_IDENTITY},
+                         ts=_utc_now(), note='complete events are durable; '
+                         'only the framing byte was missing')
 
     def _repair_torn_tail(self, events, torn):
         """Truncate the torn tail and record a journal_repair event (4.3)."""
@@ -407,16 +537,71 @@ class Writer:
         self._check_position()
         actor = actor or {'kind': 'agent', 'identity': 'caller'}
         ts = ts or _utc_now()
-        if idempotent:
-            body_key = _content_key(etype, payload, actor)
-            for prior in self.events:
-                if _content_key(prior.get('type'), _payload_of(prior),
-                                prior.get('actor')) == body_key:
-                    return prior
+        self._enforce_mint_rules(etype, actor, trust, evidence_path)
+        # M1: the approval gate runs BEFORE idempotent dedup — a replayed
+        # task_start under an unapproved contract revision is refused,
+        # never silently accepted as the old revision's event
         if etype == 'task_start':
             self._require_approval()
+        if idempotent:
+            body_key = _content_key(etype, payload, actor,
+                                    self.r.contract_id)
+            for prior in self.events:
+                if _content_key(prior.get('type'), _payload_of(prior),
+                                prior.get('actor'),
+                                prior.get('contract_id')) == body_key:
+                    return prior
         return self._append_raw(etype, payload, actor, ts, note,
                                 trust=trust, evidence_path=evidence_path)
+
+    def _enforce_mint_rules(self, etype, actor, trust, evidence_path):
+        """B1/A1: `observed` is minted only by execution, never declared.
+
+        gate_run records exist only through run_gate (the helper that
+        executed the command). Outside the gate executor, observed is
+        legal for exactly one case: host-adapter metering
+        (resource_sample from a host_adapter actor citing an evidence
+        artifact that exists). Every other caller-declared observed —
+        and every observed/imported record whose pointer does not
+        resolve — is refused here.
+        """
+        if etype == 'gate_run':
+            raise LedgerError(
+                'gate_run records are produced only by the gate executor '
+                '(ledger.py gate) — a mediated write can never be '
+                'observed evidence (A1)')
+        if trust == 'observed':
+            if etype != 'resource_sample':
+                raise LedgerError(
+                    'trust=observed is minted only by execution: the gate '
+                    'executor for gate_run records, or host-adapter '
+                    'metering for resource_sample records. Record this as '
+                    'asserted with the mediation named (A1)')
+            if (actor or {}).get('kind') != 'host_adapter':
+                raise LedgerError(
+                    'observed resource samples require a host_adapter '
+                    'actor that read the meter — agent/helper writers '
+                    'record asserted')
+        if trust in ('observed', 'imported'):
+            self._check_evidence_path(evidence_path)
+
+    def _check_evidence_path(self, evidence_path):
+        """An observed/imported record must cite a recoverable artifact."""
+        if not evidence_path:
+            raise LedgerError(
+                'trust=%s requires evidence_path — a recoverable pointer, '
+                'never a bare claim' % 'observed')
+        candidates = [os.path.join(self.r.dir, evidence_path)]
+        root = self.repo_root()
+        if root:
+            candidates.append(os.path.join(root, evidence_path))
+        if os.path.isabs(evidence_path):
+            candidates.insert(0, evidence_path)
+        if not any(os.path.isfile(c) for c in candidates):
+            raise LedgerError(
+                'evidence_path %r does not resolve inside the plan or the '
+                'repository — observed/imported records must cite an '
+                'artifact that exists' % evidence_path)
 
     def _require_approval(self):
         """D3-7/D2-3: task_start is refused until an approval event cites
@@ -437,9 +622,6 @@ class Writer:
             'task_start refused: no approval event cites the live '
             'contract_id — record the materialization-time approval first '
             '(mechanism: plan_authorship or pre_authorization)')
-
-    def _payload_of(self, event):
-        raise NotImplementedError  # replaced by module function use
 
     # -- gate execution (the only source of `observed`) --------------------
 
@@ -518,6 +700,38 @@ class Writer:
         reuse); a changed input is a new fingerprint and re-runs.
         """
         self._check_position()
+        task = self._task(task_id)
+        # M5: a gate run is bound to the contract's declared intent —
+        # the criterion must be one this task declares, the task must
+        # have started (observed evidence exists only inside an
+        # attempt, D2-9b), and the command must be inside the declared
+        # command classes where the contract declares them.
+        intents = {i.get('criterion')
+                   for i in task.get('gate_intent', [])}
+        if not criterion:
+            raise LedgerError(
+                'gate runs require a criterion from the task gate_intent — '
+                '"some command exited 0" is not acceptance evidence')
+        if criterion not in intents:
+            raise LedgerError(
+                'criterion %r is not declared in task %s gate_intent %s — '
+                'the linkage cannot be chosen after the run' %
+                (criterion, task_id, sorted(intents)))
+        start = task_start_seq_of(self.events, task_id)
+        if start is None:
+            raise LedgerError(
+                'gate refused for %s: the task has no task_start — '
+                'observed evidence is only recorded inside a task '
+                'attempt, never before it' % task_id)
+        declared = self.r.contract.get('scope', {}).get(
+            'allowed_command_classes') or []
+        if declared:
+            head = command if isinstance(command, str) else ' '.join(command)
+            head = head.split()[0] if head.split() else ''
+            if os.path.basename(head) not in declared:
+                raise LedgerError(
+                    'gate command %r is outside the contract declared '
+                    'command classes %s' % (head, sorted(declared)))
         fp = self.fingerprint(task_id, command, selection)
         if reuse:
             prior = self.evidence_lookup(fp)
@@ -525,7 +739,6 @@ class Writer:
                 return {'reused': True, 'fingerprint': fp,
                         'exit_code': prior['exit_code'],
                         'log': prior['log'], 'seq': prior.get('seq')}
-        task = self._task(task_id)
         gate_cwd = self.repo_root()
         log_dir = log_dir or os.path.join(self.r.gates_dir, task_id)
         os.makedirs(log_dir, exist_ok=True)
@@ -555,9 +768,9 @@ class Writer:
                    else ' '.join(command),
                    'cwd': os.path.abspath(gate_cwd),
                    'timeout_seconds': timeout,
-                   'exit_code': exit_code}
-        if criterion:
-            payload['criterion'] = criterion
+                   'exit_code': exit_code,
+                   'task': task_id,
+                   'criterion': criterion}
         event = self._append_raw('gate_run', payload,
                                  actor={'kind': 'helper',
                                         'identity': LEDGER_IDENTITY},
@@ -577,47 +790,11 @@ class Writer:
     # -- projection ---------------------------------------------------------
 
     def task_start_seq(self, task_id):
-        for event in self.events:
-            if event.get('type') == 'task_start' and \
-                    event.get('task') == task_id:
-                return event['seq']
-        return None
+        return task_start_seq_of(self.events, task_id)
 
     def criterion_state(self, task_id):
-        """Satisfaction per criterion with in-window accepted evidence.
-
-        D2-9b: only evidence recorded at or after the task's task_start
-        position counts, with a trust label the criterion accepts.
-        D3-6: boundary invariants are likewise evaluated at or after
-        task-start; earlier items are recorded as stale, never satisfying.
-        """
-        task = self._task(task_id)
-        start = self.task_start_seq(task_id)
-        accepted_by = {c['id']: c.get('accepted_evidence', [])
-                       for c in self.r.contract['acceptance']['criteria']}
-        states = []
-        for intent in task.get('gate_intent', []):
-            cid = intent.get('criterion')
-            wanted = accepted_by.get(cid, [])
-            best = None
-            stale = []
-            for event in self.events:
-                if event.get('type') != 'gate_run' or \
-                        event.get('criterion') != cid:
-                    continue
-                trust = event.get('trust')
-                if start is None or event.get('seq', 0) < start:
-                    stale.append(event.get('seq'))
-                    continue
-                if trust in wanted and event.get('exit_code') == 0 and \
-                        (best is None or event['seq'] > best['via_seq']):
-                    best = {'criterion': cid, 'satisfied': True,
-                            'via_seq': event['seq'], 'trust': trust,
-                            'evidence_path': event.get('evidence_path')}
-            states.append(best or {
-                'criterion': cid, 'satisfied': False,
-                'started_seq': start, 'stale_seqs': stale})
-        return states
+        # The pure module-level semantics; the writer adds only the lock.
+        return criterion_states(self.r.contract, self.events, task_id)
 
     def task_status(self, task_id):
         if self.task_start_seq(task_id) is None:
@@ -655,7 +832,7 @@ class Writer:
             'tasks': [],
             'positions': positions,
             'resources': self._resource_totals(),
-            'checkpoint': self._last_field('note'),
+            'checkpoint': self._last_authority_question(),
             'blocker': None,
         }
         archives = self.r.archives()
@@ -690,7 +867,7 @@ class Writer:
                 }
         return {'limits': limits, 'latest_samples': samples}
 
-    def _last_field(self, _field):
+    def _last_authority_question(self):
         for event in reversed(self.events):
             if event.get('type') == 'intervention' and \
                     event.get('category') == 'new_authority':
@@ -739,16 +916,63 @@ class Writer:
         single = os.path.join(self.r.dir, 'contract.json')
         if os.path.isfile(single):
             sources.append(single)
+        # M2: the export is the durability posture — it must carry the
+        # evidence chain its own snapshot cites. Archives (the journal
+        # history after rolls), the reuse cache, every gates/ log and
+        # every evidence_path cited by a record are part of the export;
+        # a cited pointer that does not resolve is recorded missing,
+        # never silently dropped.
+        for archive in self.r.archives():
+            sources.append(os.path.join(self.r.dir, archive['file']))
+        cache = os.path.join(self.r.dir, 'evidence.jsonl')
+        if os.path.isfile(cache):
+            sources.append(cache)
+        cited = []
+        for event in self.events:
+            pointer = event.get('evidence_path')
+            if isinstance(pointer, str) and pointer:
+                cited.append(pointer)
+        if os.path.isfile(self.r.state_path):
+            with open(self.r.state_path, encoding='utf-8') as fh:
+                snapshot = json.load(fh)
+            for t in snapshot.get('tasks', []):
+                for c in t.get('criteria', []):
+                    pointer = c.get('evidence_path')
+                    if isinstance(pointer, str) and pointer:
+                        cited.append(pointer)
+        missing = []
+        for pointer in sorted(set(cited)):
+            local = os.path.join(self.r.dir, pointer)
+            root = self.repo_root()
+            alt = os.path.join(root, pointer) if root else None
+            picked = None
+            for cand in (local, alt):
+                if cand and os.path.isfile(cand):
+                    picked = cand
+                    break
+            if picked is None:
+                missing.append(pointer)
+            elif picked not in sources:
+                sources.append(picked)
+        gates_dir = getattr(self.r, 'gates_dir',
+                            os.path.join(self.r.dir, 'gates'))
+        if os.path.isdir(gates_dir):
+            for base, _dirs, names in os.walk(gates_dir):
+                for name in sorted(names):
+                    sources.append(os.path.join(base, name))
         for src in sources:
             if not os.path.isfile(src):
                 continue
             with open(src, 'rb') as fh:
                 raw = fh.read()
-            target = os.path.join(dest, os.path.basename(src))
+            rel = os.path.relpath(src, self.r.dir)
+            target = os.path.join(dest, rel)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, 'wb') as fh:
                 fh.write(raw)
-            manifest['files'][os.path.basename(src)] = \
-                hashlib.sha256(raw).hexdigest()
+            manifest['files'][rel] = hashlib.sha256(raw).hexdigest()
+        if missing:
+            manifest['missing_evidence'] = missing
         manifest_path = os.path.join(dest, 'EXPORT_MANIFEST.json')
         with open(manifest_path, 'w', encoding='utf-8') as fh:
             json.dump(manifest, fh, sort_keys=True, indent=2)
@@ -778,7 +1002,9 @@ class Writer:
         os.remove(self.r.journal_path)
         with open(self.r.journal_path, 'w', encoding='utf-8'):
             pass
-        self.events = []
+        # B3: only the LIVE segment is retired — self.events keeps the
+        # full plan history (archived + live), so approvals, evidence
+        # windows and projections survive the roll
         self._end_offset = 0
         # the archive's top becomes the floor: the next append continues
         # the plan-wide seq, never restarting at 1 (seq never regresses)
@@ -801,8 +1027,11 @@ def _hash_file(path):
 
 
 def _env_subset():
-    keep = ('PATH', 'LANG', 'LC_ALL', 'PYTHONDONTWRITEBYTECODE', 'TERM')
-    return {k: os.environ.get(k, '') for k in keep}
+    keep = ('PATH', 'LANG', 'LC_ALL', 'PYTHONDONTWRITEBYTECODE', 'TERM',
+            'VIRTUAL_ENV', 'PYTHONPATH')
+    env = {k: os.environ.get(k, '') for k in keep}
+    env['interpreter'] = os.path.basename(sys.executable or '')
+    return env
 
 
 def _parse_command(raw):
@@ -830,9 +1059,12 @@ def _payload_of(event):
     return {k: v for k, v in event.items() if k not in envelope}
 
 
-def _content_key(etype, payload, actor):
+def _content_key(etype, payload, actor, contract_id=None):
+    """M1: content identity includes the contract revision — a replay
+    under a different contract is new content, never the old event."""
     body = {'type': etype, 'payload': payload,
-            'actor_identity': (actor or {}).get('identity')}
+            'actor_identity': (actor or {}).get('identity'),
+            'contract_id': contract_id}
     return hashlib.sha256(json.dumps(body, sort_keys=True,
                                      separators=(',', ':'))
                           .encode('utf-8')).hexdigest()
@@ -897,13 +1129,65 @@ def self_test():
         check('duplicate task_start is idempotent',
               ts1['seq'] == ts2['seq'],
               'seq %r vs %r' % (ts1.get('seq'), ts2.get('seq')))
-        # 3. observed gate evidence in-window satisfies; stale does not
-        writer.append('gate_run', {'command': 'true', 'cwd': tmp,
-                                   'timeout_seconds': 30, 'exit_code': 0,
-                                   'criterion': 'AC-one'},
-                      actor={'kind': 'helper', 'identity': LEDGER_IDENTITY},
-                      ts=_utc_now(), trust='observed',
-                      evidence_path='gates/x.log')
+        # 3. B1: append can never mint gate_run records or observed
+        # trust outside host-adapter metering
+        try:
+            writer.append('gate_run',
+                          {'command': 'true', 'cwd': tmp,
+                           'timeout_seconds': 30, 'exit_code': 0,
+                           'criterion': 'AC-one', 'task': 'T-implement'},
+                          actor={'kind': 'helper',
+                                 'identity': LEDGER_IDENTITY},
+                          ts=_utc_now(), trust='observed',
+                          evidence_path='gates/x.log')
+            check('append gate_run must refuse', False)
+        except LedgerError:
+            check('append gate_run refused (only the executor mints)',
+                  True)
+        try:
+            writer.append('observation', {'statement': 'forged'},
+                          actor={'kind': 'helper',
+                                 'identity': LEDGER_IDENTITY},
+                          trust='observed',
+                          evidence_path='analysis_results/real.log')
+            check('append observed must refuse', False)
+        except LedgerError:
+            check('append observed refused (A1)', True)
+        meter_dir = os.path.join(plan, 'analysis_results')
+        os.makedirs(meter_dir, exist_ok=True)
+        with open(os.path.join(meter_dir, 'meter.json'), 'w',
+                  encoding='utf-8') as fh:
+            json.dump({'spend_usd': 1.25}, fh)
+        try:
+            writer.append('resource_sample',
+                          {'source': 'selftest-meter',
+                           'limit_id': 'spend_usd', 'value': 1.25,
+                           'unit': 'USD'},
+                          actor={'kind': 'agent', 'identity': 'selftest'},
+                          trust='observed',
+                          evidence_path='analysis_results/meter.json')
+            check('observed metering requires a host_adapter', False)
+        except LedgerError:
+            check('observed metering requires a host_adapter', True)
+        writer.append('resource_sample',
+                      {'source': 'selftest-meter', 'limit_id': 'spend_usd',
+                       'value': 1.25, 'unit': 'USD'},
+                      actor={'kind': 'host_adapter',
+                             'identity': 'selftest-meter'},
+                      trust='observed',
+                      evidence_path='analysis_results/meter.json')
+        # 3b. M5: a gate run binds to the declared intent
+        try:
+            writer.run_gate('T-implement', 'true', criterion='AC-missing')
+            check('gate criterion must bind to gate_intent', False)
+        except LedgerError:
+            check('gate criterion bound to gate_intent', True)
+        # 3c. the real executor produces the observed record and it
+        # satisfies in-window
+        run = writer.run_gate('T-implement', 'true', criterion='AC-one')
+        check('gate executor ran and recorded',
+              run.get('reused') is False and run.get('exit_code') == 0,
+              repr(run))
         states = writer.criterion_state('T-implement')
         check('in-window observed evidence satisfies',
               states and states[0].get('satisfied'))
@@ -979,8 +1263,90 @@ def self_test():
               state.get('archives') == [{
                   'file': os.path.basename(archive),
                   'first_seq': 1, 'last_seq': top}])
+        # 9. B3: after a roll the plan continues — the archived approval
+        # still binds and a replayed task_start dedups against the
+        # archive instead of being refused as unapproved
+        replay = writer5.append('task_start', {'task': 'T-implement'},
+                                actor={'kind': 'agent',
+                                       'identity': 'selftest'},
+                                idempotent=True)
+        check('post-roll replay dedups against the archive',
+              replay.get('seq') == ts1['seq'],
+              'seq %r, original task_start seq %r' % (replay.get('seq'),
+                                                      ts1['seq']))
+        snap = json.load(open(rec5.state_path, encoding='utf-8'))
+        inprog = [t for t in snap.get('tasks', [])
+                  if t['id'] == 'T-implement']
+        check('post-roll projection keeps task positions',
+              bool(inprog) and inprog[0].get('status') == 'in_progress'
+              and inprog[0].get('started_seq') is not None,
+              repr(inprog))
         lock5.release()
         del snap1
+        # 10. M1: a replayed task_start under an UNAPPROVED revision is
+        # refused — the approval gate runs before dedup and the content
+        # key carries the contract id
+        rev2 = json.loads(json.dumps(contract))
+        rev2['revision'] = 2
+        rev2['parent_contract_id'] = cid
+        rev2['tasks'][0]['touched_surface'] = [src]
+        cid2 = contract_v6.compute_contract_id(rev2)
+        with open(os.path.join(plan, 'contract.json'), 'w',
+                  encoding='utf-8') as fh:
+            json.dump(dict(rev2, contract_id=cid2), fh)
+        rec6 = PlanRecords(plan)
+        lock6 = CooperativeLock(plan).acquire()
+        writer6 = Writer(rec6, lock6)
+        try:
+            writer6.append('task_start', {'task': 'T-implement'},
+                           actor={'kind': 'agent', 'identity': 'selftest'},
+                           idempotent=True)
+            check('cross-revision replay must refuse', False)
+        except ApprovalMissing:
+            check('cross-revision replay refused (gate before dedup)',
+                  True)
+        except LedgerError:
+            check('cross-revision replay refused (gate before dedup)',
+                  True)
+        # 11. B2: a complete final event that lost only its framing
+        # newline is restored, never deleted
+        writer6.append('observation', {'statement': 'framing probe'},
+                       actor={'kind': 'agent', 'identity': 'selftest'},
+                       trust='asserted')
+        lock6.release()
+        with open(rec6.journal_path, 'rb') as fh:
+            raw = fh.read()
+        if raw.endswith(b'\n'):
+            with open(rec6.journal_path, 'wb') as fh:
+                fh.write(raw[:-1])
+        rec7 = PlanRecords(plan)
+        lock7 = CooperativeLock(plan).acquire()
+        writer7 = Writer(rec7, lock7)
+        framing_repairs = [e for e in writer7.events
+                           if e['type'] == 'journal_repair' and
+                           'framing' in e.get('cause', '')]
+        kept = [e for e in writer7.events
+                if e.get('statement') == 'framing probe']
+        with open(rec7.journal_path, 'rb') as fh:
+            ends_nl = fh.read().endswith(b'\n')
+        check('framing repair restores the newline, keeps the event',
+              len(framing_repairs) == 1 and len(kept) == 1 and ends_nl,
+              'repairs=%d kept=%d ends_nl=%s' %
+              (len(framing_repairs), len(kept), ends_nl))
+        # reopening again is stable: no second repair of any kind
+        total_repairs = [e for e in writer7.events
+                         if e['type'] == 'journal_repair']
+        lock7.release()
+        rec8 = PlanRecords(plan)
+        lock8 = CooperativeLock(plan).acquire()
+        writer8 = Writer(rec8, lock8)
+        repairs_now = [e for e in writer8.events
+                       if e['type'] == 'journal_repair']
+        check('second open after framing repair is stable',
+              len(repairs_now) == len(total_repairs),
+              '%d repairs now vs %d before' %
+              (len(repairs_now), len(total_repairs)))
+        lock8.release()
     return (not failures, failures, probes[0])
 
 
@@ -1036,7 +1402,7 @@ def main(argv):
     try:
         if args.command == 'inspect':
             rec = PlanRecords(find_plan_dir(args.plan))
-            events, torn = rec.read_journal()
+            events, torn, _framing = rec.read_journal()
             print('plan %s contract %s (%d events%s)'
                   % (rec.contract['plan'], rec.contract_id[:12], len(events),
                      '; TORN TAIL' if torn else ''))

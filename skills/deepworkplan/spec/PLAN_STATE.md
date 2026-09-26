@@ -465,20 +465,35 @@ shapes. The same rule gave v6 the `plan-contract/v6` and
 **Write discipline.** One writer per plan. A cooperative `.ledger.lock`
 directory serializes writers; a session that finds the journal grown
 behind its own observed byte position refuses to append (the collision is
-reported, never interleaved). A torn final line from a crash mid-append is
-truncated on the next open and a `journal_repair` event records the byte
-offset and cause — the append-only rule binds complete events. The
+reported, never interleaved). A final line from a crash mid-append is
+handled by what it IS, not by where it sits: a line that **does not
+parse** is a torn tail — truncated at its line start on the next open,
+with a `journal_repair` event recording the byte offset and cause — while
+a line that **parses but lost only its trailing newline** is a complete,
+durable event: the writer restores the framing byte and records the
+repair, and the event itself is never deleted. The append-only rule binds
+complete events. The
 snapshot is rewritten only by the projector, atomically (temp + rename +
 fsync). No protection is claimed against editors that bypass the writer;
 read-time checks report what the records can show.
 
-**Trust.** Only `ledger.py gate` produces `observed` records — the helper
-itself executes the command with declared cwd, timeout and captured logs.
-A helper writing down a model-reported result mediates a write and the
-record is `asserted` (A1). Criteria count evidence only when recorded at
-or after the task's `task_start` journal position (D2-9b) with an accepted
-trust label; boundary invariants are evaluated at or after task-start
-(D3-6). Pre-start evidence is carried as stale, never satisfying.
+**Trust — the closed mint rule (B1/A1).** `observed` is minted by
+execution, never by declaration. `gate_run` records exist only through
+`ledger.py gate` — the helper itself executes the command with declared
+cwd, timeout and captured logs, bound at execution time to one criterion
+the task's `gate_intent` declares and to a started task; a mediated
+`append` of a `gate_run` is refused outright. Outside the gate executor
+exactly one `observed` path exists: `resource_sample` metering written by
+a `host_adapter` actor citing an evidence artifact that resolves. Every
+`observed`/`imported` record must cite a pointer that resolves inside the
+plan or the repository. Everything else an agent writes down — including
+invariant evaluations, discoveries and model-reported results — is
+`asserted`, with the mediation named. Criteria count evidence only when
+recorded inside the CURRENT attempt — at or after the task's **latest**
+`task_start` journal position (D2-9b) with an accepted trust label; a
+restart reopens the window and earlier evidence is carried as stale,
+never satisfying. Boundary invariants are evaluated at or after
+task-start (D3-6).
 
 **Determinism.** Every timestamp in the snapshot and the views is derived
 from event `ts` values, never the wall clock: replaying the same journal
@@ -501,16 +516,25 @@ has in-window accepted evidence; `ledger.py complete` refuses otherwise
 (zero-test control) and the refusal is itself a recorded event. The
 completion profile view shows which mechanism closed every criterion
 (evidence + trust + pointer, or reconciled authority) — never a bare
-claim.
+claim. In 6.0, reconciled-authority closures render as an explicit
+amendment line in the view footer: rendering them as first-class
+completion rows waits for the lifecycle wiring that mints them.
 
 **Durability and rolls (Q2, bounded by measurement).** `.dwp/` is
 conventionally gitignored, so the default durability posture is
-**export**: `ledger.py export --dest DIR` copies journal + snapshot +
-contract chain with verified digests. Rolls are OFF by default. When
-used, `ledger.py roll` archives the journal beside the plan (nothing is
-deleted; snapshot-cited positions become archive-addressable) — automatic
-roll-sizing waits for measurement data from the confirmation campaign,
-which is why no automatic policy ships in 6.0.
+**export**: `ledger.py export --dest DIR` copies the whole evidence
+chain — journal + snapshot + contract chain, plus roll archives, the
+`evidence.jsonl` reuse cache, every `gates/` log, and every
+`evidence_path` cited by any record or snapshot criterion — with
+verified digests; a cited pointer that does not resolve is listed in the
+manifest as `missing_evidence`, never silently dropped. Rolls are OFF by
+default. When used, `ledger.py roll` retires **live bytes only**: the
+journal archive beside the plan keeps every event first-class (approvals,
+evidence windows and projections read archived + live history — a rolled
+plan continues; nothing is deleted, snapshot-cited positions become
+archive-addressable, and a corrupt archive segment is an error, never a
+silent skip). Automatic roll-sizing waits for measurement data from the
+confirmation campaign, which is why no automatic policy ships in 6.0.
 
 **View layout (Q4).** Four views ship: `tasks` (task table),
 `evidence` (evidence index with trust labels), `audit` (every refusal and

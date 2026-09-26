@@ -45,17 +45,24 @@
     },
     "tasks": {
       "type": "array",
-      "items": { "$ref": "#/$defs/task" }
+      "items": {
+        "$ref": "#/$defs/task"
+      }
     },
     "positions": {
       "type": "object",
       "description": "Latest journal seq per event type (provenance types excluded). A position the journal cannot support after a markdown-wins reconciliation is recorded regenerated, never fabricated.",
-      "additionalProperties": { "$ref": "#/$defs/position" }
+      "additionalProperties": {
+        "$ref": "#/$defs/position"
+      }
     },
     "resources": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["limits", "latest_samples"],
+      "required": [
+        "limits",
+        "latest_samples"
+      ],
       "properties": {
         "limits": {
           "type": "array",
@@ -64,41 +71,75 @@
         },
         "latest_samples": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/sample" }
+          "additionalProperties": {
+            "$ref": "#/$defs/sample"
+          }
         }
       }
     },
     "checkpoint": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "The latest open question an operator must answer; null when none is recorded."
     },
     "blocker": {
-      "type": ["string", "null"],
-      "description": "The recorded blocker statement; null when the plan is not blocked."
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Reserved for lifecycle wiring: always null in 6.0 projections until blocker events are wired (later v6 tasks); recorded blockers live in refusal events meanwhile."
     },
     "archives": {
       "type": "array",
       "description": "Journal roll archives beside the plan (nothing is ever deleted; snapshot-cited positions stay addressable).",
-      "items": { "$ref": "#/$defs/archive" }
+      "items": {
+        "$ref": "#/$defs/archive"
+      }
     }
   },
   "$defs": {
     "task": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "title", "status", "started_seq", "criteria"],
+      "required": [
+        "id",
+        "title",
+        "status",
+        "started_seq",
+        "criteria"
+      ],
       "properties": {
-        "id": { "type": "string", "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$" },
-        "title": { "type": ["string", "null"] },
-        "status": { "enum": ["pending", "in_progress"] },
+        "id": {
+          "type": "string",
+          "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "in_progress"
+          ]
+        },
         "started_seq": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 1,
           "description": "The task_start event's journal position; null before the task starts."
         },
         "criteria": {
           "type": "array",
-          "items": { "$ref": "#/$defs/criterion_state" }
+          "items": {
+            "$ref": "#/$defs/criterion_state"
+          }
         }
       }
     },
@@ -107,16 +148,32 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["criterion", "satisfied", "via_seq", "trust"],
+          "required": [
+            "criterion",
+            "satisfied",
+            "via_seq",
+            "trust"
+          ],
           "properties": {
-            "criterion": { "type": "string", "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$" },
-            "satisfied": { "const": true },
+            "criterion": {
+              "type": "string",
+              "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "satisfied": {
+              "const": true
+            },
             "via_seq": {
               "type": "integer",
               "minimum": 1,
               "description": "The in-window evidence event's journal position."
             },
-            "trust": { "enum": ["observed", "imported", "asserted"] },
+            "trust": {
+              "enum": [
+                "observed",
+                "imported",
+                "asserted"
+              ]
+            },
             "evidence_path": {
               "type": "string",
               "description": "Recoverable pointer to the evidence log, relative to the plan directory."
@@ -126,18 +183,32 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["criterion", "satisfied"],
+          "required": [
+            "criterion",
+            "satisfied"
+          ],
           "properties": {
-            "criterion": { "type": "string", "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$" },
-            "satisfied": { "const": false },
+            "criterion": {
+              "type": "string",
+              "pattern": "^AC-[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "satisfied": {
+              "const": false
+            },
             "started_seq": {
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "minimum": 1
             },
             "stale_seqs": {
               "type": "array",
               "description": "Pre-start evidence events for this criterion: recorded history that can never satisfy the in-window rule.",
-              "items": { "type": "integer", "minimum": 1 }
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              }
             }
           }
         }
@@ -148,7 +219,10 @@
       "additionalProperties": false,
       "minProperties": 1,
       "properties": {
-        "seq": { "type": "integer", "minimum": 1 },
+        "seq": {
+          "type": "integer",
+          "minimum": 1
+        },
         "regenerated": {
           "const": true,
           "description": "The snapshot cites this position but the journal cannot support it (markdown-wins regeneration); ignored for roll bounding."
@@ -158,23 +232,48 @@
     "sample": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["value", "seq"],
+      "required": [
+        "value",
+        "seq"
+      ],
       "properties": {
         "value": {
           "description": "The sampled amount as recorded by the metering source; untyped because limit kinds differ."
         },
-        "seq": { "type": "integer", "minimum": 1 },
-        "trust": { "enum": ["observed", "imported", "asserted"] }
+        "seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "trust": {
+          "enum": [
+            "observed",
+            "imported",
+            "asserted"
+          ]
+        }
       }
     },
     "archive": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["file", "first_seq", "last_seq"],
+      "required": [
+        "file",
+        "first_seq",
+        "last_seq"
+      ],
       "properties": {
-        "file": { "type": "string", "pattern": "^journal-archive-[0-9]{6}-[0-9]{6}\\.ndjson$" },
-        "first_seq": { "type": "integer", "minimum": 1 },
-        "last_seq": { "type": "integer", "minimum": 1 }
+        "file": {
+          "type": "string",
+          "pattern": "^journal-archive-[0-9]{6}-[0-9]{6}\\.ndjson$"
+        },
+        "first_seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "last_seq": {
+          "type": "integer",
+          "minimum": 1
+        }
       }
     }
   }

@@ -35,6 +35,7 @@ item with its trust label and pointer — or that it is open.
 Python 3.9+ stdlib only; imports only its sibling modules.
 """
 import argparse
+import hashlib
 import json
 import os
 import sys
@@ -139,9 +140,8 @@ def render_view(name, events, snapshot, contract, digest):
         for task in snapshot.get('tasks', []):
             for crit in task.get('criteria', []):
                 if crit.get('satisfied'):
-                    mech = 'evidence: %s (seq %s, trust %s)' % (
-                        crit.get('trust'), crit.get('via_seq'),
-                        crit.get('trust'))
+                    mech = 'evidence (seq %s, trust %s)' % (
+                        crit.get('via_seq'), crit.get('trust'))
                     pointer = crit.get('evidence_path') or '—'
                 else:
                     mech = 'open'
@@ -150,8 +150,10 @@ def render_view(name, events, snapshot, contract, digest):
                     task['id'], crit.get('criterion'),
                     'yes' if crit.get('satisfied') else 'no', mech, pointer))
         lines += ['', '_Per criterion: the closing mechanism — the '
-                  'evidence item with its trust label, or reconciled '
-                  'authority — never a bare claim (A4)._']
+                  'evidence item with its trust label — never a bare '
+                  'claim (A4). Reconciled-authority closures are v6.0 '
+                  'amendments until lifecycle wiring renders them '
+                  'here._']
     else:
         raise ViewsError('unknown view %r' % name)
     return '\n'.join(lines) + '\n'
@@ -173,11 +175,14 @@ def render(plan_dir, names, out_dir=None, reconcile=None, authority=None,
         out_dir = out_dir or os.path.join(plan_dir, 'views')
         os.makedirs(out_dir, exist_ok=True)
         written = []
+        digests = {}
         for name in names:
             body = render_view(name, writer.events, snapshot,
                                rec.contract, digest)
             header = MARKER % (name, rec.contract_id[:16], digest[:16], ts)
             content = header + '\n\n' + body
+            digests[name] = hashlib.sha256(
+                content.encode('utf-8')).hexdigest()
             target = os.path.join(out_dir, name + '.md')
             existing = None
             if os.path.isfile(target):
@@ -185,8 +190,14 @@ def render(plan_dir, names, out_dir=None, reconcile=None, authority=None,
                     existing = fh.read()
                 if existing == content:
                     continue  # unchanged records: an idempotent no-op
-            if existing is not None and \
-                    existing.startswith('<!-- dwp-view:'):
+            if existing is not None and (
+                    existing.startswith('<!-- dwp-view:') or
+                    not _machine_written(writer.events, name, existing)):
+                # N3: a file that differs from render output is treated
+                # as human-edited whether or not its marker survived —
+                # marker-less edits are divergence, never silent
+                # overwrites. _machine_written consults the per-view
+                # digests the last render recorded.
                 if reconcile is None:
                     raise DivergenceError(
                         '%s was human-edited after its last render; '
@@ -212,13 +223,7 @@ def render(plan_dir, names, out_dir=None, reconcile=None, authority=None,
                     outcome = 'generated view written; human edit preserved'
                     written.append('%s (reconciled: %s)' %
                                    (name, reconcile))
-                writer.append('reconciliation',
-                              {'trigger': 'generated-view divergence',
-                               'editor': 'human edit of views/%s.md' % name,
-                               'authority': authority},
-                              actor={'kind': 'human',
-                                     'identity': authority},
-                              note=outcome)
+                _record_reconciliation(writer, name, authority, outcome)
                 continue
             with open(target, 'w', encoding='utf-8') as fh:
                 fh.write(content)
@@ -229,12 +234,51 @@ def render(plan_dir, names, out_dir=None, reconcile=None, authority=None,
             # feeds back into the snapshot; see ledger.PROVENANCE_TYPES)
             writer.append('view_render',
                           {'view': '+'.join(w.split(' ')[0] for w in written),
-                           'snapshot_digest': digest},
+                           'snapshot_digest': digest,
+                           'digests': {n: digests[n] for n in
+                                       [w.split(' ')[0] for w in written]}},
                           actor={'kind': 'helper',
                                  'identity': ledger.LEDGER_IDENTITY})
         return written
     finally:
         lock.release()
+
+
+def _machine_written(events, name, existing):
+    """N3: prove a marker-less view file is machine output.
+
+    The last view_render event records a per-view digest of exactly what
+    render wrote. A file whose bytes match that digest is machine
+    output; anything else (or no recorded digest at all) is treated as
+    a human edit.
+    """
+    recorded = None
+    for event in events:
+        if event.get('type') == 'view_render' and \
+                isinstance(event.get('digests'), dict):
+            if name in event['digests']:
+                recorded = event['digests'][name]
+    if recorded is None:
+        return False
+    return hashlib.sha256(existing.encode('utf-8')).hexdigest() == recorded
+
+
+def _record_reconciliation(writer, name, authority, outcome):
+    """Record reconciliation once per unchanged state (idempotent)."""
+    for event in reversed(writer.events):
+        if event.get('type') != 'reconciliation':
+            continue
+        if event.get('editor') == 'human edit of views/%s.md' % name and \
+                event.get('authority') == authority and \
+                event.get('note') == outcome:
+            return  # already recorded for this exact state
+        break
+    writer.append('reconciliation',
+                  {'trigger': 'generated-view divergence',
+                   'editor': 'human edit of views/%s.md' % name,
+                   'authority': authority},
+                  actor={'kind': 'human', 'identity': authority},
+                  note=outcome)
 
 
 def _md(text):
@@ -272,12 +316,8 @@ def self_test():
         writer.append('task_start', {'task': 'T-implement'},
                       actor={'kind': 'agent', 'identity': 'selftest'},
                       idempotent=True)
-        writer.append('gate_run', {'command': 'true', 'cwd': tmp,
-                                   'timeout_seconds': 30, 'exit_code': 0,
-                                   'criterion': 'AC-one'},
-                      actor={'kind': 'helper',
-                             'identity': ledger.LEDGER_IDENTITY},
-                      trust='observed', evidence_path='gates/x.log')
+        # observed evidence comes from the executor, never an append
+        writer.run_gate('T-implement', 'true', criterion='AC-one')
         writer.project()
         lock.release()
         # 1. render is deterministic across two runs
@@ -313,7 +353,7 @@ def self_test():
         check('human copy preserved',
               os.path.isfile(target[:-3] + '.human.md'))
         rec = ledger.PlanRecords(plan)
-        events, _torn = rec.read_journal()
+        events, _torn, _framing = rec.read_journal()
         reconciliations = [e for e in events
                            if e.get('type') == 'reconciliation']
         check('reconciliation recorded with authority',

@@ -25,6 +25,8 @@ import json
 import re
 import sys
 
+sys.dont_write_bytecode = True  # never leave caches inside an installed pack
+
 CONTRACT_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-contract/v6.json'
 JOURNAL_SCHEMA_URL = 'https://deepworkplan.com/schema/journal-event/v6.json'
 
@@ -678,7 +680,10 @@ def journal_event_errors(event, contract=None):
                           '%s - a journal belongs to one plan' %
                           (event.get('plan'), contract.get('plan')))
     handler = _EVENT_VALIDATORS[etype]
-    handler(event, errors)
+    if handler is _v_gate_run:
+        handler(event, errors, contract)
+    else:
+        handler(event, errors)
     _trust_rules(event, errors)
     return errors
 
@@ -730,11 +735,11 @@ def _v_approval(event, errors):
     _field(event, 'plan_digest', 'hex64', 'event', errors)
 
 
-def _v_gate_run(event, errors):
+def _v_gate_run(event, errors, contract=None):
     _closed(event, {'schema', 'type', 'seq', 'ts', 'plan', 'contract_id',
                     'actor', 'note', 'command', 'cwd', 'env',
                     'timeout_seconds', 'exit_code', 'trust',
-                    'evidence_path', 'criterion'}, 'event', errors)
+                    'evidence_path', 'criterion', 'task'}, 'event', errors)
     _field(event, 'command', 'str', 'event', errors)
     _field(event, 'cwd', 'str', 'event', errors)
     if 'env' in event and not isinstance(event['env'], dict):
@@ -745,9 +750,27 @@ def _v_gate_run(event, errors):
     if not _is_int(event.get('exit_code')):
         errors.append('event.exit_code: expected an integer')
     ref = event.get('criterion')
-    if ref is not None and (not isinstance(ref, str) or
-                            not ID_CRITERION.match(ref)):
+    if not isinstance(ref, str) or not ID_CRITERION.match(ref):
         errors.append('event.criterion: expected an AC-* id')
+    tid = _field(event, 'task', 'str?', 'event', errors)
+    if tid is not None and not ID_TASK.match(tid):
+        errors.append('event.task: expected a T-* id')
+    # M5: the record must land inside the contract's declared intent —
+    # task and criterion are bound at execution, never chosen after
+    if contract is not None and tid is not None and ref is not None:
+        intents = None
+        for task in contract.get('tasks', []):
+            if task.get('id') == tid:
+                intents = {i.get('criterion')
+                           for i in task.get('gate_intent', [])}
+                break
+        if intents is None:
+            errors.append('event.task: %r is not a task of this contract' % tid)
+        elif ref not in intents:
+            errors.append(
+                'event.criterion: %r is not declared in task %s '
+                'gate_intent - a gate run is bound to the declared '
+                'intent, not linked after the fact' % (ref, tid))
 
 
 def _v_observation(event, errors):
@@ -990,10 +1013,26 @@ def _v_refusal(event, errors):
 
 def _v_view_render(event, errors):
     _closed(event, {'schema', 'type', 'seq', 'ts', 'plan', 'contract_id',
-                    'actor', 'note', 'view', 'snapshot_digest'}, 'event',
-            errors)
+                    'actor', 'note', 'view', 'snapshot_digest', 'digests'},
+            'event', errors)
     _field(event, 'view', 'str', 'event', errors)
     _field(event, 'snapshot_digest', 'hex64', 'event', errors)
+    # N3: the rendered-bytes digests let a later render detect a human
+    # edit that carried no marker — shape-checked, content-verified by
+    # the renderer against its own recomputation
+    digests = event.get('digests')
+    if 'digests' in event:
+        if not isinstance(digests, dict) or not digests:
+            errors.append('event.digests: expected a non-empty object of '
+                          'view name -> sha256')
+        else:
+            for name, digest in digests.items():
+                if not isinstance(name, str) or not name.strip():
+                    errors.append('event.digests: view names must be '
+                                  'non-empty strings')
+                if not isinstance(digest, str) or not HEX64.match(digest):
+                    errors.append('event.digests[%r]: expected a sha256 '
+                                  'hex digest' % name)
 
 
 def _v_reconciliation(event, errors):
@@ -1081,7 +1120,7 @@ def _selftest_contract():
                         'statement': 'Records stay closed objects.'}],
         'scope': {
             'allowed_paths': ['skills/deepworkplan/'],
-            'allowed_command_classes': ['declared-gate'],
+            'allowed_command_classes': ['true'],
             'forbidden_operations': ['force-push', 'publish'],
         },
         'authorization': {
@@ -1128,9 +1167,9 @@ def _selftest_events(contract_id):
         dict(base, type='gate_run', command='bats v6-contract.bats',
              cwd='.', timeout_seconds=600, exit_code=0, trust='observed',
              evidence_path='analysis_results/gates/task11.log',
-             criterion='AC-one'),
+             task='T-implement', criterion='AC-one'),
         dict(base, type='observation', statement='suite green',
-             trust='observed', evidence_path='analysis_results/gates/x.log'),
+             trust='asserted'),
         dict(base, type='adaptation', kind='retry',
              trigger_observation=3, evidence_artifact='gates/x.log',
              hypothesis='flaky timing', action='rerun with fixed seed',
