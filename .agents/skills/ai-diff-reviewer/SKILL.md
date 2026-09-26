@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer
-description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for six capabilities — (1) review the current branch diff locally (same methodology as CI); (2) generate repo-tailored .review/extension.md overrides (generate-extension); (3) install and configure the Action, and answer action.yml input questions (setup); (4) author a documented pull request from the branch diff (open-pr); (5) read the CI review and walk findings to apply, defer or skip — read-only (apply-review); (6) close the loop in one invocation — resolve the CI review's findings (commits and pushes), repair the PR's other failing workflows (codecheck, tests, branch not up to date), and re-arm the reviewer per the repo label configuration (address-review). Auto-detects .review/extension.md. Use when the developer asks to review changes, customize the reviewer, set up the Action, open a PR, read the CI review, resolve the reviewer comments and re-trigger the review, or fix failing PR workflows.
-version: "3.2.1"
+description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for six capabilities — (1) review the current branch diff locally (same methodology as CI); (2) generate repo-tailored .review/extension.md overrides (generate-extension); (3) install and configure the Action, and answer action.yml input questions (setup); (4) author a documented pull request from the branch diff (open-pr); (5) read the CI review and walk findings to apply, defer or skip — read-only (apply-review); (6) close the loop in one invocation — resolve the CI review's findings (commits and pushes), repair the PR's other failing workflows (codecheck, tests, branch not up to date), and re-arm the reviewer per the repo label configuration (address-review). Auto-detects .review/extension.md. Use when the developer asks to review changes, customize the reviewer, set up the Action, open a PR, read the CI review, close the review loop (resolve, re-trigger, arm an unreviewed PR), or fix failing PR workflows.
+version: "3.2.2"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔍","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -41,7 +41,7 @@ doesn't have it yet.
 | 3 | Install the GitHub Action + write `pr-review.yml` | [`setup`](setup/SKILL.md) | ☁️ CI |
 | 4 | Draft the PR title + body from the diff | [`open-pr`](open-pr/SKILL.md) | 🖥️ Local → GitHub |
 | 5 | Read the CI review on the PR (the v3 structured-output artifact first, review threads as the fallback) + walk through findings to apply/defer/skip | [`apply-review`](apply-review/SKILL.md) | ☁️ CI → 🖥️ Local |
-| 6 | Close the loop in one invocation: survey every workflow and check the PR runs, wait for the review on the current head, resolve its findings (apply → commit → push), repair the failing workflows (codecheck, tests, branch not up to date), and re-arm the reviewer the way this repo triggers it (label toggle or push) | [`address-review`](address-review/SKILL.md) | ☁️ CI → 🖥️ Local → ☁️ CI |
+| 6 | Close the loop in one invocation: survey every workflow and check the PR runs, wait for the review on the current head, resolve its findings (apply → commit → push), repair the failing workflows (codecheck, tests, branch not up to date), and re-arm the reviewer the way this repo triggers it (label toggle or push) — arming the first round too when the PR was opened without its trigger label | [`address-review`](address-review/SKILL.md) | ☁️ CI → 🖥️ Local → ☁️ CI |
 
 Sub-skill 3 (`setup`) also doubles as the **reference manual** for
 every `action.yml` input via [`setup/reference.md`](setup/reference.md)
@@ -205,6 +205,20 @@ here and is authoritative for routing.
 - "Which findings blocked the merge?"
 - "The bot posted a review — help me address it"
 
+**Address-review flow (close the loop in one invocation) — triggers:**
+
+- "Address the review and re-run", "resolve the reviewer comments and
+  toggle ready"
+- "Fix the review findings and re-trigger CI", "fix the failing workflows",
+  "make CI green and re-run the reviewer"
+- "Loop the review" / "run the review loop"
+- "The PR has no review yet — trigger it" (cold start — the arm covers both trigger modes)
+- A bare invocation with a fresh context — just "loop the review", no PR
+  number, nothing else — is fully specified: the current branch's PR is the
+  target, and if the review hasn't been triggered yet, arming it is part of
+  the loop. Route straight to
+  [`address-review`](address-review/SKILL.md).
+
 If the trigger is ambiguous (e.g. developer says "help me with the
 review" on a repo that has no `.review/extension.md` yet, or says
 "handle the PR" on a repo where a PR both needs a review AND has a
@@ -232,7 +246,9 @@ that help disambiguate:
   from a recent CI run. In that case, *"read the review"* usually means
   the CI review on the PR (apply-review flow), not a fresh local one.
   Ask once: *"Read the CI review that just landed on PR #N, or run a
-  new local review on your working tree?"*
+  new local review on your working tree?"* — *"loop the review"* /
+  *"address the review"* is NOT this ambiguity: explicit loop intent
+  routes to `address-review` unasked.
 - Developer just accepted a local review's findings and applied fixes
   → probably the open-pr flow (natural next step, first PR of the
   session).

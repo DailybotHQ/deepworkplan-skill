@@ -271,7 +271,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.1 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.2 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
@@ -349,6 +349,11 @@ addon is an optional environment capability: never part of the AI-first
 baseline, never a conformance gate, never blocking — a repository with no
 Herdr runs single-agent and stays fully conformant, and a launch failure
 is recorded and continued with available peers.
+
+The addon ships **unwired** in the current line: no flow references it.
+The v7 wiring plan (onboard offer, optional execute delegation,
+`parallel-safe` marks, presence-gated verify) is recorded in
+[`V7_ROADMAP.md`](V7_ROADMAP.md) — non-normative.
 
 ## 7. References
 
