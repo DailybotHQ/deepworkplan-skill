@@ -291,8 +291,7 @@ class PlanRecords:
             for name in sorted(os.listdir(chain_dir)):
                 if not name.endswith('.json'):
                     continue
-                with open(os.path.join(chain_dir, name), encoding='utf-8') as fh:
-                    doc = json.load(fh)
+                doc = self._read_json(os.path.join(chain_dir, name))
                 rev = doc.get('revision', 0)
                 if not isinstance(rev, int):
                     continue
@@ -302,10 +301,23 @@ class PlanRecords:
             return best
         single = os.path.join(self.dir, 'contract.json')
         if os.path.isfile(single):
-            with open(single, encoding='utf-8') as fh:
-                return json.load(fh)
+            return self._read_json(single)
         raise LedgerError('no contract.json and no contracts/ chain in %s'
                           % self.dir)
+
+    @staticmethod
+    def _read_json(path):
+        # A corrupted persisted artifact must refuse by name — the journal
+        # stays untouched and the operator learns which file to restore.
+        # A raw JSONDecodeError stack dump hides both.
+        try:
+            with open(path, encoding='utf-8') as fh:
+                return json.load(fh)
+        except ValueError as exc:
+            raise LedgerError(
+                '%s is corrupt (not valid JSON: %s) — no write was made; '
+                'restore the contract or roll back before continuing'
+                % (os.path.basename(path), exc))
 
     @property
     def contract_id(self):
@@ -1997,26 +2009,28 @@ def main(argv):
             print('FAIL', failure)
         print('self-test: %s (%d probes)' % ('OK' if ok else 'FAILED', probes))
         return 0 if ok else 1
-    if args.command == 'materialize':
-        if not (args.plan and args.contract):
-            print('materialize requires --plan and --contract')
-            return 2
-        result = materialize_plan(
-            find_plan_dir(args.plan), args.contract,
-            authority=args.authority or 'developer',
-            mechanism=args.mechanism or 'plan_authorship',
-            note=args.note)
-        print('OK: materialized %s contract %s (manifest, contract, '
-              'approval seq %s)%s' %
-              (result['plan'], result['contract_id'][:12],
-               result['approval_seq'],
-               ' — resumed an interrupted materialization'
-               if result['resumed'] else ''))
-        return 0
+    if args.command == 'materialize' and not (args.plan and args.contract):
+        print('materialize requires --plan and --contract')
+        return 2
     if not args.plan:
         print(usage)
         return 2
     try:
+        if args.command == 'materialize':
+            # Inside the handler set: an invalid or injected draft must
+            # print the named refusal, not escape as a traceback.
+            result = materialize_plan(
+                find_plan_dir(args.plan), args.contract,
+                authority=args.authority or 'developer',
+                mechanism=args.mechanism or 'plan_authorship',
+                note=args.note)
+            print('OK: materialized %s contract %s (manifest, contract, '
+                  'approval seq %s)%s' %
+                  (result['plan'], result['contract_id'][:12],
+                   result['approval_seq'],
+                   ' — resumed an interrupted materialization'
+                   if result['resumed'] else ''))
+            return 0
         if args.command == 'inspect':
             rec = PlanRecords(find_plan_dir(args.plan))
             events, torn, _framing = rec.read_journal()
