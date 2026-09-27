@@ -32,4 +32,9 @@ cd "$WS"
 	echo "TASK.md missing in $WS" >&2
 	exit 2
 }
-exec claude -p "$(cat TASK.md)" --output-format json --dangerously-skip-permissions < /dev/null
+# --model opus pins the operating point the comparator cells ran at: without
+# it the CLI falls back through the provider's unrecognized-model path (the
+# [1m]-tagged default), which measured 2x slower wall-clock in round 1
+# take-3 and timed cells out at the driver's 900s ceiling.
+exec claude -p "$(cat TASK.md)" --output-format json --dangerously-skip-permissions \
+	--model opus < /dev/null

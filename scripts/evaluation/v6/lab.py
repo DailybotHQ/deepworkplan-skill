@@ -70,6 +70,31 @@ def default_lab_root() -> Path:
     return repo_root() / "tmp" / "repositories" / "dwp-v6-lab"
 
 
+def pack_frontmatter_version(pack_dir: Path):
+    """The pack's own frontmatter ``version:`` line, or None.
+
+    The arm overlay must name the pack it actually mounted — hardcoding a
+    version mislabels every non-v5 candidate arm as the comparator.
+    """
+    try:
+        for line in (pack_dir / "SKILL.md").read_text(encoding="utf-8").splitlines():
+            m = re.match(r"^version:\s*['\"]?([0-9][^'\s\"]*)", line.strip())
+            if m:
+                return m.group(1)
+    except OSError:
+        pass
+    return None
+
+
+def provider_of(stratum_name: str) -> str:
+    low = stratum_name.lower()
+    if "claude" in low:
+        return "claude"
+    if "codex" in low:
+        return "codex"
+    return stratum_name
+
+
 def load_json(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -137,14 +162,36 @@ def verify_inventory_chain(lines: list) -> dict:
 
 
 def tree_hashes(root: Path) -> dict:
-    """Sorted file->sha256 map of a tree, excluding nothing (workspaces are small)."""
+    """Sorted file->sha256 map of a tree, excluding nothing (workspaces are small).
+    An actor may legitimately create unreadable state inside its own scratch
+    (permission-behavior probes are part of real validation work — round 1's
+    AC-5 actor left a write-only control file and killed the family driver).
+    An unreadable entry is recorded as a marker, never a crash: the map's job
+    is change detection, and a marker still detects change."""
     out = {}
     for path in sorted(root.rglob("*")):
-        if path.is_symlink():
-            out[path.relative_to(root).as_posix()] = "symlink:" + os.readlink(path)
-        elif path.is_file():
-            out[path.relative_to(root).as_posix()] = sha256_path(path)
+        rel = path.relative_to(root).as_posix()
+        try:
+            if path.is_symlink():
+                out[rel] = "symlink:" + os.readlink(path)
+            elif path.is_file():
+                out[rel] = sha256_path(path)
+        except OSError as exc:
+            out[rel] = "unreadable:%s" % (exc.errno,)
     return out
+
+
+def force_rmtree(path: Path) -> None:
+    """rmtree that survives restrictive modes the actor may have left behind
+    (a chmod-000 directory blocks plain rmtree's unlink of its children)."""
+    shutil.rmtree(path, ignore_errors=True)
+    if path.exists():
+        for entry in path.rglob("*"):
+            try:
+                os.chmod(entry, 0o700)
+            except OSError:
+                pass
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def is_within(child: Path, parent: Path) -> bool:
@@ -428,6 +475,18 @@ def cmd_prepare(lab_root: Path, family: str, dry_run: bool, seed_rel: str) -> in
 
 # ----------------------------------------------------------------------- run
 
+# Provider auth travels by environment, not by copied credential files:
+# the file route (OAuth pairs under ~/.claude) rotates on every refresh and
+# a rotated copy authenticates nothing — a whole family died on exactly that
+# ("OAuth session expired and could not be refreshed"). A static token in
+# the environment has no rotation race. Only the routing/auth pair passes
+# through: the DEFAULT_*_MODEL renames send the CLI down an
+# unrecognized-model fallback path that measured 2x slower wall-clock (the
+# adapter pins the model explicitly instead). Values are never recorded;
+# the inventory's env_keys list carries only the key names.
+PROVIDER_ENV_KEYS = ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN")
+
+
 def scrubbed_env(workspace: Path, scratch_home: Path) -> dict:
     env = {
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
@@ -436,8 +495,51 @@ def scrubbed_env(workspace: Path, scratch_home: Path) -> dict:
         "TZ": "UTC",
         "LC_ALL": "C",
         "LANG": "C",
+        # An actor's Python must never write __pycache__ anywhere — round 1
+        # proved it will otherwise drop bytecode caches INTO the mounted pack
+        # snapshot (content-digest drift, caught by the run-time validation).
+        "PYTHONDONTWRITEBYTECODE": "1",
+        # Pin the pack's plan output INSIDE the workspace. context.sh derives
+        # dwp_dir from `git rev-parse --show-toplevel` — and evaluation
+        # workspaces are nested inside the host repository's work tree, so
+        # git resolves to the HOST root and an actor that resolves before
+        # creating anything local writes its plan into the host .dwp/ (three
+        # SC-5 cells escaped exactly this way in round 1). DWP_DIR is the
+        # pack's documented public override for this; setting it per cell
+        # makes every resolution land locally by construction.
+        "DWP_DIR": str(workspace / ".dwp"),
     }
+    for key in PROVIDER_ENV_KEYS:
+        if os.environ.get(key):
+            env[key] = os.environ[key]
     return env
+
+
+def lock_packs_readonly(cfg: dict, lab_root: Path) -> None:
+    """Freeze every referenced pack tree at the filesystem level for the run.
+
+    The pack reaches the actor through DWP_EVAL_PACK and nothing else in the
+    driver made it read-only — round 1 proved an actor's Python can write
+    __pycache__ into the snapshot (two .pyc files drifted the content digest
+    and the run-time validation refused the next resume, exactly as designed).
+    Clearing write bits blocks both edits and new files; modes are not part
+    of the content digest, so the frozen identity is unaffected."""
+    for spec in (cfg.get("arms") or {}).values():
+        pack = (spec or {}).get("pack")
+        if not pack:
+            continue
+        root = (lab_root / pack) if not Path(pack).is_absolute() else Path(pack)
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            try:
+                os.chmod(path, 0o555 if path.is_dir() else 0o444)
+            except OSError:
+                pass
+        try:
+            os.chmod(root, 0o555)
+        except OSError:
+            pass
 
 
 def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s: int) -> dict:
@@ -450,7 +552,7 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     # records are skipped by resume before run_cell, so scored evidence is
     # never touched. Rebuild from the seed, always.
     if workspace.is_dir():
-        shutil.rmtree(workspace)
+        force_rmtree(workspace)
     elif workspace.exists():
         workspace.unlink()
     seed_staging = lab_root / "seeds" / cfg["seed"]["family"] / "seed"
@@ -463,10 +565,13 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     # mounted pack is their method (its onboarding/create cost belongs to
     # their arm), pack-less arms get no tooling hint at all.
     prompt = cell["task"]["prompt"]
-    if (cell["arm_spec"] or {}).get("pack"):
+    pack_rel = (cell["arm_spec"] or {}).get("pack")
+    if pack_rel:
+        version = pack_frontmatter_version(lab_root / pack_rel)
+        version_note = f" (v{version})" if version else ""
         prompt += (
-            "\n\n## Available method\n"
-            "A read-only DWP skill pack (v5.5.4) is mounted at the path in the"
+            f"\n\n## Available method\n"
+            f"A read-only DWP skill pack{version_note} is mounted at the path in the"
             " environment variable DWP_EVAL_PACK. Start from its SKILL.md and"
             " follow its flows (onboarding/create/execute as applicable) to"
             " plan and carry out this task; the time and effort of doing so"
@@ -492,17 +597,21 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
 
     scratch_home = attempt_dir / "homes" / cell["cell_id"]
     if scratch_home.is_dir():
-        shutil.rmtree(scratch_home)
+        force_rmtree(scratch_home)
     elif scratch_home.exists():
         scratch_home.unlink()
     scratch_home.mkdir(parents=True, exist_ok=True)
     # Actor credentials must travel, but traces must not: copy ONLY auth
     # files into the scratch HOME (never session transcripts or project
     # history), and delete the whole scratch HOME after the run so no
-    # credential ever survives in an artifact.
+    # credential ever survives in an artifact. Claude auth is skipped when
+    # the provider env route is armed: a copied OAuth pair goes stale on the
+    # first rotation and then refuses every cell (observed round 1); the env
+    # token needs no files at all. Codex stays file-based.
+    env_route_armed = bool(os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    claude_files = () if env_route_armed else (".claude.json", ".claude/.credentials.json")
     home = Path.home()
-    for rel in (".claude.json", ".claude/.credentials.json",
-                ".codex/auth.json", ".codex/config.toml"):
+    for rel in claude_files + (".codex/auth.json", ".codex/config.toml"):
         src = home / rel
         if src.is_file():
             dst = scratch_home / rel
@@ -536,7 +645,11 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     log_path.parent.mkdir(parents=True, exist_ok=True)
     status, exit_code, note = "error", None, ""
     started = time.time()
-    adapter_name = cell["stratum"]["launch"]["mode"]
+    # Metering keys off the stratum's provider, never the launch mode:
+    # real strata launch through wrapper scripts (mode "exec"), so keying
+    # on the mode never reaches a provider parser and every cell records
+    # no meter — the pilot needed a post-hoc regenerator for exactly this.
+    adapter_name = provider_of(cell["stratum"].get("name", ""))
     with log_path.open("w", encoding="utf-8") as log:
         log.write("# argv: " + json.dumps(argv) + "\n")
         log.write("# env keys: " + ", ".join(sorted(env)) + "\n")
@@ -564,10 +677,63 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
             exit_code = None
     duration = round(time.time() - started, 3)
 
+    # A provider-side failure is not a measured outcome. The provider can
+    # refuse the start outright (codex usage-limit line, claude expired
+    # auth) or land mid-session after real turns (claude 429 terminal
+    # api_error) — either way the cell's evidence is void. Recording it as
+    # "completed" would score a phantom failure (the driver cannot tell a
+    # 2-second auth death from real work); recording it terminal would pin
+    # the cell as forever-done. Every terminal api_error result is therefore
+    # a non-terminal provider_refused, with the quota signatures kept for
+    # the confirmation pacing cooldown — a later resume re-runs the cell.
+    quota_signature = None
+    provider_refusal = None
+    try:
+        log_scan = log_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        log_scan = ""
+    if '"api_error_status":429' in log_scan or "hit your session limit" in log_scan:
+        quota_signature = "claude"
+        provider_refusal = "quota-claude"
+    elif re.search(r"(?m)^ERROR: You.?ve hit your usage limit", log_scan):
+        quota_signature = "codex"
+        provider_refusal = "quota-codex"
+    elif re.search(r'"terminal_reason":"api_error"', log_scan):
+        provider_refusal = "api-error"
+        if "Failed to authenticate" in log_scan:
+            provider_refusal = "auth"
+    if provider_refusal:
+        status = "provider_refused"
+        note = "provider refused this cell (%s); resume re-runs it" % provider_refusal
+
+    # A nonzero exit is never a completion. The take-5->take-6 chain stop
+    # SIGTERM'd an in-flight actor (SC-2-claude-code-r1-C): the CLI trapped
+    # the signal and exited 143, no provider-refusal signature was present,
+    # and the driver recorded `completed` — an unmetered, log-less
+    # "completion" the resume done-set then skipped forever. An actor that
+    # died (externally killed or crashed on its own) has void evidence and
+    # must stay re-runnable, exactly like a provider refusal.
+    if status == "completed" and exit_code != 0:
+        status = "actor_failed"
+        note = (note + "; " if note else "") + (
+            "actor exited %s — externally killed or crashed; resume re-runs it" % exit_code)
+
     content_intact = canary.read_text(encoding="utf-8") == canary_token + "\n"
     leaked = False
+    unreadable_files = []
     for produced in workspace.rglob("*"):
-        if produced.is_file() and canary_token in produced.read_text(encoding="utf-8", errors="replace"):
+        if not produced.is_file():
+            continue
+        try:
+            body = produced.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            # Unreadable state cannot be scanned for the canary token; it is
+            # listed per-cell so analysis can inspect it by hand. The residual
+            # (token hidden behind a chmod) is accepted knowingly: voiding
+            # every permission-probing cell would punish legitimate work.
+            unreadable_files.append(produced.relative_to(workspace).as_posix())
+            continue
+        if canary_token in body:
             leaked = True
             break
     canary_intact = content_intact and not leaked
@@ -582,6 +748,8 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
     if adapter_name == "claude":
         try:
             import re as _re
+            # The actor's stdout/stderr landed in the per-cell log above.
+            log_text = log_path.read_text(encoding="utf-8", errors="replace")
             candidates = [m for m in _re.findall(r'\{"duration_api_ms".*', log_text)
                           if '"total_cost_usd"' in m]
             if candidates:
@@ -616,10 +784,12 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
 
     # Credential hygiene: the scratch HOME held auth files and session logs;
     # it must not survive into artifacts.
-    shutil.rmtree(scratch_home, ignore_errors=True)
+    force_rmtree(scratch_home)
     final = tree_hashes(workspace)
     record = {
         "cell_id": cell["cell_id"],
+        "quota_signature": quota_signature,
+        "provider_refusal": provider_refusal,
         "attempt": attempt_dir.name,
         "counters": counters,
         "cost": cost,
@@ -639,6 +809,7 @@ def run_cell(cell: dict, cfg: dict, attempt_dir: Path, lab_root: Path, timeout_s
         "produced_change": initial != final,
         "ancestor_workspace_risk": ancestor_workspace_risk,
         "canary_intact": canary_intact,
+        "unreadable_files": unreadable_files[:20],
         "canary": "actor_invisible/CUSTODIAN_CANARY.secret",
         "env_keys": sorted(env),
         "log": str(log_path.relative_to(attempt_dir)),
@@ -664,12 +835,24 @@ def campaign_cells(cfg: dict, arms: dict) -> list:
     return cells
 
 
-def cmd_run(cfg: dict, lab_root: Path, output_dir: Path, resume: str, timeout_s: int) -> int:
+def cmd_run(cfg: dict, lab_root: Path, output_dir: Path, resume: str, timeout_s: int,
+            rerun_timeouts: bool = False, rerun_cells: str = "") -> int:
     # D15 F4: the pack/config chain is verified at run time too — validation
     # at validate-time alone does not protect a campaign already in flight.
     errors = validate_campaign(cfg, lab_root, repo_root() / DESIGN_PATH)
     if errors:
         die("campaign config invalid at run time: " + "; ".join(errors))
+    # A treatment-tree integrity event can taint cells that already recorded
+    # terminal completions; re-running exactly the named cells (last record
+    # wins downstream) is the auditable recovery. Unknown ids are refused so
+    # a typo can never silently no-op.
+    rerun_ids = {c.strip() for c in (rerun_cells or "").split(",") if c.strip()}
+    if rerun_ids:
+        known = {c["cell_id"] for c in campaign_cells(cfg, cfg["arms"])}
+        unknown = sorted(rerun_ids - known)
+        if unknown:
+            die("--rerun-cells names cells not in this campaign: " + ", ".join(unknown))
+    lock_packs_readonly(cfg, lab_root)
     inventory = output_dir / "attempts.jsonl"
     if resume:
         attempt_dir = output_dir / resume
@@ -688,24 +871,25 @@ def cmd_run(cfg: dict, lab_root: Path, output_dir: Path, resume: str, timeout_s:
         if cfg.get("requires_enforced_isolation") and not posture["host_enforced_isolation"]:
             die("campaign requires enforced host isolation; this host cannot provide it (see ISOLATION.json)")
 
+    # Timeout is terminal by default (an endlessly slow cell must not loop),
+    # but a ceiling that was simply too low for the lane destroys healthy
+    # evidence — a killed-mid-work cell is an experiment artifact, not an
+    # actor verdict. --rerun-timeouts opts in, deliberately and auditably,
+    # to re-running exactly those cells (typically with a larger
+    # --timeout-s); scoring and joins read the LAST record per cell.
+    terminal_statuses = (("completed", "ineligible") if rerun_timeouts
+                         else ("completed", "ineligible", "timeout"))
     done_cells = set()
     if inventory.exists():
         for line in inventory.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 record = json.loads(line)
-                if record.get("status") in ("completed", "ineligible", "timeout"):
+                if (record.get("status") in terminal_statuses
+                        and record["cell_id"] not in rerun_ids):
                     done_cells.add(record["cell_id"])
 
     cells = campaign_cells(cfg, cfg["arms"])
     inventory.parent.mkdir(parents=True, exist_ok=True)
-
-    def provider_of(stratum_name: str) -> str:
-        low = stratum_name.lower()
-        if "claude" in low:
-            return "claude"
-        if "codex" in low:
-            return "codex"
-        return stratum_name
 
     # D15 F3: chain each appended record to its predecessor's raw line.
     existing_lines = [l for l in inventory.read_text(encoding="utf-8").splitlines() if l.strip()] if inventory.exists() else []
@@ -980,7 +1164,8 @@ def cmd_self_test(tmp: Path) -> int:
     return 0
 
 
-def run_full(cfg: dict, lab_root: Path, out: Path, timeout_s: int = 20, resume: str = None) -> None:
+def run_full(cfg: dict, lab_root: Path, out: Path, timeout_s: int = 20, resume: str = None,
+             rerun_timeouts: bool = False, rerun_cells: str = "") -> None:
     """Internal helper mirroring cmd_run for the self-test."""
     attempt_dir = None
     if resume is None:
@@ -995,12 +1180,15 @@ def run_full(cfg: dict, lab_root: Path, out: Path, timeout_s: int = 20, resume: 
         if not attempt_dir.is_dir():
             die(f"cannot resume: attempt {resume} not found under {out}")
     inventory = out / "attempts.jsonl"
+    terminal = (("completed", "ineligible") if rerun_timeouts
+                else ("completed", "ineligible", "timeout"))
     done = set()
     if inventory.exists():
         for line in inventory.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 r = json.loads(line)
-                if r.get("status") in ("completed", "ineligible", "timeout"):
+                if r.get("status") in terminal and r["cell_id"] not in {
+                        c.strip() for c in (rerun_cells or "").split(",") if c.strip()}:
                     done.add(r["cell_id"])
     with inventory.open("a", encoding="utf-8") as inv:
         for cell in campaign_cells(cfg, cfg["arms"]):
@@ -1020,6 +1208,14 @@ def main() -> int:
     parser.add_argument("--resume")
     parser.add_argument("--lab-root")
     parser.add_argument("--timeout-s", type=int, default=900)
+    parser.add_argument("--rerun-cells", default="",
+                        help="run: comma-separated cell ids to re-run even if their last record "
+                             "is terminal (deliberate recovery, e.g. after a treatment-tree "
+                             "integrity event; scoring and joins read the LAST record)")
+    parser.add_argument("--rerun-timeouts", action="store_true",
+                        help="run: re-run cells whose last record is a timeout (an under-budgeted "
+                             "ceiling must not permanently destroy evidence); pair with a larger "
+                             "--timeout-s — completed and ineligible cells are never re-run")
     parser.add_argument("--execute-checks", action="store_true",
                         help="family validate: run the manifest's install/build/check in a disposable copy")
     parser.add_argument("--seed-path", help="prepare: fixture seed directory relative to the repository root")
@@ -1069,7 +1265,9 @@ def main() -> int:
         output_dir = raw if raw.is_absolute() else repo_root() / raw
         if not is_within(output_dir, repo_root()):
             die("run output must live inside the repository checkout: the lab root or the owning plan's analysis_results/lab/")
-        return cmd_run(cfg, lab_root, output_dir, args.resume, args.timeout_s)
+        return cmd_run(cfg, lab_root, output_dir, args.resume, args.timeout_s,
+                       getattr(args, "rerun_timeouts", False),
+                       getattr(args, "rerun_cells", ""))
 
     if args.mode == "score":
         return cmd_score(cfg, Path(args.output))

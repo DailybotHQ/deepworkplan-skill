@@ -1,0 +1,70 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/campaign/1",
+  "name": "development-r1-service-c",
+  "paid": true,
+  "requires_enforced_isolation": false,
+  "launch_readiness": "Development round 1, arm C only. Matched comparators A (no-DWP) and B (latest-v5) are the pilot r3 cells on the identical immutable seeds, adapters and oracle registry (equivalent-input reuse per the task contract); the analysis joins on (case, stratum, repeat). Candidate round frozen at packs/v6/v6-candidate-r1-13a2c4c268f836db (commit 8056668).",
+  "arms": {
+    "C": {
+      "pack": "packs/v6/v6-candidate-r1-13a2c4c268f836db"
+    }
+  },
+  "seed": {
+    "path": "tests/evaluation/v6/fixtures/service/seed",
+    "family": "service"
+  },
+  "tasks": [
+    {
+      "id": "SC-2",
+      "prompt": "Verify and, if needed, harden the transfer endpoint so an overdrawing transfer is refused with a clear error and no ledger row or balance change remains. Acceptance: 409 with the current balance; balances unchanged; ledger entry count unchanged."
+    },
+    {
+      "id": "SC-4",
+      "prompt": "Verify event listing pagination yields every record exactly once in stable order across pages, and fix any duplication, loss or ordering bug. Acceptance: concatenated pages contain no duplicates or loss, ordering is stable, nextCursor terminates."
+    },
+    {
+      "id": "SC-5",
+      "prompt": "Verify that simultaneous duplicate deliveries of one Idempotency-Key create exactly one record, using the service's own barriers for alignment (no sleeps). Acceptance: exactly one delivery returns 201, the rest replay, and the stored row count for the key is one."
+    },
+    {
+      "id": "SC-9",
+      "prompt": "Add GET /events/{id} returning a single event by id with its payload and schema version. Acceptance: 404 for unknown ids; 200 with the exact stored payload for known ids; replayed events readable the same way; the existing suite still passes."
+    }
+  ],
+  "strata": [
+    {
+      "name": "claude-code",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/claude_task.sh"
+        ]
+      }
+    },
+    {
+      "name": "codex-cli",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/codex_task.sh"
+        ]
+      }
+    }
+  ],
+  "repeats": 2,
+  "oracles": [
+    {
+      "id": "O-SC-2",
+      "kind": "exit_zero_file",
+      "path": "solution.txt"
+    }
+  ],
+  "partition": "development",
+  "quota_protections": {
+    "max_starts_per_hour": 30,
+    "budget_stop_per_provider": 30,
+    "cooldown_on_quota_minutes": 60
+  }
+}

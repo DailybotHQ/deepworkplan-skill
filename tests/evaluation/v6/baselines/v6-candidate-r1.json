@@ -1,0 +1,25 @@
+{
+ "schema": "deepworkplan-skill/evaluation/v6/baseline-freeze/1",
+ "comparator": "v6-candidate",
+ "tag": "v6-candidate-r1",
+ "peeled_commit": "80566682c69b760c8914552eb863ccb9970cd96a",
+ "upstream": "local working tree of DailybotHQ/deepworkplan-skill branch feat/dwp-v6-verified-autonomy (plan PLAN_v6_verified_autonomy; tasks 1-20 complete at freeze)",
+ "resolved_at": "2026-09-27T01:20:00Z",
+ "resolution": "Development candidate round 1: the v6-generating working tree at commit 8056668 exported as a real copy. The shipped v6 core (context selection, outcomes, scheduler, resources, migration) plus the v6 lifecycle wiring; frontmatter version remains release-bot owned. Each development round freezes its own immutable snapshot; rounds never rewrite this one.",
+ "snapshot": {
+  "path": "tmp/repositories/dwp-v6-lab/packs/v6/v6-candidate-r1-13a2c4c268f836db",
+  "digest": "13a2c4c268f836db0005665ced5a3a5162959c5d7d3abbc0c089a5737987754b",
+  "digest_definition": "SHA-256 of the snapshot's SHA256SUMS manifest; the manifest itself lists every snapshot file with its SHA-256, LC_ALL=C sorted",
+  "files": 149,
+  "manifest": "SHA256SUMS",
+  "export_method": "cp -R skills/deepworkplan (real copy; live symlinks prohibited); pycache stripped before hashing"
+ },
+ "pack": {
+  "path": ".",
+  "version": "5.5.4"
+ },
+ "integrity": {
+  "algorithm": "sha256",
+  "verify": "python3 tests/evaluation/v6/baselines/verify_snapshot.py --baseline tests/evaluation/v6/baselines/v6-candidate-r1.json"
+ }
+}
