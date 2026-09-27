@@ -344,6 +344,8 @@ def synthesize_contract(analysis, authority):
         'invariants': [],
         'scope': {
             'allowed_paths': ['.dwp/plans/%s/' % folder],
+            # Records-only default: empty is undeclared (not unrestricted).
+            'allowed_command_classes': ['true'],
             'forbidden_operations': ['publication', 'force-push',
                                      'history-deletion']},
         'authorization': {

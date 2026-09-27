@@ -902,13 +902,16 @@ class Writer:
                 'attempt, never before it' % task_id)
         declared = self.r.contract.get('scope', {}).get(
             'allowed_command_classes') or []
-        if declared:
-            head = command if isinstance(command, str) else ' '.join(command)
-            head = head.split()[0] if head.split() else ''
-            if os.path.basename(head) not in declared:
-                raise LedgerError(
-                    'gate command %r is outside the contract declared '
-                    'command classes %s' % (head, sorted(declared)))
+        if not declared:
+            raise LedgerError(
+                'gate refused: contract declared no command classes '
+                '(empty allowlist is undeclared, not unrestricted)')
+        head = command if isinstance(command, str) else ' '.join(command)
+        head = head.split()[0] if head.split() else ''
+        if os.path.basename(head) not in declared:
+            raise LedgerError(
+                'gate command %r is outside the contract declared '
+                'command classes %s' % (head, sorted(declared)))
         fp = self.fingerprint(task_id, command, selection)
         if reuse:
             prior = self.evidence_lookup(fp, task_id, criterion)
