@@ -251,8 +251,10 @@ confirmed by an independent agent pass (6/6 claims exact).
 
 ## Failure taxonomy (predeclared procedure)
 
-Final census at 48/48 completed: **zero non-passing cells** — all eight
-predeclared classes are empty at the last record. The taxonomy earned its
+Final census at 48/48 last-records: **zero cells with a standing taxonomy
+primary class** (the eight predeclared classes are empty at the last
+record). That census is not the oracle pass/fail ledger — calibrated
+verdicts on the same 48 cells are **38 PASS · 8 FAIL · 2 ERROR** below. The taxonomy earned its
 keep mid-round: 20 cells recorded environment-class events on the way
 (18 quota-refusal cells — every codex chain that ever refused — and 2
 claude ceiling timeouts), plus 1 bookkeeping-class event (the SC-2 phantom,
