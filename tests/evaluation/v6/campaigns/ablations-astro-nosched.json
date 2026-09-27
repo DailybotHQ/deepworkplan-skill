@@ -1,0 +1,57 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/campaign/1",
+  "name": "ablations-astro-nosched",
+  "paid": true,
+  "requires_enforced_isolation": false,
+  "launch_readiness": "Task 22 component ablations, family astro, treatment nosched: adaptive scheduling removed (fixed plan-order dispatch, no proposals). Arm C carries this campaign's treatment pack; one-factor-removed variants keep mandatory v5 safety checks intact. Predeclared design: .dwp/plans/PLAN_v6_verified_autonomy/22.task_run_component_ablations.md.",
+  "arms": {
+    "C": {
+      "pack": "packs/v6/v6-abl-nosched-6562b4703aeedd90"
+    }
+  },
+  "seed": {
+    "path": "tests/evaluation/v6/fixtures/astro/seed",
+    "family": "astro"
+  },
+  "tasks": [
+    {
+      "id": "AC-2",
+      "prompt": "Add tag archives at /tags/<tag>/ with stable URLs linked from every post's tags, plus pagination on /blog/ at 3 posts per page preserving post URLs. Acceptance: archive pages exist for existing tags, pagination links both directions, no existing post URL changes, and 'pnpm run check' passes."
+    },
+    {
+      "id": "AC-5",
+      "prompt": "Give every page a canonical URL and preserve RSS/sitemap integrity; add a permanent redirect from /posts/<slug>/ to /blog/<slug>/. Acceptance: canonicals match final routes, RSS and sitemap enumerate built posts with resolving URLs, /posts/first-post/ redirects to /blog/first-post/."
+    }
+  ],
+  "strata": [
+    {
+      "name": "claude-code",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/claude_task.sh"
+        ]
+      }
+    }
+  ],
+  "repeats": 1,
+  "oracles": [
+    {
+      "id": "O-AC-2",
+      "kind": "exit_zero_file",
+      "path": "solution.txt"
+    },
+    {
+      "id": "O-AC-5",
+      "kind": "exit_zero_file",
+      "path": "solution.txt"
+    }
+  ],
+  "partition": "development",
+  "quota_protections": {
+    "max_starts_per_hour": 30,
+    "budget_stop_per_provider": 25,
+    "cooldown_on_quota_minutes": 60
+  }
+}
