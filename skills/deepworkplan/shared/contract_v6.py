@@ -383,7 +383,11 @@ def _scope_errors(doc, errors):
     else:
         _str_list(scope['allowed_paths'], 'contract.scope.allowed_paths',
                   errors)
-    if 'allowed_command_classes' in scope:
+    if 'allowed_command_classes' not in scope or not scope['allowed_command_classes']:
+        errors.append('contract.scope.allowed_command_classes: expected a '
+                      'non-empty list - an empty allowlist is undeclared, '
+                      'not unrestricted')
+    else:
         if _str_list(scope['allowed_command_classes'],
                      'contract.scope.allowed_command_classes', errors):
             if len(set(scope['allowed_command_classes'])) != \
@@ -1409,6 +1413,8 @@ def self_test():
     probe('empty handoff condition',
           lambda c: c.update(scheduling={'handoff': {
               'fresh_context': '  '}}))
+    probe('empty allowed_command_classes',
+          lambda c: c['scope'].update(allowed_command_classes=[]))
     probe('journal: refused adaptation without a reason',
           None, lambda es: es[4].pop('reason'))
     probe('journal: adaptation carrying criterion content',
