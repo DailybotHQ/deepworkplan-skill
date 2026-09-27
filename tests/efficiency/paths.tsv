@@ -106,3 +106,9 @@ resume-v6	v6-recovery	Step 2.0 — the plan folder carries a manifest contract p
 resume-v6	v6-recovery	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	spec/V6_LIFECYCLE.md
 resume-v6	execution-handoff	Step 5 resumes into the execution loop	execute/SKILL.md
 resume-v6	v6-loop	Step 2.0 of execute — the plan is v6	execute/v6.md
+onboard-v6	entry	t0 — router + onboard contract + the linked shared resources	SKILL.md
+onboard-v6	entry	t0 — router + onboard contract + the linked shared resources	onboard/SKILL.md
+onboard-v6	entry	t0 — router + onboard contract + the linked shared resources	shared/adaptation.md
+onboard-v6	entry	t0 — router + onboard contract + the linked shared resources	shared/dwp-paths.md
+onboard-v6	v6-records	Phase 2c — the repository will run v6 plans (pack line 6+ or an explicit request)	onboard/v6.md
+onboard-v6	principles	Phase 0 or Phase 3 — agent rules are assessed or written	shared/working-principles.md

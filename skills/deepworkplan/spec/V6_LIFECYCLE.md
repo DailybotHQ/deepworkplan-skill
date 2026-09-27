@@ -181,3 +181,26 @@ pointer is recorded missing, never dropped); a missing `state.json` on the
 receiving host is expected and rebuilt by `project`. The journal is never
 replayed as conversation context: resumption goes back through the execute
 v6 loop with its per-task context manifest.
+
+## 10. Onboarding guidance (normative)
+
+Onboarding a repository that will run v6 plans (§2's activation rule)
+adds four records to the generated guidance, taught by the trigger-gated
+[`../onboard/v6.md`](../onboard/v6.md) and reconciled under the same
+non-destructive rules as every other generated section:
+
+1. a **capability declaration** using exactly the closed ability set of
+   `shared/resources.py` — unstated is `false`, an unmeterable limit is
+   advisory with the missing ability named, `telemetry` is opt-in, and
+   the minimal host is supported;
+2. **authority boundaries** drawn from the repository's real approval
+   rules — never boilerplate;
+3. an **outcome/test mapping** citing the repository's own runnable
+   commands — never an invented or aspirational check;
+4. **concise working context** — entry-point budget discipline; nothing
+   here expands routine per-task reads.
+
+A v5-only repository MUST receive none of these sections. Upgrading a
+harness reconciles; it never re-onboards from scratch and never converts
+an existing plan across generations (§8). A second pass with unchanged
+inputs MUST produce no diff.
