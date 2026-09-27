@@ -72,6 +72,12 @@ LOCK_STALE_SECONDS = 900
 # journal-event/v6, and is described by spec/schema/plan-snapshot-v6.schema.json.
 STATE_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-snapshot/v6.json'
 
+# RFC 9.1 again, for the plan identity: the v6 manifest is its own new
+# generation (the v1/v2/v5 manifest shapes are frozen), and it carries the
+# A12 contract pointer that makes a plan's v6-ness discoverable even when
+# materialization crashed between the manifest and the contract.
+MANIFEST_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
+
 # Journal types that are render provenance, not plan state: they never
 # advance the projected snapshot (a view's own bookkeeping must not change
 # the state the view is anchored to).
@@ -112,6 +118,150 @@ def find_plan_dir(path):
     if os.path.isfile(path) and os.path.basename(parent).startswith('PLAN_'):
         return parent
     raise LedgerError('no plan directory found at %r' % path)
+
+
+def plan_markdown_digest(plan_dir):
+    """Deterministic digest of the plan markdown the authority approves.
+
+    Every ``*.md`` file directly in the plan folder (README, PROGRESS, the
+    task files), sorted by name, concatenated, sha256. A plan with no
+    markdown has nothing to approve — materialization refuses rather than
+    approving a folder of records alone.
+    """
+    names = sorted(name for name in os.listdir(plan_dir)
+                   if name.endswith('.md') and os.path.isfile(
+                       os.path.join(plan_dir, name)))
+    if not names:
+        raise LedgerError(
+            'no plan markdown (*.md) in %s — the materialization-time '
+            'approval digests the plan the authority approved; a folder '
+            'with no markdown is not approvable' % plan_dir)
+    digest = hashlib.sha256()
+    for name in names:
+        with open(os.path.join(plan_dir, name), 'rb') as fh:
+            digest.update(fh.read())
+    return digest.hexdigest()
+
+
+def _atomic_write(path, text):
+    """Write text to path via temp + rename + fsync (write discipline)."""
+    hold = os.path.dirname(path)
+    fd, tmp = tempfile.mkstemp(dir=hold, prefix='.tmp-')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.rename(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def materialize_plan(plan_dir, contract_file, authority='developer',
+                     mechanism='plan_authorship', note=None):
+    """Materialize a v6 plan: manifest -> contract -> approval (A12).
+
+    One guarded, resumable sequence. The order is normative (RFC 3.1/A12,
+    ``spec/V6_LIFECYCLE.md``): the manifest carries the contract pointer so
+    a crash between manifest and contract still leaves the plan's v6-ness
+    discoverable; the contract lands stamped with its content-addressed
+    identity; the materialization-time ``approval`` journal event — citing
+    the live ``contract_id`` and the digest of the plan markdown — is the
+    first journal event and the only thing that opens the task-start gate.
+
+    Every step is idempotent and resume-safe: an interrupted materialization
+    is completed by running it again with the same inputs. What is never
+    allowed: rewriting a contract that differs (that is a revision — the
+    refine amendment path), or touching a manifest of another generation
+    (a v1/v2/v5 manifest belongs to its recorded lifecycle, RFC 9.2).
+    """
+    if mechanism not in contract_v6.MECHANISMS:
+        raise LedgerError(
+            'mechanism %r outside %s (D3-2: exactly two exist)'
+            % (mechanism, ' and '.join(contract_v6.MECHANISMS)))
+    with open(contract_file, encoding='utf-8') as fh:
+        contract = json.load(fh)
+    contract.pop('contract_id', None)
+    errors = contract_v6.contract_errors(contract)
+    if errors:
+        raise LedgerError('contract invalid: %s' % errors[0])
+    folder = os.path.basename(os.path.normpath(plan_dir))
+    if contract.get('plan') != folder:
+        raise LedgerError(
+            'contract plan %r does not match the plan folder %r — the '
+            'manifest asserts the folder identity; materializing a '
+            'mismatched contract would record the wrong plan'
+            % (contract.get('plan'), folder))
+    cid = contract_v6.compute_contract_id(contract)
+    digest = plan_markdown_digest(plan_dir)
+
+    # -- 1. manifest: the contract pointer (written first, A12) ----------
+    manifest_path = os.path.join(plan_dir, 'manifest.json')
+    manifest = {'schema': MANIFEST_SCHEMA_URL, 'plan': contract['plan'],
+                'contract': {'id': cid, 'path': 'contract.json'}}
+    if os.path.exists(manifest_path):
+        with open(manifest_path, encoding='utf-8') as fh:
+            existing = json.load(fh)
+        if existing.get('schema') != MANIFEST_SCHEMA_URL:
+            raise LedgerError(
+                'manifest.json is %r — a different generation. v1/v2/v5 '
+                'manifests belong to their recorded lifecycle and are '
+                'never rewritten (RFC 9.2)' % existing.get('schema'))
+        if (existing.get('contract') or {}).get('id') != cid:
+            raise LedgerError(
+                'manifest contract pointer %r does not match this '
+                'contract %r — never rewrite a pointer; amend through '
+                'refine (the revision chain)' %
+                ((existing.get('contract') or {}).get('id'), cid))
+    else:
+        _atomic_write(manifest_path, json.dumps(
+            manifest, sort_keys=True, indent=2) + '\n')
+
+    # -- 2. contract: stamped, atomic, never rewritten -------------------
+    chain = os.path.join(plan_dir, 'contracts')
+    if os.path.isdir(chain):
+        raise LedgerError(
+            'a contracts/ revision chain exists — the contract is owned '
+            'by amendments from here on; materialization never rewrites it')
+    contract_path = os.path.join(plan_dir, 'contract.json')
+    if os.path.exists(contract_path):
+        with open(contract_path, encoding='utf-8') as fh:
+            stamped = json.load(fh)
+        if stamped.get('contract_id') != cid:
+            raise LedgerError(
+                'contract.json already carries %r; this contract is %r — a '
+                'materialization never rewrites a contract, that is a '
+                'revision (refine amendment path)' %
+                (stamped.get('contract_id'), cid))
+    else:
+        _atomic_write(contract_path, json.dumps(
+            dict(contract, contract_id=cid), sort_keys=True, indent=2) + '\n')
+
+    # -- 3. approval: the materialization-time journal event -------------
+    lock = CooperativeLock(plan_dir, identity='%s pid:%d' %
+                           (LEDGER_IDENTITY, os.getpid()))
+    lock.acquire()
+    try:
+        writer = Writer(PlanRecords(plan_dir), lock)
+        for event in writer.events:
+            if event.get('type') == 'approval' and \
+                    event.get('contract_id') == cid:
+                return {'plan': contract['plan'], 'contract_id': cid,
+                        'approval_seq': event.get('seq'),
+                        'digest': digest, 'resumed': True}
+        payload = {'authority': authority, 'mechanism': mechanism,
+                   'plan_digest': digest}
+        event = writer.append(
+            'approval', payload,
+            actor={'kind': 'human', 'identity': authority},
+            note=note, idempotent=True)
+        return {'plan': contract['plan'], 'contract_id': cid,
+                'approval_seq': event.get('seq'), 'digest': digest,
+                'resumed': False}
+    finally:
+        lock.release()
 
 
 class PlanRecords:
@@ -668,8 +818,16 @@ class Writer:
                 return task
         raise LedgerError('task %r is not in the contract' % task_id)
 
-    def evidence_lookup(self, fingerprint):
-        """Prior result on an EXACT fingerprint match, else None."""
+    def evidence_lookup(self, fingerprint, task_id=None, criterion=None):
+        """Prior result on an EXACT fingerprint match, else None.
+
+        Reuse is sound only for the same (task, criterion) the evidence
+        was recorded under: satisfaction is evaluated per (task,
+        criterion), so replaying another linkage's cached result would
+        mint no evidence for the requester and dead-loop its gate (every
+        run would short-circuit into the cache). A cross-linkage run
+        executes freshly and records its own result.
+        """
         if not os.path.exists(self.r.evidence_path):
             return None
         with open(self.r.evidence_path, encoding='utf-8') as fh:
@@ -681,8 +839,14 @@ class Writer:
                     rec = json.loads(line)
                 except json.JSONDecodeError:
                     continue  # corrupt sidecar line: skip, never crash reads
-                if rec.get('fingerprint') == fingerprint:
-                    return rec
+                if rec.get('fingerprint') != fingerprint:
+                    continue
+                if task_id is not None and rec.get('task') != task_id:
+                    continue
+                if criterion is not None and \
+                        rec.get('criterion') != criterion:
+                    continue
+                return rec
         return None
 
     def _evidence_put(self, rec):
@@ -735,7 +899,7 @@ class Writer:
                     'command classes %s' % (head, sorted(declared)))
         fp = self.fingerprint(task_id, command, selection)
         if reuse:
-            prior = self.evidence_lookup(fp)
+            prior = self.evidence_lookup(fp, task_id, criterion)
             if prior is not None:
                 return {'reused': True, 'fingerprint': fp,
                         'exit_code': prior['exit_code'],
@@ -1006,8 +1170,16 @@ class Writer:
         return criterion_states(self.r.contract, self.events, task_id)
 
     def task_status(self, task_id):
+        """Derived, never declared: no task_start -> pending; every
+        gate_intent criterion satisfied in-window -> completed (the same
+        zero-test predicate the scheduler selects by); otherwise
+        in_progress. A restart reopens the evidence window, so a
+        restarted task derives in_progress again until fresh evidence
+        lands."""
         if self.task_start_seq(task_id) is None:
             return 'pending'
+        if task_complete(self.r.contract, self.events, task_id):
+            return 'completed'
         return 'in_progress'
 
     def project(self):
@@ -1056,12 +1228,7 @@ class Writer:
                 'criteria': self.criterion_state(task['id']),
             })
         blob = json.dumps(state, sort_keys=True, indent=2) + '\n'
-        tmp = self.r.state_path + '.tmp'
-        with open(tmp, 'w', encoding='utf-8') as fh:
-            fh.write(blob)
-            fh.flush()
-            os.fsync(fh.fileno())
-        os.replace(tmp, self.r.state_path)
+        _atomic_write(self.r.state_path, blob)
         return state
 
     def _resource_totals(self):
@@ -1412,6 +1579,28 @@ def self_test():
         check('gate executor ran and recorded',
               run.get('reused') is False and run.get('exit_code') == 0,
               repr(run))
+        # 3c-bis. reuse is per (task, criterion): another linkage with an
+        # identical command executes fresh and records its own evidence —
+        # replaying the cached result would mint nothing for the requester
+        # and dead-loop its gate.
+        orig_contract = writer.r.contract
+        again = writer.run_gate('T-implement', 'true', criterion='AC-one')
+        check('same (task, criterion) replays from the cache',
+              again.get('reused') is True and
+              again.get('exit_code') == run.get('exit_code'))
+        contract_two = json.loads(json.dumps(writer.r.contract))
+        contract_two['acceptance']['criteria'].append(
+            {'id': 'AC-two', 'statement': 'Second criterion',
+             'observable_check': 'true exits 0',
+             'accepted_evidence': ['observed']})
+        contract_two['tasks'][0]['gate_intent'].append(
+            {'criterion': 'AC-two', 'check': 'true exits 0'})
+        writer.r.contract = contract_two
+        fresh = writer.run_gate('T-implement', 'true', criterion='AC-two')
+        check('a different criterion never replays another linkage',
+              fresh.get('reused') is False and fresh.get('exit_code') == 0,
+              repr(fresh))
+        writer.r.contract = orig_contract
         states = writer.criterion_state('T-implement')
         check('in-window observed evidence satisfies',
               states and states[0].get('satisfied'))
@@ -1501,8 +1690,9 @@ def self_test():
         snap = json.load(open(rec5.state_path, encoding='utf-8'))
         inprog = [t for t in snap.get('tasks', [])
                   if t['id'] == 'T-implement']
-        check('post-roll projection keeps task positions',
-              bool(inprog) and inprog[0].get('status') == 'in_progress'
+        check('post-roll projection keeps task positions (status derives '
+              'completed once every criterion is in-window satisfied)',
+              bool(inprog) and inprog[0].get('status') == 'completed'
               and inprog[0].get('started_seq') is not None,
               repr(inprog))
         lock5.release()
@@ -1571,6 +1761,122 @@ def self_test():
               '%d repairs now vs %d before' %
               (len(repairs_now), len(total_repairs)))
         lock8.release()
+
+        # 14-19. materialization: manifest -> contract -> approval (A12)
+        plan2 = os.path.join(tmp, 'PLAN_selftest_materialize')
+        os.makedirs(plan2)
+        with open(os.path.join(plan2, 'README.md'), 'w',
+                  encoding='utf-8') as fh:
+            fh.write('# Plan selftest materialize\n\nplan markdown\n')
+        contract2 = _sibling_module()._selftest_contract()
+        contract2['plan'] = 'PLAN_selftest_materialize'
+        contract2['tasks'][0]['touched_surface'] = [src]
+        draft = os.path.join(tmp, 'draft-contract.json')
+        with open(draft, 'w', encoding='utf-8') as fh:
+            json.dump(contract2, fh)
+        result = materialize_plan(plan2, draft, authority='selftest')
+        cid2 = contract_v6.compute_contract_id(contract2)
+        manifest = json.load(open(os.path.join(plan2, 'manifest.json')))
+        check('materialize writes the manifest with the contract pointer',
+              manifest == {'schema': MANIFEST_SCHEMA_URL,
+                           'plan': 'PLAN_selftest_materialize',
+                           'contract': {'id': cid2,
+                                        'path': 'contract.json'}},
+              repr(manifest))
+        stamped2 = json.load(open(os.path.join(plan2, 'contract.json')))
+        check('materialize stamps the contract and approval citing it',
+              stamped2.get('contract_id') == cid2 and
+              result['contract_id'] == cid2 and
+              result['approval_seq'] is not None)
+        digest2 = plan_markdown_digest(plan2)
+        check('the approval digests the plan markdown',
+              len(digest2) == 64 and digest2 != 'a' * 64)
+        # resume: a re-run with the same inputs is idempotent
+        again = materialize_plan(plan2, draft, authority='selftest')
+        check('re-running materialize resumes, never duplicates',
+              again['resumed'] and
+              again['approval_seq'] == result['approval_seq'])
+        # task_start now opens (the approval cites the live contract)
+        lockm = CooperativeLock(plan2).acquire()
+        writerm = Writer(PlanRecords(plan2), lockm)
+        approvals = [e for e in writerm.events if e['type'] == 'approval']
+        tsm = writerm.start_task('T-implement',
+                                 actor={'kind': 'agent',
+                                        'identity': 'selftest'})
+        lockm.release()
+        check('a materialized plan passes the approval gate',
+              len(approvals) == 1 and tsm.get('task') == 'T-implement')
+        # a manifest-only crash completes on re-run; a DIFFERENT contract
+        # never rewrites what landed
+        plan3 = os.path.join(tmp, 'PLAN_selftest_crash')
+        os.makedirs(plan3)
+        with open(os.path.join(plan3, 'README.md'), 'w',
+                  encoding='utf-8') as fh:
+            fh.write('# crash window\n')
+        contract3 = json.loads(json.dumps(contract2))
+        contract3['plan'] = 'PLAN_selftest_crash'
+        draft3 = os.path.join(tmp, 'draft3.json')
+        json.dump(contract3, open(draft3, 'w', encoding='utf-8'))
+        cid3 = contract_v6.compute_contract_id(contract3)
+        with open(os.path.join(plan3, 'manifest.json'), 'w',
+                  encoding='utf-8') as fh:
+            json.dump({'schema': MANIFEST_SCHEMA_URL,
+                       'plan': 'PLAN_selftest_crash',
+                       'contract': {'id': cid3, 'path': 'contract.json'}},
+                      fh)
+        resumed3 = materialize_plan(plan3, draft3, authority='selftest')
+        kept_manifest = json.load(open(os.path.join(plan3,
+                                                    'manifest.json')))
+        check('a crash between manifest and contract resumes cleanly',
+              os.path.isfile(os.path.join(plan3, 'contract.json')) and
+              kept_manifest['contract']['id'] == cid3 and
+              resumed3['contract_id'] == cid3,
+              repr(kept_manifest))
+        try:
+            materialize_plan(plan3, draft, authority='selftest')
+            check('a different contract never rewrites the plan', False)
+        except LedgerError as exc:
+            check('a different contract never rewrites the plan',
+                  'never rewrites' in str(exc) or
+                  'does not match' in str(exc))
+        contract2b = json.loads(json.dumps(contract2))
+        contract2b['outcome']['statement'] += ' (variant content)'
+        draft2b = os.path.join(tmp, 'draft2b.json')
+        json.dump(contract2b, open(draft2b, 'w', encoding='utf-8'))
+        try:
+            materialize_plan(plan2, draft2b, authority='selftest')
+            check('a pointer mismatch is refused, never edited', False)
+        except LedgerError as exc:
+            check('a pointer mismatch is refused, never edited',
+                  'does not match this contract' in str(exc))
+        try:
+            materialize_plan(plan2, draft3, authority='selftest')
+            check('a contract naming another folder is refused', False)
+        except LedgerError as exc:
+            check('a contract naming another folder is refused',
+                  'does not match the plan folder' in str(exc))
+        with open(os.path.join(plan3, 'manifest.json'), 'w',
+                  encoding='utf-8') as fh:
+            json.dump({'schema': 'https://deepworkplan.com/schema/'
+                                 'plan-manifest/v5.json'}, fh)
+        try:
+            materialize_plan(plan3, draft3, authority='selftest')
+            check('a v5-generation manifest is never rewritten', False)
+        except LedgerError as exc:
+            check('a v5-generation manifest is never rewritten',
+                  'never rewritten' in str(exc))
+        empty = os.path.join(tmp, 'PLAN_no_markdown')
+        os.makedirs(empty)
+        contract4 = json.loads(json.dumps(contract3))
+        contract4['plan'] = 'PLAN_no_markdown'
+        draft4 = os.path.join(tmp, 'draft4.json')
+        json.dump(contract4, open(draft4, 'w', encoding='utf-8'))
+        try:
+            materialize_plan(empty, draft4, authority='selftest')
+            check('no plan markdown means no approval', False)
+        except LedgerError as exc:
+            check('no plan markdown means no approval',
+                  'not approvable' in str(exc))
     return (not failures, failures, probes[0])
 
 
@@ -1586,8 +1892,10 @@ def _writer_for(args, force=False):
 
 
 def main(argv):
-    usage = ('usage: ledger.py --plan DIR {append|start|gate|reuse|project|'
-             'complete|export|roll|inspect|self-test} [options]')
+    usage = ('usage: ledger.py --plan DIR {materialize --contract FILE '
+             '[--authority WHO] [--mechanism plan_authorship|'
+             'pre_authorization] [--note TEXT] | append|start|gate|reuse|'
+             'project|complete|export|roll|inspect|self-test} [options]')
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--plan')
     parser.add_argument('command')
@@ -1606,6 +1914,9 @@ def main(argv):
     parser.add_argument('--trust')
     parser.add_argument('--evidence-path')
     parser.add_argument('--note')
+    parser.add_argument('--contract')
+    parser.add_argument('--authority')
+    parser.add_argument('--mechanism')
     try:
         args = parser.parse_args(argv)
     except SystemExit:
@@ -1620,6 +1931,22 @@ def main(argv):
             print('FAIL', failure)
         print('self-test: %s (%d probes)' % ('OK' if ok else 'FAILED', probes))
         return 0 if ok else 1
+    if args.command == 'materialize':
+        if not (args.plan and args.contract):
+            print('materialize requires --plan and --contract')
+            return 2
+        result = materialize_plan(
+            find_plan_dir(args.plan), args.contract,
+            authority=args.authority or 'developer',
+            mechanism=args.mechanism or 'plan_authorship',
+            note=args.note)
+        print('OK: materialized %s contract %s (manifest, contract, '
+              'approval seq %s)%s' %
+              (result['plan'], result['contract_id'][:12],
+               result['approval_seq'],
+               ' — resumed an interrupted materialization'
+               if result['resumed'] else ''))
+        return 0
     if not args.plan:
         print(usage)
         return 2
@@ -1709,7 +2036,8 @@ def main(argv):
             try:
                 fp = writer.fingerprint(args.task, command,
                                         args.selection)
-                prior = writer.evidence_lookup(fp)
+                prior = writer.evidence_lookup(fp, args.task,
+                                               args.criterion)
                 if prior is None:
                     print('NO EVIDENCE for fingerprint %s' % fp[:12])
                     return 1

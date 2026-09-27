@@ -65,7 +65,25 @@ List `PLAN_*` folders in `.dwp/plans/`; mark the most recently modified as
 Accept a number, name, `all`, or `latest`.
 
 ### Step 2 — Gather Status Information (compact projection first)
-For each plan:
+**v6 plans first:** a plan folder with a `manifest.json` contract pointer,
+`contract.json` or a `contracts/` chain is v6 — its records are the journal,
+not `state.json`. Report from the shipped read-only commands, never by
+re-deriving by hand: `python3 ../shared/ledger.py --plan <dir> inspect`
+(events, one line each, torn tails reported); `python3
+../shared/scheduler.py ready <dir>` (next dispatch, read-only);
+`python3 ../shared/resources.py --plan <dir> report` / `routing` / `hold`
+(envelope posture, incl. any exhaustion hold); `python3
+../shared/outcomes.py --plan <dir> receipt` (recomputed outcome receipt —
+it changes when the records change). Do **not** run `project` or
+`views.py render` here — both write, and this flow stays read-only; the
+`state.json` already on disk is a v6 projection and may be quoted with its
+`generated_at` stamp, marked as derived. Status findings (torn tail, no
+approval event, projection disagreement) are reported with their suggested
+repair, never repaired. Then continue with the README index and
+consistency reading below (items 2–5 apply unchanged; item 1's
+`state.json` is a v6 projection).
+
+For each (non-v6) plan:
 1. **State first.** If `state.json` exists, read it: `status`, `completed_count`
    / `task_count`, `checkpoint`, `blocked`, `updated_at`/`updated_by`, and the
    per-task `status` list. This is the compact projection; it is enough for the

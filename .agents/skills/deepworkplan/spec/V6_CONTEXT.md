@@ -9,7 +9,9 @@
 > over the plan's records — it takes no lock and writes nothing except the
 > files you name with `--out`). The v5 standard is untouched: these rules
 > bind **v6 new plans only**, and the v5 read tiers remain the loading
-> discipline the manifest's triggers reference.
+> discipline the manifest's triggers reference. The manifest document's
+> shape is published as
+> [`schema/context-manifest-v6`](schema/context-manifest-v6.schema.json).
 
 All documents in this spec use RFC-2119 language. The manifest is a
 **derived view**: it is recomputed from `contract.json` (or the live

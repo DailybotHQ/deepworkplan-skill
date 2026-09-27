@@ -172,3 +172,13 @@ all-False floor is the documented minimal host and every ability it lacks
 degrades the matching limits to advisory with the reason named — never to
 a silent or invented enforcement. `spec/V6_RESOURCES.md` is the normative
 contract; `bats tests/v6-budget.bats` is the behavior-tested evidence.
+
+The v6 **plan generation** is a parallel lifecycle, not a host stratum: a
+plan folder is v6 by its artifacts (`manifest.json` contract pointer,
+`contract.json`, `contracts/` chain) and v5/v6 plans coexist in one
+`.dwp/` — each keeps its own recorded lifecycle, and no flow migrates
+across generations (`spec/V6_LIFECYCLE.md`). New plans get v6 only when
+the pack line is 6+ or the developer explicitly asks for the candidate;
+`bats tests/v6-lifecycle.bats` is the behavior-tested evidence for the
+wiring, including the read-only status/verify surfaces and the guarded
+materialization sequence.

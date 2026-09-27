@@ -100,6 +100,12 @@ reading companions "to be safe" is the failure mode this tiering removed.)
   command the repository does not have.
   That is the whole t0 set — no guide or spec file is compulsory.
 - **Conditional — read only when the trigger fires:**
+  - [`v6.md`](v6.md) (this directory) — read only when Step 0.3 detects the
+    v6 candidate (pack line 6+ or an explicit v6 request); it carries the
+    whole v6 authoring + materialization path.
+  - [`../spec/V6_CONTRACT.md`](../spec/V6_CONTRACT.md) — read only when
+    that v6 path composes the outcome contract (the closed field set,
+    evidence classes and amendment chain it must conform to).
   - [`../guide/authoring.md`](../guide/authoring.md) — read §4–§5 (plan
     README structure, task-file anatomy incl. the Touched Surface) only when
     Step 4.4 expands the plan into Full task files; read §5.3–§5.5 only when
@@ -247,6 +253,14 @@ all following text is literal context. Never inspect ordinary context words.
 **Routing by mode:**
 - `no input` / `name-only` → Step 1, then Step 2.
 - `full-context` → Step 1, then Step 3.
+
+**0.3 Detect the v6 candidate:** if this pack's line is 6+ or the developer
+explicitly asked for a v6 plan (e.g. `v6` among the tokens, "create a v6
+plan"), the plan is created under the v6 execution contract instead: read
+[`v6.md`](v6.md) (this directory) and follow it — the steps below compose
+the recorded v5 lifecycle and never produce a v6 plan silently. An
+explicit candidate request overrides a 5.x line; a 5.x line never
+overrides an explicit request.
 
 ### Step 1 — Quick Introduction
 

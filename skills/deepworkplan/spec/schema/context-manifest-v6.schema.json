@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/context-manifest/v6.json",
+  "title": "DWP v6 per-task context manifest",
+  "description": "The derived, read-only context selection for ONE task of a v6 plan, produced by shared/context_manifest.py (spec/V6_CONTEXT.md): the cheap re-anchoring surface an executing agent loads instead of history. Never hand-edited and never a source of truth - every value is recomputed from the contract and the journal, so two derivations over the same records are identical (deterministic under replay; as_of carries the records' position and timestamp, not a wall clock). Context pruning can never hide the acceptance or authorization boundary: the three mandatory sections (authorization, repository_rules, acceptance) are unconditional, and a --sections request that would drop one is refused.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "derived_by",
+    "plan",
+    "contract_id",
+    "contract_revision",
+    "task",
+    "as_of",
+    "authorization",
+    "repository_rules",
+    "touched_surface",
+    "acceptance",
+    "evidence",
+    "next_action",
+    "dead_ends",
+    "freshness"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/context-manifest/v6.json"
+    },
+    "derived_by": {
+      "const": "dwp context_manifest.py",
+      "description": "The shipped helper identity that produced this derivation; a document produced by any other path must not wear this schema."
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_[A-Za-z0-9_-]+$",
+      "description": "The plan folder name, mirrored from the contract."
+    },
+    "contract_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "The live contract's content-addressed identity this derivation was computed against."
+    },
+    "contract_revision": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The live contract's revision; after an amendment this is the highest revision under contracts/."
+    },
+    "task": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The task id this manifest selects context for."
+    },
+    "as_of": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["last_seq", "event_ts"],
+      "properties": {
+        "last_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The journal sequence of the last event included; the manifest is stale by definition once the journal grows past it."
+        },
+        "event_ts": {
+          "type": "string",
+          "description": "The timestamp of that last event (the scheduler's clock, A11)."
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approvals", "contract_authorization", "permissions"],
+      "properties": {
+        "approvals": {
+          "type": "array",
+          "description": "Approval events citing the live contract id - the running authority (task_start is refused without one).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["authority", "mechanism", "ts", "seq"],
+            "properties": {
+              "authority": {"type": ["string", "null"]},
+              "mechanism": {
+                "type": "string",
+                "description": "How authority was granted (plan_authorship or pre_authorization); the mechanism is recorded honestly and both gate identically (A2/A3)."
+              },
+              "ts": {"type": ["string", "null"]},
+              "seq": {"type": "integer", "minimum": 1}
+            }
+          }
+        },
+        "contract_authorization": {
+          "description": "The contract's authorization block verbatim; its shape is governed by plan-contract/v6.json, not restated here.",
+          "type": ["object", "null"]
+        },
+        "permissions": {
+          "description": "The contract's permissions block verbatim (granted / not_granted); its shape is governed by plan-contract/v6.json, not restated here.",
+          "type": ["object", "null"]
+        }
+      }
+    },
+    "repository_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "invariants", "dependencies"],
+      "properties": {
+        "scope": {
+          "description": "The contract's scope block verbatim (allowed_paths, allowed_command_classes, forbidden_operations); governed by plan-contract/v6.json.",
+          "type": ["object", "null"]
+        },
+        "invariants": {
+          "type": "array",
+          "description": "Per declared invariant: the statement, plus the latest grammar-matching observation's state (pass / fail / stale / unevaluated).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "statement", "state", "seq"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "statement": {"type": "string"},
+              "state": {
+                "enum": ["pass", "fail", "stale", "unevaluated"]
+              },
+              "seq": {
+                "type": ["integer", "null"],
+                "description": "The seq of the observation that produced the state, or null when unevaluated."
+              },
+              "detail": {
+                "type": "string",
+                "description": "The fail/stale detail when the state carries one."
+              }
+            }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "The contract's dependencies block verbatim (pinned inputs, external systems); governed by plan-contract/v6.json.",
+          "items": {"type": "object"}
+        }
+      }
+    },
+    "touched_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "widen_discovery", "widen_reasons"],
+      "properties": {
+        "files": {
+          "type": "object",
+          "description": "Repo-relative path to its sha256 content digest; a null value means the entry is missing on disk.",
+          "additionalProperties": {
+            "type": ["string", "null"],
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "widen_discovery": {
+          "type": "boolean",
+          "description": "True when discovery must widen this cycle: a touched-surface entry is missing on disk, or the surface's impact is unmapped (no in-window accepted evidence yet)."
+        },
+        "widen_reasons": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "description": "This task's criteria with their closure decisions, recomputed by outcomes.py closure - a projection, never a declaration.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "task", "control_kind", "satisfied", "mechanism"],
+        "properties": {
+          "criterion": {"type": "string", "minLength": 1},
+          "task": {"type": "string"},
+          "control_kind": {
+            "enum": ["regression", "discrimination", "none"],
+            "description": "none for evidence-closed criteria; regression/discrimination require an executed, in-window, discriminating control pair."
+          },
+          "satisfied": {"type": "boolean"},
+          "mechanism": {
+            "type": "string",
+            "description": "How it closes or why it is still open: control_pair, evidence, reconciled, or an open/blocked explanation string."
+          },
+          "via_seq": {
+            "type": ["integer", "null"],
+            "description": "The journal seq of the closing record when one exists."
+          },
+          "verdict": {
+            "enum": ["discriminating"],
+            "description": "The control verdict that closed a controlled criterion."
+          },
+          "trust": {
+            "enum": ["observed", "asserted"],
+            "description": "The trust label of the closing evidence; observed means a shipped helper itself executed the check (A1)."
+          },
+          "evidence_path": {
+            "type": "string",
+            "description": "Pointer to the recorded evidence artifact under the plan."
+          },
+          "authority": {
+            "type": "string",
+            "description": "The amendment authority behind a reconciled closure (A4/D2-4)."
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "In-window accepted evidence for this task's satisfied criteria, with pointers that are re-checked against disk at derivation time.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "seq", "trust", "evidence_path", "pointer_resolves"],
+        "properties": {
+          "criterion": {"type": "string", "minLength": 1},
+          "seq": {"type": "integer", "minimum": 1},
+          "trust": {"enum": ["observed", "asserted"]},
+          "evidence_path": {"type": "string"},
+          "pointer_resolves": {
+            "type": "boolean",
+            "description": "Whether the evidence artifact exists on disk at derivation time; a dangling pointer is surfaced, never hidden."
+          }
+        }
+      }
+    },
+    "next_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step", "action"],
+      "properties": {
+        "step": {
+          "enum": ["approval", "start", "authority", "control", "evidence", "complete"],
+          "description": "The deterministic ladder's first match, in order: approval -> start -> authority -> control -> evidence -> complete."
+        },
+        "action": {
+          "type": "string",
+          "description": "The concrete command or authority act the ladder prescribes."
+        },
+        "criteria": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "description": "The criteria the step addresses, when it addresses specific ones."
+        }
+      }
+    },
+    "dead_ends": {
+      "type": "array",
+      "description": "The U4 digest: recorded dead approaches (failed gates, refusals, refused adaptations, non-discriminating controls), retention-biased - an entry leaves only on a proven record fact, never on a mere surface change.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "seq", "ts"],
+        "properties": {
+          "kind": {
+            "enum": ["failed_gate", "refusal", "refused_adaptation", "non_discriminating_control"]
+          },
+          "seq": {"type": "integer", "minimum": 1},
+          "ts": {"type": ["string", "null"]},
+          "task": {"type": "string"},
+          "criterion": {"type": "string"},
+          "command": {"type": "string"},
+          "exit_code": {"type": "integer"},
+          "cause": {"type": "string"},
+          "run_fingerprint": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "subject": {"type": "string"},
+          "stage": {"type": "string"},
+          "reason": {"type": "string"},
+          "verdict": {"type": "string"},
+          "recorded_contract_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "aged_out": {
+            "type": "string",
+            "description": "Why the entry no longer gates discovery (e.g. a superseded contract revision)."
+          }
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputs_fingerprint", "rule"],
+      "properties": {
+        "inputs_fingerprint": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Digest over the contract id and the current touched-surface digests; a stored fingerprint different from the current one invalidates the summary that carries it."
+        },
+        "rule": {
+          "type": "string",
+          "description": "The freshness rule in words, restated with every derivation."
+        }
+      }
+    },
+    "history_triggers": {
+      "type": "array",
+      "description": "Optional section: the ONLY declared triggers under which history beyond this manifest loads (none, a handoff, an amendment affecting this task).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trigger", "loads"],
+        "properties": {
+          "trigger": {"type": "string", "minLength": 1},
+          "loads": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

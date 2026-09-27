@@ -446,6 +446,7 @@ A v6 plan carries, beside the markdown:
 
 | Artifact | Role | Writer |
 |---|---|---|
+| `manifest.json` (v6) | Identity manifest with the **contract pointer** — written FIRST by materialization so a plan's v6-ness is discoverable even if interrupted before the contract lands; the pointer is provenance and is never edited (`schema/plan-manifest/v6.json`) | `shared/ledger.py materialize` (once) |
 | `contract.json` (or `contracts/` chain) | Outcome + authority contract; content-addressed identity | materialization / revisions (never in-place edits) |
 | `journal.ndjson` | Append-only event log — the plan's **memory** | `shared/ledger.py` only |
 | `state.json` (v6 shape) | Deterministic **snapshot projection** — the recovery root | `shared/ledger.py project` |
@@ -461,6 +462,11 @@ is a generation snapshot of the v2 shape), and the v6 snapshot is a
 different artifact projected from the journal, not a mutation of those
 shapes. The same rule gave v6 the `plan-contract/v6` and
 `journal-event/v6` labels.
+
+**Materialization order.** `shared/ledger.py materialize` writes the v6
+records in exactly this order — manifest, contract, approval event — each
+step idempotent and resumable; the full normative sequence and its
+refusals are specified in [`V6_LIFECYCLE.md`](V6_LIFECYCLE.md) §3.
 
 **Write discipline.** One writer per plan. A cooperative `.ledger.lock`
 directory serializes writers; a session that finds the journal grown

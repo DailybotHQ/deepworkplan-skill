@@ -30,6 +30,9 @@ when their moment arrives. (This ordering is deliberate: reading companions
   `dwp_dir`; its source is not part of this flow's reads. That is the whole
   t0 set — the operative rules the loop needs are inline below.
 - **Conditional — read only when the trigger fires:**
+  - [`v6.md`](v6.md) (this directory) — read only when Step 2.0 detects a
+    v6 plan (manifest contract pointer / `contract.json` / `contracts/`
+    chain); it carries the whole v6 task loop.
   - [`../spec/LITE_PLANS.md`](../spec/LITE_PLANS.md) — read only when the
     plan README declares `Plan Format: Lite` or a v2 state line (anchored
     task records, approval axis, promotion recovery).
@@ -196,6 +199,15 @@ Surface) is executed **under its own shape** — never retrofitted
 this skill is reported honestly and not executed. Note whether the README says
 the plan is pre-approved for unattended execution and whether it records an
 explicit Executive Report request.
+
+**Step 2.0 — Detect plan generation (v6).** If the plan folder carries a
+`manifest.json` whose `contract` pointer resolves, a `contract.json`, or a
+`contracts/` revision chain, this is a **v6 plan**: **read
+[`v6.md`](v6.md)** (this directory) and run the v6 loop there for the whole
+execution — the steps below are the v5 loop and do not apply. A v6 plan is
+never executed through the v5 steps, and a v5 plan is never migrated to v6
+mid-flight; a v5-only runner that meets a v6 plan reports it as unsupported
+and stops rather than approximating it.
 
 **Step 2.1 — Detect plan type.** Set `plan_type = "orchestrator"` if the README
 has a "Child DWP Plans" section, or task files contain `create_child_dwp` /

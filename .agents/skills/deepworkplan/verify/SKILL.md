@@ -140,6 +140,22 @@ Then, by reading rather than grepping:
 
 For each plan under `.dwp/plans/PLAN_{name}/`:
 
+- **v6 generation check (run first).** A folder carrying `manifest.json`
+  with a contract pointer, `contract.json`, or a `contracts/` chain is a
+  **v6 plan** and is verified against its own records, all read-only:
+  `python3 ../shared/contract_v6.py validate-contract <dir>/contract.json`
+  (or the highest revision under `contracts/`), `python3
+  ../shared/contract_v6.py validate-journal <dir>/journal.ndjson
+  --contract <dir>/contract.json`, and `python3 ../shared/ledger.py --plan
+  <dir> inspect` (an `approval` citing the live contract id must exist;
+  a torn tail is a finding). Verify the projection agrees with the
+  journal (`state.json` is generated for v6; a disagreement is a
+  finding — regenerate via `project`, never hand-edit). The v5 lifecycle
+  checks below (final-task shape, checkbox correspondence) apply to the
+  plan's human markdown as written; a v6 plan does not fail for not
+  having a v5 `state.json` hand-shape. Both generations can coexist;
+  neither is migrated by this flow.
+
 - Every task file declares an explicit scope, **acceptance criteria**, and at least one **validation gate** (a runnable command or check).
 - **Test discipline.** Tasks that add new core functionality or change product behavior require automated test coverage in their Acceptance Criteria and run the repo's tests + lint/type-check in their Validation (`DWP_SPECIFICATION.md` §5.1.1). A behavior-changing plan with zero test work is a finding, not a pass.
 - **Security discipline.** Tasks that touch auth, input handling, secrets/config, network surface, or dependencies carry security expectations in their Acceptance Criteria (`DWP_SPECIFICATION.md` §5.1.2); where the plan has a dedicated security-hardening task, it is ordered before the comprehensive-tests task.

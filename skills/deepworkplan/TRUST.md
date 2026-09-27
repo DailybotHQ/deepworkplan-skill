@@ -22,7 +22,14 @@ transactions, `shared/contract_v6.py` validating the v6 outcome
 contract and journal records (identity, graph and verdict semantics; it
 never executes gates), and — for v6 plans — `shared/ledger.py`, the single
 journal writer and gate executor (the only place `observed` gate evidence
-is produced, by actually running the declared command; it also captures
+is produced, by actually running the declared command; evidence replay
+from its cache is bound to the same task and criterion the cached result
+was recorded under, so an identical command for another linkage runs
+fresh instead of silently minting nothing; its `materialize` command is
+the guarded creator of a v6 plan — manifest contract pointer, stamped
+content-addressed contract, then the materialization-time approval event,
+each step atomic and resumable, never rewriting a different contract or
+another generation's manifest; it also captures
 each task's starting fingerprint at `task_start` and executes both legs of
 a declared control pair, materializing the old leg as a detached worktree
 at that recorded revision), `shared/views.py`

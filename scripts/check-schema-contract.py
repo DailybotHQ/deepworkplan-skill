@@ -49,6 +49,7 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/plan-contract/v6.json": json.load(open(os.path.join(d, "plan-contract-v6.schema.json"))),
         "https://deepworkplan.com/schema/journal-event/v6.json": json.load(open(os.path.join(d, "journal-event-v6.schema.json"))),
         "https://deepworkplan.com/schema/plan-snapshot/v6.json": json.load(open(os.path.join(d, "plan-snapshot-v6.schema.json"))),
+        "https://deepworkplan.com/schema/plan-manifest/v6.json": json.load(open(os.path.join(d, "plan-manifest-v6.schema.json"))),
     }
 
 
@@ -244,6 +245,55 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
     startfp2["fingerprint"] = {"revision": "r0", "dirty": "", "staged": "yes"}
     both_ok(startfp2, js, c6.journal_event_errors(startfp2), "task_start fingerprint with an extra key", False)
     notes.append("v6: journal mutants rejected by both halves (catalog / closed object / D3-3 / D3-2 / fingerprint shape)")
+
+    # Manifest (A12): the REAL materialize writes the manifest; its output
+    # validates under the published generation, and the runtime refuses
+    # every rewrite path the schema closes (era const, closed object,
+    # pointer shape). Two-half drift is caught by construction.
+    ms = schemas["https://deepworkplan.com/schema/plan-manifest/v6.json"]
+    mtmp = tempfile.mkdtemp(prefix="dwp-manifest-check-")
+    mplan = os.path.join(mtmp, "PLAN_manifest_check")
+    try:
+        os.makedirs(mplan)
+        open(os.path.join(mplan, "README.md"), "w").write("# manifest check\n")
+        mdraft = os.path.join(mtmp, "draft.json")
+        mcontract = copy.deepcopy(contract)
+        mcontract["plan"] = "PLAN_manifest_check"
+        json.dump(mcontract, open(mdraft, "w"))
+        result = ledger.materialize_plan(mplan, mdraft, authority="checker")
+        manifest = json.load(open(os.path.join(mplan, "manifest.json")))
+        merrs = errors(ms, manifest)
+        if merrs or result["contract_id"] != manifest["contract"]["id"]:
+            problems.append(f"v6 manifest probe: jsonschema rejects the real materialize manifest ({merrs[:1]})")
+        else:
+            notes.append("v6: manifest written by the shipped materialize validates under plan-manifest-v6.schema.json")
+        for label, mutate in (
+            ("mixed-era schema url", lambda d: d.update(schema="https://deepworkplan.com/schema/plan-manifest/v5.json")),
+            ("extra top-level field", lambda d: d.update(spec_version="6.0.0")),
+            ("non-hex contract id", lambda d: d["contract"].update(id="not-hex")),
+            ("wrong pointer path", lambda d: d["contract"].update(path="contracts/1.json")),
+        ):
+            doc = copy.deepcopy(manifest)
+            mutate(doc)
+            if not errors(ms, doc):
+                problems.append(f"v6 manifest mutant {label}: accepted by the schema")
+        # runtime: a v5-generation manifest is refused untouched, and a
+        # differing contract never rewrites what already landed
+        v5plan = os.path.join(mtmp, "PLAN_v5_manifest")
+        os.makedirs(v5plan)
+        open(os.path.join(v5plan, "README.md"), "w").write("# v5\n")
+        json.dump({"schema": "https://deepworkplan.com/schema/plan-manifest/v5.json",
+                   "spec_version": "5.0.0"}, open(os.path.join(v5plan, "manifest.json"), "w"))
+        try:
+            ledger.materialize_plan(v5plan, mdraft, authority="checker")
+            problems.append("v6 manifest probe: a v5-generation manifest was rewritten instead of refused")
+        except ledger.LedgerError:
+            pass
+        if json.load(open(os.path.join(v5plan, "manifest.json"))).get("spec_version") != "5.0.0":
+            problems.append("v6 manifest probe: the refused v5 manifest was modified anyway")
+        notes.append("v6: manifest mutants rejected (era const / closed object / pointer shape) and rewrite refusals hold")
+    finally:
+        shutil.rmtree(mtmp, ignore_errors=True)
 
 
 def errors(schema, doc):

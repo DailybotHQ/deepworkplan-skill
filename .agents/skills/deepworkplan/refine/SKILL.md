@@ -81,6 +81,16 @@ number, name, or `latest`. Normalize the `PLAN_` prefix.
 
 **3.2 Read and classify.** Read the plan README, the task files, `PROGRESS.md`,
 and — when present — `manifest.json` and `state.json`. Establish:
+- **The plan's generation.** A folder carrying `manifest.json` with a
+  contract pointer, `contract.json`, or a `contracts/` chain is a **v6
+  plan**: scope, acceptance, permissions or envelope changes are
+  **contract amendments** — author the revised contract, then follow the
+  v6 amendment sequence in [`../execute/v6.md`](../execute/v6.md) and
+  [`../spec/V6_LIFECYCLE.md`](../spec/V6_LIFECYCLE.md) §5 (revision
+  chain under `contracts/`, fresh approval citing the new contract id,
+  evidence invalidation for affected criteria). The markdown task edits
+  below still apply to the plan's human layer; the contract never moves
+  through them. A v5 plan is never migrated to v6 by refine.
 - **The plan's standard** (`../spec/PLAN_STATE.md` §6.1): a declared
   `**Standard:**` line in the README wins; otherwise `manifest.spec_version`;
   otherwise (no manifest) the shape of its files. **New shape** = a single

@@ -397,7 +397,8 @@ PY
 import json, sys
 state = json.load(open(sys.argv[1]))
 task = [t for t in state['tasks'] if t['id'] == 'T-publish-schemas'][0]
-assert task['status'] == 'in_progress', task
+# status derives completed once every criterion is in-window satisfied
+assert task['status'] == 'completed', task
 assert task['started_seq'] == 2, task
 assert task['criteria'][0]['satisfied'] is True, task
 print('post-roll projection intact')

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://deepworkplan.com/schema/plan-snapshot/v6.json",
   "title": "DWP v6 plan snapshot (state.json projection)",
-  "description": "The deterministic snapshot projection of a v6 plan: rebuilt only by shared/ledger.py (project) from contract + journal.ndjson, atomically (temp + rename + fsync). Every timestamp derives from event ts values, never the wall clock, so replaying the same journal bytes yields a byte-identical snapshot. New schema-URL generation per RFC 9.1: not a mutation of the v5 plan-state shapes. Task statuses are pending/in_progress as emitted today; completion states land with the lifecycle wiring and will widen this enum in the same generation before release.",
+  "description": "The deterministic snapshot projection of a v6 plan: rebuilt only by shared/ledger.py (project) from contract + journal.ndjson, atomically (temp + rename + fsync). Every timestamp derives from event ts values, never the wall clock, so replaying the same journal bytes yields a byte-identical snapshot. New schema-URL generation per RFC 9.1: not a mutation of the v5 plan-state shapes. Task statuses are derived, never declared: pending (no task_start), completed (every gate_intent criterion satisfied in-window — the same zero-test predicate the scheduler selects by), else in_progress; a restart reopens the evidence window and the task derives in_progress again until fresh evidence lands.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -124,8 +124,10 @@
         "status": {
           "enum": [
             "pending",
-            "in_progress"
-          ]
+            "in_progress",
+            "completed"
+          ],
+          "description": "Derived from the records: pending (no task_start), completed (all gate_intent criteria satisfied in-window), in_progress otherwise."
         },
         "started_seq": {
           "type": [

@@ -80,3 +80,21 @@ conditional-escalation	gate-widening	a task's gate must be widened or derived	gu
 conditional-escalation	final-review	the Final Review task begins	guide/execution.md
 conditional-escalation	final-review	the Final Review task begins	create/addon-augmentations.md
 conditional-escalation	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
+# --- create: the v6 candidate -------------------------------------------------
+create-v6	entry	t0 — router + create contract + the template every plan writes	SKILL.md
+create-v6	entry	t0 — router + create contract + the template every plan writes	create/SKILL.md
+create-v6	entry	t0 — router + create contract + the template every plan writes	examples/PROMPTS_TEMPLATE.md
+create-v6	entry	t0 — router + create contract + the template every plan writes	shared/adaptation.md
+create-v6	v6-candidate	Step 0.3 — the pack line is 6+ or the developer explicitly asked for v6	create/v6.md
+create-v6	contract-authorship	composing the outcome contract — closed field set and evidence classes	spec/V6_CONTRACT.md
+create-v6	final-review	composing the Final Review — every plan carries one, so this trigger always fires	create/addon-augmentations.md
+create-v6	final-review	composing the Final Review — every plan carries one, so this trigger always fires	guide/execution.md
+
+# --- execute: a v6 plan end to end --------------------------------------------
+execute-v6	entry	t0 — router + execute contract	SKILL.md
+execute-v6	entry	t0 — router + execute contract	execute/SKILL.md
+execute-v6	v6-loop	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	execute/v6.md
+execute-v6	final-review	the Final Review task begins	guide/execution.md
+execute-v6	final-review	the Final Review task begins	create/addon-augmentations.md
+execute-v6	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
