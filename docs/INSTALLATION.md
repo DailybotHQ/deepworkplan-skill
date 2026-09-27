@@ -241,6 +241,29 @@ the portable sequential path
 | 3 (git clone + setup) | `cd <skill-path> && git pull && ./setup.sh` |
 | 4 (manual per-agent) | `cd <skill-path> && git pull` |
 
+### Existing plans when you update
+
+Nothing is migrated by updating — your v5 plans keep running under the v5
+contract forever, and new v6-candidate plans exist alongside them. If you
+later want a v5 plan on the v6 contract, that is an explicit, previewed,
+one-directional migration through the pack helper:
+
+```bash
+python3 <pack>/shared/migrate_v6.py --plan .dwp/plans/PLAN_your_plan preview
+python3 <pack>/shared/migrate_v6.py --plan .dwp/plans/PLAN_your_plan     migrate --authority "your name"
+# changed your mind before any post-migration work?
+python3 <pack>/shared/migrate_v6.py --plan .dwp/plans/PLAN_your_plan rollback
+```
+
+`preview` writes `migration_v5/PREVIEW.json` (task mapping, the criteria
+whose v5 evidence carries as `imported`, and the **re-evidence list** —
+criteria blocked until their gates re-run under v6) and touches nothing.
+`migrate` backs the v5 pair up, synthesizes the v6 contract, swaps the
+manifest, imports the journal history and reprojects; an interruption at
+any phase is recovered by running it again. `rollback` restores the v5
+bytes verbatim and refuses (until `--force`) if real v6 work already
+happened on top. There is no v6 → v5 migration.
+
 ---
 
 ## Uninstalling

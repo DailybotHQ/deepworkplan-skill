@@ -133,11 +133,23 @@ setup() {
     # — recovering 1,275 B. What remained was substance, so the bound moved
     # rather than the rules. The headroom is deliberately small: this still
     # trips on the failure mode it exists for, a whole companion re-linked.
+    #
+    # Raised 31,000 -> 32,000 once (2026-09-27, DWP v6 campaign, task 18),
+    # same discipline. v6 generation detection added four operative pieces:
+    # the Step 2.0 trigger (a v6 plan must never run the v5 reconcile), the
+    # v6.md and V6_LIFECYCLE.md conditional-tier declarations the read
+    # contract requires for them, one persistence pointer (the export bundle
+    # is the v6 handoff artifact), and the migration MUST-NOT pointing at
+    # shared/migrate_v6.py. The recovery ladder, cross-agent protocol and
+    # migration detail all live in the gated resume/v6.md (loaded only for
+    # v6 plans), and the entry's own duplication was compressed first
+    # (~120 B). What remained was the gate itself, so the bound moved again;
+    # headroom stays small for the same tripwire.
     run bash "$REPO_ROOT/tests/efficiency/measure-instruction-load.sh" "$REPO_ROOT"
     [ "$status" -eq 0 ]
     bytes="$(printf '%s' "$output" | awk '/^resume /{print $2}')"
     [ -n "$bytes" ]
-    [ "$bytes" -le 31000 ]
+    [ "$bytes" -le 32000 ]
 }
 
 # Sentence-level assertion that tolerates the source file's own line wrapping:

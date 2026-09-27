@@ -32,6 +32,11 @@ this tiering removed.)
   t0 set — the resume protocol (Step 2) and the handoff rules are inline
   below.
 - **Conditional — read only when the trigger fires:**
+  - [`v6.md`](v6.md) (this directory) — read only when Step 2.0 detects a
+    v6 plan: the v6 recovery ladder, cross-agent handoff and migration
+    boundary. A v5 plan never reads it.
+  - [`../spec/V6_LIFECYCLE.md`](../spec/V6_LIFECYCLE.md) — read only
+    when a migration or cross-agent question goes beyond `v6.md` (§8–§9).
   - [`../execute/SKILL.md`](../execute/SKILL.md) — read only when Step 5
     resumes into the execution loop: the contract every resumed task runs
     under (gate selection from the actual surface, repair/stop, task-local
@@ -105,8 +110,9 @@ recorded, and only three things reopen one: the developer asks, `refine` left a
 skip that post-interruption smoke test, which validates the **world** (the
 cheapest standing check) before anything is built on it; repeat a commit, gate,
 skill authoring, report or other external action the evidence shows already
-happened; migrate a legacy plan (that is `refine migrate`, on explicit request
-only); push without instruction; or write outside the repo checkout and
+happened; migrate a legacy plan (that is the refine migration surface —
+`../shared/migrate_v6.py` on explicit request, preview first); push
+without instruction; or write outside the repo checkout and
 `.dwp/`.
 
 ## Workflow
@@ -122,6 +128,11 @@ List `PLAN_*` folders in `.dwp/plans/`; mark the most recently modified as
 choice.
 
 ### Step 2 — Assess Current State (CRITICAL)
+
+**Step 2.0 — Detect plan generation (v6).** A manifest contract pointer,
+`contract.json` or a `contracts/` chain means **v6**: read `v6.md` and run
+its recovery ladder (the journal is the truth) instead of the reconcile
+below. A v5 folder continues as written — never migrate it here.
 
 This step implements the **DWP Resume Protocol**
 (`../spec/DWP_SPECIFICATION.md` §5.3) — the named ritual any resuming session
@@ -271,6 +282,9 @@ model, or another harness resumes from these files with Step 2.
 
 - **Same workspace:** the handoff artifacts above are already on disk; Step 2
   is the whole recovery.
+- **v6 plans:** the handoff artifact is the ledger export bundle — see
+  `v6.md` *Cross-agent and cold resume* (a missing `state.json` on the
+  receiving host is expected, not an incident).
 - **New machine / fresh clone:** `.dwp/` is gitignored by design, so a fresh
   `git clone` carries **no** plan data — report that honestly, never
   fabricate progress from commits. Transfer is explicit and manual

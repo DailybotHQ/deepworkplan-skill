@@ -116,3 +116,68 @@ v5 and v6 plans MAY coexist in one `.dwp/plans/`. Each plan runs under
 its own generation for its whole life; no flow upgrades, downgrades or
 approximates across generations. The pack's version line governs only
 which generation NEW plans get (§2) — never what existing plans become.
+
+## 8. v5 migration (normative — one-directional, explicit)
+
+A v5 plan keeps running under the v5 contract forever (§7); the ONLY thing
+that turns it into a v6 plan is `shared/migrate_v6.py`, run on purpose
+through `refine`. Migration MUST follow this sequence, and each step is
+idempotent and recorded in `migration_v5/PHASE.json` so an interruption at
+any point recovers by running the command again:
+
+1. **preview** — integrity check (folder/state identity, known statuses,
+   well-formed gates) and the full mapping: task *N* → `T-NN-<slug>`,
+   criterion `AC-tNN-<slug>`, one per v5 task, prerequisites mirroring the
+   v5 sequential order. A completed task whose gates all recorded
+   `passes=true`, exit 0 and a **resolving** evidence pointer closes via
+   an `imported` criterion; anything weaker — a failed gate, a missing or
+   dangling pointer, an in-progress task, no gates — is a **re-evidence
+   criterion**: bar `observed`, blocked by default until the gates re-run
+   under v6 (D3-5). The preview names the recorded assumptions (gate cwd
+   and timeout are not v5 fields; imported records carry the repository
+   root and the executor default) and refuses lossy inputs. No v5 byte is
+   touched.
+2. **backup** — `manifest.json` + `state.json` copied under
+   `migration_v5/backup/` with recorded digests. The manifest swap never
+   happens before this exists.
+3. **contract** — the synthesized contract is deterministic (timestamps
+   anchor to the v5 state's `updated_at`, never the wall clock), validates
+   under `contract_v6.py`, and takes the conservative posture: scope
+   records-only, no capabilities granted, an advisory unmetered envelope —
+   substantive work after migration goes through an amendment (§5).
+4. **manifest swap** — the v6 pointer manifest replaces the v5 manifest.
+   This is the **single sanctioned rewrite of another generation's
+   manifest** in the whole system (§3's refusal is what makes this
+   exception safe).
+5. **journal** — a `pre_authorization` approval citing the v5 source
+   digest (the preview + records ARE the recorded pre-authorization,
+   D3-2), one fingerprint-less `task_start` per non-pending task (v5 kept
+   no fingerprint; control pairs stay honestly unavailable), every v5
+   gate record imported through `Writer.migrated_gate` — `imported` with
+   the source digest when the pointer resolves, `asserted` history when it
+   does not, `observed` never — and a migration `observation`.
+6. **projection** — `state.json` becomes the v6 snapshot; statuses are
+   derived (imported-closed tasks `completed`, re-evidence tasks
+   `in_progress` at their blocked criteria, pending tasks `pending`).
+
+**rollback** restores the v5 pair byte-identically from the verified
+backup and removes the v6 artifacts. It MUST refuse — until `--force` —
+when the journal carries more events than the migration minted:
+post-migration v6 work is real history, not debris. The reverse migration
+(v6 → v5) does not exist; a v6 plan under the v5 runner is refused by
+`verify/plan_contract.py` naming the contract pointer (D2-10).
+
+## 9. Cross-agent and cold resume (normative)
+
+The journal is the truth; `state.json` and `views/` are reprojections. A
+resuming host MUST recover in this order — inspect (read-only), validate
+(read-only), `project`, `render --reconcile` with recorded authority — and
+MUST treat stale fingerprints (dirty files, moved workspace, different
+revision) as invalidated evidence to re-run, never as reusable results.
+Because `.dwp/` is gitignored, a second host has nothing until the sender
+exports the bundle (`ledger.py export --dest`: journal, snapshot,
+contract chain, and every cited evidence artifact — a dangling cited
+pointer is recorded missing, never dropped); a missing `state.json` on the
+receiving host is expected and rebuilt by `project`. The journal is never
+replayed as conversation context: resumption goes back through the execute
+v6 loop with its per-task context manifest.

@@ -98,3 +98,11 @@ execute-v6	v6-loop	Step 2.0 — the plan folder carries a manifest contract poin
 execute-v6	final-review	the Final Review task begins	guide/execution.md
 execute-v6	final-review	the Final Review task begins	create/addon-augmentations.md
 execute-v6	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
+# --- resume: a v6 plan recovery ----------------------------------------------
+resume-v6	entry	t0 — router + resume contract; assessment loads no companion	SKILL.md
+resume-v6	entry	t0 — router + resume contract; assessment loads no companion	resume/SKILL.md
+resume-v6	v6-recovery	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	resume/v6.md
+resume-v6	v6-recovery	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	spec/V6_LIFECYCLE.md
+resume-v6	execution-handoff	Step 5 resumes into the execution loop	execute/SKILL.md
+resume-v6	v6-loop	Step 2.0 of execute — the plan is v6	execute/v6.md

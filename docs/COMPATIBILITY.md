@@ -177,7 +177,13 @@ The v6 **plan generation** is a parallel lifecycle, not a host stratum: a
 plan folder is v6 by its artifacts (`manifest.json` contract pointer,
 `contract.json`, `contracts/` chain) and v5/v6 plans coexist in one
 `.dwp/` — each keeps its own recorded lifecycle, and no flow migrates
-across generations (`spec/V6_LIFECYCLE.md`). New plans get v6 only when
+across generations (`spec/V6_LIFECYCLE.md`), with one explicit
+one-directional bridge: `shared/migrate_v6.py` (preview → guarded migrate
+→ verified rollback) turns a v5 plan into a v6 plan on request, importing
+its gate evidence as `imported` records with v5 provenance and blocking
+any criterion whose v5 evidence cannot carry until the gates re-run under
+v6; the v5 checker refuses a migrated folder naming the contract, so a v6
+plan can never slide back under the v5 runner. New plans get v6 only when
 the pack line is 6+ or the developer explicitly asks for the candidate;
 `bats tests/v6-lifecycle.bats` is the behavior-tested evidence for the
 wiring, including the read-only status/verify surfaces and the guarded

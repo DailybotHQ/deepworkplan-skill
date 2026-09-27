@@ -952,6 +952,72 @@ class Writer:
                 'log': os.path.relpath(log_path, self.r.dir),
                 'seq': event['seq']}
 
+    def migrated_gate(self, task_id, criterion, command, exit_code,
+                      evidence_path, source, cwd=None, timeout=600,
+                      trust='imported'):
+        """Migration-only IMPORT of a matched v5 gate record (RFC 9.3).
+
+        A1 is untouched: ``observed`` is still minted only by execution,
+        and the generic ``append`` path still refuses ``gate_run`` outright.
+        This method is the one narrow opening the v5->v6 migration needs:
+        ``shared/migrate_v6.py`` - deterministic code, never an agent -
+        imports a record that already exists in the v5 plan state
+        (command, exit code, evidence pointer) under the label the
+        taxonomy gives a matched external source: ``imported``, with the
+        v5 source digest as provenance, and only when the evidence
+        pointer still resolves on disk. A record the v5 state kept
+        without a pointer may be imported as ``asserted`` history - it
+        can never satisfy a criterion whose bar was not set to accept
+        it. ``observed`` is refused here like everywhere else.
+        """
+        self._check_position()
+        if trust not in ('imported', 'asserted'):
+            raise LedgerError(
+                'migrated_gate imports a v5 record as imported (pointer '
+                'resolves) or asserted (no pointer) - %r is not a '
+                'migration label, and observed is minted only by '
+                'execution (A1)' % trust)
+        if trust == 'imported':
+            if not evidence_path:
+                raise LedgerError(
+                    'an imported gate record requires evidence_path - the '
+                    'v5 pointer IS the provenance (A1)')
+            self._check_evidence_path(evidence_path)
+        task = self._task(task_id)
+        intents = {i.get('criterion')
+                   for i in task.get('gate_intent', [])}
+        if criterion not in intents:
+            raise LedgerError(
+                'criterion %r is not declared in task %s gate_intent - a '
+                'migrated record is bound to the declared intent like any '
+                'gate run (M5)' % (criterion, task_id))
+        if task_start_seq_of(self.events, task_id) is None:
+            raise LedgerError(
+                'migrated gate refused for %s: the task has no task_start '
+                '- evidence lives inside the task attempt window '
+                '(D2-9b)' % task_id)
+        for prior in self.events:
+            if prior.get('type') != 'gate_run' or \
+                    prior.get('task') != task_id or \
+                    prior.get('criterion') != criterion or \
+                    prior.get('command') != command or \
+                    prior.get('exit_code') != exit_code or \
+                    prior.get('evidence_path') != (evidence_path or None):
+                continue
+            return prior  # one v5 record, one event: re-running is a no-op
+        payload = {'command': command,
+                   'cwd': os.path.abspath(cwd or self.repo_root()
+                                          or self.r.dir),
+                   'timeout_seconds': timeout,
+                   'exit_code': exit_code,
+                   'task': task_id,
+                   'criterion': criterion}
+        return self._append_raw(
+            'gate_run', payload,
+            actor={'kind': 'helper', 'identity': 'migrate_v6.py'},
+            ts=_utc_now(), note=('migrated: %s' % source)[:500],
+            trust=trust, evidence_path=evidence_path)
+
     # -- control-pair execution (the second observed executor, U2/A6) -------
 
     def _run_leg(self, command, cwd, timeout, log_path):
