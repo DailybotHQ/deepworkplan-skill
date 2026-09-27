@@ -37,8 +37,10 @@ Published in `DEVELOPMENT.md` / `CANDIDATE_SELECTION.md`: 38 PASS / 8 FAIL
 | remaining 26/30 | variants + reviewer | `provider_refused` or empty inventory | not scored |
 
 Manipulation: r1 drain 0 v6 journals (pack line 5.5.4). r2 full-arm 4/4
-`spec_version` 6.0.0. SC-9 wrote 4 `control_pair` events, all
-`control_unavailable` (dirty fingerprint D3-3), not (old FAIL, new PASS).
+`spec_version` 6.0.0. SC-9 wrote 4 events of **type** `control_pair`, each
+with `verdict=control_unavailable` (old_leg.available=false, D3-3 dirty
+fingerprint; new_leg.outcome=PASS). That is not a discriminating close
+(old FAIL, new PASS).
 
 Invoiced (ledger scope): development live $77.90 + ablation drain $1.78
 + r2 $18.49 ≈ **$98.17**. Headroom vs $300 remains; provider cap bound.
