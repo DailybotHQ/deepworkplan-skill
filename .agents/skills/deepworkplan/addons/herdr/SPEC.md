@@ -1,6 +1,7 @@
 # SPEC.md — Herdr Mesh Addon (normative)
 
-Status: proposed as part of the v6 candidate. RFC 2119 keywords apply.
+Status: proposed for v7; unwired in v6. RFC 2119 keywords describe the
+proposed protocol and do not activate v6 flow hooks.
 
 ## 1. Placement decision (recorded, not open)
 
@@ -18,10 +19,10 @@ wrapper taking the same address) and never a product, launcher, or vendor.
 
 ## 2. What this addon is
 
-An **optional environment capability**. It is not a review gate, not part of
-the AI-first baseline, and never required for conformance. `onboard` offers
-it; a decline is recorded. `verify` inspects it only when installed. A
-repository with no Herdr runs single-agent and is fully conformant.
+An **optional environment capability proposed for v7**. It is not a review
+gate, not part of the AI-first baseline, and never required for conformance.
+The v6 `onboard`, `execute`, `create`, and `verify` flows do not invoke it.
+A repository with no Herdr runs single-agent and is fully conformant.
 
 ## 3. Identity and addressing
 
@@ -92,6 +93,9 @@ one records the outcome and the plan continues single-agent. This addon
 ships no binaries, runs no remote installers, writes no secrets into
 prompts (grant bodies name addresses and stamps, never credentials), and
 touches no files outside the plan's own delegation records and workspaces.
+Adding an SSH host key is an operator action that requires separate explicit
+approval and verification against a trusted source; it is never part of an
+automatic retry.
 
 ## 10. Reconcile, don't clobber
 
@@ -99,3 +103,13 @@ The addon never modifies the plan's task files or another agent's
 delegation records; it appends its own delegation and reply notes. Edits to
 generated views follow the plan's amendment path. A peer's written
 artifacts are judged by the same oracles as the orchestrator's own work.
+
+## 11. Proposed validation checklist
+
+- `SKILL.md`, `SPEC.md`, `templates/grant.md`, and the referenced protocol
+  companions exist in the installed pack.
+- If the binary is present, `herdr --version` succeeds; if absent, record
+  `mesh unavailable` and continue single-agent.
+- A live mesh returns stable machine and pane IDs. Every sent prompt carries
+  the reply grant, and every delegation is recorded under the current plan.
+- No credential, SSH trust file, or unrelated workspace file was changed.

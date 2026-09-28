@@ -12,6 +12,7 @@ materialization, activation, amendments, coexistence).
 .dwp/plans/PLAN_001_ship_feature_x/
 ├── README.md          # the human plan (what the approval digests)
 ├── 1.task_implement.md
+├── 2.task_final_review.md
 ├── manifest.json      # WRITTEN BY materialize — contract pointer
 ├── contract.json      # WRITTEN BY materialize — stamped, content-addressed
 ├── journal.ndjson     # first event: the approval
@@ -22,8 +23,8 @@ materialization, activation, amendments, coexistence).
 
 `README.md` carries the goal, the task list and the execution rules — the
 recorded create flow's shape, unchanged. Task files declare their
-objective, `Touched Surface`, `Read Before Starting` and gates, and each
-criterion an `AC-*` id.
+objective, `Touched Surface`, `Read Before Starting`, `Acceptance Criteria`
+with `AC-*` ids, and `Validation` gates. The last task is the Final Review.
 
 ## 2. The contract draft (authored, outside the plan folder)
 
@@ -54,7 +55,10 @@ criterion an `AC-*` id.
     { "id": "T-implement", "title": "Implement feature X",
       "prerequisites": [], "touched_surface": ["src/feature_x.py"],
       "gate_intent": [
-        { "criterion": "AC-tests-pass", "check": "pytest -q" }] }
+        { "criterion": "AC-tests-pass", "check": "pytest -q" }] },
+    { "id": "T-final-review", "title": "Final Review",
+      "prerequisites": ["T-implement"], "touched_surface": ["src/", "tests/"],
+      "gate_intent": [] }
   ],
   "invariants": [
     { "id": "INV-no-publication",

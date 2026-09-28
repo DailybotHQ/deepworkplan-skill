@@ -1,7 +1,7 @@
 # orchestration.md — delegating plan work across the mesh
 
-How `execute` uses the mesh: delegate independent tasks, record the
-delegation, join on the plan.
+Proposed v7 `execute` flow: delegate independent tasks, record the
+delegation, join on the plan. This file does not activate v6 delegation.
 
 ## 1. What may be delegated
 

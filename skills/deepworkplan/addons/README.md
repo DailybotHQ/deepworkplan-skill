@@ -1,8 +1,9 @@
 # addons/ — Opt-In Addon Mechanism
 
 This directory ships **inside** the DeepWorkPlan skill
-(`skills/deepworkplan/addons/`). Five of the six addons here are **optional**
-and **never** part of the AI-first baseline — one of them, **dependency
+(`skills/deepworkplan/addons/`). The active v6 set has four **optional**
+addons and one baseline addon; Herdr is a proposed, unwired v7 addon.
+Optional addons are **never** part of the AI-first baseline — one of them, **dependency
 upgrade**, is **near-default**: offered for every repo with declared
 dependencies, and its **inert** `/lib-upgrade` delegator installs under the
 onboarding consent unless explicitly declined (an install runs no upgrade).
@@ -50,7 +51,7 @@ Each addon is a subfolder here and MUST ship all four:
 |-----------|---------|---------|
 | **Spec** | `SPEC.md` | RFC-2119 description of what the addon provides and what "conformant to this addon" means. |
 | **Reasoning templates** | `templates/*` | Parameterized guides with placeholders + decision notes the agent fills by reasoning about the repo's stack — not literal copies of one repo. |
-| **Onboarding hook** | `SKILL.md` (`user-invocable`) | The entry point the `onboard` flow calls to offer, then (if accepted) apply the addon. Also directly invocable on an already-onboarded repo. |
+| **Onboarding hook** | `SKILL.md` (`user-invocable` when active) | The entry point the `onboard` flow calls to offer, then (if accepted) apply the addon. The staged Herdr candidate has this hook disabled until v7. |
 | **Validation step** | A checklist inside `SPEC.md`/`SKILL.md` | Confirms the addon was applied correctly (files exist, settings present, smoke check passes). |
 
 An addon MAY additionally ship per-stack presets, examples, or migration notes.
@@ -80,7 +81,7 @@ An addon MAY additionally ship per-stack presets, examples, or migration notes.
 | Dependency upgrade | [`addons/dependency-upgrade/`](dependency-upgrade/SKILL.md) | **Authored** — **near-default**, **package-manager-agnostic** dependency upgrades: offered for every repo with declared dependencies, with the inert `/lib-upgrade` delegator installed under the onboarding consent unless explicitly declined (an install runs no upgrade). When invoked: detect the repo's real manager (npm/pnpm/yarn + ncu, pip/poetry/uv, cargo, go mod, bundler, composer…), classify by semver, upgrade in safe batches, run the repo's **real** validation gate after each batch, revert a failing batch, summarize. |
 | Design system | [`addons/design-system/`](design-system/SKILL.md) | **Authored** — opt-in, **interface-surface-scoped** `DESIGN.md` at `docs/DESIGN.md` (indexed from `AGENTS.md`; root only if no `docs/` tree), covering three profiles in one file: **visual-ui** (design tokens from CSS vars / Tailwind config / token files / component styles; WCAG AA contrast), **cli-output** (semantic terminal styles, output components, TTY/`NO_COLOR` degradation), and **conversational** (voice & register, message anatomy, per-platform rendering with plain-text fallbacks). Reason about the repo's **real** design source — never a brand file — and reconcile an existing `DESIGN.md` instead of clobbering it. Offered by `onboard` **only when an interface surface is detected** — the offer is mandatory, not skippable, with the detection rationale recorded — and every profile (**visual-ui** strongly recommended) installs only after explicit acceptance, never auto-applied. |
 | AI Diff Reviewer | [`addons/ai-diff-reviewer/`](ai-diff-reviewer/SKILL.md) | **Authored** — **required local review** (baseline since 2.3.0): tag-pinned install of the vendored `DailybotHQ/ai-diff-reviewer` skill (currently **v3.2.2**; workflows pin the moving `@v3`; marketplace listing "AI Diff Reviewer") plus a repo-tailored `.review/extension.md`, wired into the Final Review's security pass; the CI Action (Flow B — same prompt bytes as the local pass, methodology and severity parity) and the `apply-review` / `address-review` companions stay an explicit opt-in. |
-| Herdr Mesh | [`addons/herdr/SKILL.md`](herdr/SKILL.md) | **Optional environment capability** — discovers a Herdr agent mesh (`machine list` × `agent list`), launches a fresh peer when the mesh is empty, and teaches `execute` to delegate independent plan tasks to idle peers with reply-grant stamps, joining on the plan instead of the chat. A repository with no Herdr runs single-agent and stays fully conformant. Never required, never a conformance gate. |
+| Herdr Mesh | [`addons/herdr/SKILL.md`](herdr/SKILL.md) | **Proposed for v7; unwired in v6.** Its protocol describes discovery, grants, and plan-based delegation. The current `onboard` and `execute` flows do not activate it. A repository with no Herdr stays fully conformant. |
 
 > This README is the mechanism doc. The first addon, `addons/devcontainer/`, is
 > the methodology's proof that the mechanism works; the second,

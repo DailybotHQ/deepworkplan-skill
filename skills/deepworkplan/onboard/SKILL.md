@@ -392,7 +392,9 @@ developer break the tie.
 **The plan-driven path:**
 
 0. **Resume, don't regenerate (idempotency check).** Before building a new plan,
-   look for an in-progress onboarding plan: `ls .dwp/plans/PLAN_onboard_*`. If one
+   list existing folders with `../shared/plan_paths.py --plans-dir
+   <dwp_dir>/plans list` and look for an in-progress onboarding plan, whether
+   numbered (`PLAN_<id>_onboard_*`) or legacy (`PLAN_onboard_*`). If one
    exists, **do not start over** — read its `PROGRESS.md`, report status, and hand
    off to `/dwp-resume` to continue from the first open task. Only generate a new
    plan when none exists. (This honors the Phase 0 idempotency rule for the

@@ -205,7 +205,8 @@ End with one of: **CONFORMANT** (all MUST criteria pass) or **NOT CONFORMANT —
 > **Large repo / in-progress onboarding.** A big repo may be mid-onboarding via
 > the plan-driven path (onboard Phase 2b) — its documentation is being generated
 > task-by-task by an onboarding Deep Work Plan rather than all at once. If you
-> find a `PLAN_onboard_*` under `.dwp/plans/`, report conformance gaps as
+> find a numbered `PLAN_<id>_onboard_*` or legacy `PLAN_onboard_*` under
+> `.dwp/plans/`, report conformance gaps as
 > **in progress, not failures**, and point the developer at `/dwp-status` and
 > `/dwp-resume` to finish that plan rather than starting a new remediation plan.
 

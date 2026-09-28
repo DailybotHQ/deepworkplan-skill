@@ -1,6 +1,7 @@
 # DeepWorkPlan — Onboard: the required local review and the optional addons (read in Phase 7a and 7b)
 
-Verbatim from the main procedure. Five addons ship under `../addons/`. Four are
+Verbatim from the main procedure. Five active addons ship under `../addons/`;
+the proposed Herdr candidate is unwired. Four active addons are
 **optional**: a repository is fully conformant with zero optional addons, and none
 of them is required to create or execute plans. One of the four — **dependency
 upgrade** — is **near-default**: offered for every repo with declared
@@ -44,8 +45,10 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
 
 ## Phase 7b — Offer optional addons (trigger only)
 
-After Phase 7a, **enumerate** the remaining addons under `../addons/` and offer
-each one. Three are **explicit opt-ins** — signal-gated, installed only on the
+After Phase 7a, offer the four active optional addons in the table below.
+The proposed Herdr addon is present in the pack for v7 design work but is
+**unwired in v6**: do not offer or activate it. Three active addons are
+**explicit opt-ins** — signal-gated, installed only on the
 developer's explicit acceptance. The fourth, **dependency upgrade**, is
 **near-default**: offered for every repo with declared dependencies, with its
 inert `/lib-upgrade` delegator installed under the Phase 0 onboarding consent
@@ -54,7 +57,7 @@ are **never required** — a
 repo is fully conformant with zero optional addons. In **trust mode**, you MAY
 recommend the obviously-applicable ones, but still surface them.
 
-Five addons ship today; the table lists all of them (the AI Diff Reviewer row
+Five active addons ship today; the table lists all of them (the AI Diff Reviewer row
 records its Phase 7a status). Offer the four optional ones independently:
 
 | Addon | Folder | Recommend in trust mode when… |

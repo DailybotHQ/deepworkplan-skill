@@ -111,8 +111,10 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Six addons ship today. Five are **optional** and **never required** — a repository
-is fully conformant with **zero optional addons** installed. Of those five, the
+Six addon folders ship: four active addons are **optional** and **never
+required**, one is the local-review baseline, and Herdr is a staged v7
+candidate with no v6 flow hook. A repository is fully conformant with
+**zero optional addons** installed. Of the four active optional addons, the
 **dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
 with declared dependencies, with its **inert** `/lib-upgrade` delegator
 installed under the onboarding consent **unless explicitly declined** (an
@@ -351,6 +353,9 @@ Herdr runs single-agent and stays fully conformant, and a launch failure
 is recorded and continued with available peers.
 
 The addon ships **unwired** in the current line: no flow references it.
+Its `SKILL.md` is not user-invocable in v6, and Phase 7b excludes this
+staged candidate from the active addon offer. The template and validation
+checklist are present for review but do not activate the addon.
 The v7 wiring plan (onboard offer, optional execute delegation,
 `parallel-safe` marks, presence-gated verify) is recorded in
 [`V7_ROADMAP.md`](V7_ROADMAP.md) — non-normative.

@@ -56,8 +56,8 @@ AndresMpa/mu-vim → DailybotHQ/mu-vim → this product — see that repo's
 pack, the same way the AI Diff Reviewer is a named review surface.
 
 **v7 onboard offers (never imposes):** detect Neovim; if the person wants
-the DWP terminal editor, point at the repo and the host install
-(`git clone … ~/.config/nvim && lua install.lua`). An existing Neovim
+the DWP terminal editor, point at the repo's versioned installation
+instructions. An existing Neovim
 config is **never** overwritten without explicit consent. The editor is
 never a conformance failure. Contributor/agent environments (Debian image,
 Herdr, `dev.sh agents|ask`) live **in that repository** — never copied
@@ -106,14 +106,16 @@ probe across enabled machines.
 
 **Install policy.** Detect (`command -v herdr && herdr --version`). If
 absent and the person wants the mesh: show the official install paths
-(https://herdr.dev/docs/install/; the curl installer; Homebrew), and **do
+(https://herdr.dev/docs/install/; Homebrew; mise), and **do
 not run a remote installer unattended without explicit human consent**.
 After install, re-detect and continue.
 
 **Cross-machine networking (containers).** Peers reached from inside a
 container use `host.docker.internal` and the published SSH port — never
-`127.0.0.1`, which is the container itself. Trust ED25519 host keys
-(`ssh-keyscan -t ed25519`) before agent calls; note that `accept-new` SSH
+`127.0.0.1`, which is the container itself. Inspect ED25519 host keys
+(`ssh-keyscan -t ed25519`), compare fingerprints with a trusted source,
+and require explicit developer approval before changing `known_hosts`;
+note that `accept-new` SSH
 often stores RSA first and Debian hashes `known_hosts`, so verify with
 `ssh-keygen -F "[host]:port"`. Derive workspace peers from the host's
 live config on every listing/ask — a peers file written once at onboard

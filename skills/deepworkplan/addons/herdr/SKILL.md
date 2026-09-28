@@ -1,9 +1,9 @@
 ---
 name: deepworkplan-addon-herdr
-description: DeepWorkPlan addon that teaches an executing agent to discover, launch and orchestrate a Herdr agent mesh — list live agents across machines, delegate independent plan tasks to idle peers with self-granted reply stamps, join on the plan instead of the chat, and launch a fresh peer when the mesh is empty — while a repository with no Herdr stays fully conformant and runs single-agent. Optional environment capability, offered at onboarding; a decline is recorded and is never a conformance failure. Use when the developer wants parallel agent work across machines from inside a Deep Work Plan.
+description: Proposed DeepWorkPlan addon for discovering and coordinating a Herdr agent mesh across machines. The addon ships as an unwired v7 candidate; v6 onboarding, creation, execution, and verification do not activate it. A repository without Herdr stays fully conformant and runs single-agent.
 version: "5.5.4"
 documentation_url: https://deepworkplan.com
-user-invocable: true
+user-invocable: false
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 metadata: {"openclaw":{"emoji":"🕸️","homepage":"https://deepworkplan.com"}}
 ---
@@ -17,6 +17,21 @@ A repository **without** Herdr runs single-agent exactly as before and stays
 fully conformant — **this addon is an environment capability, never a
 requirement, never part of the AI-first baseline, and never a conformance
 gate.**
+
+**Current release status:** this is a proposed v7 integration. The v6
+`create`, `execute`, `onboard`, and `verify` flows do not invoke it. The
+protocol below is retained for the v7 implementation and must not be treated
+as an active v6 onboarding step.
+
+## Trust boundary and write scope
+
+Read-only discovery may inspect the Herdr catalog and current pane. When v7
+activates this addon, consented delegation may append records to the current
+plan and send prompts to explicitly selected peers. It MUST NOT write
+credentials or host trust files, run remote installers, silently replace
+existing files, close another person's pane, or emit telemetry. Changing SSH
+host trust requires a separate, explicit developer approval after the key has
+been checked against a trusted source.
 
 Placement decision (recorded in `SPEC.md` §1): this lives inside DeepWorkPlan
 because its only consumer is an agent executing or coordinating a plan, and
@@ -40,7 +55,6 @@ or absent.
   | Path | Command (show, do not run) | Updates |
   | --- | --- | --- |
   | Docs | `https://herdr.dev/docs/install/` | — |
-  | Stable installer | `curl -fsSL https://herdr.dev/install.sh | sh` (binary lands at `~/.local/bin/herdr`; that directory must be on `PATH`) | `herdr update` |
   | Homebrew | `brew install herdr` | `brew upgrade herdr` |
   | mise | `mise use -g herdr` | — |
   | Releases | `https://github.com/herdrdev/herdr/releases` | — |
@@ -76,8 +90,8 @@ If the mesh is empty and the plan benefits from peers, see §4 (launch).
 ## 2. Discovery — list the live mesh
 
 When the person asks for the agents — any phrasing, any language ("list the
-Herdr agents", "lista todos los agentes", "who is available", "show the
-mesh") — **run the listing now and print the live table**. The full
+Herdr agents", "who is available", "show the mesh") — **run the listing now
+and print the live table**. The full
 procedure, the table format, the state glossary, and the unreachable
 diagnoses are [`listing.md`](listing.md): a first-class flow, not a
 description. Quick form:
@@ -173,13 +187,15 @@ without the grant is a bug in this addon.**
 
 ## 9. Wiring into the flows
 
-- `create` MAY mark tasks that are safe to run in parallel.
-- `execute`, when detection (§1) succeeds, MAY delegate those tasks to idle
-  peers per §5 and keep going.
-- `onboard` offers this addon; a decline is recorded and is **never** a
-  conformance failure.
-- `verify` checks this addon only when it is installed. A missing optional
-  addon is not a failure.
+There is no v6 flow wiring. The proposed v7 hooks for `create`, `execute`,
+`onboard`, and `verify` are recorded in `../../spec/V7_ROADMAP.md`. Their
+presence here does not authorize v6 to delegate work or offer installation.
+Herdr is not part of the AI-first baseline.
 
-No mandatory closing task is added and Herdr is not part of the AI-first
-baseline.
+## 10. Proposed validation gate
+
+Before v7 enables a hook, confirm the addon files and grant template exist;
+check `command -v herdr` and `herdr --version` without installing anything;
+record an absent or unreachable mesh and continue single-agent. For a live
+mesh, confirm discovery returns a machine ID and pane ID, and that delegation
+records stay within the plan. No host trust file is changed by this check.

@@ -1,9 +1,11 @@
 # listing.md — listing the live mesh
 
+Proposed v7 flow; the v6 onboarding and execution paths do not invoke it.
+
 ## The user-facing rule
 
-When a person says any of these — "list the Herdr agents", "lista todos los
-agentes", "who is available", "show the mesh", "list agents" — **list them
+When a person says any of these — "list the Herdr agents", "who is
+available", "show the mesh", "list agents" — **list them
 now**. Do not describe the command. Do not answer from a table seen
 earlier. Do not say "you can run herdr machine list". Run the list and
 print the table. The list is live: agents appear and disappear, a rebuild
@@ -96,9 +98,11 @@ peer file. Diagnoses seen in the wild:
   typed check is
   `ssh-keygen -F "[host]:<port>" -f ~/.ssh/known_hosts` — look for
   `ssh-ed25519` in that output. `ssh-keyscan -T 4 -t ed25519 -p <port>
-  <host>` returns the key Herdr wants. ONE retry is allowed: append that
-  ED25519 line, then list that machine again. Still unreachable → report
-  and continue with the machines that answered. Do not loop.
+  <host>` returns the key Herdr wants. Compare its fingerprint with a trusted
+  source and ask for explicit developer approval before adding it to
+  `known_hosts`. Only after approval may you retry that machine once. Without
+  approval, report it as unreachable and continue with the machines that
+  answered. Do not loop.
 - `Connection closed` / `Connection refused` on a port that `nc` says is
   open → the process behind the port is not sshd (stale image; sshd did not
   start). Report it. Do not install sshd from this skill.
