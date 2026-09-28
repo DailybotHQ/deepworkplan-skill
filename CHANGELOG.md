@@ -9,6 +9,13 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [6.0.1] — 2026-09-28
+
+### Changes
+
+- fix(docs): align current v6 guidance and provenance (#52)
+
+
 ## [6.0.0] — 2026-09-28
 
 ### Changes
