@@ -1,0 +1,31 @@
+{
+  "schema": "https://deepworkplan.com/schema/plan-state/v5.json",
+  "plan": "PLAN_full_migration_fixture",
+  "updated_at": "2026-09-26T00:00:00.000Z",
+  "updated_by": { "agent": "legacy-fixture-author", "model": "fixture" },
+  "status": "pending",
+  "completed_count": 0,
+  "task_count": 2,
+  "format": "full",
+  "materialization": "ready",
+  "approval": "pending",
+  "promotion": null,
+  "checkpoint": null,
+  "blocked": null,
+  "tasks": [
+    {
+      "id": 1,
+      "locator": { "kind": "file", "value": "1.task_narrow_k1.md" },
+      "title": "Narrow and fix K1",
+      "status": "pending",
+      "gates": []
+    },
+    {
+      "id": 2,
+      "locator": { "kind": "file", "value": "2.task_final_review.md" },
+      "title": "Final Review",
+      "status": "pending",
+      "gates": []
+    }
+  ]
+}

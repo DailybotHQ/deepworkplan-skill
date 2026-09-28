@@ -25,7 +25,7 @@ basic). Default to Distributed.
 **Orchestrator additions (orchestrator plans):**
 - README **Child DWP Plans** table (`# | Repository | Child Plan | Status |
   Depends On`), an **Execution Mode** subsection, and **Dependency Rules**.
-- **ORCHESTRATOR_MANIFEST.md** at `.dwp/plans/PLAN_{name}/ORCHESTRATOR_MANIFEST.md`
+- **ORCHESTRATOR_MANIFEST.md** at `.dwp/plans/{PLAN_NAME}/ORCHESTRATOR_MANIFEST.md`
   (template in `../guide/orchestrator.md` §13.8): Shared Context, Child DWP Registry,
   Dependency Graph, Output Contracts, Execution State.
 - Task files: direct design tasks first (if hybrid); then `create_child_dwp`
@@ -36,5 +36,7 @@ basic). Default to Distributed.
   `execute_child_dwp` tasks for Sequential-with-Output-Handoff mode
   (`../examples/ORCHESTRATOR_TASK_TEMPLATE_execute_child_dwp.md`); then the
   Final Review last (`{N}.task_final_review.md`). Each `create_child_dwp` task instructs the agent to
-  navigate to the target repo, read its `AGENTS.md`, and create a child DWP at
-  `repositories/{repo}/.dwp/plans/PLAN_{child}/` using that repo's conventions.
+  navigate to the target repo, read its `AGENTS.md`, and allocate a child DWP
+  folder under `repositories/{repo}/.dwp/plans/` using that repo's local next
+  ID. Record its allocated basename in the parent registry and all references;
+  never guess a child ID from the parent plan's sequence.

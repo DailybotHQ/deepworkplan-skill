@@ -165,8 +165,9 @@ Or invoke directly: `/deepworkplan-create`, `/deepworkplan-onboard`, etc.
 All Deep Work Plan output lives in a gitignored `.dwp/` directory at the repo
 root:
 
-- `.dwp/plans/PLAN_<slug>/` — the plans (README + state + progress log, plus
-  task files when the plan is Full)
+- `.dwp/plans/PLAN_001_<slug>/`, `PLAN_002_<slug>/`, ... — new plans in a flat,
+  creation-ordered folder list (README + state + progress log, plus task files
+  when the plan is Full). Existing unnumbered folders keep their names.
 
 There is no draft directory: `create` materializes an executable Lite plan
 directly, and that plan is the reviewable artifact. `.dwp/drafts/` and the
@@ -175,7 +176,14 @@ directly, and that plan is the reviewable artifact. `.dwp/drafts/` and the
 `.dwp/` is resolved by `skills/deepworkplan/shared/context.sh` and overridable
 via the `DWP_DIR` environment variable. It is meant to be gitignored — plan
 artifacts are working state, not committed source. For orchestrator hubs, child
-plans live at `repositories/<repo>/.dwp/plans/PLAN_<child>/`.
+plans use the same numbering within each managed repository.
+
+Each repository assigns IDs starting at `001`; the counter is kept in
+`.dwp/plans/.next-plan-id`, so deleting a plan does not reuse its number.
+`latest` selects the highest numbered plan. You can also select a plan by its
+full folder name, ID, or unique slug. Existing folders such as
+`PLAN_improve_docs/` are not renamed and remain usable. New v5 plan slugs use
+2–4 words to fit the frozen v5 schemas; v6 slugs can use 2–5.
 
 ## Reproducible installs (`skills-lock.json`)
 

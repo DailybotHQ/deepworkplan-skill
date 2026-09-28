@@ -106,15 +106,31 @@ PY
     rm -rf "$WORK"
 }
 
-@test "schema URLs are the published v1/v2/v5 line — a shape series, not the standard's version" {
-    # No v3/v4/v6+ schema URL may ever appear: the published line is exactly
-    # v1, v2 and the v5 generation snapshots of the v2 shape.
-    run bash -c "grep -rn 'schema/plan-\(state\|manifest\)/v[3-46-9]' '$SK'"
+@test "schema URLs are the v1/v2/v5 line plus the deliberate v6 candidate line" {
+    # No v3/v4 schema URL may ever appear. plan-state stays on the published
+    # v1/v2/v5 line forever — the v6 projection schema is plan-snapshot/v6,
+    # never a plan-state/v6. Every other family adds exactly the deliberate
+    # v6 candidate generation of the DWP v6 campaign (manifest = the A12
+    # pointer, snapshot = the projection, contract, journal-event,
+    # context-manifest), each pinned below and mapped to a shipped file by
+    # tests/schema-publication.bats.
+    run bash -c "grep -rn 'schema/plan-state/v[3-46-9]\|schema/plan-\(manifest\|snapshot\|contract\)/v[3-47-9]\|schema/\(journal-event\|context-manifest\)/v[3-47-9]' '$SK'"
     [ "$status" -ne 0 ]
     grep -q 'plan-manifest/v5.json' "$SK/create/SKILL.md"
     grep -q 'plan-state/v5.json' "$SK/create/SKILL.md"
     grep -q 'https://deepworkplan.com/schema/plan-state/v2.json' "$SK/spec/schema/plan-state-v2.schema.json"
     grep -q 'https://deepworkplan.com/schema/plan-state/v5.json' "$SK/spec/schema/plan-state-v5.schema.json"
+    # The v6 candidate line is pinned exactly: five families, five files.
+    for pair in \
+        'plan-manifest/v6.json plan-manifest-v6.schema.json' \
+        'plan-snapshot/v6.json plan-snapshot-v6.schema.json' \
+        'plan-contract/v6.json plan-contract-v6.schema.json' \
+        'journal-event/v6.json journal-event-v6.schema.json' \
+        'context-manifest/v6.json context-manifest-v6.schema.json'; do
+        set -- $pair
+        [ -s "$SK/spec/schema/$2" ]
+        grep -q "https://deepworkplan.com/schema/$1" "$SK/spec/schema/$2"
+    done
     # Historical URLs stay valid forever: the v2 files are untouched and the
     # v5 description states the generation-snapshot relationship.
     grep -q 'Generation snapshot of the v2 shape' "$SK/spec/schema/plan-state-v5.schema.json"

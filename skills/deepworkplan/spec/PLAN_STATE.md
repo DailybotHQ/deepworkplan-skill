@@ -67,7 +67,7 @@ The RFC 2119 keywords (**MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**,
 A plan using the state layer has this layout (extending `DWP_SPECIFICATION.md` §4):
 
 ```text
-.dwp/plans/PLAN_{name}/
+.dwp/plans/<plan>/
 ├── README.md            ← human source of truth (unchanged)
 ├── PROGRESS.md          ← narrative log (unchanged)
 ├── PROMPTS.md           ← unchanged
@@ -77,6 +77,12 @@ A plan using the state layer has this layout (extending `DWP_SPECIFICATION.md` �
 │   └── SKILLS_CANDIDATES.md ← task-local skills ledger (DWP_SPECIFICATION §6.2; markdown, not JSON)
 └── {N}.task_{...}.md
 ```
+
+Newly created folders use `PLAN_<id>_<slug>` (for example,
+`PLAN_001_payment_webhooks`); the ID is allocated by `shared/plan_paths.py`.
+The v5 manifest and state schemas are frozen, so new v5 slugs use 2–4 words
+after the numeric ID. Existing unnumbered folders keep their recorded names
+and stay in place. This naming policy does not rewrite any existing state.
 
 - `manifest.json` **MUST** be written exactly once, as the **first file** of the
   plan folder when the `create` flow materializes the plan — before any task
@@ -432,6 +438,132 @@ task correspondence and the meaning of validation results.
 ---
 
 *Part of the DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+
+## 8. The v6 record layer: journal, ledger snapshot, generated views
+
+> **Status: v6 line.** This section binds **v6 new plans only**. v1/v2/v5
+> plans keep sections 1–7 as their complete standard; the v6 contract and
+> journal record formats are specified in
+> [`V6_CONTRACT.md`](V6_CONTRACT.md) and validated by the published
+> schemas plus `shared/contract_v6.py`. What this section adds is the
+> **write discipline and projections** around those records.
+
+A v6 plan carries, beside the markdown:
+
+| Artifact | Role | Writer |
+|---|---|---|
+| `manifest.json` (v6) | Identity manifest with the **contract pointer** — written FIRST by materialization so a plan's v6-ness is discoverable even if interrupted before the contract lands; the pointer is provenance and is never edited (`schema/plan-manifest/v6.json`) | `shared/ledger.py materialize` (once) |
+| `contract.json` (or `contracts/` chain) | Outcome + authority contract; content-addressed identity | materialization / revisions (never in-place edits) |
+| `journal.ndjson` | Append-only event log — the plan's **memory** | `shared/ledger.py` only |
+| `state.json` (v6 shape) | Deterministic **snapshot projection** — the recovery root | `shared/ledger.py project` |
+| `evidence.jsonl` | Fingerprint→result cache for equivalent-input reuse | `shared/ledger.py gate` |
+| `gates/<task>/*.log` | Recoverable gate output logs | `shared/ledger.py gate` |
+| `views/*.md` | Generated views (tasks / evidence / audit / completion) | `shared/views.py render` |
+
+**The snapshot's own schema URL.** The v6 snapshot publishes under its own
+new-generation URL — `https://deepworkplan.com/schema/plan-snapshot/v6.json`
+(`spec/schema/plan-snapshot-v6.schema.json`) — never inside the
+`plan-state` label: that label is the frozen v1/v2/v5 **shape** series (v5
+is a generation snapshot of the v2 shape), and the v6 snapshot is a
+different artifact projected from the journal, not a mutation of those
+shapes. The same rule gave v6 the `plan-contract/v6` and
+`journal-event/v6` labels.
+
+**Materialization order.** `shared/ledger.py materialize` writes the v6
+records in exactly this order — manifest, contract, approval event — each
+step idempotent and resumable; the full normative sequence and its
+refusals are specified in [`V6_LIFECYCLE.md`](V6_LIFECYCLE.md) §3.
+
+**Write discipline.** One writer per plan. A cooperative `.ledger.lock`
+directory serializes writers; a session that finds the journal grown
+behind its own observed byte position refuses to append (the collision is
+reported, never interleaved). A final line from a crash mid-append is
+handled by what it IS, not by where it sits: a line that **does not
+parse** is a torn tail — truncated at its line start on the next open,
+with a `journal_repair` event recording the byte offset and cause — while
+a line that **parses but lost only its trailing newline** is a complete,
+durable event: the writer restores the framing byte and records the
+repair, and the event itself is never deleted. The append-only rule binds
+complete events. The
+snapshot is rewritten only by the projector, atomically (temp + rename +
+fsync). No protection is claimed against editors that bypass the writer;
+read-time checks report what the records can show.
+
+**Trust — the closed mint rule (B1/A1).** `observed` is minted by
+execution, never by declaration. `gate_run` records exist only through
+`ledger.py gate` — the helper itself executes the command with declared
+cwd, timeout and captured logs, bound at execution time to one criterion
+the task's `gate_intent` declares and to a started task; a mediated
+`append` of a `gate_run` is refused outright. Outside the gate executor
+exactly two `observed` paths exist: `resource_sample` metering written by
+a `host_adapter` actor citing an evidence artifact that resolves, and the
+control-pair executor — `ledger.py start` captures the task's starting
+fingerprint (revision plus dirty state) on the `task_start` record while
+the working tree still is the starting state, and `run_control` (reached
+through `outcomes.py control`) then executes both legs itself, materializing
+the old leg as a detached worktree at that recorded revision carrying
+exactly the declared check artifacts (D2-6/D3-4); a dirty starting
+fingerprint or a non-git host records `control_unavailable`, never a
+synthesized old outcome (D3-3). Every
+`observed`/`imported` record must cite a pointer that resolves inside the
+plan or the repository. Everything else an agent writes down — including
+invariant evaluations, discoveries and model-reported results — is
+`asserted`, with the mediation named. Criteria count evidence only when
+recorded inside the CURRENT attempt — at or after the task's **latest**
+`task_start` journal position (D2-9b) with an accepted trust label; a
+restart reopens the window and earlier evidence is carried as stale,
+never satisfying. Boundary invariants are evaluated at or after
+task-start (D3-6).
+
+**Determinism.** Every timestamp in the snapshot and the views is derived
+from event `ts` values, never the wall clock: replaying the same journal
+bytes yields byte-identical `state.json` and view files. Positions the
+journal cannot support after a markdown-wins reconciliation are recorded
+`regenerated`, never fabricated (D2-8), and are ignored for roll bounding.
+
+**The human-edit rule (views).** A generated view that differs from what
+render would produce — its identity header proves it was machine-rendered
+— is never silently overwritten. Render reports the divergence and the
+operator reconciles: `human-wins` (the human edit stays; the generated
+output sits beside it as `<name>.generated.md`) or `generated-wins` (the
+human edit is preserved as `<name>.human.md`). Both record a
+`reconciliation` event with the trigger, the editor whose change won, and
+the operator-supplied authority. `README.md` and `PROGRESS.md` remain
+markdown-wins human documents.
+
+**Completion.** A task may only close when every `gate_intent` criterion
+has in-window accepted evidence; `ledger.py complete` refuses otherwise
+(zero-test control) and the refusal is itself a recorded event. The
+completion profile view shows which mechanism closed every criterion
+(evidence + trust + pointer, or reconciled authority) — never a bare
+claim. In 6.0, reconciled-authority closures render as an explicit
+amendment line in the view footer: rendering them as first-class
+completion rows waits for the lifecycle wiring that mints them.
+
+**Durability and rolls (Q2, bounded by measurement).** `.dwp/` is
+conventionally gitignored, so the default durability posture is
+**export**: `ledger.py export --dest DIR` copies the whole evidence
+chain — journal + snapshot + contract chain, plus roll archives, the
+`evidence.jsonl` reuse cache, every `gates/` log, and every
+`evidence_path` cited by any record or snapshot criterion — with
+verified digests; a cited pointer that does not resolve is listed in the
+manifest as `missing_evidence`, never silently dropped. Rolls are OFF by
+default. When used, `ledger.py roll` retires **live bytes only**: the
+journal archive beside the plan keeps every event first-class (approvals,
+evidence windows and projections read archived + live history — a rolled
+plan continues; nothing is deleted, snapshot-cited positions become
+archive-addressable, and a corrupt archive segment is an error, never a
+silent skip). Automatic roll-sizing waits for measurement data from the
+confirmation campaign, which is why no automatic policy ships in 6.0.
+
+**View layout (Q4).** Four views ship: `tasks` (task table),
+`evidence` (evidence index with trust labels), `audit` (every refusal and
+intervention, by class, with reasons — a faithful ledger of recorded
+proposals, never an index or rating), and `completion` (rendered at
+completion). All are pure projections under the generated-view discipline
+above.
+
+---
 
 ## Guarded state updates
 

@@ -21,7 +21,7 @@ Tasks:
 2. [Task 2]
 3. [Task 3]
 
-Plan name: PLAN_{descriptive_name}
+Requested plan slug: {descriptive_name}
 ```
 
 ---
@@ -47,7 +47,7 @@ Tasks:
 4. Add integration tests with mocks
 5. Update platform factory and documentation
 
-Plan name: PLAN_whatsapp_integration
+Requested plan slug: whatsapp_integration
 ```
 
 ---
@@ -70,7 +70,7 @@ Tasks:
 3. Write integration tests (comprehensive mock coverage)
 4. Update ARCHITECTURE.md with new handler patterns
 
-Plan name: PLAN_refactor_handler_system
+Requested plan slug: refactor_handler_system
 ```
 
 ---
@@ -93,7 +93,7 @@ Tasks:
 4. Fill documentation gaps
 5. Update all cross-references and links
 
-Plan name: PLAN_docs_reorganization
+Requested plan slug: docs_reorganization
 ```
 
 ---
@@ -117,7 +117,7 @@ Tasks:
 4. Add edge case and error handling tests
 5. Update TESTING_GUIDE.md with new patterns
 
-Plan name: PLAN_botflow_testing
+Requested plan slug: botflow_testing
 ```
 
 ---
@@ -146,7 +146,7 @@ Tasks:
 6. Update serverless config and environment variables
 7. Document sentiment analysis flow in docs/ARCHITECTURE.md
 
-Plan name: PLAN_sentiment_analysis_lambda
+Requested plan slug: sentiment_analysis_lambda
 ```
 
 **Why mention tech here?** Because you're introducing AWS Comprehend SDK (new AWS service) and specifying DynamoDB caching (specific approach).
@@ -173,7 +173,7 @@ Tasks:
 2. [Task 2 with specific requirements]
 3. [Task 3 with specific requirements]
 
-Plan name: PLAN_{descriptive_name}
+Requested plan slug: {descriptive_name}
 
 Global guidelines:
 - Branch: feature/{branch-name}
@@ -194,10 +194,10 @@ Global guidelines:
 
 Objective: [Your goal]
 Tasks: [List]
-Plan name: PLAN_{name}
+Requested plan slug: {name}
 
 2. After creating, execute immediately:
-Execute the plan at: .dwp/plans/PLAN_{name}/README.md
+Execute the plan at: .dwp/plans/{PLAN_NAME}/README.md
 ```
 
 ---
@@ -209,7 +209,7 @@ Create a deep work plan following guide/GUIDE.md
 
 Objective: [Your goal]
 Tasks: [List]
-Plan name: PLAN_{name}
+Requested plan slug: {name}
 
 After creating, show me the plan structure. Wait for approval before executing.
 ```
@@ -223,7 +223,7 @@ Create a deep work plan for overnight autonomous execution following guide/GUIDE
 
 Objective: [Your goal]
 Tasks: [List with AUTOMATED validations only]
-Plan name: PLAN_{name}
+Requested plan slug: {name}
 
 CRITICAL: Each task must have automated validation. If ANY fails, STOP and LOG.
 ```
@@ -236,7 +236,7 @@ CRITICAL: Each task must have automated validation. If ANY fails, STOP and LOG.
 
 - **Be specific about goal**: "Add 5 component pages" not "improve UI"
 - **List expected tasks**: Give rough breakdown upfront
-- **Name clearly**: `PLAN_ui_expansion` not `PLAN_stuff`
+- **Name clearly**: `ui_expansion` instead of a vague slug
 - **Mention validations**: "Run codecheck", "50%+ coverage"
 - **Mention tech when relevant**: "Use Stripe SDK" or "Use LangGraph for state machine"
 - **Reference existing docs**: "Follow patterns in docs/ui/COMPONENTS_REFERENCE.md"

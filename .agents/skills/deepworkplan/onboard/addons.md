@@ -1,6 +1,7 @@
 # DeepWorkPlan — Onboard: the required local review and the optional addons (read in Phase 7a and 7b)
 
-Verbatim from the main procedure. Five addons ship under `../addons/`. Four are
+Verbatim from the main procedure. Five active addons ship under `../addons/`;
+the proposed Herdr candidate is unwired. Four active addons are
 **optional**: a repository is fully conformant with zero optional addons, and none
 of them is required to create or execute plans. One of the four — **dependency
 upgrade** — is **near-default**: offered for every repo with declared
@@ -25,7 +26,7 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
    > `.github/ai-pr-reviewer/extension.md`), a `.review/.skip-bootstrap`
    marker, and any existing `pr-review.yml`. Fill gaps only.
 2. **Install the vendored skill, pinned:**
-   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v2.3.0 --skill ai-diff-reviewer -y`
+   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.2 --skill ai-diff-reviewer -y`
    (both `--yes` and `-y` are required in non-TTY; never an unpinned ref, never
    a remote installer piped to a shell). Assert the vendored `SKILL.md` version
    equals the requested tag.
@@ -44,8 +45,10 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
 
 ## Phase 7b — Offer optional addons (trigger only)
 
-After Phase 7a, **enumerate** the remaining addons under `../addons/` and offer
-each one. Three are **explicit opt-ins** — signal-gated, installed only on the
+After Phase 7a, offer the four active optional addons in the table below.
+The proposed Herdr addon is present in the pack for v7 design work but is
+**unwired in v6**: do not offer or activate it. Three active addons are
+**explicit opt-ins** — signal-gated, installed only on the
 developer's explicit acceptance. The fourth, **dependency upgrade**, is
 **near-default**: offered for every repo with declared dependencies, with its
 inert `/lib-upgrade` delegator installed under the Phase 0 onboarding consent
@@ -54,7 +57,7 @@ are **never required** — a
 repo is fully conformant with zero optional addons. In **trust mode**, you MAY
 recommend the obviously-applicable ones, but still surface them.
 
-Five addons ship today; the table lists all of them (the AI Diff Reviewer row
+Five active addons ship today; the table lists all of them (the AI Diff Reviewer row
 records its Phase 7a status). Offer the four optional ones independently:
 
 | Addon | Folder | Recommend in trust mode when… |
@@ -92,16 +95,16 @@ reporting; in trust mode, recommend it **only** on that signal and **never
 auto-install it for everyone**. If accepted: read that addon's `SKILL.md` and run
 its flow — detect whether the Dailybot skill/CLI is already present
 (reconcile-don't-clobber), offer the **opt-in** install paths (Dailybot agent
-skill via `npx --yes skills add DailybotHQ/agent-skill@v3.10.3 --skill dailybot -y`
+skill via `npx --yes skills add DailybotHQ/agent-skill@v3.16.1 --skill dailybot -y`
 / `npx --yes skills update dailybot -y` / OpenClaw `openclaw skills install dailybot`,
-or the Dailybot CLI **>= 3.7.0** via pip / Homebrew / the skill's verified
+or the Dailybot CLI **>= 3.9.0** via pip / Homebrew / the skill's verified
 installer flow), **defer
 all authentication** to the Dailybot skill's own consent flow (`shared/auth.md`
 — `dailybot login` or `DAILYBOT_API_KEY`; never reinvent or store credentials),
 wire the **four lifecycle events** (kickoff, significant task, blocked,
 completion) as optional progress reports via the dailybot `report` sub-skill,
 and **MAY** offer deterministic hook enforcement (`dailybot hook`, CLI >=
-3.7.0). The paired Dailybot skill (**3.10.3**) exposes 14 capabilities (chat,
+3.9.0). The paired Dailybot skill (**3.16.1**) exposes 17 capabilities (chat,
 check-ins, forms authoring, ask AI, per-repo API keys, and more); this addon wires only **report**
 into DWP execution. Every report is strictly **best-effort and never blocks**
 the work if Dailybot is absent, unauthenticated, or unreachable. The core

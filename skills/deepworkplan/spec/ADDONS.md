@@ -111,8 +111,10 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Five addons ship today. Four are **optional** and **never required** — a repository
-is fully conformant with **zero optional addons** installed. Of those four, the
+Six addon folders ship: four active addons are **optional** and **never
+required**, one is the local-review baseline, and Herdr is a staged v7
+candidate with no v6 flow hook. A repository is fully conformant with
+**zero optional addons** installed. Of the four active optional addons, the
 **dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
 with declared dependencies, with its **inert** `/lib-upgrade` delegator
 installed under the onboarding consent **unless explicitly declined** (an
@@ -156,9 +158,9 @@ form**; only its CI surface is optional.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx --yes skills add DailybotHQ/agent-skill@v3.10.3 --skill dailybot -y`,
-  currently **3.10.3**; or OpenClaw `openclaw skills install dailybot`) and/or
-  the **Dailybot CLI** (`dailybot-cli >= 3.7.0`,
+  (`npx --yes skills add DailybotHQ/agent-skill@v3.16.1 --skill dailybot -y`,
+  currently **3.16.1**; or OpenClaw `openclaw skills install dailybot`) and/or
+  the **Dailybot CLI** (`dailybot-cli >= 3.9.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
   never a one-line remote-installer pipe); **defers all authentication** to the
   Dailybot skill's own
@@ -166,8 +168,8 @@ form**; only its CI surface is optional.
   **four lifecycle events** (kickoff, significant task, blocked, completion) as
   **optional, best-effort, never-blocking** progress reports via the dailybot
   `report` sub-skill; and **MAY** commit deterministic hook enforcement
-  (`dailybot hook` lifecycle hooks, CLI >= 3.7.0). The paired Dailybot skill
-  exposes 14 capabilities (chat, check-ins, forms authoring, ask AI, per-repo API keys, and more);
+  (`dailybot hook` lifecycle hooks, CLI >= 3.9.0). The paired Dailybot skill
+  exposes 17 capabilities (chat, check-ins, forms authoring, ask AI, per-repo API keys, and more);
   this addon wires only **report** into DWP execution.
 - **Vendor-neutral guardrail:** the core DeepWorkPlan methodology has **zero**
   Dailybot dependency. This addon **MUST NOT** be auto-installed for everyone —
@@ -271,7 +273,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.1.1 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.2 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
@@ -323,6 +325,40 @@ form**; only its CI surface is optional.
 > addon's implementation.
 
 ---
+
+
+### 6.6 Herdr Mesh (sixth addon — optional environment capability)
+
+An optional addon teaching an executing agent to discover, launch and
+orchestrate a **Herdr agent mesh** (`skills/deepworkplan/addons/herdr/`):
+`SKILL.md` (router, detection, launch), `SPEC.md` (normative),
+`protocol.md` (address, discovery, send, grant/reply stamps, stop rules,
+escalation), `orchestration.md` (delegation discipline, one writer per
+path, join on the plan), `movement.md` (inside-Herdr detection and the
+safe command subset), `templates.md` (grant/reply stamps, launch brief).
+
+Placement decision (recorded per the addon contract): INSIDE DeepWorkPlan,
+not a separate repository — its only consumer is an agent executing or
+coordinating a plan, and it must stay in lockstep with the plan autonomy
+rules; it has no second surface (no CI Action, no marketplace) to justify
+a split. Generic by contract: it names `herdr` on PATH (or a detected
+wrapper taking the same address) and never a product or vendor.
+
+Identity is `(machine_id, pane_id)`; labels and row numbers are never
+addresses. Every delegation body carries the reply grant
+(`[herdr-mesh]` stamp); return hops are marked and never answered. The
+addon is an optional environment capability: never part of the AI-first
+baseline, never a conformance gate, never blocking — a repository with no
+Herdr runs single-agent and stays fully conformant, and a launch failure
+is recorded and continued with available peers.
+
+The addon ships **unwired** in the current line: no flow references it.
+Its `SKILL.md` is not user-invocable in v6, and Phase 7b excludes this
+staged candidate from the active addon offer. The template and validation
+checklist are present for review but do not activate the addon.
+The v7 wiring plan (onboard offer, optional execute delegation,
+`parallel-safe` marks, presence-gated verify) is recorded in
+[`V7_ROADMAP.md`](V7_ROADMAP.md) — non-normative.
 
 ## 7. References
 

@@ -9,17 +9,31 @@ All plans live under a single gitignored repo-root directory, `.dwp/`:
 
 ```
 .dwp/
-└── plans/      ← PLAN_{name}/ directories (the plans)
+└── plans/      ← PLAN_001_{name}/, PLAN_002_{name}/, ... (flat)
 ```
 
-- A plan lives at `.dwp/plans/PLAN_{name}/`, Lite or Full alike.
+- New plans live at `.dwp/plans/PLAN_<id>_<name>/`, Lite or Full alike.
+  `id` is an incrementing decimal number with at least three digits, allocated
+  by `plan_paths.py`. Old `PLAN_{name}/` folders remain valid and stay in place.
+  At 1000 the ID expands to four digits; `list` still sorts it numerically.
+  Never renumber or move an existing plan: its basename is referenced by
+  manifests, contracts, journals, prompts and evidence.
+- To select a plan, use `python3 ../shared/plan_paths.py --plans-dir
+  <dwp_dir>/plans resolve <selector>`. A selector can be the full folder name,
+  its numeric ID (`1` or `001`), a unique slug, or `latest`. `latest` means the
+  highest allocated ID when numbered plans exist; otherwise it uses the most
+  recently modified legacy folder. Ambiguous slugs require the full name or ID.
+  `list` shows numbered plans in numeric order and then legacy plans.
+- The allocator keeps `.next-plan-id` in `plans/`, so deleting an old plan does
+  not reuse its number. A crash may leave a gap or an empty folder; neither
+  silently changes the identity of another plan.
 - `create` writes the plan folder directly. There is no separate draft artifact
   and no `.dwp/drafts/` directory: the Lite plan **is** the reviewable artifact
   (`../spec/LITE_PLANS.md`). Both were removed in 2.4.0. A `.dwp/drafts/` folder
   left over from an earlier version is inert — DWP neither reads nor writes it.
 - Every artifact a plan produces — analysis outputs, gate logs, generated
   reports — lives inside **that plan's own folder**, under
-  `.dwp/plans/PLAN_{name}/analysis_results/`. Temporary or analysis results
+  `.dwp/plans/<plan>/analysis_results/`. Temporary or analysis results
   **MUST NOT** be written to the repository root or to ad-hoc folders elsewhere
   in the repo: the plan folder is the single home for a plan's working
   artifacts, so a plan can be inspected, archived, or deleted as one unit.
@@ -37,8 +51,8 @@ All plans live under a single gitignored repo-root directory, `.dwp/`:
 
 `.dwp/` **MUST** be added to the repository's `.gitignore`. Plans are
 working artifacts, not tracked source. (Orchestrator hubs follow the same rule:
-child plans live at `repositories/{repo}/.dwp/plans/PLAN_{child}/`, also
-gitignored.)
+child plans live at `repositories/{repo}/.dwp/plans/<plan>/`, also
+gitignored; numbering is local to each managed repository.)
 
 ## Workspace persistence and transfer
 
@@ -54,7 +68,7 @@ boundary) needs nothing else.
 **Transfer to a new machine (explicit, manual).** The minimum handoff
 manifest — everything a resumed session needs, nothing it can reconstruct:
 
-1. **The complete plan folder** `.dwp/plans/PLAN_{name}/`: README, task
+1. **The complete plan folder** `.dwp/plans/<plan>/`: README, task
    files, `PROGRESS.md`, `manifest.json`, `state.json`, and
    `analysis_results/` **including every gate log cited by a `log=` evidence
    pointer** (a dangling pointer is a conformance finding, not reusable
@@ -66,6 +80,10 @@ manifest — everything a resumed session needs, nothing it can reconstruct:
 4. **Evidence pointers** to external-action receipts (report ids, PR URLs)
    recorded in the task logs — the receipts themselves live in their
    services and are investigated there when absent.
+
+If the destination will create further plans in the same sequence, also carry
+`.dwp/plans/.next-plan-id`. Transferring a single plan folder is enough to
+resume that plan; the counter preserves IDs of plans deleted before transfer.
 
 On arrival: restore the folder at the same relative path, check out the
 recorded revision, re-create the dirty work, then run the read-only checker
@@ -84,7 +102,7 @@ human or an agent acting on explicit instruction.
 
 | Concept | Legacy path | New path |
 |---------|-------------|----------|
-| Plans | `.agent_commands/agent_deep_work_plans/results/plans/PLAN_{name}/` | `.dwp/plans/PLAN_{name}/` |
+| Plans | `.agent_commands/agent_deep_work_plans/results/plans/PLAN_{name}/` | `.dwp/plans/<plan>/` |
 
 The legacy `.agent_commands/agent_deep_work_plans/results/` tree **MUST NOT** be
 used by repos onboarded to DeepWorkPlan v2; migration moves any existing plans

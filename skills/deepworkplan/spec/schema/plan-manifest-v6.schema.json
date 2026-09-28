@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-manifest/v6.json",
+  "title": "DWP v6 plan manifest (identity + contract pointer)",
+  "description": "The v6 generation of the plan identity manifest. New schema-URL generation per RFC 9.1: the v1/v2/v5 manifest shapes are frozen and a v6 plan never rewrites one. Written exactly once, as the first file of the guarded materialization sequence (shared/ledger.py materialize: manifest -> contract -> approval), it carries the A12 contract pointer that makes a plan's v6-ness discoverable even when materialization was interrupted between the manifest and the contract — the ledger then refuses execution until the contract lands and re-running materialize with the same inputs completes it. The pointer is never edited: a changed contract is a revision under contracts/, recorded through the refine amendment path.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan",
+    "contract"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/plan-manifest/v6.json"
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_[A-Za-z0-9_-]+$",
+      "description": "The plan folder name; identical to the contract's plan field."
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "The content-addressed identity of the contract this plan executes under (compute over the canonical contract bytes); the ledger's approval gate scans journal approvals for exactly this value."
+        },
+        "path": {
+          "const": "contract.json",
+          "description": "The live contract location at materialization time; after amendments the live contract is the highest revision under contracts/ and the pointer stays as materialized provenance."
+        }
+      }
+    }
+  }
+}

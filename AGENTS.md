@@ -118,12 +118,12 @@ how to (1) turn any repository AI-first — generating an adapted `AGENTS.md`,
 gitignored `.dwp/` directory. The skill follows the
 [Open Agent Skills](https://agentskills.io) standard.
 
-**Stack:** Markdown + Bash. No application runtime, no compiled artifacts.
-The "code" is the `SKILL.md` prompt files an agent reads at runtime, plus two
-small helper scripts: `setup.sh` (the symlink installer at the repo root) and
-`skills/deepworkplan/shared/context.sh` (repo/branch/agent + `.dwp/`
-resolution). There is **no** CLI, no HTTP API, no auth flow, and no network
-calls — unlike the `dailybot` skill pack this repo is modeled on.
+**Stack:** Markdown + Bash + Python 3.9 standard library. No application
+runtime or compiled artifacts. The runtime includes `SKILL.md` instructions,
+`context.sh` for repo and `.dwp/` resolution, `plan_paths.py` for plan ID
+allocation and selection, and the v6 state helpers. `setup.sh` is the
+repository-root symlink installer. There is no standalone application CLI,
+HTTP API, auth flow, or network call.
 
 ## Project Structure
 
@@ -159,7 +159,7 @@ deepworkplan-skill/
 └── skills/deepworkplan/                        ← THE INSTALLED ARTIFACT — only this ships
     ├── SKILL.md                                ← router (version source of truth)
     ├── spec/                                   ← the 5 RFC-2119 normative docs (the standard; ships)
-    ├── shared/                                 ← context.sh, dwp-paths.md, adaptation.md, troubleshooting.md, install-verification.md, update-state.py, state_contract.py, finalize_plan.py
+    ├── shared/                                 ← context.sh, plan_paths.py (numbered plan allocation), dwp-paths.md, adaptation.md, troubleshooting.md, install-verification.md, update-state.py, state_contract.py, finalize_plan.py
     ├── create/SKILL.md                         ← create a Deep Work Plan
     ├── execute/SKILL.md                        ← execute a plan task-by-task
     ├── refine/SKILL.md                         ← modify a plan / promote Lite to Full

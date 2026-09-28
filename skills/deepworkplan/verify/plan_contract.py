@@ -205,7 +205,20 @@ def check(plan, is_git=True, state_override=None, allow_finalizing=False):
         url = doc.get('schema')
         known = [f'https://deepworkplan.com/schema/plan-{label}/v{v}.json' for v in (1, 2, 5)]
         if url is not None and url not in known:
-            report.bad(f'unknown {label} schema URL {url!r} — upgrade the installed skill')
+            # D2-10: a v6 plan under the v5 runner is unsupported, and the
+            # error names the contract pointer instead of a generic
+            # "unknown URL" — the caller is sent to the v6 flow, never to
+            # an upgrade that would silently change generations.
+            if url == 'https://deepworkplan.com/schema/plan-manifest/v6.json':
+                report.bad(f'this plan is v6 (manifest points at contract.json {doc.get("contract", {}).get("id", "?")!r}) — '
+                           'the v5 runner does not execute v6 plans; open it with the v6 flow (execute Step 2.0). '
+                           'v6 plans are never migrated back; a v5 plan is migrated forward only through shared/migrate_v6.py')
+            elif (plan / 'contract.json').exists():
+                report.bad(f'{label}.json is {url!r} but the folder carries a v6 contract.json — '
+                           'a torn pair this checker refuses to guess about; resolve the folder by hand '
+                           '(shared/migrate_v6.py rollback if a migration was interrupted)')
+            else:
+                report.bad(f'unknown {label} schema URL {url!r} — upgrade the installed skill')
     if report.failed:
         return report
     if state_override is not None:

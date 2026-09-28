@@ -1,0 +1,57 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/campaign/1",
+  "name": "ablations-service-noautom",
+  "paid": true,
+  "requires_enforced_isolation": false,
+  "launch_readiness": "Task 22 component ablations, family service, treatment noautom: context/state automation removed (no manifests, no generated views, hand-maintained records). Arm C carries this campaign's treatment pack; one-factor-removed variants keep mandatory v5 safety checks intact. Predeclared design: .dwp/plans/PLAN_v6_verified_autonomy/22.task_run_component_ablations.md.",
+  "arms": {
+    "C": {
+      "pack": "packs/v6/v6-abl-noautom-e4b60f72ef4aa6b8"
+    }
+  },
+  "seed": {
+    "path": "tests/evaluation/v6/fixtures/service/seed",
+    "family": "service"
+  },
+  "tasks": [
+    {
+      "id": "SC-5",
+      "prompt": "Verify that simultaneous duplicate deliveries of one Idempotency-Key create exactly one record, using the service's own barriers for alignment (no sleeps). Acceptance: exactly one delivery returns 201, the rest replay, and the stored row count for the key is one."
+    },
+    {
+      "id": "SC-9",
+      "prompt": "Add GET /events/{id} returning a single event by id with its payload and schema version. Acceptance: 404 for unknown ids; 200 with the exact stored payload for known ids; replayed events readable the same way; the existing suite still passes."
+    }
+  ],
+  "strata": [
+    {
+      "name": "claude-code",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/claude_task.sh"
+        ]
+      }
+    }
+  ],
+  "repeats": 1,
+  "oracles": [
+    {
+      "id": "O-SC-5",
+      "kind": "exit_zero_file",
+      "path": "solution.txt"
+    },
+    {
+      "id": "O-SC-9",
+      "kind": "exit_zero_file",
+      "path": "solution.txt"
+    }
+  ],
+  "partition": "development",
+  "quota_protections": {
+    "max_starts_per_hour": 30,
+    "budget_stop_per_provider": 25,
+    "cooldown_on_quota_minutes": 60
+  }
+}

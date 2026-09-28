@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-execute
 description: Execute Lite or Full Deep Work Plans task-by-task — select validation from the actual surface, preserve state and evidence, recover safely, and finish with the Final Review.
-version: "5.4.0"
+version: "5.5.4"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -30,6 +30,9 @@ when their moment arrives. (This ordering is deliberate: reading companions
   `dwp_dir`; its source is not part of this flow's reads. That is the whole
   t0 set — the operative rules the loop needs are inline below.
 - **Conditional — read only when the trigger fires:**
+  - [`v6.md`](v6.md) (this directory) — read only when Step 2.0 detects a
+    v6 plan (manifest contract pointer / `contract.json` / `contracts/`
+    chain); it carries the whole v6 task loop.
   - [`../spec/LITE_PLANS.md`](../spec/LITE_PLANS.md) — read only when the
     plan README declares `Plan Format: Lite` or a v2 state line (anchored
     task records, approval axis, promotion recovery).
@@ -55,7 +58,7 @@ when their moment arrives. (This ordering is deliberate: reading companions
     set — is inline in Step 5 rule 3.
   - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
     plan folder cannot be located or the `DWP_DIR` override is in play
-    (Steps 0–3 already inline `.dwp/plans/PLAN_{name}/`).
+    (Steps 0–3 already inline `.dwp/plans/<plan>/`).
   - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
     only when something is already wrong (discovery failure, stale
     installation, missing test command, unsupported host capability,
@@ -84,14 +87,15 @@ when their moment arrives. (This ordering is deliberate: reading companions
 ## Parameter Support
 
 - `/dwp-execute {plan_name}` — execute directly (skip the selection menu).
-- `/dwp-execute latest` — execute the most recently modified plan.
+- `/dwp-execute latest` — execute the highest numbered plan, or the most
+  recently modified legacy plan when no numbered plan exists.
 - `/dwp-execute {plan_name} trust` (or `auto`, or an explicit "run to the end")
   — unattended: no questions between tasks (see *Autonomous mode*).
 - No parameter → interactive selection (Step 1).
 
-Normalize names by adding the `PLAN_` prefix if missing. Validate that
-`.dwp/plans/PLAN_{name}/` and its `README.md` exist; if not, show available plans
-and ask the user to choose. A folder **without** `README.md`, whose README says
+Resolve full names, IDs, unique slugs, or `latest` with `../shared/plan_paths.py
+--plans-dir <dwp_dir>/plans resolve <selector>`. If no folder or README exists,
+show available plans. A folder **without** `README.md`, whose README says
 `Plan Status: materializing`, or whose README **links a task file that does not
 exist**, is a partial materialization — point to `refine` and stop.
 
@@ -180,9 +184,8 @@ README under `.dwp/plans/`, note whether `trust`/`auto` was passed, and skip to
 Step 2. Otherwise continue to Step 1.
 
 ### Step 1 — Identify Plan
-List folders in `.dwp/plans/` starting with `PLAN_`; mark the most recently
-modified as `latest`. Present a numbered menu and accept a number, plan name, or
-`latest`. Validate the chosen plan's folder + README.
+List folders with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list`.
+Resolve the choice with the helper; validate its folder and README.
 
 ### Step 2 — Read Plan Overview
 Read the plan README (goal, context, global guidelines, task list `[x]`/`[ ]`,
@@ -196,6 +199,15 @@ Surface) is executed **under its own shape** — never retrofitted
 this skill is reported honestly and not executed. Note whether the README says
 the plan is pre-approved for unattended execution and whether it records an
 explicit Executive Report request.
+
+**Step 2.0 — Detect plan generation (v6).** If the plan folder carries a
+`manifest.json` whose `contract` pointer resolves, a `contract.json`, or a
+`contracts/` revision chain, this is a **v6 plan**: **read
+[`v6.md`](v6.md)** (this directory) and run the v6 loop there for the whole
+execution — the steps below are the v5 loop and do not apply. A v6 plan is
+never executed through the v5 steps, and a v5 plan is never migrated to v6
+mid-flight; a v5-only runner that meets a v6 plan reports it as unsupported
+and stops rather than approximating it.
 
 **Step 2.1 — Detect plan type.** Set `plan_type = "orchestrator"` if the README
 has a "Child DWP Plans" section, or task files contain `create_child_dwp` /
@@ -225,7 +237,7 @@ An orchestrator records a separate baseline per child, in that child's session.
 
 Read the README task list; run `git status` and `git log --oneline -10`; identify
 the first `[ ]` task. Report completed/pending tasks, the starting task, git
-state, and recent commits. The location is `.dwp/plans/PLAN_{name}/`. A README
+state, and recent commits. The location is `.dwp/plans/<plan>/`. A README
 `[ ]` marked `(re-validate: …)` is a task whose evidence `refine` invalidated:
 re-run its gates and re-mark it rather than re-implementing it. Gate evidence
 prefixed `invalidated by refine` is retained history, never passing evidence —
@@ -652,7 +664,7 @@ candidate against all plan artifacts before writing state, verifies the actual
 files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
 an invented passing gate for this invocation to the candidate it is validating.
 The receipt is external evidence, not its own prerequisite. Run
-`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+`bash ../verify/conformance.sh --plan <plan>` on the actual artifacts next.
 
 An interrupted publication leaves `.finalizing.json`; normal verification fails
 until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR

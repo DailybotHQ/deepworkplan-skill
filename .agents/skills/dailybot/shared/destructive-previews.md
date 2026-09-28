@@ -29,6 +29,8 @@ tasks" is the sentence that changes someone's mind; "this will archive the board
 
 - **Archiving a board cascade-archives its live tasks**, and restoring the board does
   **not** bring them back. They are restored one by one.
+- **Archiving a project cascades to its boards and their tasks.** `project restore` walks
+  back up, never down: the boards and tasks stay archived until restored themselves.
 - **`task delete` is an alias of archive.** Nothing is destroyed; it is reversible and
   audited as `task.archived`. Do not tell a developer their data is gone.
 - **`--yes` skips the prompt, not the preview.** The record of what was about to happen is
@@ -46,22 +48,49 @@ So the panel goes to **stderr** and stdout carries exactly one JSON object:
 | --- | --- | --- |
 | `--dry-run --json` | the preview (`consequence`, `affects`, `reversible`, `restore_path`) | — |
 | `--yes --json` | the write result | the consequence panel |
-| preview failed, `--json` | `{"status": "error", "code", "detail", "message"}`, exit 1 | — |
+| preview failed, `--json` | `{"status": "error", "code", "detail", "message"}`, exit per the error (e.g. 5 not found, 4 refused) | — |
 
 Read the `consequence` from stdout under `--dry-run --json`; never scrape the panel. And
 note that a failed preview still gives you a parseable stdout — an agent that branches on
 stdout for every exit code does not need a special case here.
 
-## Bulk has no dry run
+## Bulk has a real dry run
 
-Its blast radius is bounded by a **100-item cap** instead (`too_many_items` above it).
+`task bulk --dry-run` asks the server to run the whole batch and roll it back. The changes
+(`items[].changes`, each field `from → to`) and the refusals (`refused[]`) are the real ones,
+and nothing is written. It sends no idempotency key.
 
 ```bash
+dailybot task bulk --operation archive -f batch.json --dry-run --json
+# stop here: show the developer the changes and refusals; run the next line only after yes
 dailybot task bulk --operation archive -f batch.json --yes --json
 ```
 
-Bulk reports **per item**. A partial failure exits non-zero — do not read exit 0 as "all
-applied" without checking the per-item results.
+A preview that predicts refusals exits 1. A server too old to preview refuses the keyless
+call instead of applying it (`bulk_dry_run_unsupported`, exit 2). The cap is **100 items**
+(`too_many_items` above it). Bulk reports **per item**: a partial failure exits non-zero, so
+do not read exit 0 as "all applied" without checking the per-item results.
+
+## Doors with no server preview
+
+Removing a board or project member, taking someone off a task, unlinking two tasks or a goal
+from a project, and deleting a comment, an attachment, a milestone or a saved view have no
+server-side preview.
+Their `--dry-run` is the CLI's own: it states the exact act and sends **nothing**
+(`"previewed_by": "client"` under `--json`). There are no counts to read — say what will
+happen, and wait for the developer.
+
+## Saving views replaces the whole list
+
+`board view save` and `project view save` replace **every** saved view the person has on
+that board or project with the file you send. There is no preview of any kind: the ETag
+(`--if-match`) only stops you from overwriting a save that happened after you read. It does
+not check that the new list is what the person wants. So:
+
+1. Read the current list: `dailybot board views <board-uuid> --json` (or `project views`).
+2. Show the developer the views that the new file drops or changes.
+3. Wait for their go-ahead, then save with the ETag you read:
+   `dailybot board view save <board-uuid> -f views.json --if-match "<etag>"`.
 
 ## What to do as an agent
 

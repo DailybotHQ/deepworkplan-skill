@@ -68,7 +68,12 @@ Guarantees also covered by fixtures:
 
 ## Runtime self-containment
 
-Plan verification requires **Python 3.9+**, using only its standard library.
+Plan creation now requires **Python 3.9+** for numbered folder allocation;
+plan selection by ID, slug, or `latest` uses the same standard-library helper.
+The allocator uses POSIX file locking (`fcntl`) so concurrent creators cannot
+claim the same ID; it requires a POSIX Python environment such as macOS,
+Linux or WSL.
+Plan verification also requires Python 3.9+, using only its standard library.
 The shell entry point returns `2` with `UNVERIFIED` when Python is missing or
 too old, so a CI gate cannot accept an unchecked plan. Structural failures
 return `1`; fully checked structural success returns `0`. Repository-only
@@ -154,3 +159,37 @@ continues to be recorded per harness above.
 See [the handoff record](evaluations/cross-agent-handoff.md) for the
 bidirectional (A→B and B→A) interrupted-plan experiment, its results, and its
 limits.
+
+## v6 evaluation strata (2026-09-26)
+
+For the v6 evaluation campaigns only: the preregistered host/model strata are
+the `claude` CLI and the `codex` CLI headless launches (see
+`docs/evaluations/v6/TELEMETRY.md` for the adapters and their counter
+sources). This section is **Documented** level — the probes and bounded
+canaries discover actual counter exposure at execution time; it is not
+behavior-tested evidence about the pack itself.
+
+At runtime a v6 host additionally states its **abilities** through the
+closed negotiation set of `shared/resources.py`
+(`stop_agent`, `meter_spend`, `meter_tokens`, `meter_wall_clock`,
+`cancel_children`, `model_routing`, `subagents`, `telemetry`); the
+all-False floor is the documented minimal host and every ability it lacks
+degrades the matching limits to advisory with the reason named — never to
+a silent or invented enforcement. `spec/V6_RESOURCES.md` is the normative
+contract; `bats tests/v6-budget.bats` is the behavior-tested evidence.
+
+The v6 **plan generation** is a parallel lifecycle, not a host stratum: a
+plan folder is v6 by its artifacts (`manifest.json` contract pointer,
+`contract.json`, `contracts/` chain) and v5/v6 plans coexist in one
+`.dwp/` — each keeps its own recorded lifecycle, and no flow migrates
+across generations (`spec/V6_LIFECYCLE.md`), with one explicit
+one-directional bridge: `shared/migrate_v6.py` (preview → guarded migrate
+→ verified rollback) turns a v5 plan into a v6 plan on request, importing
+its gate evidence as `imported` records with v5 provenance and blocking
+any criterion whose v5 evidence cannot carry until the gates re-run under
+v6; the v5 checker refuses a migrated folder naming the contract, so a v6
+plan can never slide back under the v5 runner. New plans get v6 only when
+the pack line is 6+ or the developer explicitly asks for the candidate;
+`bats tests/v6-lifecycle.bats` is the behavior-tested evidence for the
+wiring, including the read-only status/verify surfaces and the guarded
+materialization sequence.

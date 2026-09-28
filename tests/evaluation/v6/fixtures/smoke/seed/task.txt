@@ -1,0 +1,2 @@
+Produce a file named solution.txt in the workspace root whose content is the
+single word: done

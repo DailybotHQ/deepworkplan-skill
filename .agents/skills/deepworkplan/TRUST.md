@@ -13,12 +13,53 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Four Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Thirteen Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
-`verify/plan_contract.py` for the read-only conformance check, and
+`verify/plan_contract.py` for the read-only conformance check,
+`shared/plan_paths.py` for monotonic plan IDs and plan selection,
 `shared/update-state.py`, `shared/state_contract.py` and
 `shared/finalize_plan.py` for the guarded state, evidence and completion
-transactions. They read and write only your repository and its `.dwp/`
+transactions, `shared/contract_v6.py` validating the v6 outcome
+contract and journal records (identity, graph and verdict semantics; it
+never executes gates), and — for v6 plans — `shared/ledger.py`, the single
+journal writer and gate executor (the only place `observed` gate evidence
+is produced, by actually running the declared command; evidence replay
+from its cache is bound to the same task and criterion the cached result
+was recorded under, so an identical command for another linkage runs
+fresh instead of silently minting nothing; its `materialize` command is
+the guarded creator of a v6 plan — manifest contract pointer, stamped
+content-addressed contract, then the materialization-time approval event,
+each step atomic and resumable, never rewriting a different contract or
+another generation's manifest; it also captures
+each task's starting fingerprint at `task_start` and executes both legs of
+a declared control pair, materializing the old leg as a detached worktree
+at that recorded revision), `shared/views.py`
+rendering the deterministic generated views under the human-edit rule,
+`shared/scheduler.py` — the read-only authorization core that turns journal
+records into dispatch/refusal decisions (it never writes and never executes
+anything; every refusal it returns is a decision, not a side effect) — and
+`shared/outcomes.py`, the v6 outcome-verification helper: closure decisions
+and receipts are pure recomputations over the records (a receipt is written
+only to the `--out` path you name), review states are recorded as ordinary
+`asserted` observations through the ledger writer, and a declared control
+executes through the ledger's control executor — never on its own — and
+`shared/context_manifest.py`, the v6 context-selection helper: a read-only
+derivation of the per-task context manifest, dead-end digest, freshness
+verdict and four-quantity accounting from the plan's own records (it takes
+no lock and writes nothing unless you pass `--out`); and
+`shared/resources.py`, the v6 resource helper: it composes the
+scheduler's envelope accounting and the ledger's record discipline to
+negotiate host abilities, apply reserves, record exhaustion and settle
+cancellations — the only events it writes are journal observations
+through the ledger writer, and it never mints observed trust; and
+`shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,
+guarded resumable migrate, verified rollback. It never executes anything:
+a v5 gate record is imported through the ledger writer as `imported`
+evidence with the v5 source digest as provenance (or `asserted` history
+when the v5 state kept no resolvable pointer), and `observed` is refused
+there exactly as everywhere else. The only v5 byte it ever rewrites is the
+manifest, swapped to the v6 pointer after the verified backup exists. They
+read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
 ours: importing a Python helper can leave a `__pycache__/` bytecode cache
 beside it inside the installed pack. The shipped flows set

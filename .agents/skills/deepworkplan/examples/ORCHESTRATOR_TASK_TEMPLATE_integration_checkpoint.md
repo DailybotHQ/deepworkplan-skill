@@ -1,6 +1,6 @@
 # Task {N}: Integration Checkpoint — {Description}
 
-> **Template for orchestrator plans.** Replace all `{placeholders}` when generating a real task file.
+> **Template for orchestrator plans.** Fill in known placeholders when generating a real task file. Resolve each child plan basename from the parent registry after the child has been allocated; never construct an ID from the feature or repository name.
 
 ## 1. Context
 
@@ -16,12 +16,12 @@ This task does NOT execute any child DWP plans. It reviews the created child pla
 
 ### Orchestrator Context
 
-- **Parent Plan:** PLAN_{parent_plan_name}
+- **Parent Plan:** {PARENT_PLAN_NAME}
 - **Checkpoint position:** After {child DWP creation tasks}, before {next phase}
-- **Manifest:** `.dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md` {or "Not used"}
+- **Manifest:** `.dwp/plans/{PARENT_PLAN_NAME}/ORCHESTRATOR_MANIFEST.md` {or "Not used"}
 - **Child DWPs to verify:**
-  - `repositories/{repo1}/.dwp/plans/PLAN_{feature}_{repo1_short}/`
-  - `repositories/{repo2}/.dwp/plans/PLAN_{feature}_{repo2_short}/`
+  - `repositories/{repo1}/.dwp/plans/{CHILD_PLAN_NAME_1}/`
+  - `repositories/{repo2}/.dwp/plans/{CHILD_PLAN_NAME_2}/`
 
 ### Output Contract Verification
 
@@ -97,7 +97,7 @@ Check that output declarations match input dependencies across the dependency ch
 
 | Producer Child DWP | Declared Outputs | Consumer Child DWP | Required Inputs | Match? |
 |-------------------|-----------------|-------------------|----------------|--------|
-| PLAN_{feature}_{repo1_short} | {outputs listed in "Expected Outputs"} | PLAN_{feature}_{repo2_short} | {inputs listed in "Input Dependencies"} | [ ] Yes / [ ] No |
+| {CHILD_PLAN_NAME_1} | {outputs listed in "Expected Outputs"} | {CHILD_PLAN_NAME_2} | {inputs listed in "Input Dependencies"} | [ ] Yes / [ ] No |
 
 For each mismatch:
 - Identify what's missing or inconsistent
@@ -175,8 +175,8 @@ Create a checkpoint report with:
 
 ```bash
 # Verify all child DWP plans exist
-test -f repositories/{repo1}/.dwp/plans/PLAN_{feature}_{repo1_short}/README.md && echo "PASS: {repo1} child DWP exists" || { echo "FAIL" >&2; exit 1; }
-test -f repositories/{repo2}/.dwp/plans/PLAN_{feature}_{repo2_short}/README.md && echo "PASS: {repo2} child DWP exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo1}/.dwp/plans/{CHILD_PLAN_NAME_1}/README.md && echo "PASS: {repo1} child DWP exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo2}/.dwp/plans/{CHILD_PLAN_NAME_2}/README.md && echo "PASS: {repo2} child DWP exists" || { echo "FAIL" >&2; exit 1; }
 
 # No code validation needed — this is a review task
 echo "Integration checkpoint is a manual verification task"
@@ -197,7 +197,7 @@ echo "Integration checkpoint is a manual verification task"
 - [ ] 11. Handle any issues (fix blocking, note advisory).
 - [ ] 12. Update the plan README to mark this task as `[x]`.
 - [ ] 13. Update PROGRESS.md with checkpoint results.
-- [ ] 14. Commit: `git commit -m "docs(technical): integration checkpoint passed - Task {N} of PLAN_{parent_plan_name}"`
+- [ ] 14. Commit: `git commit -m "docs(technical): integration checkpoint passed - Task {N} of {PARENT_PLAN_NAME}"`
 - [ ] 15. Send Dailybot progress report (non-blocking).
 - [ ] 16. Update the Log section below.
 

@@ -24,13 +24,13 @@ When an agent is instructed to use this system, it must obey:
    - Always commit work before moving on.
    - **Commit message format** — Include a reference to the plan and task:
      ```
-     type(scope): description - Task N of PLAN_{plan_name}
+     type(scope): description - Task N of {PLAN_NAME}
      ```
      Examples:
      ```
-     feat(api): add notification endpoint - Task 2 of PLAN_notification_system
-     docs(technical): update architecture guide - Task 3 of PLAN_docs_reorganization
-     fix(chatbot): resolve timeout in handler - Task 1 of PLAN_bug_fixes
+     feat(api): add notification endpoint - Task 2 of PLAN_001_notification_system
+     docs(technical): update architecture guide - Task 3 of PLAN_002_docs_reorganization
+     fix(chatbot): resolve timeout in handler - Task 1 of PLAN_003_bug_fixes
      ```
 
 5. **Stop on failure**
@@ -42,7 +42,7 @@ When an agent is instructed to use this system, it must obey:
    **Per-task reports (only when Dailybot is installed/authorized; only for individually significant tasks):**
    - After a task that ships a feature, fixes a bug, or completes a major refactor, trigger the skill with a standup-style message — e.g., *"Implemented JWT middleware for the API gateway — all protected routes now validate tokens."*
    - **Skip** intermediate/setup tasks (scaffolding, base classes, config changes) — they'll be covered by the plan completion report when Dailybot is in use.
-   - **NEVER use** internal references: *"Completed Task N: {title} - PLAN_{name}"* — this is tracking, not a standup update.
+   - **NEVER use** internal references: *"Completed Task N: {title} - {PLAN_NAME}"* — this is tracking, not a standup update.
 
    **🔔 Plan completion report (when Dailybot is installed and authorized — golden rule for that channel; never required for DWP conformance):**
    - When ALL tasks in a plan are complete **and** Dailybot is available, send a Dailybot report as a **milestone** with **structured data** (completed/in-progress/blockers) and **metadata** (plan name, repo). If Dailybot is absent or unauthorized, skip — do not block completion.
@@ -50,9 +50,9 @@ When an agent is instructed to use this system, it must obey:
    - **If an Executive Report is requested:** generate it from durable evidence (task logs, PROGRESS.md, `analysis_results/`, the state layer, PR summaries) without replaying the plan. Do not generate it unrequested.
 
      Examples (the message itself; the skill builds the payload):
-     - ✅ GOLD STANDARD: *"Built a full-text search feature for the agents dashboard — users can now search across report content, structured data, metadata, and agent names with real-time highlighted results."* (with structured data listing each deliverable and metadata `{"plan": "PLAN_dashboard_search", "repo": "web-app"}`)
+     - ✅ GOLD STANDARD: *"Built a full-text search feature for the agents dashboard — users can now search across report content, structured data, metadata, and agent names with real-time highlighted results."* (with structured data listing each deliverable and metadata `{"plan": "PLAN_004_dashboard_search", "repo": "web-app"}`)
      - ❌ NEVER (vague, no detail): *"Completed a deep work plan with multiple tasks executed and validated"*
-     - ❌ NEVER (process-focused): *"Plan completed: PLAN_auth_refactor - 8 tasks completed successfully"*
+     - ❌ NEVER (process-focused): *"Plan completed: PLAN_005_auth_refactor - 8 tasks completed successfully"*
 
    See [`addons/dailybot/templates/INTEGRATION.md`](../addons/dailybot/templates/INTEGRATION.md) for the full pattern when the addon is in use.
 
@@ -165,7 +165,7 @@ This workflow applies when a Deep Work Plan involves changes to **multiple sub-p
    # Template for each repository
    cd {repository}
    git add -A
-   git commit -m "type(scope): description - Task N of PLAN_{name}"
+   git commit -m "type(scope): description - Task N of {PLAN_NAME}"
    git push
    ```
 
@@ -179,7 +179,7 @@ This workflow applies when a Deep Work Plan involves changes to **multiple sub-p
 For multi-project plans, use this format to maintain traceability:
 
 ```
-type(scope): description - Task N of PLAN_{plan_name}
+type(scope): description - Task N of {PLAN_NAME}
 
 [Optional details]
 
@@ -188,9 +188,9 @@ Refs: Related commits in other repos (if applicable)
 
 **Examples:**
 ```
-feat(api): add notification preferences endpoint - Task 2 of PLAN_notification_system
-feat(chatbot): implement notification dispatcher - Task 2 of PLAN_notification_system
-feat(web): add notification settings UI - Task 3 of PLAN_notification_system
+feat(api): add notification preferences endpoint - Task 2 of PLAN_001_notification_system
+feat(chatbot): implement notification dispatcher - Task 2 of PLAN_001_notification_system
+feat(web): add notification settings UI - Task 3 of PLAN_001_notification_system
 ```
 
 ### Why Commit After Each Task?
@@ -224,7 +224,7 @@ When executing multi-project plans, the agent **MUST**:
 
 ### Example: Complete Task Workflow
 
-**Scenario:** Task 3 of PLAN_user_preferences modifies `repositories/api-services` and `repositories/web-app`
+**Scenario:** Task 3 of PLAN_006_user_preferences modifies `repositories/api-services` and `repositories/web-app`
 
 ```bash
 # 1. Work on the task (implementation)
@@ -240,13 +240,13 @@ cd ../web-app && npm run test && npm run lint
 # 4. Commit in api-services
 cd ../api-services
 git add -A
-git commit -m "feat(api): add user preferences model and endpoints - Task 3 of PLAN_user_preferences"
+git commit -m "feat(api): add user preferences model and endpoints - Task 3 of PLAN_006_user_preferences"
 git push
 
 # 5. Commit in web-app
 cd ../web-app
 git add -A
-git commit -m "feat(ui): add user preferences settings page - Task 3 of PLAN_user_preferences"
+git commit -m "feat(ui): add user preferences settings page - Task 3 of PLAN_006_user_preferences"
 git push
 
 # 6. Update the state layer, if present
@@ -348,7 +348,7 @@ candidate against all plan artifacts before writing state, verifies the actual
 files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
 an invented passing gate for this invocation to the candidate it is validating.
 The receipt is external evidence, not its own prerequisite. Run
-`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+`bash ../verify/conformance.sh --plan <plan>` on the actual artifacts next.
 
 An interrupted publication leaves `.finalizing.json`; normal verification fails
 until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR

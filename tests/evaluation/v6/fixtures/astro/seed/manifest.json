@@ -1,0 +1,30 @@
+{
+  "family": "astro",
+  "role": "immutable initial fixture for the v6 evaluation lab (seed source; the lab driver pins and stages it)",
+  "provenance": {
+    "upstream": "https://github.com/withastro/astro",
+    "template_path": "examples/blog",
+    "tag": "astro@7.3.5",
+    "pinned_commit": "c2e01642af5f3919e4951b277a01d2de0ba1322f",
+    "license": "MIT (upstream LICENSE, Copyright (c) 2021 Fred K. Schott)",
+    "node_requirement": ">=22.12.0 (template engines field)",
+    "package_manager": "pnpm with pnpm-lock.yaml committed beside this manifest (pnpm is this host's package manager; the npm binary is a shim that redirects to pnpm here)",
+    "resolved_at": "2026-09-26"
+  },
+  "overlays": [
+    "src/pages/index.astro replaced with a generic product landing page (hero, features, CTA, blog entry point)",
+    "src/consts.ts branded to the generic site name 'Meridian'",
+    "scripts/fixture-check.mjs added: zero-dependency behavioral + accessibility checks over dist/",
+    "package.json gains the 'check' script; pnpm-lock.yaml generated at fixture freeze",
+    "accessibility overlay: alt attributes added to post/hero images the pristine template ships without one (seed must pass its own check contract)",
+    "accessibility overlay: blog index gains its h1 and card dates become h3 (heading order); the markdown style guide's body heading demoted so each page renders exactly one h1"
+  ],
+  "commands": {
+    "install": "pnpm install --frozen-lockfile --ignore-scripts",
+    "build": "pnpm run build",
+    "check": "pnpm run check"
+  },
+  "check_contract": "fixture-check must pass on the pristine seed and fail when a user-visible contract regresses (route presence, internal link resolution, one h1 per page, heading order, img dimensions/alt, document metadata)",
+  "cases": "../CASES.md",
+  "notes": "Fixture-local documentation only; shared integration (Task 8) owns cross-fixture indexes. Hidden variants and sealed scoring assets are authored by the restricted custodian outside implementer access."
+}

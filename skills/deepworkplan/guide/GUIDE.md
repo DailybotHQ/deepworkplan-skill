@@ -36,10 +36,10 @@ the single-file guide exists verbatim in exactly one file below.
 
 | Your flow | Read (essential) | Read only when triggered |
 |-----------|------------------|--------------------------|
-| **Create** a plan | [`authoring.md`](./authoring.md) (README + task-file templates, test & security discipline), [`structure.md`](./structure.md) (folders, naming, lifecycle) | [`orchestrator.md`](./orchestrator.md) if the plan spans sub-repositories; [`team-agents.md`](./team-agents.md) if parallel groups were detected; [`prompts.md`](./prompts.md) when writing `PROMPTS.md`; [`skills-integration.md`](./skills-integration.md) when referencing skills/agents in tasks |
-| **Execute** / **resume** a plan | [`execution.md`](./execution.md) (agent rules, per-task commits, completion tracking, final review) | [`orchestrator.md`](./orchestrator.md) for orchestrator plans; [`team-agents.md`](./team-agents.md) for parallel groups; [`prompts.md`](./prompts.md) §9 for resume scenarios |
+| **Create** a plan | [`authoring.md`](./authoring.md) (README + task-file templates, test & security discipline), [`structure.md`](./structure.md) (folders, naming, lifecycle) | [`orchestrator.md`](./orchestrator.md) if the plan spans sub-repositories; [`team-agents.md`](./team-agents.md) if parallel groups were detected; [`prompts.md`](./prompts.md) when writing `PROMPTS.md`; [`skills-integration.md`](./skills-integration.md) when referencing skills/agents in tasks; the flow file `../create/v6.md` + `../spec/V6_CONTRACT.md` when the plan is a v6 candidate |
+| **Execute** / **resume** a plan | [`execution.md`](./execution.md) (agent rules, per-task commits, completion tracking, final review) | [`orchestrator.md`](./orchestrator.md) for orchestrator plans; [`team-agents.md`](./team-agents.md) for parallel groups; [`prompts.md`](./prompts.md) §9 for resume scenarios; the flow file `../execute/v6.md` (loop: contract, journal, scheduler, verified closure) when the plan folder is v6 by its artifacts — `../spec/V6_LIFECYCLE.md` is the normative wiring; for a v6 plan the resume flow loads `../resume/v6.md` (journal-is-truth ladder, export handoff) and v5 → v6 migration is refine 3.2a's explicit surface (`../shared/migrate_v6.py`) |
 | **Refine** a plan | [`authoring.md`](./authoring.md), [`structure.md`](./structure.md) | as for Create |
-| **Onboard** a repository | [`structure.md`](./structure.md) | [`large-repo-onboarding.md`](./large-repo-onboarding.md) when the repository is large enough to onboard as its own plan |
+| **Onboard** a repository | [`structure.md`](./structure.md) | [`large-repo-onboarding.md`](./large-repo-onboarding.md) when the repository is large enough to onboard as its own plan; the flow file `../onboard/v6.md` (the four bounded-autonomy records) when the repository will run v6 plans — `../spec/V6_LIFECYCLE.md` §10 is normative |
 | **Verify** / **status** | [`structure.md`](./structure.md) §1–§2 | — |
 | **Upgrade** the installed skill | [`structure.md`](./structure.md) §1–§2 (what lives where) | the `upgrade` sub-skill itself (`../upgrade/SKILL.md`) — check is read-only, download needs explicit acceptance, `.dwp/` is never migrated |
 | **Author** skills/agents | [`skills-integration.md`](./skills-integration.md) | — |
@@ -54,7 +54,7 @@ names its essential files and its conditional triggers.
 | ## 1. Top-Level Folder Structure | [`structure.md`](./structure.md) |
 | ## 2. Naming Conventions | [`structure.md`](./structure.md) |
 | ## 3. Purpose of This System | [`structure.md`](./structure.md) |
-| ## 4. Plan-Level README Structure (`PLAN_{plan_title}/README.md`) | [`authoring.md`](./authoring.md) |
+| ## 4. Plan-Level README Structure (`{PLAN_NAME}/README.md`) | [`authoring.md`](./authoring.md) |
 | ## 5. Task File Structure (`N.task_{task_title}.md`) | [`authoring.md`](./authoring.md) |
 | ## 6. Agent Execution Rules (Critical Behavior) | [`execution.md`](./execution.md) |
 | ## 6.1. Mandatory Final Tasks → now **6.1. Final Review, Task-Local Skills and the Optional Report** (spec 2.3.0 lifecycle) | [`execution.md`](./execution.md) |
@@ -82,7 +82,8 @@ through this table.
 
 This guide defines how an agent should:
 
-- Create deep-work plans under `.dwp/plans/PLAN_{plan_title}/`
+- Create plans under `.dwp/plans/{PLAN_NAME}/`; `plan_paths.py` allocates
+  numbered names. Existing unnumbered plans keep their names.
 - Split work into ordered, single-focus task files
 - Execute tasks sequentially, with strong validation and logging
 - Resume interrupted plans without duplicating work

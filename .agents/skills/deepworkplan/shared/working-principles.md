@@ -35,6 +35,21 @@ It is not an extra mandatory read for every task or plan flow.
   that lower bound describes full onboarding. Report this limited scope
   without claiming that the whole repository is now conformant.
 
+## Bounded-autonomy records (v6 repositories)
+
+When the repository will run v6 plans (pack line 6+ or an explicit
+candidate request), the same reconciliation adds the four records taught
+by [`../onboard/v6.md`](../onboard/v6.md): a capability declaration
+stated honestly (the eight closed-set abilities; unstated is false; an
+unmeterable limit is advisory with the missing ability named; telemetry
+opt-in), the authority boundaries drawn from the repository's real
+approval rules, an outcome/test mapping that cites the repository's own
+commands, and concise working-context pointers. The ten behaviors above
+are unchanged by any of this; the v6 records extend what the principles
+govern, never replace it. A v5-only repository gets none of these
+sections, and a second pass with unchanged inputs still produces no
+diff.
+
 ## Suggested inline wording
 
 ```markdown

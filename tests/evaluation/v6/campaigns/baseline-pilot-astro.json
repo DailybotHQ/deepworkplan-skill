@@ -1,0 +1,65 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/campaign/1",
+  "name": "baseline-pilot-astro",
+  "paid": true,
+  "requires_enforced_isolation": false,
+  "launch_readiness": "RESOLVED 2026-09-26: resource envelope SET and real-CLI launch wrappers shipped (tests/evaluation/v6/adapters_launch/) \u2014 rounds r1-r3 ran under both. Confirmation-era configs carry machine-checked readiness fields only; readiness prose lives in PILOT.md (D15 F10).",
+  "arms": {
+    "A": null,
+    "B": {
+      "pack": "packs/v5/v5.5.4-2f1c7e62017b6b60"
+    }
+  },
+  "seed": {
+    "path": "tests/evaluation/v6/fixtures/astro/seed",
+    "family": "astro"
+  },
+  "tasks": [
+    {
+      "id": "AC-2",
+      "prompt": "Add tag archives at /tags/<tag>/ with stable URLs linked from every post's tags, plus pagination on /blog/ at 3 posts per page preserving post URLs. Acceptance: archive pages exist for existing tags, pagination links both directions, no existing post URL changes, and 'pnpm run check' passes."
+    },
+    {
+      "id": "AC-3",
+      "prompt": "Add a small client-side search box on /blog/ filtering post titles, with a useful empty state. Acceptance: the built page contains the search control and data, filtering is verifiable in the served DOM, empty and no-match states render human-readable text."
+    },
+    {
+      "id": "AC-5",
+      "prompt": "Give every page a canonical URL and preserve RSS/sitemap integrity; add a permanent redirect from /posts/<slug>/ to /blog/<slug>/. Acceptance: canonicals match final routes, RSS and sitemap enumerate built posts with resolving URLs, /posts/first-post/ redirects to /blog/first-post/."
+    },
+    {
+      "id": "AC-6",
+      "prompt": "Add a visible skip-to-content link and make the nav fully keyboard-operable with a visible focus style. Acceptance: the skip link is the first focusable element and moves focus to main; every nav item is keyboard-operable; the focus style is visible in built CSS."
+    }
+  ],
+  "strata": [
+    {
+      "name": "claude-code",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/claude_task.sh"
+        ]
+      }
+    },
+    {
+      "name": "codex-cli",
+      "launch": {
+        "mode": "exec",
+        "argv": [
+          "bash",
+          "tests/evaluation/v6/adapters_launch/codex_task.sh"
+        ]
+      }
+    }
+  ],
+  "repeats": 2,
+  "oracles": [
+    {
+      "id": "O-AC-2",
+      "kind": "exit_zero_file",
+      "path": "solution.txt"
+    }
+  ]
+}

@@ -46,7 +46,254 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/plan-state/v1.json": json.load(open(os.path.join(d, "plan-state.schema.json"))),
         "https://deepworkplan.com/schema/plan-manifest/v2.json": json.load(open(os.path.join(d, "plan-manifest-v2.schema.json"))),
         "https://deepworkplan.com/schema/plan-state/v2.json": json.load(open(os.path.join(d, "plan-state-v2.schema.json"))),
+        "https://deepworkplan.com/schema/plan-contract/v6.json": json.load(open(os.path.join(d, "plan-contract-v6.schema.json"))),
+        "https://deepworkplan.com/schema/journal-event/v6.json": json.load(open(os.path.join(d, "journal-event-v6.schema.json"))),
+        "https://deepworkplan.com/schema/plan-snapshot/v6.json": json.load(open(os.path.join(d, "plan-snapshot-v6.schema.json"))),
+        "https://deepworkplan.com/schema/plan-manifest/v6.json": json.load(open(os.path.join(d, "plan-manifest-v6.schema.json"))),
     }
+
+
+def load_pack_module(pack, name):
+    """Import a shipped runtime module for the two-half drift check.
+
+    Importing from the pack MUST NOT leave bytecode inside it - a
+    __pycache__ under skills/deepworkplan/ fails the pack-purity tests -
+    so bytecode writing is disabled for the duration of the import no
+    matter how this script was invoked. The shared directory goes on
+    sys.path first so plain sibling imports (ledger imports contract_v6)
+    resolve to the shipped files too.
+    """
+    import importlib.util
+    shared = os.path.join(pack, "shared")
+    prior_dw = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        if shared not in sys.path:
+            sys.path.insert(0, shared)
+        spec = importlib.util.spec_from_file_location(
+            name, os.path.join(shared, name + ".py"))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.dont_write_bytecode = prior_dw
+    return module
+
+
+def v6_canonical_id(doc):
+    """Independent re-implementation of the section-3.1 identity function."""
+    import hashlib
+    body = {k: v for k, v in doc.items() if k != "contract_id"}
+    raw = json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def v6_cases(schemas, problems, notes, pack, fixtures):
+    """v6 contract + journal-event surfaces: jsonschema (independent half)
+    must agree with the shipped runtime validator on every probe. Drift
+    between the two implementations is itself a failure."""
+    cs = schemas["https://deepworkplan.com/schema/plan-contract/v6.json"]
+    js = schemas["https://deepworkplan.com/schema/journal-event/v6.json"]
+    ss = schemas["https://deepworkplan.com/schema/plan-snapshot/v6.json"]
+    v6dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         "tests", "fixtures", "v6")
+    cpath = os.path.join(v6dir, "contract-minimal.json")
+    jpath = os.path.join(v6dir, "journal-events.ndjson")
+    if not (os.path.isfile(cpath) and os.path.isfile(jpath)):
+        problems.append("v6: fixtures tests/fixtures/v6/ missing - cannot check the v6 surfaces")
+        return
+    contract = json.load(open(cpath))
+    events = [json.loads(l) for l in open(jpath) if l.strip()]
+    c6 = load_pack_module(pack, "contract_v6")
+
+    def both_ok(doc, schema, runtime_errors, label, expect_valid,
+                runtime_only=False):
+        schema_errs = errors(schema, doc)
+        if expect_valid and schema_errs:
+            problems.append(f"v6 probe {label}: jsonschema rejects a document the runtime accepts ({schema_errs[0]})")
+        if not expect_valid and not runtime_only and not schema_errs:
+            problems.append(f"v6 probe {label}: jsonschema accepts a document the runtime rejects (drift)")
+        if bool(runtime_errors) != (not expect_valid):
+            problems.append(f"v6 probe {label}: runtime validator disagrees (drift)")
+        # runtime_only marks semantics a schema cannot express (graph
+        # integrity: dangling references, duplicate ids, cycles) - the same
+        # category as the v1/v2 contract checks this script already performs
+        # outside the schemas. The runtime must still reject them.
+
+    # Positive: fixtures validate under BOTH halves.
+    both_ok(contract, cs, c6.contract_errors(contract), "contract fixture", True)
+    if len(events) != 14:
+        problems.append(f"v6 journal fixture carries {len(events)} events; the closed catalog has 14 types and the fixture covers each once")
+    for i, event in enumerate(events):
+        both_ok(event, js, c6.journal_event_errors(event), f"journal event {event.get('type')} (line {i+1})", True)
+    if not c6.journal_errors(events, contract=contract):
+        notes.append("v6: contract + journal fixtures valid under both halves (jsonschema + shipped validator)")
+    else:
+        problems.append("v6: journal sequence invalid under the shipped validator")
+
+    # Identity: the checker's own canonicalization must reproduce the stamp.
+    if v6_canonical_id(contract) != contract.get("contract_id"):
+        problems.append("v6: independent canonical sha256 does not reproduce the fixture's contract_id (identity drift)")
+    else:
+        notes.append("v6: contract_id reproduced by an independent canonicalization")
+    if c6.compute_contract_id(contract) != contract.get("contract_id"):
+        problems.append("v6: shipped compute_contract_id disagrees with the stamped fixture id")
+
+    # Snapshot: the REAL projector runs over the same fixtures and its output
+    # must validate under the published schema - drift between writer and
+    # schema is caught by construction, not by a hand-maintained fixture.
+    ledger = load_pack_module(pack, "ledger")
+    if "/plan-state/" in ledger.STATE_SCHEMA_URL:
+        problems.append("v6: the snapshot must publish under its own new-generation URL "
+                        "(RFC 9.1), never inside the frozen plan-state v1/v2/v5 shape series")
+    else:
+        notes.append("v6: snapshot URL is a new schema-URL generation, outside the frozen plan-state series")
+    if ledger.STATE_SCHEMA_URL != "https://deepworkplan.com/schema/plan-snapshot/v6.json":
+        problems.append("v6: snapshot URL label does not map to the shipped schema file name")
+    import shutil, tempfile
+    tmp = tempfile.mkdtemp(prefix="dwp-snapshot-check-")
+    plandir = os.path.join(tmp, "PLAN_snapshot_check")
+    try:
+        os.makedirs(plandir)
+        shutil.copyfile(cpath, os.path.join(plandir, "contract.json"))
+        shutil.copyfile(jpath, os.path.join(plandir, "journal.ndjson"))
+        rec = ledger.PlanRecords(plandir)
+        lock = ledger.CooperativeLock(plandir).acquire()
+        try:
+            snapshot = ledger.Writer(rec, lock).project()
+        finally:
+            lock.release()
+        errs = errors(ss, snapshot)
+        if errs:
+            problems.append(f"v6: jsonschema rejects the real projector's snapshot ({errs[0]})")
+        else:
+            notes.append("v6: snapshot produced by the shipped ledger validates under plan-snapshot-v6.schema.json")
+        for label, mutate in (
+            ("mixed-era schema url", lambda d: d.update(schema="https://deepworkplan.com/schema/plan-state/v5.json")),
+            ("extra top-level field", lambda d: d.update(efficiency={"tokens": 1})),
+            ("non-enum trust on satisfied criterion",
+             lambda d: d["tasks"][0]["criteria"][0].update(trust="vibes") if d["tasks"][0]["criteria"] and d["tasks"][0]["criteria"][0].get("satisfied") else d["tasks"][0]["criteria"].insert(0, {"criterion": "AC-valid-contract-shape", "satisfied": True, "via_seq": 3, "trust": "vibes"})),
+            ("fabricated position seq", lambda d: d["positions"].update(gate_run={"seq": 0})),
+        ):
+            doc = copy.deepcopy(snapshot)
+            mutate(doc)
+            if not errors(ss, doc):
+                problems.append(f"v6 snapshot mutant {label}: accepted by the schema")
+        notes.append("v6: snapshot mutants rejected (era const / closed object / trust enum / seq floor)")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    # Negative probes: every mutant must fail BOTH halves identically.
+    def contract_mutant(label, mutate, runtime_only=False):
+        doc = copy.deepcopy(contract)
+        mutate(doc)
+        both_ok(doc, cs, c6.contract_errors(doc), label, False,
+                runtime_only=runtime_only)
+
+    contract_mutant("mixed-era schema url", lambda d: d.update(schema="https://deepworkplan.com/schema/plan-state/v5.json"))
+    contract_mutant("extra top-level field", lambda d: d.update(efficiency={"tokens": 1}))
+    contract_mutant("unsupported capability", lambda d: d["permissions"]["granted"].append("time_travel"))
+    contract_mutant("negative resource limit", lambda d: d["resource_envelope"]["limits"][0].update(limit=-1))
+    contract_mutant("enforced limit without metering source", lambda d: d["resource_envelope"]["limits"][0].pop("metering_source"))
+    # section 8 reserves: optional additive field. A VALID reserve passes
+    # both halves (optionality proof); a non-numeric reserve fails both;
+    # the reserve<=limit ceiling is runtime-only (it depends on the
+    # sibling field's value, which draft 2020-12 cannot express).
+    reserved = copy.deepcopy(contract)
+    reserved["resource_envelope"]["limits"][0]["reserve"] = 500
+    # the fixture is identity-stamped: adding a field changes the canonical
+    # bytes, so the probe re-stamps exactly as a new revision would
+    reserved["contract_id"] = c6.compute_contract_id(reserved)
+    both_ok(reserved, cs, c6.contract_errors(reserved), "valid reserve accepted", True)
+    contract_mutant("reserve as a string", lambda d: d["resource_envelope"]["limits"][0].update(reserve="5"))
+    contract_mutant("reserve above the limit", lambda d: d["resource_envelope"]["limits"][0].update(reserve=5000), runtime_only=True)
+    contract_mutant("negative reserve", lambda d: d["resource_envelope"]["limits"][0].update(reserve=-1))
+    contract_mutant("dangling prerequisite", lambda d: d["tasks"][1]["prerequisites"].append("T-missing"), runtime_only=True)
+    contract_mutant("duplicate criterion id", lambda d: d["acceptance"]["criteria"].append(copy.deepcopy(d["acceptance"]["criteria"][0])), runtime_only=True)
+    contract_mutant("prerequisite cycle", lambda d: d["tasks"][0]["prerequisites"].append("T-ship-validator"), runtime_only=True)
+    # Scheduling policy (RFC section 5): every bound is optional but never
+    # unbounded when present — both halves reject the same out-of-policy
+    # declarations (starvation floor, negative caps, open objects, empty
+    # handoff conditions).
+    contract_mutant("zero starvation threshold", lambda d: d["scheduling"].update(starvation_threshold_events=0))
+    contract_mutant("negative adaptation cap", lambda d: d["scheduling"].update(max_adaptations_per_task=-1))
+    contract_mutant("negative retry cap", lambda d: d["scheduling"].update(max_retries_per_gate=-1))
+    contract_mutant("scheduling with an unknown field", lambda d: d["scheduling"].update(mode="auto"))
+    contract_mutant("empty handoff condition", lambda d: d["scheduling"].update(handoff={"fresh_context": ""}))
+    notes.append("v6: contract mutants rejected (schema: era / closed object / capability / resource / scheduling / reserve; runtime-only: graph integrity, reserve ceiling)")
+    if "model_routing" not in cs["$defs"]["capability"]["enum"]:
+        problems.append("v6: model_routing missing from the schema capability enum (section 8 routing authority)")
+
+    def event_mutant(label, mutate):
+        doc = copy.deepcopy(events[0])
+        mutate(doc)
+        both_ok(doc, js, c6.journal_event_errors(doc), label, False)
+
+    event_mutant("unknown event type", lambda e: e.update(type="time_travel"))
+    event_mutant("unknown payload key", lambda e: e.update(mystery=1))
+    pair = copy.deepcopy(events[9])
+    assert pair["type"] == "control_pair"
+    pair["old_leg"] = {"available": False, "outcome": "FAIL", "log": "x"}
+    both_ok(pair, js, c6.journal_event_errors(pair), "unavailable old leg carrying an outcome", False)
+    appr = copy.deepcopy(events[1])
+    appr["mechanism"] = "migration"
+    both_ok(appr, js, c6.journal_event_errors(appr), "third approval mechanism", False)
+    startfp = copy.deepcopy(events[0])
+    assert startfp["type"] == "task_start"
+    startfp["fingerprint"] = {"revision": "r0", "dirty": 3}
+    both_ok(startfp, js, c6.journal_event_errors(startfp), "task_start fingerprint with a non-string dirty", False)
+    startfp2 = copy.deepcopy(events[0])
+    startfp2["fingerprint"] = {"revision": "r0", "dirty": "", "staged": "yes"}
+    both_ok(startfp2, js, c6.journal_event_errors(startfp2), "task_start fingerprint with an extra key", False)
+    notes.append("v6: journal mutants rejected by both halves (catalog / closed object / D3-3 / D3-2 / fingerprint shape)")
+
+    # Manifest (A12): the REAL materialize writes the manifest; its output
+    # validates under the published generation, and the runtime refuses
+    # every rewrite path the schema closes (era const, closed object,
+    # pointer shape). Two-half drift is caught by construction.
+    ms = schemas["https://deepworkplan.com/schema/plan-manifest/v6.json"]
+    mtmp = tempfile.mkdtemp(prefix="dwp-manifest-check-")
+    mplan = os.path.join(mtmp, "PLAN_manifest_check")
+    try:
+        os.makedirs(mplan)
+        open(os.path.join(mplan, "README.md"), "w").write("# manifest check\n")
+        mdraft = os.path.join(mtmp, "draft.json")
+        mcontract = copy.deepcopy(contract)
+        mcontract["plan"] = "PLAN_manifest_check"
+        json.dump(mcontract, open(mdraft, "w"))
+        result = ledger.materialize_plan(mplan, mdraft, authority="checker")
+        manifest = json.load(open(os.path.join(mplan, "manifest.json")))
+        merrs = errors(ms, manifest)
+        if merrs or result["contract_id"] != manifest["contract"]["id"]:
+            problems.append(f"v6 manifest probe: jsonschema rejects the real materialize manifest ({merrs[:1]})")
+        else:
+            notes.append("v6: manifest written by the shipped materialize validates under plan-manifest-v6.schema.json")
+        for label, mutate in (
+            ("mixed-era schema url", lambda d: d.update(schema="https://deepworkplan.com/schema/plan-manifest/v5.json")),
+            ("extra top-level field", lambda d: d.update(spec_version="6.0.0")),
+            ("non-hex contract id", lambda d: d["contract"].update(id="not-hex")),
+            ("wrong pointer path", lambda d: d["contract"].update(path="contracts/1.json")),
+        ):
+            doc = copy.deepcopy(manifest)
+            mutate(doc)
+            if not errors(ms, doc):
+                problems.append(f"v6 manifest mutant {label}: accepted by the schema")
+        # runtime: a v5-generation manifest is refused untouched, and a
+        # differing contract never rewrites what already landed
+        v5plan = os.path.join(mtmp, "PLAN_v5_manifest")
+        os.makedirs(v5plan)
+        open(os.path.join(v5plan, "README.md"), "w").write("# v5\n")
+        json.dump({"schema": "https://deepworkplan.com/schema/plan-manifest/v5.json",
+                   "spec_version": "5.0.0"}, open(os.path.join(v5plan, "manifest.json"), "w"))
+        try:
+            ledger.materialize_plan(v5plan, mdraft, authority="checker")
+            problems.append("v6 manifest probe: a v5-generation manifest was rewritten instead of refused")
+        except ledger.LedgerError:
+            pass
+        if json.load(open(os.path.join(v5plan, "manifest.json"))).get("spec_version") != "5.0.0":
+            problems.append("v6 manifest probe: the refused v5 manifest was modified anyway")
+        notes.append("v6: manifest mutants rejected (era const / closed object / pointer shape) and rewrite refusals hold")
+    finally:
+        shutil.rmtree(mtmp, ignore_errors=True)
 
 
 def errors(schema, doc):
@@ -192,6 +439,7 @@ def main():
     for p in sorted(set(plans)):
         check_plan(p, schemas, problems, notes)
     negative_cases(schemas, problems, notes)
+    v6_cases(schemas, problems, notes, a.pack, a.fixtures)
     for n in notes:
         print("ok  ", n)
     for p in problems:

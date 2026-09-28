@@ -3,7 +3,7 @@
 > Part of the DeepWorkPlan methodology guide. The routing index is
 > [`GUIDE.md`](GUIDE.md); read only the guide files your flow names.
 
-## 4. Plan-Level README Structure (`PLAN_{plan_title}/README.md`)
+## 4. Plan-Level README Structure (`{PLAN_NAME}/README.md`)
 
 Each plan folder must have a `README.md` that serves as the **index and control center** for the deep-work session.
 
@@ -331,7 +331,7 @@ The agent must follow these steps sequentially:
 - [ ] 6. Review the diff and ensure it matches acceptance criteria.
 - [ ] 7. Update the plan README to mark this task as `[x]` in the Task List.
 - [ ] 8. Update PROGRESS.md with task summary.
-- [ ] 9. Commit the changes referencing the plan: `git commit -m "type(scope): description - Task {N} of PLAN_{plan_name}"`
+- [ ] 9. Commit the changes referencing the plan: `git commit -m "type(scope): description - Task {N} of {PLAN_NAME}"`
 - [ ] 10. **If the Dailybot addon is installed in this repo** (`.agents/skills/dailybot/`): send a progress report IF this task is independently significant (feature, fix, major refactor) — a standup-style *"Implemented [what] — [why it matters]."* Skip the step entirely when the addon is absent; never inject an addon step into a repo that has no addon. (non-blocking — continue if it fails)
 - [ ] 11. Update the Log section below.
 
@@ -441,8 +441,8 @@ gate messaging only.
   (pre-v1.5 back-compat).
 - **Invocation.** Route to the upstream skill's parent default flow ("Review
   my current branch" / `/ai-diff-reviewer`) — the local review is capability
-  #1 of the upstream skill's five-sub-skill router (parent + `generate-extension`
-  + `setup` + `open-pr` + `apply-review`).
+  #1 of the upstream skill's six-sub-skill router (parent + `generate-extension`
+  + `setup` + `open-pr` + `apply-review` + `address-review`).
 - **Output shape.** Verdict + findings table (columns: `#` / Severity / File /
   Summary) + per-finding body + notes + recommendation. Shared `prompt.md` +
   extension align methodology/severity with the CI Action at the same tag
@@ -451,8 +451,9 @@ gate messaging only.
 - **Integration.** Append the output to `analysis_results/SECURITY_REVIEW.md`
   under a dedicated `## AI Diff Reviewer local review` heading — so a reader
   sees the manual security-pass findings and the AI-augmented findings side by side.
-- **Severity handling.** `critical` blocks completion until fixed or explicitly
-  accepted (existing SR contract); `warning` and `info` are documented but
+- **Severity handling.** A **verified** `critical` (v3, BC-07) blocks completion
+  until fixed or explicitly accepted (existing SR contract; unverified critical
+  claims arrive as annotated warnings); `warning` and `info` are documented but
   non-blocking. The reviewer's `.review/extension.md` (repo-tailored) shapes
   what maps to which severity — this is the primary customization surface.
 - **Optional Flow B post-CI companion.** When the repo runs the CI Action

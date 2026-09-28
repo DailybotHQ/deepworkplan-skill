@@ -192,10 +192,55 @@ jobs:
           for helper in skills/deepworkplan/shared/update-state.py \
                         skills/deepworkplan/shared/state_contract.py \
                         skills/deepworkplan/shared/finalize_plan.py \
+                        skills/deepworkplan/shared/contract_v6.py \
+                        skills/deepworkplan/shared/ledger.py \
+                        skills/deepworkplan/shared/views.py \
+                        skills/deepworkplan/shared/scheduler.py \
+                        skills/deepworkplan/shared/outcomes.py \
+                        skills/deepworkplan/shared/context_manifest.py \
+                        skills/deepworkplan/shared/plan_paths.py \
+                        skills/deepworkplan/shared/resources.py \
+                        skills/deepworkplan/shared/migrate_v6.py \
                         skills/deepworkplan/verify/plan_contract.py; do
             python3 -m py_compile "$helper"
             echo "OK: $helper compiles on $(python3 --version)"
           done
+          # The v6 record validator must also RUN on the floor, not just
+          # parse: its self-test is stdlib-only and touches no repository.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/contract_v6.py self-test
+          # The v6 writer and views helpers likewise: their self-tests are
+          # stdlib-only, run against throwaway temp directories and touch
+          # no repository state.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/ledger.py self-test
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/views.py self-test
+          # The authorization core as well: read-only, stdlib-only, its
+          # self-test exercises the refusal pipeline in memory.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/scheduler.py self-test
+          # The v6 outcome-verification helper as well: closure decisions,
+          # receipts and review-state grammar; its self-test is stdlib-only
+          # and runs against a throwaway plan directory.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/outcomes.py self-test
+          # The v6 context-selection helper as well: manifest derivation,
+          # dead-end digest, freshness and accounting are pure read-only
+          # recomputations; its self-test builds a throwaway plan in memory.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/context_manifest.py self-test
+          # The v6 resource helper as well: capability negotiation,
+          # reserves, exhaustion holds and settlements; its self-test is
+          # stdlib-only and runs against a throwaway plan directory.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/resources.py self-test
+          # The v5 -> v6 migration helper as well: preview synthesis, the
+          # guarded phase sequence and rollback; its self-test builds
+          # throwaway v5 plans in a temp directory and touches no
+          # repository state.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/migrate_v6.py self-test
           # And they must actually run, not merely parse: the read-only checker
           # over a real fixture plan, with no optional dependency available.
           python3 -c 'import jsonschema' 2>/dev/null && { echo "FAIL: jsonschema present — this job must prove the stdlib-only path"; exit 1; }

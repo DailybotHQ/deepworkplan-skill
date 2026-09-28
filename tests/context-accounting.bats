@@ -36,17 +36,18 @@ setup() {
 
 # --- the manifest itself -----------------------------------------------------
 
-@test "paths.tsv declares the six named end-to-end paths" {
+@test "paths.tsv declares the ten named end-to-end paths" {
     [ -f "$PATHS" ]
     local ids
     ids="$(rows | cut -f1 | sort -u)"
-    for want in create-lite create-full execute-final-review \
-                resume-assessment resume-execution conditional-escalation; do
+    for want in create-lite create-full create-v6 execute-final-review \
+                execute-v6 resume-assessment resume-execution resume-v6 \
+                onboard-v6 conditional-escalation; do
         printf '%s\n' "$ids" | grep -qx "$want" || {
             echo "missing path: $want"; echo "$ids"; return 1
         }
     done
-    [ "$(printf '%s\n' "$ids" | wc -l | tr -d ' ')" -eq 6 ]
+    [ "$(printf '%s\n' "$ids" | wc -l | tr -d ' ')" -eq 10 ]
 }
 
 @test "every manifest row has four tab-separated fields and a nonempty trigger" {
@@ -109,8 +110,9 @@ setup() {
     run bash "$MEASURE" "$REPO_ROOT"
     [ "$status" -eq 0 ]
     local pid flow bundle entry
-    for pid in create-lite create-full execute-final-review \
-               resume-assessment resume-execution conditional-escalation; do
+    for pid in create-lite create-full create-v6 execute-final-review \
+               execute-v6 resume-assessment resume-execution \
+               conditional-escalation; do
         flow="$(entry_flow "$pid")"
         bundle="$(printf '%s' "$output" | awk -v f="$flow" '$1 == f && $3 == "bytes" {print $2}')"
         entry="$(printf '%s' "$output" | awk -v p="$pid" '$1 == p && NF == 6 {print $2}')"

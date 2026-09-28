@@ -1,0 +1,127 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section class="hero">
+				<h1>Publish clearly. Stay fast.</h1>
+				<p>
+					Meridian is a small publishing site: a product landing page and a blog,
+					built as static HTML. Everything here ships as plain, accessible markup.
+				</p>
+				<p class="actions">
+					<a class="button" href="/blog/">Read the blog</a>
+					<a class="button secondary" href="/about/">About the site</a>
+				</p>
+			</section>
+
+			<section class="features">
+				<h2>What this site does</h2>
+				<div class="grid">
+					<div class="feature">
+						<h3>Content-first</h3>
+						<p>
+							Articles live in a typed content collection, so every post is
+							validated at build time and rendered to plain HTML.
+						</p>
+					</div>
+					<div class="feature">
+						<h3>Fast by default</h3>
+						<p>
+							No client-side framework is required to read a page. The blog ships
+							static files with an RSS feed and a sitemap.
+						</p>
+					</div>
+					<div class="feature">
+						<h3>Accessible markup</h3>
+						<p>
+							Landmarks, alt text and a single clear heading per page are part of
+							the site's checked contract, not an afterthought.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="cta">
+				<h2>Start reading</h2>
+				<p>
+					The blog is the living part of the site — new posts land there first.
+				</p>
+				<p class="actions">
+					<a class="button" href="/blog/">Browse all posts</a>
+				</p>
+			</section>
+		</main>
+		<Footer />
+	</body>
+</html>
+
+<style>
+	.hero {
+		padding: 4rem 1.5rem 3rem;
+		text-align: center;
+	}
+	.hero h1 {
+		font-size: 2.5rem;
+		margin-bottom: 0.5rem;
+	}
+	.hero p {
+		max-width: 42rem;
+		margin: 0 auto;
+	}
+	.actions {
+		display: flex;
+		gap: 0.75rem;
+		justify-content: center;
+		margin-top: 1.25rem;
+	}
+	.button {
+		display: inline-block;
+		padding: 0.6rem 1.1rem;
+		border: 2px solid var(--accent);
+		border-radius: 6px;
+		color: var(--accent);
+		text-decoration: none;
+		font-weight: 600;
+	}
+	.button.secondary {
+		border-color: var(--black);
+		color: var(--black);
+	}
+	.features,
+	.cta {
+		padding: 2rem 1.5rem;
+		max-width: 64rem;
+		margin: 0 auto;
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+		gap: 1.25rem;
+		margin-top: 1rem;
+	}
+	.feature {
+		border: 1px solid rgba(var(--black), 15%);
+		border-radius: 8px;
+		padding: 1rem 1.25rem;
+	}
+	@media (max-width: 720px) {
+		.hero h1 {
+			font-size: 1.9rem;
+		}
+		.actions {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+</style>

@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
-# Schema-line publication guards (DWP standard 5.0.0, schema v5 URLs).
+# Schema-line publication guards (DWP standard 5.0.0, schema v5 URLs; since
+# the DWP v6 campaign the pack also ships the v6 candidate schemas).
 #
 # The v5 schema URLs are generation snapshots of the v2 shape — no property
 # added, renamed, or re-typed. Three invariants keep that line honest:
@@ -7,7 +8,10 @@
 #      the pack maps to a shipped file in spec/schema/ under the pinned
 #      naming convention (v1 unsuffixed, vN>=2 suffixed), and every shipped
 #      schema file's $id follows the same convention. This is the guard that
-#      would have caught the website gap on the skill side of the boundary.
+#      would have caught the website gap on the skill side of the boundary —
+#      and it is label-agnostic on purpose: when the v6 campaign stamped
+#      context-manifest/v6.json into context_manifest.py's output before a
+#      schema file shipped, only the widened grep could see it.
 #   2. Fixtures: v2-era and v5-era manifest/state pairs each validate under
 #      their own schema file (jsonschema when installed, like
 #      tests/schema-contract.bats); the v5 files are exact generation
@@ -30,28 +34,30 @@ setup() {
 teardown() { rm -rf "$TMPDIR_TEST"; }
 
 @test "every schema URL referenced in the pack maps to a shipped schema file" {
-    urls="$(grep -rhoE 'https://deepworkplan\.com/schema/plan-(manifest|state)/v[0-9]+\.json' "$PACK" | sort -u)"
+    urls="$(grep -rhoE 'https://deepworkplan\.com/schema/[a-z-]+/v[0-9]+\.json' "$PACK" | sort -u)"
     [ -n "$urls" ]
-    # v1/v2/v5 for both labels = six URLs, all published lines.
-    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 6 ]
+    # v1/v2/v5 for manifest+state, plus the v6 candidate line for manifest,
+    # snapshot, contract, journal-event and context-manifest (DWP v6
+    # campaign) = eleven URLs, all shipped files.
+    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 11 ]
     while IFS= read -r url; do
-        label="${url#*schema/plan-}"; label="${label%%/*}"
+        label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"
-        if [ "$v" = "1" ]; then file="plan-$label.schema.json"; else file="plan-$label-v$v.schema.json"; fi
+        if [ "$v" = "1" ]; then file="$label.schema.json"; else file="$label-v$v.schema.json"; fi
         [ -s "$PACK/spec/schema/$file" ] || { echo "URL $url has no shipped file spec/schema/$file"; exit 1; }
     done <<< "$urls"
 }
 
 @test "every shipped schema file's \$id follows the URL/naming convention and pins its own const" {
-    for f in "$PACK"/spec/schema/plan-manifest*.schema.json "$PACK"/spec/schema/plan-state*.schema.json; do
+    for f in "$PACK"/spec/schema/*.schema.json; do
         base="$(basename "$f")"
         url="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("$id",""))' "$f")"
         [ -n "$url" ] || { echo "$base has no \$id"; exit 1; }
-        label="${url#*schema/plan-}"; label="${label%%/*}"
+        label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"
         case "$base" in
-            plan-$label.schema.json) [ "$v" = "1" ] || { echo "$base names v$v in \$id $url"; exit 1; } ;;
-            plan-$label-v$v.schema.json) : ;;
+            $label.schema.json) [ "$v" = "1" ] || { echo "$base names v$v in \$id $url"; exit 1; } ;;
+            $label-v$v.schema.json) : ;;
             *) echo "$base does not match its \$id $url"; exit 1 ;;
         esac
         # the closed schema const must equal the file's own \$id

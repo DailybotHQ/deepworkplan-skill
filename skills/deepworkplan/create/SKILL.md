@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 
 Create a new Deep Work Plan through a smooth, unified flow: the developer
 provides information once, you run the **requirements analysis**, and materialize
-a Lite plan folder under `.dwp/plans/PLAN_{name}/`. Guided mode presents that
+a Lite plan folder under `.dwp/plans/{PLAN_NAME}/`. Guided mode presents that
 proposal for review; trust chooses its ready representation without a review.
 Both modes return control to the developer to execute later.
 
@@ -100,6 +100,13 @@ reading companions "to be safe" is the failure mode this tiering removed.)
   command the repository does not have.
   That is the whole t0 set — no guide or spec file is compulsory.
 - **Conditional — read only when the trigger fires:**
+  - [`v6.md`](v6.md) (this directory) — read only when Step 0.3 detects the
+    v6 candidate (pack line 6+ or an explicit v6 request); it carries the
+    whole v6 authoring + materialization path. Both generations allocate new
+    numbered folders; existing unnumbered plans keep their recorded names.
+  - [`../spec/V6_CONTRACT.md`](../spec/V6_CONTRACT.md) — read only when
+    that v6 path composes the outcome contract (the closed field set,
+    evidence classes and amendment chain it must conform to).
   - [`../guide/authoring.md`](../guide/authoring.md) — read §4–§5 (plan
     README structure, task-file anatomy incl. the Touched Surface) only when
     Step 4.4 expands the plan into Full task files; read §5.3–§5.5 only when
@@ -141,7 +148,7 @@ reading companions "to be safe" is the failure mode this tiering removed.)
     takes its input from Steps 1–3, not from this catalogue.
   - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
     plan folder cannot be located or the `DWP_DIR` override is in play; Step
-    4.0 already inlines `.dwp/plans/PLAN_{name}/`.
+    4.0 already inlines `.dwp/plans/{PLAN_NAME}/`.
   - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
     only when something is already wrong (discovery failure, stale
     installation, missing test command, unsupported host capability,
@@ -205,7 +212,7 @@ materializes a **Lite plan folder** — no draft file is written.
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
 **Writes:** plan artifacts under the gitignored `.dwp/` directory only —
-`.dwp/plans/PLAN_{name}/` for the
+`.dwp/plans/{PLAN_NAME}/` for the
 materialized plan (README, task files, analysis outputs, state layer). Analysis
 outputs go inside that plan's own `analysis_results/`, never the repository root
 (`../spec/DWP_SPECIFICATION.md` §5). "Trust
@@ -248,6 +255,14 @@ all following text is literal context. Never inspect ordinary context words.
 - `no input` / `name-only` → Step 1, then Step 2.
 - `full-context` → Step 1, then Step 3.
 
+**0.3 Detect the v6 candidate:** if this pack's line is 6+ or the developer
+explicitly asked for a v6 plan (e.g. `v6` among the tokens, "create a v6
+plan"), the plan is created under the v6 execution contract instead: read
+[`v6.md`](v6.md) (this directory) and follow it — the steps below compose
+the recorded v5 lifecycle and never produce a v6 plan silently. An
+explicit candidate request overrides a 5.x line; a 5.x line never
+overrides an explicit request.
+
 ### Step 1 — Quick Introduction
 
 Show a brief intro matching the mode: in **guided** mode, that you will analyze
@@ -264,8 +279,10 @@ that the plan will be pre-approved for unattended execution.
 > 2.10 at the start of Step 3 against the provided context, then continue.
 
 Collect, conversationally:
-- **2.1 Plan name** (skip if already extracted) — auto-convert to snake_case, add
-  `PLAN_` prefix internally.
+- **2.1 Plan name** (skip if already extracted) — auto-convert to a lowercase
+  snake_case slug. The allocator adds `PLAN_<id>_` when the folder is created.
+  A new v5 plan uses 2–4 slug words (the frozen v5 schema counts the ID as one
+  word); a v6 plan can use 2–5 slug words. Existing names are never changed.
 - **2.2 Objective** — one or two sentences.
 - **2.3 Context** — where the changes live, constraints/rules, tech notes.
 - **2.4 Tasks** — one bounded task is valid for Lite; split only when outcomes,
@@ -384,9 +401,19 @@ folder** from proposal through completion: Lite and Full describe the *task
 representation*, not two different products. `create` never modifies product
 source and never calls execute.
 
-**Before writing:** resolve `dwp_dir` via `../shared/context.sh`. If
-`.dwp/plans/PLAN_{name}/` already exists, see *Error Handling — plan exists /
-partial materialization*.
+**Before writing:** resolve `dwp_dir` via `../shared/context.sh`. On a resumed
+create request, inspect existing folders with the requested slug and reuse a
+matching partial plan only when its recorded objective matches; if several
+match, require the full folder name or ID. For a genuinely new plan, allocate
+the folder once with `python3 ../shared/plan_paths.py --plans-dir
+<dwp_dir>/plans allocate <slug> --max-words 4` for v5 (omit the option for
+v6). It creates a flat folder such as
+`PLAN_001_improve_release_docs/`; use the printed basename as `{PLAN_NAME}`
+in every artifact and prompt. For v5, keep the slug to 2–4 words so the frozen
+v5 manifest and state schemas accept the numeric ID. Reuse this folder on
+retry or promotion; never allocate again for partial materialization. Existing
+unnumbered folders are left untouched. If the target folder already exists,
+see *Error Handling — plan exists / partial materialization*.
 
 **Decide the representation before the second write.** Apply *Format selection*
 below to the Step 3 analysis, together with any explicit `lite`/`full`
@@ -533,7 +560,7 @@ gate would be lost — then say exactly which one, and why Full is required.
 - **Trust** — the format was already chosen and materialized once, per the
   branch table above. Record `Pre-approved for unattended execution: yes (trust)`
   and `Approval: pre-approved (trust)`, then go to Step 4.5 and hand off with
-  `/dwp-execute PLAN_{name}`. Never invoke execute.
+  `/dwp-execute {PLAN_NAME}`. Never invoke execute.
 
 Promotion **after** creation is not this step: it is `/dwp-refine promote`
 (`../refine/SKILL.md` Step 5), which writes a recoverable marker first.
@@ -552,7 +579,7 @@ same task IDs. It is never an entry point of its own.
 
 Follow `../guide/authoring.md` (§4–§5) and `../guide/structure.md` (§1–§2).
 
-**Before writing:** resolve `dwp_dir`; if `.dwp/plans/PLAN_{name}/` already
+**Before writing:** reuse the folder allocated in Step 4.0; if it already
 exists, see *Error Handling — plan exists / partial materialization*. Never
 overwrite files that are not part of this plan.
 
@@ -572,7 +599,7 @@ a **partial materialization**: `create` and `refine` complete or discard it,
 
 Create:
 
-1. **Folder + `manifest.json` (first write):** create `.dwp/plans/PLAN_{name}/`
+1. **Folder + `manifest.json` (first write):** create `.dwp/plans/{PLAN_NAME}/`
    and immediately write `manifest.json` — plan identity: name, title, archetype,
    rigor tier, `spec_version` **"5.0.0"**, `plan_format` **"full"**, `task_count`
    = the number of task files this materialization will write (Final Review
@@ -716,7 +743,7 @@ and the Final Review is always sequential.
 
 #### 4.5 Plan-Quality Check (both modes and both formats — before reporting success)
 
-Run `bash ../verify/conformance.sh --plan PLAN_name` from the repository root
+Run `bash ../verify/conformance.sh --plan {PLAN_NAME}` from the repository root
 after materialization. The checker resolves the plan through the same
 `shared/context.sh` logic every flow uses, so the ordinary case needs nothing
 else. Only when the output lives outside the repo's own `.dwp/` do you set
@@ -779,7 +806,7 @@ fabricated success record of its own invocation.
 
 ### Step 5 — Completion & Execute Option
 
-For a **Lite** plan, report success and the location `.dwp/plans/PLAN_{name}/`,
+For a **Lite** plan, report success and the location `.dwp/plans/{PLAN_NAME}/`,
 state the format and why it was chosen, and name the execute command. In guided
 mode the plan is still `Approval: pending` — say so, and that executing it is
 what approves its current scope. In trust mode state that it is ready and
@@ -792,7 +819,7 @@ Full instead → `/dwp-refine promote {name}`. **Return control either way**:
 trust mode.
 
 For a **Full** plan, report success and the location
-`.dwp/plans/PLAN_{name}/` (in trust mode, state that it is pre-approved for
+`.dwp/plans/{PLAN_NAME}/` (in trust mode, state that it is pre-approved for
 unattended execution), then offer: (1) execute now → run the **Execute**
 sub-skill (`../execute/SKILL.md`); (2) review the README first, then ask again;
 (3) done for now → tell them to run `/dwp-execute {name}` later (or

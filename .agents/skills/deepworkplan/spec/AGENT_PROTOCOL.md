@@ -275,7 +275,153 @@ an explicit, manual step: no daemon, auto-upload, or automatic unignoring of
 
 ---
 
-## 8. References
+## 8. The v6 Authorization Core (scheduler proposals)
+
+> **Status: v6 line.** This section binds **v6 new plans only**. It
+> specifies how a model scheduler proposes and how the deterministic core
+> (`shared/scheduler.py`, stdlib-only, read-only) decides. The record
+> surfaces it reads are specified in [`V6_CONTRACT.md`](V6_CONTRACT.md)
+> and [`PLAN_STATE.md`](PLAN_STATE.md) §8. v5 plans keep sections 1–7 as
+> their complete standard.
+
+### 8.1. The split: the model proposes, the core decides
+
+A v6 plan's dispatch is a two-party protocol. The **scheduler is a
+model**: it reads the projection and proposes — `select` a task next, or
+`adapt` (retry, split, reorder, insert, change strategy). Proposals are
+cheap and none is trusted. The **authorization core is a pure function**:
+`authorize(contract, events, proposal) → accept | refuse(rule, reason)`,
+deterministic under replay — no wall clock, no random, no filesystem, no
+network. An accepted `adapt` returns the exact journal event the writer
+would append, so **what was checked is what gets recorded**; the caller
+appends it through the ledger writer, which re-validates. The core never
+writes: recording an authorized decision — and recording a refusal worth
+keeping — is the caller's job.
+
+The closed proposal set is `select` and `adapt`. Anything else is refused
+(`proposal-type`). Static and adaptive scheduling are not two modes: a
+static executor that walks contract order and an adaptive one that
+re-plans both issue the same proposals through the same `authorize`, and
+are held to the same acceptance contracts. Ordering freedom lives in the
+proposer; the acceptance boundaries never move.
+
+### 8.2. What the core refuses (named rules)
+
+Every refusal names its rule; the names are stable strings a test pins.
+
+| Rule | Meaning |
+|---|---|
+| `proposal-type` / `proposal-shape` | Outside the closed proposal set, or carrying fields outside the closed shape (criterion content never rides a proposal). |
+| `contract-invalid` | The contract fails `contract_v6` validation — prerequisite **cycles**, dangling references, dropped requirements and closed-object violations stop scheduling before any policy applies. |
+| `record-invalid` | The journal does not validate — tampered or corrupt records stop dispatch. |
+| `approval-missing` | No `approval` event cites the live contract (D3-7/D2-3): materialization approval precedes every proposal. A contract revision is a new identity and needs a fresh approval — enforced here, not by convention. |
+| `invariant-failed` / `invariant-stale` / `invariant-unevaluated` | See §8.3. |
+| `envelope-exceeded` | See §8.4. The resource layer's reserve-adjusted `limit-exhausted` refusal, the `LIMIT:` exhaustion grammar and the `RESERVATION:` settlement grammar are defined in [V6_RESOURCES.md](V6_RESOURCES.md) (closed refusal names stay stable: a test pins each). |
+| `unknown-task` / `task-complete` | Selecting work that is not in the contract, or re-selecting completed work (new work on the same surface is a new task or a revision). |
+| `prerequisite-open` | A prerequisite lacks in-window accepted evidence. A prerequisite whose criteria carry only stale evidence is **not** complete — deferral disguised as completion is refused here. |
+| `surface-serialization` | The task's `touched_surface` overlaps a task currently in progress: intra-plan parallelism on overlapping surfaces is serialized (A8); independent in-scope work stays selectable. |
+| `adaptation-shape` | The proposal is not a valid `adaptation` event (closed §3.3 enumeration; weakening or substituting acceptance is an **amendment** with recorded authority, never an adaptation). |
+| `adaptation-cap` / `retry-cap` | Contract-declared caps exceeded (§8.5). |
+| `blind-retry` | A retry whose trigger observation does not postdate the last attempt on the same criterion: a no-progress retry is refused even under the cap. |
+
+### 8.3. Boundary invariants: verified, never assumed
+
+Invariant evaluations ride ordinary `observation` events with a **closed
+grammar** as the statement: `INV-<id>: pass` or `INV-<id>: fail: <reason>`.
+The grammar is trust-agnostic; the trust label is not. An evaluation is
+something an agent or helper **wrote down** — a mediated claim — so it is
+recorded `asserted` with the mediation named (A1); `observed` is reserved
+for execution evidence and host-adapter metering (PLAN_STATE §8). The
+core never consults the label for invariants: pass/fail is read from the
+statement. Statements that do not match a declared invariant's grammar
+are ordinary observations and are ignored by the core. At any authorize() moment,
+**every declared invariant must have a non-failed evaluation at or after
+the reference position** — the latest `task_start`, else the `approval`:
+the points where boundaries are re-verified before more work is
+dispatched (D3-6). A failure, a stale evaluation, or a missing evaluation
+are all **stops**, never scheduling inputs: the core will not dispatch on
+an unverified boundary and never fabricates an evaluation to proceed. A
+plan that declares no invariants carries no boundary checks — declaring
+the boundary is what buys the verification.
+
+### 8.4. Envelope: commit-plus-pending (A5)
+
+Per enforced limit, authorization requires `spent + pending ≤ limit`.
+`spent` is the **latest observed** `resource_sample` for that limit id —
+asserted samples are advisory-only for enforced limits (A5); a limit with
+no observed sample is `metered: false`, its spend exposed as missing
+(never imputed), and the pending side still enforced. `pending` is the
+declared `resource_impact` of every **authorized** adaptation still
+affecting incomplete work, matched to limits by unit — plus the proposal's
+own declared impact. Two sequential proposals that individually fit but
+jointly overshoot are therefore both refused at the second one: the
+commitment is counted when authorized, not when spent.
+
+The resource layer ([V6_RESOURCES.md](V6_RESOURCES.md)) composes this
+accounting: a limit's optional `reserve` lowers the dispatchable ceiling to
+`limit - reserve` (verification, retry and resume cannot be starved by
+ordinary work), journal-observable counters enforce with no host ability at
+all, and host-metered counters require the negotiated `meter_*` ability —
+a metered host with no observed sample still enforces the pending side
+exactly as this section states.
+
+### 8.5. Caps, defaults, handoff
+
+The optional contract `scheduling` block declares
+`starvation_threshold_events` (≥1), `max_adaptations_per_task` (≥0),
+`max_retries_per_gate` (≥0) and `handoff` conditions (`fresh_context`,
+`cross_host_resume`). Every field is optional and every default is
+**finite** — never unlimited: 50 journal events, 3 adaptations per task,
+2 retries per gate. A contract may declare tighter or looser bounds; the
+caps count **authorized** adaptations, so a refused proposal never burns
+budget. Bounded adaptation is structural: every loop a scheduler could
+enter terminates at a cap or the `blind-retry` rule. The handoff fields
+are the contract's explicit statement of when a fresh context or a
+cross-host resume is required (RFC §5); they are declarations the
+operator and flows read, not conditions the core evaluates.
+
+### 8.6. Starvation and aging (A11)
+
+`ready(contract, events)` lists eligible tasks (prerequisites complete,
+itself incomplete) ranked **oldest-first on the journal clock**:
+`waiting_events = last_seq − waiting_since_seq`, where
+`waiting_since_seq` is the seq of the event that made the task eligible
+(the highest criterion-satisfaction seq among its prerequisites, or the
+approval seq when there are none). The clock is the journal, never the
+wall — aging is deterministic under replay. A task waiting at or beyond
+`starvation_threshold_events` carries `priority_boost: true` with the
+`aging` payload (`waiting_since_seq`, `threshold`) that the `selection`
+event shape requires. The boost is **recorded, not enacted**: the caller
+appends the `selection` event through the ledger writer, which validates
+the closed shape; the core only computes and reports.
+
+### 8.7. Child plans and the single record
+
+Intra-repo parallelism runs as **sibling plans** under the same
+`.dwp/plans/`, each worker a single-writer contract + journal scoped to
+declared file ownership, the parent aggregating through the §8
+orchestrator tracking-table shape (U5/A8/D3-8). `authorize` decides
+exactly one record and never sees — never writes — a sibling's paths.
+The `surface-serialization` rule is the in-plan half of that boundary:
+within one record, overlapping in-progress work cannot be selected
+concurrently; across records, separation is by construction (each
+contract declares its own scope).
+
+### 8.8. What the core is not
+
+The core does not judge proposal *quality* — only authorization
+boundaries. A well-shaped, in-budget, non-blind adaptation toward a bad
+hypothesis is authorized; the outcome evidence still decides acceptance.
+It does not schedule wall-clock time, pick models, or score work. It
+reads records only: an adaptation's `hypothesis` and
+`trigger_observation` are the proposal's duty of stating a discriminating
+rationale (expected decision impact, never an invented numeric
+confidence), and the record keeps them honest — but the boundary checks
+are the core's whole jurisdiction.
+
+---
+
+## 9. References
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `DOCUMENTATION_STANDARD.md` (§§2.5, 5, 6, 7), `DWP_SPECIFICATION.md` (§§5.1–5.3), `ARCHETYPES.md` (§4), `ADDONS.md`, `PLAN_STATE.md`

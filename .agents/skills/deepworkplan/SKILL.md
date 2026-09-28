@@ -1,7 +1,7 @@
 ---
 name: deepworkplan
 description: DeepWorkPlan — turn any repo AI-first and run Deep Work Plans. Routes to create, execute, refine, resume, status, verify, upgrade, and repo-onboarding sub-skills based on intent. Use when the developer wants to plan, execute, manage, or verify structured multi-task work, or make a repository AI-agent-ready.
-version: "5.4.0"
+version: "5.5.4"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -159,6 +159,13 @@ developer which they mean before routing.
   plan.
 - **Status and verify stay read-only.** They report; they never execute tasks
   or mutate files — regardless of how they are invoked.
+- **Plan generation is detected, never assumed.** A plan folder carrying a
+  `manifest.json` contract pointer, a `contract.json`, or a `contracts/`
+  revision chain is **v6** — create and execute route it through their
+  `v6.md` loops (contract, journal, scheduler, verified closure). Anything
+  else keeps the recorded v5 lifecycle, is never migrated silently, and a
+  v5-only runner that meets a v6 plan reports it as unsupported rather
+  than approximating it. Both generations can coexist in one `.dwp/`.
 - **Hosts without slash commands use the same flows by name.** Invoke the
   sub-skill as `#deepworkplan-create` or in plain text ("run
   deepworkplan-create"); the flows themselves are plain file reads, edits and

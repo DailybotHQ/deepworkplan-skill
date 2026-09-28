@@ -1,0 +1,47 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/partition/1",
+  "partition": "sealed-confirmation",
+  "status": "BLOCKED_NO_ENFORCED_CUSTODIAN",
+  "blocking_rule": "preregistration isolation.enforcement_requirement: sealed task prompts, hidden checks and reference solutions must live under enforced custodian separation (separate accounts/hosts/sandbox with access controls), proven by sentinel checks, before any sealed case is authored. This host provides neither containers nor a second enforced OS user, so authoring sealed content here would put it inside the implementer's reachable context - forbidden. Confirmation stays blocked; development-only runs remain exploratory.",
+  "opaque_commitments": {
+    "committed_by": "restricted custodian (once an enforced store exists)",
+    "visible_fields": [
+      {
+        "field": "case_counts_per_family",
+        "type": "integer >= preregistered minimums",
+        "value": null
+      },
+      {
+        "field": "mechanism_strata",
+        "type": "subset of each family's public taxonomy",
+        "value": null
+      },
+      {
+        "field": "oracle_hash_commitments",
+        "type": "sha256 of each sealed oracle, pre-committed before runs",
+        "value": null
+      },
+      {
+        "field": "calibration_attestation",
+        "type": "signed statement that sealed oracles passed known-good and failed broken variants",
+        "value": null
+      },
+      {
+        "field": "mechanism_distinctness_attestation",
+        "type": "custodian-signed statement that every sealed case exercises a behavioral mechanism distinct from every development-partition case in the registry \u2014 not a new seed on a developed solution pattern (D15 F5)",
+        "value": null
+      }
+    ],
+    "never_visible_to_implementer": [
+      "task prompts",
+      "hidden checks",
+      "reference solutions",
+      "actor trajectories"
+    ]
+  },
+  "unblocking_conditions": [
+    "an enforced custodian store exists and sentinel/access checks prove the implementer cannot reach it",
+    "the custodian authors and calibrates heldout oracles and reference solutions in that store",
+    "the opaque commitments above are filled and frozen before development results are examined"
+  ]
+}

@@ -1,6 +1,6 @@
 # Task {N}: Hand Off Execution of Child DWP — {Repository Name}
 
-> **Template for orchestrator plans.** Replace all `{placeholders}` when generating a real task file.
+> **Template for orchestrator plans.** Fill in known placeholders when generating a real task file. Resolve each child plan basename from the parent registry after the child has been allocated; never construct an ID from the feature or repository name.
 
 > [!IMPORTANT]
 > **This task is a HAND-OFF, not an execution.** The orchestrator agent **must never** execute a child DWP itself in the same session. It must stop at this task, confirm predecessors are ready, emit a ready-to-use execution prompt for the target repository, and wait for the user (or a separate agent session running inside that repo) to execute the child and confirm completion. Only then may the orchestrator agent continue.
@@ -20,26 +20,26 @@
 
 **Plan Type:** Orchestrator — Child DWP Execution HAND-OFF
 **Target Repository:** `repositories/{repo_name}/`
-**Child Plan to Execute (by another agent):** `PLAN_{feature}_{repo_short}`
-**Child Plan Location:** `repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/`
+**Child Plan to Execute (by another agent):** `{CHILD_PLAN_NAME}`
+**Child Plan Location:** `repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/`
 
 This task verifies predecessors are ready, emits a hand-off prompt for the target repo's agent, and **stops**. It does not execute the child DWP. When the user confirms the child DWP has been executed (all its tasks `[x]`, `state.json` reporting `completed`, declared artifacts on disk), the orchestrator agent updates the manifest and marks this task complete.
 
 ### Orchestrator Context
 
-- **Parent Plan:** PLAN_{parent_plan_name} (this plan, in Core Hub)
+- **Parent Plan:** {PARENT_PLAN_NAME} (this plan, in Core Hub)
 - **Feature:** {overall feature description}
 - **This repo's role:** {what this repo contributes — e.g., "CRUD API endpoints for user preferences"}
 - **Depends on:** {list child plans that must be executed first, or "None — this is the first child DWP"}
 - **Depended on by:** {list child plans that depend on this one's outputs, or "None"}
-- **Manifest:** `.dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md`
+- **Manifest:** `.dwp/plans/{PARENT_PLAN_NAME}/ORCHESTRATOR_MANIFEST.md`
 
 ### Predecessor Outputs Required
 
 {If this child has predecessors, list what outputs must be available before hand-off:}
 
-- **PLAN_{feature}_{predecessor_short}** (must be `[x] Executed`):
-  - Declared artifacts: `repositories/{predecessor_repo}/.dwp/plans/PLAN_{feature}_{predecessor_short}/analysis_results/{declared_artifact}`
+- **{PREDECESSOR_PLAN_NAME}** (must be `[x] Executed`):
+  - Declared artifacts: `repositories/{predecessor_repo}/.dwp/plans/{PREDECESSOR_PLAN_NAME}/analysis_results/{declared_artifact}`
   - Key outputs needed: {specific data this child needs — e.g., "API endpoint paths, data model definitions, error response formats"}
 - {Or "None — this is the first child DWP (no predecessors)"}
 
@@ -49,11 +49,11 @@ This task verifies predecessors are ready, emits a hand-off prompt for the targe
    - Check "Execution State" — verify all predecessors are `[x] Executed`.
    - Check "Completed Output References" — confirm each predecessor's declared artifacts are registered.
 2. **Predecessor declared artifacts** (if this child has dependencies): confirm they exist on disk (do NOT read through them line-by-line — the target repo's agent will). Check the files the predecessor actually declared; an Executive Report is optional under DWP 2.3.0 and may legitimately not exist.
-3. **Child DWP README** (for the hand-off prompt): `repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md`.
+3. **Child DWP README** (for the hand-off prompt): `repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/README.md`.
 
 ## 3. Goal
 
-Emit a ready-to-use hand-off prompt for the target repo's agent to execute `PLAN_{feature}_{repo_short}`, then pause. When the user confirms execution is complete, register outputs in the orchestrator manifest and mark this task `[x]`.
+Emit a ready-to-use hand-off prompt for the target repo's agent to execute `{CHILD_PLAN_NAME}`, then pause. When the user confirms execution is complete, register outputs in the orchestrator manifest and mark this task `[x]`.
 
 **Success conditions:**
 
@@ -83,7 +83,7 @@ Determine execution mode from the orchestrator plan README (§4). Then apply the
 If any required check for the applicable mode fails — STOP:
 
 ```
-BLOCKED: Cannot hand off PLAN_{feature}_{repo_short}
+BLOCKED: Cannot hand off {CHILD_PLAN_NAME}
 - Mode: {Contract-Parallel | Fully Parallel | Sequential Runtime-Dependent}
 - Missing: {what failed}
 - Action: {fix the missing piece; do NOT execute the child inline to "unblock"}
@@ -107,11 +107,11 @@ Open a new agent session with its working directory set to `repositories/{repo_n
 
 Paste this prompt into that agent:
 
-Execute the plan at: .dwp/plans/PLAN_{feature}_{repo_short}/README.md
+Execute the plan at: .dwp/plans/{CHILD_PLAN_NAME}/README.md
 
 Important:
 - Follow THIS repository's AGENTS.md conventions (validation, commit format, test patterns).
-- {Predecessor context note — e.g., "Before Task 1, read: repositories/{predecessor_repo}/.dwp/plans/PLAN_{feature}_{predecessor_short}/analysis_results/{declared_artifact}"}
+- {Predecessor context note — e.g., "Before Task 1, read: repositories/{predecessor_repo}/.dwp/plans/{PREDECESSOR_PLAN_NAME}/analysis_results/{declared_artifact}"}
 - {Any audit-only / behavior notes from the child DWP README}
 - Do NOT send Dailybot interim reports if the parent orchestrator will send a single milestone at its final task.
 
@@ -120,7 +120,7 @@ When the child DWP is complete:
 2. `state.json` reads `status: completed`, and every declared output artifact
    exists in `analysis_results/`.
 3. Reply to the orchestrator session with:
-   "DONE: PLAN_{feature}_{repo_short} executed. Declared artifacts at <paths>. Key outputs: <1–3 bullets>."
+   "DONE: {CHILD_PLAN_NAME} executed. Declared artifacts at <paths>. Key outputs: <1–3 bullets>."
 ~~~
 
 ### Step 3: Pause and wait for user confirmation
@@ -141,7 +141,7 @@ After the user replies "DONE: …" (or equivalent), verify from Core Hub:
 
 ```bash
 set -e
-CHILD=repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}
+CHILD=repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}
 if [ -f "$CHILD/state.json" ]; then
   # v2+ plans: the TOP-LEVEL status and EVERY task must be completed. A nested
   # task-level "completed" never satisfies this check on its own.
@@ -166,7 +166,7 @@ fi
 # ownership of its own gates (its session ran them).
 CHILD_CHECKER=repositories/{repo_name}/.agents/skills/deepworkplan/verify/conformance.sh
 if [ -f "$CHILD_CHECKER" ]; then
-  if env -u DWP_DIR bash "$CHILD_CHECKER" --plan PLAN_{feature}_{repo_short} repositories/{repo_name}; then
+  if env -u DWP_DIR bash "$CHILD_CHECKER" --plan {CHILD_PLAN_NAME} repositories/{repo_name}; then
     echo "PASS: child conformance green"
   else
     echo "FAIL: child conformance not green (1 = findings, 2 = UNVERIFIED) — ask the child session to resolve before marking Executed" >&2
@@ -201,13 +201,13 @@ Update `ORCHESTRATOR_MANIFEST.md`:
 
 1. §5 Execution State — mark this child `[x] Executed`:
    ```
-   | {N} | PLAN_{feature}_{repo_short} | [x] | [x] | Available | {short key-outputs list} |
+   | {N} | {CHILD_PLAN_NAME} | [x] | [x] | Available | {short key-outputs list} |
    ```
 
 2. §5 Completed Output References — add an entry:
    ```markdown
-   #### Child #{N}: PLAN_{feature}_{repo_short} ({repo_name})
-   - **Declared artifacts:** `repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/analysis_results/{declared_artifact}`
+   #### Child #{N}: {CHILD_PLAN_NAME} ({repo_name})
+   - **Declared artifacts:** `repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/analysis_results/{declared_artifact}`
    - **Completion evidence:** that plan's `state.json` (`status: completed`) and its Final Review task log.
    - **Key outputs:** (from the user's DONE reply + a quick read of the declared artifacts)
      - {bullet}
@@ -222,7 +222,7 @@ Update `ORCHESTRATOR_MANIFEST.md`:
 - Mark this task `[x]` in the orchestrator README.
 - Update `PROGRESS.md` with a 1–2 sentence summary.
 - Fill §9 Completion & Log below.
-- Commit in Core Hub (tracking files only): `docs(technical): hand-off + register outputs for {repo_name} child DWP - Task {N} of PLAN_{parent_plan_name}`.
+- Commit in Core Hub (tracking files only): `docs(technical): hand-off + register outputs for {repo_name} child DWP - Task {N} of {PARENT_PLAN_NAME}`.
 
 ## 5. Acceptance Criteria
 
@@ -237,7 +237,7 @@ Update `ORCHESTRATOR_MANIFEST.md`:
 ## 6. Outputs
 
 - **Emitted:** Ready-to-use execution prompt for the target repo's agent.
-- **Verified (after user confirmation):** the child plan's `state.json` reports `completed`, and each declared artifact exists under `repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/analysis_results/`.
+- **Verified (after user confirmation):** the child plan's `state.json` reports `completed`, and each declared artifact exists under `repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/analysis_results/`.
 - **Updated (in Core Hub):** Parent plan ORCHESTRATOR_MANIFEST.md + README.
 
 ## 7. Validation
@@ -245,7 +245,7 @@ Update `ORCHESTRATOR_MANIFEST.md`:
 ```bash
 # Run in Core Hub after the user replies DONE:
 set -e
-CHILD=repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}
+CHILD=repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}
 if [ -f "$CHILD/state.json" ]; then
   # Same authoritative check as Step 4: TOP-LEVEL status + every task. A bare
   # grep for '"status": "completed"' would also match nested task-level status.
@@ -262,10 +262,10 @@ fi
 test -f "$CHILD/analysis_results/{declared_artifact}" && echo "PASS: declared artifact present" || { echo "FAIL" >&2; exit 1; }
 
 # Verify manifest updated
-grep -q "PLAN_{feature}_{repo_short}" .dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md && echo "PASS: Manifest has child entry" || { echo "FAIL" >&2; exit 1; }
+grep -q "{CHILD_PLAN_NAME}" .dwp/plans/{PARENT_PLAN_NAME}/ORCHESTRATOR_MANIFEST.md && echo "PASS: Manifest has child entry" || { echo "FAIL" >&2; exit 1; }
 
 # Verify orchestrator README marked Executed
-grep -E "\[x\].*PLAN_{feature}_{repo_short}|PLAN_{feature}_{repo_short}.*\[x\] Executed" .dwp/plans/PLAN_{parent_plan_name}/README.md >/dev/null && echo "PASS: README marks Executed" || echo "CHECK MANUALLY"
+grep -E "\[x\].*{CHILD_PLAN_NAME}|{CHILD_PLAN_NAME}.*\[x\] Executed" .dwp/plans/{PARENT_PLAN_NAME}/README.md >/dev/null && echo "PASS: README marks Executed" || echo "CHECK MANUALLY"
 ```
 
 ## 8. Execution Checklist
@@ -281,7 +281,7 @@ grep -E "\[x\].*PLAN_{feature}_{repo_short}|PLAN_{feature}_{repo_short}.*\[x\] E
 - [ ] 9. Update orchestrator README Child DWP Plans table.
 - [ ] 10. Update PROGRESS.md with summary.
 - [ ] 11. Mark this task `[x]` in the plan README.
-- [ ] 12. Commit in Core Hub: `git commit -m "docs(technical): hand-off + register outputs for {repo_name} - Task {N} of PLAN_{parent_plan_name}"`.
+- [ ] 12. Commit in Core Hub: `git commit -m "docs(technical): hand-off + register outputs for {repo_name} - Task {N} of {PARENT_PLAN_NAME}"`.
 - [ ] 13. Update the Log section below.
 
 ## 9. Completion & Log (filled by the agent)

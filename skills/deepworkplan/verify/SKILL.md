@@ -18,7 +18,7 @@ normative criteria are defined in the specification's Conformance document
 ## Shared resources (read these)
 
 - [`../shared/context.sh`](../shared/context.sh) — resolve the repo root and `.dwp/`.
-- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans live at `.dwp/plans/PLAN_{name}/`.
+- [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans live at `.dwp/plans/<plan>/`.
 - [`conformance.sh`](conformance.sh) — the mechanical conformance layer (run it first).
 - **Guide (essential — read for this flow):** none — the spec is the standard being checked.
 - **Working principles (conditional):** read
@@ -38,7 +38,7 @@ markdown-vs-`state.json` desync:
 ```bash
 bash {skill_dir}/verify/conformance.sh            # repo + every plan
 bash {skill_dir}/verify/conformance.sh --repo-only
-bash {skill_dir}/verify/conformance.sh --plan PLAN_{name}
+bash {skill_dir}/verify/conformance.sh --plan <plan>
 ```
 
 The checker resolves the git root even when invoked from a subdirectory and
@@ -138,7 +138,26 @@ Then, by reading rather than grepping:
 
 ## Plan checks (when verifying a plan)
 
-For each plan under `.dwp/plans/PLAN_{name}/`:
+For each plan directly under `.dwp/plans/`, whether its name is numbered or
+legacy: resolve an optional selector with `../shared/plan_paths.py --plans-dir
+<dwp_dir>/plans resolve <selector>` before passing the full basename to
+`conformance.sh --plan`. Use `list` for all plans; never rename an old folder.
+
+- **v6 generation check (run first).** A folder carrying `manifest.json`
+  with a contract pointer, `contract.json`, or a `contracts/` chain is a
+  **v6 plan** and is verified against its own records, all read-only:
+  `python3 ../shared/contract_v6.py validate-contract <dir>/contract.json`
+  (or the highest revision under `contracts/`), `python3
+  ../shared/contract_v6.py validate-journal <dir>/journal.ndjson
+  --contract <dir>/contract.json`, and `python3 ../shared/ledger.py --plan
+  <dir> inspect` (an `approval` citing the live contract id must exist;
+  a torn tail is a finding). Verify the projection agrees with the
+  journal (`state.json` is generated for v6; a disagreement is a
+  finding — regenerate via `project`, never hand-edit). The v5 lifecycle
+  checks below (final-task shape, checkbox correspondence) apply to the
+  plan's human markdown as written; a v6 plan does not fail for not
+  having a v5 `state.json` hand-shape. Both generations can coexist;
+  neither is migrated by this flow.
 
 - Every task file declares an explicit scope, **acceptance criteria**, and at least one **validation gate** (a runnable command or check).
 - **Test discipline.** Tasks that add new core functionality or change product behavior require automated test coverage in their Acceptance Criteria and run the repo's tests + lint/type-check in their Validation (`DWP_SPECIFICATION.md` §5.1.1). A behavior-changing plan with zero test work is a finding, not a pass.
@@ -186,7 +205,8 @@ End with one of: **CONFORMANT** (all MUST criteria pass) or **NOT CONFORMANT —
 > **Large repo / in-progress onboarding.** A big repo may be mid-onboarding via
 > the plan-driven path (onboard Phase 2b) — its documentation is being generated
 > task-by-task by an onboarding Deep Work Plan rather than all at once. If you
-> find a `PLAN_onboard_*` under `.dwp/plans/`, report conformance gaps as
+> find a numbered `PLAN_<id>_onboard_*` or legacy `PLAN_onboard_*` under
+> `.dwp/plans/`, report conformance gaps as
 > **in progress, not failures**, and point the developer at `/dwp-status` and
 > `/dwp-resume` to finish that plan rather than starting a new remediation plan.
 

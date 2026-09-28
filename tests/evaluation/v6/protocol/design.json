@@ -1,0 +1,306 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/experiment-design/1",
+  "title": "DWP v6 verified-autonomy experiment preregistration",
+  "status": "preregistered targets — not results; every threshold below is an ambition to be tested, and the operative bar is frozen by Task 25 (the powered confirmation design and candidate freeze) before any confirmation result exists",
+  "preregistered_at": "2026-09-26",
+  "preregistered_by": "PLAN_v6_verified_autonomy Task 3",
+  "change_policy": "Any design amendment happens here, before heldout data, with the original rationale retained. After confirmation data exists, a changed candidate requires a new identity and a fresh untouched partition. Do not adjust effect targets to fit an observed result. Oracle identity is content-addressed: each oracle's defining sources are SHA-256-bound per score record and frozen at the Task 25 freeze (score_pilot.py --dump/--oracle-commitments); an oracle edited after confirmation launch gets a new identity and a disclosed full rescore with both versions — never a silent partial rescore (D15 F1).",
+  "baseline_comparator": {
+    "name": "latest-v5",
+    "tag": "v5.5.4",
+    "peeled_commit": "7d571cef0bde3955bf5fb9593ab1a209cbe237b3",
+    "record": "tests/evaluation/v6/baselines/latest-v5.json",
+    "integrity": "python3 tests/evaluation/v6/baselines/verify_snapshot.py",
+    "recheck_policy": "Recheck upstream tags at the confirmation freeze; a newer v5 becomes a new recorded comparator and the affected calibration is redone. The vendored dogfood is never a comparator."
+  },
+  "estimands": [
+    {
+      "id": "Q1",
+      "claim": "v6 increases independently accepted task completion under the same resource ceiling as latest stable v5",
+      "unit_of_analysis": "task case; repeated runs, cloned copies, test/tool invocations and increments are not new independent tasks",
+      "denominator": "all eligible attempted task cases in the partition, intention-to-treat, with infrastructure-ineligible and incomplete categories reported separately under the preregistered exclusion rules",
+      "decision_rule": "launch_bar[0]",
+      "limitation": "Establishes the tested population only; universal superiority is not an attainable guarantee"
+    },
+    {
+      "id": "Q2",
+      "claim": "v6 reduces total attributable cost per accepted result",
+      "unit_of_analysis": "task case; cost is the preregistered attributable aggregate, not bytes or a single counter",
+      "denominator": "accepted outcomes in the same eligible attempted workload as the cost numerator; an all-failed workload leaves the ratio undefined and it is never reported as zero",
+      "decision_rule": "launch_bar[2]",
+      "limitation": "Provider-counter semantics must be preserved (input/output/cache/reasoning); missing counters are unknown, not imputed"
+    },
+    {
+      "id": "Q3",
+      "claim": "v6 improves sustained completion and reduces engineering intervention across interrupted, evolving projects",
+      "unit_of_analysis": "project storyline/campaign (six increments), scored per increment and per campaign",
+      "denominator": "all scheduled campaigns including aborts; earlier failures are never erased by later repairs",
+      "decision_rule": "launch_bar[3], launch_bar[4]",
+      "limitation": "With a small number of storylines, uncertainty is substantial; unsupported differences are labeled inconclusive"
+    },
+    {
+      "id": "Q4",
+      "claim": "Identified v6 mechanisms account for measured gains, and remaining overheads/regressions are known",
+      "unit_of_analysis": "ablation cell (component removed) on development cases",
+      "denominator": "all ablation runs including the full-component control",
+      "decision_rule": "descriptive with intervals; ablations identify contribution and overhead, they do not independently satisfy the launch bar",
+      "limitation": "Component contributions on development cases may not transfer to sealed confirmation families"
+    }
+  ],
+  "arms": {
+    "A_no_dwp": {
+      "workflow": "the agent's normal planning, notes, tests and tools",
+      "exposure": "same useful project/task information and documentation; no DWP skill, state, hooks or plan artifacts",
+      "fairness_rule": "never cripple: native planning, notes, tests and context compaction stay allowed; strip only treatment contamination (inherited parent instructions, global DWP installs, prior-run memory); a no-DWP actor never needs a plan file or DWP receipt to succeed"
+    },
+    "B_latest_v5": {
+      "workflow": "published latest-v5 onboarding/create/execute/resume as applicable",
+      "exposure": "the exact frozen v5 pack snapshot and matched release dependencies",
+      "fairness_rule": "the comparator is the frozen snapshot (baseline_comparator), never the vendored dogfood or mutable main"
+    },
+    "C_v6_candidate": {
+      "workflow": "candidate onboarding/create/adaptive execution/verification",
+      "exposure": "the exact frozen candidate pack and dependencies",
+      "fairness_rule": "the candidate is frozen before the confirmation campaign; findings found mid-campaign go to a later development cycle with a new identity"
+    }
+  },
+  "reviewer_policy": {
+    "primary_comparison": "each pinned package as delivered, with every difference recorded",
+    "matched_rule": "freeze the reviewer version and rule inputs across arms B/C when compatible",
+    "sensitivity_cells": [
+      "A plus the same reviewer (sensitivity)",
+      "matched-reviewer B/C comparison in ablations"
+    ],
+    "attribution_rule": "a remaining reviewer difference limits attribution and must appear in the claims"
+  },
+  "tracks": {
+    "cold_adoption": "setup/onboarding plus plan creation, implementation, verification and recovery — reported separately",
+    "already_onboarded": "cost of the next matched task once the prescribed harness exists — reported separately; never amortize setup over an invented workload"
+  },
+  "strata": {
+    "definition": "fixed model/host/tool/reasoning-setting configurations held constant within each block; randomized arm order within stratum with a frozen seed",
+    "currently_available": [
+      {
+        "name": "claude-code/claude-fable-5-1",
+        "probe": "claude CLI 2.1.283 present"
+      },
+      {
+        "name": "codex-cli/gpt-6",
+        "probe": "codex-cli 0.156.1 present (the plan's creating agent ran on GPT-6)"
+      }
+    ],
+    "pinning_rule": "the operative stratum pair is pinned and recorded in each campaign's META before the first run; a stratum that cannot produce a fresh isolated context is dropped and reported, not silently substituted",
+    "routing_note": "a v6-only stronger-model option is a secondary routing experiment, never proof of methodology gains"
+  },
+  "partitions": {
+    "baseline_pilot": {
+      "purpose": "validate apparatus, estimate baseline variance, power the design",
+      "expression": "12 cases x 2 arms x 2 strata x 2 repeats",
+      "cases": 12,
+      "arms": 2,
+      "strata": 2,
+      "repeats": 2,
+      "starts": 96,
+      "timing": "Task 10; precedes core implementation (Tasks 11-20 depend on this pilot via stage gate G2)",
+      "status": "planned envelope — not an approved bill"
+    },
+    "v6_development": {
+      "purpose": "repair mechanisms on development cases only; at most three initial bounded rounds",
+      "expression": "3 arms x development cases x bounded rounds",
+      "starts": null,
+      "status": "bounded by round count and the resource envelope; exact starts recorded at run time"
+    },
+    "ablations": {
+      "purpose": "identify mechanism contribution and overhead",
+      "expression": "full v6 + 3 one-component-removed variants + reviewer-sensitivity cells",
+      "starts": null,
+      "status": "planned envelope; exact cell sizes fixed at the ablation campaign freeze"
+    },
+    "confirmation": {
+      "purpose": "powered heldout three-arm comparison",
+      "expression": "60 distinct cases x 3 arms x 2 strata x 3 repeats",
+      "cases": 60,
+      "arms": 3,
+      "strata": 2,
+      "repeats": 3,
+      "starts": 1080,
+      "status": "planned envelope — only 60 task clusters; subject to the power/simulation rule and the resource envelope; never launched with an unset envelope",
+      "sealing": "cases and reference solutions authored by the restricted custodian outside implementer access; unseen families are distinct behavioral mechanisms, never new seeds on the same solution pattern; the custodian records the distinctness attestation in the sealed partition's opaque_commitments at freeze, and dev-round skill-text changes are reviewed as mechanism-generic (not dev-case-specific) before the candidate freezes (D15 F5)",
+      "quota_protections": {
+        "lesson": "pilot r3 (2026-09-26): 96 sequential starts on one account quota-killed 76 cells mid-campaign; at confirmation scale (1,080 starts) the same failure mode censors the primary endpoint and burns the envelope on dead cells.",
+        "pacing": "per-provider max starts/hour with a cooldown after any quota signature; values pinned at the Task 25 freeze from QUOTA_EVENT.json evidence",
+        "budget_stop": "per-provider budget stop: no new starts once the provider's window budget is exhausted; the runner records the stop and resumes in the next window",
+        "windows": "confirmation starts are split across provider windows by stratum plan — never 1,080 sequential starts in one window",
+        "enforcement": "campaign schema fields max_starts_per_hour, cooldown_on_quota, budget_stop_per_provider are REQUIRED for confirmation configs; the lab refuses a confirmation config without them (D15 F6)"
+      }
+    },
+    "long_horizon": {
+      "purpose": "sustained completion and intervention behavior on evolving projects",
+      "expression": "6 storylines x 3 arms x 2 strata x 2 repeats; six real increments per campaign; sessions counted separately",
+      "storylines": 6,
+      "arms": 3,
+      "strata": 2,
+      "repeats": 2,
+      "starts": 72,
+      "status": "planned envelope; campaign-level analysis"
+    },
+    "external_replication": {
+      "purpose": "bounded transfer/adoption evidence on unseen repositories",
+      "expression": "3 repositories x 2 tasks x 3 arms x 2 strata x 2 repeats",
+      "repositories": 3,
+      "tasks": 2,
+      "arms": 3,
+      "strata": 2,
+      "repeats": 2,
+      "starts": 72,
+      "status": "planned envelope; repository identities, snapshots, task contracts, scorer inputs and replacement rules selected and sealed at the Task 25 freeze before any confirmation result; Task 27 only executes the frozen selections"
+    }
+  },
+  "power_rule": "Pilot-based simulation must target the complete joint GO decision: at least 0.80 GO probability under an explicitly justified design alternative with room beyond the thresholds (feasible sensitivity grid: +10/+15/+20 point success changes; 0.80/0.70/0.65 cost ratios). If task clustering dominates, add genuinely distinct cases rather than more repeats. A baseline above 0.90 accepted-rate leaves fewer than ten points of possible improvement — if the launch bar is unattainable for the preregistered population, disclose that and block or relabel exploratory rather than silently choosing easier comparisons. The power simulation reports its input usable-pilot-cell count and refuses to freeze a confirmation size below a preregistered floor of 60 usable pilot cells (r3 mid-recovery: 20/96 usable — below floor; the freeze waits for the recovered inventory) — D15 F11.",
+  "launch_bar": [
+    {
+      "id": "L1",
+      "endpoint": "accepted outcome vs latest v5",
+      "kind": "target",
+      "practical_target": "at least +10 percentage points",
+      "statistical_condition": "matched estimate meets the target AND the multiplicity-adjusted 95% interval lower bound is above zero",
+      "limitation": "an assumed true +10-point gain sits exactly on the threshold and does not by itself yield high joint GO probability"
+    },
+    {
+      "id": "L2",
+      "endpoint": "accepted outcome vs no-DWP",
+      "kind": "target",
+      "practical_target": "positive improvement",
+      "statistical_condition": "adjusted 95% interval lower bound above zero",
+      "limitation": "a capable no-DWP baseline bounds the attributable claim"
+    },
+    {
+      "id": "L3",
+      "endpoint": "cost per accepted outcome vs latest v5",
+      "kind": "target",
+      "practical_target": "at least 20% lower (ratio <= 0.80)",
+      "statistical_condition": "estimated ratio <= 0.80 AND adjusted 95% upper bound below 1.00",
+      "limitation": "boundary alternatives (true ratio exactly 0.80) sit on the threshold; provider-counter semantics must be preserved"
+    },
+    {
+      "id": "L4",
+      "endpoint": "human engineering rescue rate",
+      "kind": "target",
+      "practical_target": "30% lower where the baseline rate is nonzero",
+      "statistical_condition": "report absolute rate and ratio with uncertainty; no autonomy-superiority claim unless its own preregistered test passes",
+      "limitation": "correctly asking for missing authorization is not a quality failure; silence is not automatically autonomy"
+    },
+    {
+      "id": "L5",
+      "endpoint": "long-horizon outcome retention",
+      "kind": "target",
+      "practical_target": "at least +10 percentage points vs v5",
+      "statistical_condition": "campaign-cluster analysis; unsupported differences are labeled inconclusive",
+      "limitation": "six storylines bound the power of any inferential claim"
+    },
+    {
+      "id": "L6",
+      "endpoint": "critical regressions / false-completion events",
+      "kind": "guardrail",
+      "practical_target": "zero observed release-blocking events in mandatory confirmation checks",
+      "statistical_condition": "publish the event denominator and the exact Clopper-Pearson upper bound on the event rate (zero observed does not imply zero population risk; the rule-of-three 3/n may be cited only as its approximation) — D15 F11; unavailable-leg controls rounded up in a completion claim count in the same false-completion class (D3 residual)",
+      "limitation": "an unmeetable-looking zero is reported with its denominator, never as proof of absence"
+    },
+    {
+      "id": "L7",
+      "endpoint": "simple-task overhead",
+      "kind": "target",
+      "practical_target": "at most 10% median cost/time overhead vs v5 on easy cases",
+      "statistical_condition": "task-stratified estimates; overhead is never hidden behind aggregate gains",
+      "limitation": "overhead on easy work is the price candidate must justify"
+    }
+  ],
+  "mandatory_go_conditions": [
+    "the deterministic guarantee/compatibility/packaging gates all pass on the release candidate",
+    "launch_bar L1, L2 and L3 each meet practical and statistical conditions",
+    "no unresolved observed critical defect, unauthorized destructive action, or false-completion event remains in the required campaigns",
+    "long-horizon and external campaigns complete, with no demonstrated material domain-specific regression left unexplained; their limited scope stays explicit",
+    "any headline autonomy claim separately passes its preregistered test; if it does not, the claim is removed and the primary bar is not altered",
+    "no material contamination, missing primary telemetry, or candidate drift invalidates the design",
+    "the evaluated artifact is the release candidate"
+  ],
+  "inconclusive_semantics": "A good point estimate with a wide interval is INCONCLUSIVE. A non-significant degradation is not evidence of equivalence. Practical regression margins and any non-inferiority tests are declared before data (this file, as amended before heldout data); small subgroups are reported descriptively when underpowered. NO_GO and INCONCLUSIVE are honest results; neither satisfies the verified-upgrade release gate.",
+  "statistics": {
+    "pairing": "by task/starting snapshot/model-host configuration and repetition block",
+    "randomization": "arm order randomized within stratum using a frozen recorded seed; time-of-day and provider-condition balance recorded",
+    "cache_policy": "explicit and recorded; cold and warm results reported separately where relevant",
+    "primary_estimator": "fixed workload/host weights with a stratified paired cluster bootstrap at task level, keeping all repeats/arms/host observations of a sampled task together; the estimator is verified by simulation before use",
+    "multiplicity": "preregistered Holm adjustment across the mandatory superiority claims with compatible intervals; adjustment is implemented and tested, never claimed from unadjusted intervals",
+    "long_horizon_analysis": "at storyline/campaign level",
+    "exclusions": {
+      "policy": "intention-to-treat is primary with predeclared sensitivity analyses; all categories reported. These rules are data (D15 F2): the classification used during pilot r3 recovery is frozen here, not re-derived post-hoc.",
+      "rules": {
+        "quota_signature": "a terminal cell whose actor log carries a provider rate/usage-limit signature (recorded in the campaign's QUOTA_EVENT.json) is infrastructure-ineligible: excluded from the eligible denominator, counted and reported. Replacement is in-place resume of the same cell id when the provider window resets; the killed attempt stays in the inventory.",
+        "canary_breach": "canary_intact=false at terminal status is infrastructure-ineligible: never scored toward the arm, reported separately.",
+        "timeout": "a cell terminal at the campaign timeout is ineligible and counted in the timeout break-out; never silently retried.",
+        "replacement": "an infrastructure-ineligible cell may be replaced only by re-running the same cell id (resume semantics); new cell ids are never substituted post-hoc.",
+        "missing_usage": "a completed cell with an unknown meter is never imputed: the cost/token report carries has_unknowns and cannot reconcile numerically; the cell stays in the outcome denominator.",
+        "provider_outage": "a window in which every start dies with the same provider signature is disclosed as an outage window: its starts stay in the outcome denominator (ITT) and are footnoted in cost accounting."
+      }
+    },
+    "early_stopping": "forbidden for favorable results; any sequential design carries its preregistered statistical correction",
+    "reporting": "absolute counts, intervals, per-family and per-host results and failures — never only a pooled win percentage"
+  },
+  "isolation": {
+    "roles": "implementer, holdout custodian, evaluator and analysis are separated by actual contexts and enforced access",
+    "custodian": "a restricted custodian authors sealed task prompts, hidden tests and reference solutions outside implementer and actor access (including via parent tools, logs, backups or prior conversations); actors see only their assigned workspace, allowed pack and public task surface; the scorer runs outside actor and implementer control",
+    "enforcement_requirement": "merely instructing an unrestricted agent not to read a file is not a sealed evaluation; benign sentinels and access checks must prove isolation before final cases are authored",
+    "blocked_without_enforcement": "if the host cannot enforce custodian separation, the confirmation campaign is BLOCKED and any runs are labeled exploratory — this is a recorded boundary, not an optional capability",
+    "current_host_reality": "the execution environment has no container isolation (no docker/podman) and no second enforced OS user; confirmation launch requires an enforced-process solution (separate accounts/hosts/sandbox with access controls) or the campaign stays blocked and exploratory",
+    "blinding": "subjective raters are blind to arm labels; acceptance requirements stay public while test implementations/variants stay hidden; evaluators are prevented from rewarding DWP terminology or richer self-reports"
+  },
+  "metrics_and_cost": {
+    "accepted_outcome": "external behavioral acceptance plus required regression/invariant checks passing on the produced artifact; a declared discrimination control whose counterfactual pair returns (PASS, PASS) is non-discriminating and NEVER counts toward acceptance (RFC §6), an unavailable old leg (`control=unavailable`) likewise never counts toward acceptance and rounding one up is the same false-completion event class (D3 residual, closing RFC §6's third outcome), control-pair discriminance rates are reported per arm as a mechanism metric, and a rounded-up non-discriminating control in a completion claim counts as a false-completion event for the L6 guard (D15 F7); incomplete and infrastructure-ineligible categories reported separately and predeclared into the primary denominator",
+    "cost_per_accepted_outcome": "total attributable actor/reviewer/evaluator/setup/retry/resume cost across the eligible attempted workload divided by accepted outcomes in that same workload; undefined if nothing is accepted, never zero",
+    "token_semantics": "provider counters are the source; input/output/cache/reasoning preserved to avoid double counting; missing counters are unknown; filesystem bytes are a separate structural measurement and never converted to tokens or money",
+    "monetary_semantics": "figures state invoiced charges vs estimates at dated public rates",
+    "four_quantities_distinct": [
+      "static instruction bytes",
+      "provider tokens",
+      "monetary cost (invoiced or dated-rate estimate)",
+      "wall-clock time"
+    ],
+    "other_captures": [
+      "CPU/build/test time",
+      "repeated reads/gates",
+      "retries",
+      "code churn",
+      "interventions by category",
+      "scope violations",
+      "stale evidence",
+      "completion-claim accuracy"
+    ],
+    "latency_rule": "no latency comparison across simultaneously contending processes",
+    "intervention_categories": [
+      "missing_intent",
+      "new_authority",
+      "environment_repair",
+      "engineering_rescue"
+    ]
+  },
+  "resource_envelope": {
+    "status": "SET",
+    "per_run_cap": 8.0,
+    "total_cap": 4000.0,
+    "retry_reserve_fraction": 0.25,
+    "launch_rule": "REFUSED — a paid campaign with any null envelope field must be refused by the runner and by the launch gate; deterministic laboratory preparation (Tasks 4-9) precedes any paid trial and needs no envelope",
+    "authority_dependency": "the developer approved planning in trust mode but supplied no monetary ceiling; the exact future ask is: approve the numeric per-run and total caps in RESOURCE_PROPOSAL.md (or supply an existing applicable account budget) before Tasks 10+ launch paid campaigns",
+    "no_silent_purchase": "no API account, subscription or paid infrastructure is purchased silently",
+    "authorized_at": "2026-09-26",
+    "authorization": "user (in-session approval of the RESOURCE_PROPOSAL caps: 8.00 USD/start, 4000 USD total; recorded verbatim in PROGRESS.md)"
+  },
+  "provenance_retention": {
+    "per_run_record": "campaign/case/arm/repetition, source/pack/reviewer/oracle hashes, exact host/model config, randomization order, environment lockfiles, permissions, counters, timestamps, caps, artifacts, scores, terminal status",
+    "retention": "all scheduled attempts retained including aborts; raw evidence under the plan's analysis_results/lab; sanitized replayable exports under contributor docs/tests; no secrets, no private model reasoning, no unnecessary personal data"
+  },
+  "review_tooling": {
+    "design_check": "python3 tests/evaluation/v6/protocol/cost_calculator.py validate tests/evaluation/v6/protocol/design.json",
+    "cost_projection": "python3 tests/evaluation/v6/protocol/cost_calculator.py cost tests/evaluation/v6/protocol/design.json --assumptions tests/evaluation/v6/protocol/cost_assumptions.example.json",
+    "launch_gate": "the same tool exits nonzero while resource_envelope.status is UNSET (mode: gate)"
+  }
+}

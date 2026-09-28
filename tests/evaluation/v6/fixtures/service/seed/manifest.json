@@ -1,0 +1,20 @@
+{
+  "family": "service",
+  "role": "immutable initial fixture for the v6 evaluation lab (seed source; the lab driver pins and stages it)",
+  "provenance": {
+    "origin": "authored in-repo for this fixture (no upstream template exists for a stdlib-only stateful service)",
+    "toolchain": "Python 3.9+ standard library only (http.server, sqlite3, unittest); verified on the host CPython 3.13.5",
+    "license": "MIT (this repository)",
+    "data_store": "per-run disposable SQLite file via LEDGER_DB; never shared, never external",
+    "pinned_at": "2026-09-26"
+  },
+  "overlays": [],
+  "commands": {
+    "install": "python3 -c \"print('stdlib-only service: no dependencies to install')\"",
+    "build": "python3 -m compileall -q server.py tests",
+    "check": "python3 -m unittest discover -s tests -v"
+  },
+  "check_contract": "the behavioral suite must pass on the pristine seed and fail when a stateful contract regresses: idempotent replay (exactly one record, original response), overdraft refused and recording nothing, 401 on unauthorized admin reads, stable keyset pagination, barrier-aligned concurrent duplicate delivery creating exactly one record, compatible schema evolution",
+  "cases": "../CASES.md",
+  "notes": "Fixture-local documentation only; shared integration (Task 8) owns cross-fixture indexes. Sealed variants are custodian-authored outside implementer access."
+}

@@ -32,6 +32,11 @@ this tiering removed.)
   t0 set — the resume protocol (Step 2) and the handoff rules are inline
   below.
 - **Conditional — read only when the trigger fires:**
+  - [`v6.md`](v6.md) (this directory) — read only when Step 2.0 detects a
+    v6 plan: the v6 recovery ladder, cross-agent handoff and migration
+    boundary. A v5 plan never reads it.
+  - [`../spec/V6_LIFECYCLE.md`](../spec/V6_LIFECYCLE.md) — read only
+    when a migration or cross-agent question goes beyond `v6.md` (§8–§9).
   - [`../execute/SKILL.md`](../execute/SKILL.md) — read only when Step 5
     resumes into the execution loop: the contract every resumed task runs
     under (gate selection from the actual surface, repair/stop, task-local
@@ -49,7 +54,7 @@ this tiering removed.)
     classify it (resume rules and scenarios).
   - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
     plan folder cannot be located or the `DWP_DIR` override is in play
-    (Steps 0–1 already inline `.dwp/plans/PLAN_{name}/`).
+    (Steps 0–1 already inline `.dwp/plans/<plan>/`).
   - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
     only when something is already wrong (discovery failure, stale
     installation, missing test command, unsupported host capability,
@@ -66,13 +71,15 @@ this tiering removed.)
 ## Parameter Support
 
 - `/dwp-resume {plan_name}` — resume directly (skip the menu).
-- `/dwp-resume latest` — resume the most recently modified plan.
+- `/dwp-resume latest` — resume the highest numbered plan, or the most
+  recently modified legacy plan when no numbered plan exists.
 - `/dwp-resume {plan_name} trust` (or `auto`, or "run to the end") — resume
   unattended: no questions between tasks (`../execute/SKILL.md` *Autonomous mode*).
 - No parameter → interactive selection (Step 1).
 
-Normalize the `PLAN_` prefix; validate `.dwp/plans/PLAN_{name}/` and its
-`README.md`. If not found, show available plans and ask the user to choose. A
+Resolve the full name, ID, unique slug, or `latest` with `../shared/plan_paths.py
+--plans-dir <dwp_dir>/plans resolve <selector>`. Validate its folder and
+`README.md`; if absent, show available plans. A
 folder without `README.md`, or whose README says `Plan Status: materializing`,
 is a partial materialization (its `manifest.json` records the intended shape) —
 point to `refine`; never execute it.
@@ -105,8 +112,9 @@ recorded, and only three things reopen one: the developer asks, `refine` left a
 skip that post-interruption smoke test, which validates the **world** (the
 cheapest standing check) before anything is built on it; repeat a commit, gate,
 skill authoring, report or other external action the evidence shows already
-happened; migrate a legacy plan (that is `refine migrate`, on explicit request
-only); push without instruction; or write outside the repo checkout and
+happened; migrate a legacy plan (that is the refine migration surface —
+`../shared/migrate_v6.py` on explicit request, preview first); push
+without instruction; or write outside the repo checkout and
 `.dwp/`.
 
 ## Workflow
@@ -117,11 +125,15 @@ README under `.dwp/plans/`, note `trust`/`auto`, and skip to Step 2. Otherwise
 go to Step 1.
 
 ### Step 1 — Identify Plan
-List `PLAN_*` folders in `.dwp/plans/`; mark the most recently modified as
-`latest`. Present a numbered menu (number / name / `latest`) and validate the
-choice.
+List plans with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list`.
+Present an ID / name / `latest` menu; validate with `resolve`.
 
 ### Step 2 — Assess Current State (CRITICAL)
+
+**Step 2.0 — Detect plan generation (v6).** A manifest contract pointer,
+`contract.json` or a `contracts/` chain means **v6**: read `v6.md` and run
+its recovery ladder (the journal is the truth) instead of the reconcile
+below. A v5 folder continues as written — never migrate it here.
 
 This step implements the **DWP Resume Protocol**
 (`../spec/DWP_SPECIFICATION.md` §5.3) — the named ritual any resuming session
@@ -207,7 +219,7 @@ Report, compactly: the plan's standard and pre-approval; completed `[x]` /
 pending `[ ]` counts; the task to resume from and its interruption boundary
 (Step 2.5) with the single next action; git state (uncommitted changes, recent
 commits, last commit); reconciliation or takeover findings; any blocker. Location:
-`.dwp/plans/PLAN_{name}/`.
+`.dwp/plans/<plan>/`.
 
 ### Step 4 — Handle Partial Work
 Apply the Step 2.5 decision. Interactive: if the partial work is unclear or
@@ -271,6 +283,9 @@ model, or another harness resumes from these files with Step 2.
 
 - **Same workspace:** the handoff artifacts above are already on disk; Step 2
   is the whole recovery.
+- **v6 plans:** the handoff artifact is the ledger export bundle — see
+  `v6.md` *Cross-agent and cold resume* (a missing `state.json` on the
+  receiving host is expected, not an incident).
 - **New machine / fresh clone:** `.dwp/` is gitignored by design, so a fresh
   `git clone` carries **no** plan data — report that honestly, never
   fabricate progress from commits. Transfer is explicit and manual

@@ -1,0 +1,29 @@
+{
+  "schema": "deepworkplan-skill/evaluation/v6/partition/1",
+  "partition": "development",
+  "visibility": "public — these cases, their seeds and their oracles are visible to every arm and to the v6 implementer",
+  "families": {
+    "astro": {
+      "cases_file": "../fixtures/astro/CASES.md",
+      "public_cases": ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6", "AC-7", "AC-8"],
+      "calibrated": [
+        { "case": "AC-1", "oracle": "oracles.oracles:score_astro_ac1", "reference": "oracles/reference/astro_ac1_reading_time.py" }
+      ]
+    },
+    "service": {
+      "cases_file": "../fixtures/service/CASES.md",
+      "public_cases": ["SC-1", "SC-2", "SC-3", "SC-4", "SC-5", "SC-6", "SC-7", "SC-8", "SC-9"],
+      "calibrated": [
+        { "case": "SC-9", "oracle": "oracles.oracles:score_service_sc9", "reference": "oracles/reference/service_sc9_event_lookup.py" }
+      ]
+    },
+    "legacy": {
+      "cases_file": "../fixtures/legacy/CASES.md",
+      "public_cases": ["LC-1", "LC-2", "LC-3", "LC-4", "LC-5", "LC-6"],
+      "calibrated": [
+        { "case": "LC-3", "oracle": "oracles.oracles:score_legacy_lc3", "reference": "oracles/reference/legacy_lc3_k1_fix.py" }
+      ]
+    }
+  },
+  "notes": "One calibrated case per family proves the oracle framework end to end; remaining public cases gain calibrated oracles the same way before any campaign uses them. Sealed heldout cases are NOT here — see sealed.json."
+}

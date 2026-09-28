@@ -19,7 +19,7 @@ Every Dockerfile, regardless of language:
    - **GitHub CLI (`gh`)** — via `apt` on Debian/Ubuntu bases (`apt install
      gh` from the GitHub CLI apt repo) or `brew install gh`. Pin the version
      in the Dockerfile when reproducibility matters.
-   - **Dailybot CLI** — via `pip install 'dailybot-cli>=3.7.0'` (preferred
+   - **Dailybot CLI** — via `pip install 'dailybot-cli>=3.9.0'` (preferred
      when Python is already in the image), or `brew install
      dailybothq/tap/dailybot`, or the Dailybot skill's own verified installer
      flow documented at
