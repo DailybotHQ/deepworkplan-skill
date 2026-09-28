@@ -68,7 +68,12 @@ Guarantees also covered by fixtures:
 
 ## Runtime self-containment
 
-Plan verification requires **Python 3.9+**, using only its standard library.
+Plan creation now requires **Python 3.9+** for numbered folder allocation;
+plan selection by ID, slug, or `latest` uses the same standard-library helper.
+The allocator uses POSIX file locking (`fcntl`) so concurrent creators cannot
+claim the same ID; it requires a POSIX Python environment such as macOS,
+Linux or WSL.
+Plan verification also requires Python 3.9+, using only its standard library.
 The shell entry point returns `2` with `UNVERIFIED` when Python is missing or
 too old, so a CI gate cannot accept an unchecked plan. Structural failures
 return `1`; fully checked structural success returns `0`. Repository-only

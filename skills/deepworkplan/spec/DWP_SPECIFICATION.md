@@ -114,7 +114,7 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 | Term | Definition |
 |------|-----------|
-| **Plan** | A directory of markdown files specifying an objective and its tasks. Named `PLAN_{snake_case_name}/`. |
+| **Plan** | A directory of markdown files specifying an objective and its tasks. Newly authored plans are named `PLAN_<id>_<snake_case_name>/`; earlier names remain valid. |
 | **Task** | An atomic unit of work, defined in `{N}.task_{title}.md`. |
 | **Lite plan** | An executable plan whose compact task records live in `README.md`; it carries the normal state, validation and Final Review contract. |
 | **Full plan** | An executable plan whose task records live in individual task files; a Lite plan may promote to this representation without losing history. |
@@ -134,7 +134,7 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
   ```
   .dwp/
-  └── plans/      ← PLAN_{name}/ directories (Lite and Full alike)
+  └── plans/      ← PLAN_001_{name}/, PLAN_002_{name}/, ... (Lite and Full)
   ```
 
 - Implementations **MUST NOT** write a `.dwp/drafts/` directory. It was removed
@@ -146,7 +146,10 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 - The legacy `.agent_commands/agent_deep_work_plans/results/` tree **MUST NOT** be
   used by v2 plans. On migration, existing plans **MUST** be relocated or archived,
   and **MUST NOT** be blind-deleted (`ORCHESTRATOR_MANIFEST.md` key decision).
-- A plan **MUST** be located at `.dwp/plans/PLAN_{name}/`.
+- A plan **MUST** be located directly under `.dwp/plans/`. Newly created plans
+  **MUST** use `PLAN_<id>_<name>/`, with an increasing ID zero-padded to at
+  least three digits (`PLAN_001_...`). Existing unnumbered plan paths remain
+  valid and **MUST NOT** be renamed during this change.
 
 > **Divergence from v1.** v1's normative spec mandated
 > `.agent_commands/agent_deep_work_plans/results/plans/PLAN_{name}/` even though the
@@ -184,13 +187,13 @@ tasks, validation selection per §5, proportional-rigor tier per §11), and then
 materializes according to the mode the developer chose:
 
 - **Guided mode (default).** The flow **MUST** materialize the plan folder
-  `.dwp/plans/PLAN_{name}/` as a ready Lite plan and present **it** for review,
+  `.dwp/plans/<plan>/` as a ready Lite plan and present **it** for review,
   with the format recommendation and the signals behind it. It carries the goal,
   context, variables, task records, archetype and tier, so the developer can
   approve, promote, revise or stop in one pass. Approval stays `pending` until
   they choose; a ready plan is not an approved one.
 - **Trust mode (`trust` / `auto`).** The flow **MUST** materialize
-  `.dwp/plans/PLAN_{name}/` directly and choose its representation, because
+  `.dwp/plans/<plan>/` directly and choose its representation, because
   the developer has waived the intermediate review. The requirements analysis,
   dependency ordering, and a **plan-quality check** (numbering, links, every task
   carrying acceptance criteria and a validation gate, the Final Review present)
@@ -229,7 +232,7 @@ the only output of `create`.
 A conformant plan directory **MUST** contain:
 
 ```text
-.dwp/plans/PLAN_{name}/
+.dwp/plans/<plan>/
 ├── README.md                              ← overview, task list, rules, status (source of truth)
 ├── PROMPTS.md                             ← copy-paste execute / resume / status prompts
 ├── PROGRESS.md                            ← running narrative, one entry per completed task
@@ -251,7 +254,15 @@ mandatory Final Review. See `LITE_PLANS.md` for the authoritative layouts.
 > `{N-2}.task_security_review.md`, `{N-1}.task_skills_agents_discovery.md`, and
 > `{N}.task_executive_report.md` instead; that shape remains conformant (§6.5).
 
-- Plan names **MUST** follow `PLAN_{snake_case_name}` (lowercase, underscore-separated, 2–5 words).
+- New plan names **MUST** follow `PLAN_<id>_{snake_case_name}` (an
+  incrementing ID padded to at least three digits, then 2–5 lowercase,
+  underscore-separated words; v5 plans use at most four slug words because
+  their frozen schema counts the ID as a word). Older `PLAN_{snake_case_name}`
+  names remain valid for their recorded generations. The ID is allocated once by
+  `shared/plan_paths.py`, persists across deletion, and is part of the plan's
+  immutable identity. All selection flows accept the full name, ID, or an
+  unambiguous slug; `latest` resolves to the highest ID when numbered plans
+  exist. The layout stays flat under `.dwp/plans/`.
 - `README.md`, `PROMPTS.md`, `PROGRESS.md`, and `analysis_results/` **MUST** all be present; `manifest.json` and `analysis_results/PLAN_ANALYSIS.md` **MUST** be present in a plan authored under this version (`PLAN_STATE.md` §2; §3 above).
 - **A plan's temporary and analysis output MUST be written under that plan's own
   `analysis_results/` directory.** It **MUST NOT** be written to the repository
@@ -580,7 +591,7 @@ After passing validation and before advancing, the agent **MUST**, in order:
 (1) fill the task's Completion & Log with no placeholders; (2) mark the task
 `[x]` in the plan README and increment the `Plan Status` count; (3) add a 3–5
 bullet entry to `PROGRESS.md`; (4) commit (where the plan commits) with
-`{type}({scope}): {description} - Task {N} of PLAN_{name}`; (6) where the plan
+`{type}({scope}): {description} - Task {N} of {PLAN_NAME}`; (6) where the plan
 carries the state layer (§10), rewrite `state.json` atomically — task `completed`,
 gate records, outcome record, commit hash. The agent **MUST** then verify the
 README mark, the status count, the filled log, the PROGRESS entry, and a clean git
@@ -851,7 +862,7 @@ hub archetype. A repository **MAY** use it; an individual repo typically does no
   (so each child inherits global decisions without re-deriving them).
 - Each target sub-repo **MUST** have a dedicated `create_child_dwp` task in the
   parent plan that: navigates into the sub-repo, reads that sub-repo's `AGENTS.md`,
-  creates `repositories/{repo}/.dwp/plans/PLAN_{child}/` with all required files,
+  creates `repositories/{repo}/.dwp/plans/{CHILD_PLAN_NAME}/` with all required files, using the child repo's allocated ID,
   and ensures the child's tasks use **that sub-repo's** validation commands.
 - Child DWPs **MUST** reference `ORCHESTRATOR_MANIFEST.md` and **MUST** follow this
   specification independently. They **MAY** be created and executed in
@@ -958,7 +969,7 @@ candidate against all plan artifacts before writing state, verifies the actual
 files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
 an invented passing gate for this invocation to the candidate it is validating.
 The receipt is external evidence, not its own prerequisite. Run
-`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+`bash ../verify/conformance.sh --plan <plan>` on the actual artifacts next.
 
 An interrupted publication leaves `.finalizing.json`; normal verification fails
 until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR

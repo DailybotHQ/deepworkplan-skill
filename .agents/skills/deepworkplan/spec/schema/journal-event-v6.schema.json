@@ -46,7 +46,8 @@
     },
     "plan": {
       "type": "string",
-      "pattern": "^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$"
+      "description": "Plan folder name: optional monotonic numeric ID of at least three digits, followed by a 2–5-word lowercase snake_case slug; legacy unnumbered names remain valid.",
+      "pattern": "^PLAN_([0-9]{3,}_)?[a-z0-9]+(_[a-z0-9]+){1,4}$"
     },
     "contract_id": {
       "type": "string",

@@ -21,7 +21,7 @@ on explicit request — migrate a legacy plan to the current standard).
 ## Shared resources (read these)
 
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans at `.dwp/plans/`,
-  plans at `.dwp/plans/PLAN_{name}/`.
+  plans at `.dwp/plans/<plan>/`.
 - [`../shared/context.sh`](../shared/context.sh) — resolve `dwp_dir`.
 - **Guide (essential — read for this flow):** [`../guide/authoring.md`](../guide/authoring.md) (plan README §4, task-file anatomy §5 incl. the Touched Surface, mandatory elements) and [`../guide/structure.md`](../guide/structure.md) (§1–§2 naming and folders).
 - **Guide (conditional — read only when the trigger fires):** [`../guide/orchestrator.md`](../guide/orchestrator.md) / [`../guide/team-agents.md`](../guide/team-agents.md) only for plans that use them; [`../guide/execution.md`](../guide/execution.md) §6.1 when editing the Final Review (or a legacy plan's final tasks). Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
@@ -43,7 +43,7 @@ on explicit request — migrate a legacy plan to the current standard).
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`.
 
 **Writes:** edits confined to the target plan's files under
-`.dwp/plans/PLAN_{name}/` — task content, ordering, the README's task list and
+`.dwp/plans/<plan>/` — task content, ordering, the README's task list and
 counts, `PROGRESS.md`, and the **regenerated** `state.json` — kept mutually
 consistent. Deleting a completed task, dropping the Final Review (or a legacy
 plan's final tasks), or invalidating completed evidence requires explicit
@@ -76,8 +76,10 @@ selected plan is legacy.
 
 ### Step 3 — Select and Modify a Final Plan
 
-**3.1 Select.** If not specified, list `PLAN_*` folders in `.dwp/plans/`; pick by
-number, name, or `latest`. Normalize the `PLAN_` prefix.
+**3.1 Select.** If not specified, list plans with `../shared/plan_paths.py
+--plans-dir <dwp_dir>/plans list`. Resolve a full name, numeric ID, unique slug,
+or `latest` with the same helper's `resolve` command. `latest` is the highest
+numbered plan when one exists, or the most recently modified legacy plan.
 
 **3.2 Read and classify.** Read the plan README, the task files, `PROGRESS.md`,
 and — when present — `manifest.json` and `state.json`. Establish:
@@ -124,7 +126,7 @@ and — when present — `manifest.json` and `state.json`. Establish:
   in-progress checkpoint.
 
 **3.3 Show current state** — objective, standard (new / legacy), the task list
-with status, and the location `.dwp/plans/PLAN_{name}/`.
+with status, and the location `.dwp/plans/<plan>/`.
 
 **3.4 Choose modification:** Add task(s) / Edit task / Split task / Reorganize /
 Update README / View task details / Done.

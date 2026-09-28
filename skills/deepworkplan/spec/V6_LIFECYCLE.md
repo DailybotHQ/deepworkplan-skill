@@ -22,6 +22,11 @@ A plan folder under `.dwp/plans/` is **v6** if and only if it carries a
 by skill version alone: an installed v6 pack can hold v5 plans, and a v5
 pack can encounter a v6 plan folder copied in.
 
+New plan folders use the forward-only `PLAN_<id>_<slug>` naming policy in
+`shared/dwp-paths.md`. That policy applies at creation and does not classify a
+plan's generation. Existing unnumbered v5 or v6 folders remain valid in their
+original locations; no lifecycle flow renames them.
+
 - The v6 flows (`create/v6.md`, `execute/v6.md`) MUST route on this
   detection and nothing else.
 - A v1/v2/v5 plan MUST keep its recorded lifecycle (RFC §9.2); no flow

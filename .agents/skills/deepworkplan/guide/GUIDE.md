@@ -54,7 +54,7 @@ names its essential files and its conditional triggers.
 | ## 1. Top-Level Folder Structure | [`structure.md`](./structure.md) |
 | ## 2. Naming Conventions | [`structure.md`](./structure.md) |
 | ## 3. Purpose of This System | [`structure.md`](./structure.md) |
-| ## 4. Plan-Level README Structure (`PLAN_{plan_title}/README.md`) | [`authoring.md`](./authoring.md) |
+| ## 4. Plan-Level README Structure (`{PLAN_NAME}/README.md`) | [`authoring.md`](./authoring.md) |
 | ## 5. Task File Structure (`N.task_{task_title}.md`) | [`authoring.md`](./authoring.md) |
 | ## 6. Agent Execution Rules (Critical Behavior) | [`execution.md`](./execution.md) |
 | ## 6.1. Mandatory Final Tasks → now **6.1. Final Review, Task-Local Skills and the Optional Report** (spec 2.3.0 lifecycle) | [`execution.md`](./execution.md) |
@@ -82,7 +82,9 @@ through this table.
 
 This guide defines how an agent should:
 
-- Create deep-work plans under `.dwp/plans/PLAN_{plan_title}/`
+- Create deep-work plans under `.dwp/plans/{PLAN_NAME}/`, where new
+  `{PLAN_NAME}` values come from `shared/plan_paths.py` (`PLAN_001_<slug>`,
+  `PLAN_002_<slug>`, ...). Existing unnumbered plans keep their names.
 - Split work into ordered, single-focus task files
 - Execute tasks sequentially, with strong validation and logging
 - Resume interrupted plans without duplicating work

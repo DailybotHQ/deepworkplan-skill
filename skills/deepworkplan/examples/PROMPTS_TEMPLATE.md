@@ -11,7 +11,9 @@ This file contains **copy-paste ready prompts** for working with this specific p
 **When generating PROMPTS.md for a new plan:**
 
 1. **Use this template** as the base structure
-2. **Replace all instances of `{PLAN_NAME}`** with the actual plan name (e.g., `PLAN_EXAMPLE_document_domain_app`)
+2. **Replace all instances of `{PLAN_NAME}`** with the actual allocated plan
+   basename (e.g., `PLAN_001_document_domain_app`). For an existing unnumbered
+   plan, use its unchanged basename.
 3. **Reference the canonical examples** in the skill's `examples/` folder and the
    command sub-skills:
    - See `examples/CREATE_PLAN.md` for create prompt patterns

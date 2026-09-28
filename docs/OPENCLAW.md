@@ -49,7 +49,8 @@ dependency. Leave it off if you don't use Dailybot.
 
 OpenClaw's own docs note that skills are not designed as long-running
 multi-step workflows. That is exactly the gap DeepWorkPlan fills: the durable
-multi-step procedure lives in the **plan** (`.dwp/plans/PLAN_{name}/`), and
+multi-step procedure lives in the **plan** (`.dwp/plans/PLAN_<id>_<name>/`
+for new plans; older names stay in place), and
 OpenClaw's scheduling primitives drive its continuation. The mapping:
 
 | OpenClaw primitive | DWP role |

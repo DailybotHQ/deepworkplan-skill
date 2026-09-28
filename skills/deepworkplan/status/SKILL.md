@@ -17,13 +17,13 @@ modifying anything**, and without loading the whole plan.
 
 - [`../shared/context.sh`](../shared/context.sh) — resolve `dwp_dir`.
 - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — plans at
-  `.dwp/plans/PLAN_{name}/`.
+  `.dwp/plans/<plan>/`.
 - **Guide (essential — read for this flow):** none. Status is a read-only report; it does not load the methodology guide.
 
 ## Parameter Support
 
 - `/dwp-status {plan_name}` — check a specific plan.
-- `/dwp-status latest` — check the most recently modified plan.
+- `/dwp-status latest` — check the highest numbered plan, or the most recently modified legacy plan.
 - `/dwp-status all` — check all plans.
 - No parameter → interactive scope selection (Step 1).
 
@@ -55,14 +55,21 @@ silently.
 ## Workflow
 
 ### Step 0 — Check for Parameters
-`all` → scope "all", skip to Step 2. `latest` → most recent plan, scope "single",
-skip to Step 2. Otherwise normalize the name, validate, scope "single", skip to
-Step 2. No parameter → Step 1.
+`all` → scope "all", skip to Step 2. Otherwise resolve the supplied full name,
+ID, unique slug or `latest` with `../shared/plan_paths.py --plans-dir
+<dwp_dir>/plans resolve <selector>`, set scope "single", then go to Step 2.
+No parameter → Step 1.
 
 ### Step 1 — Ask for Scope
-List `PLAN_*` folders in `.dwp/plans/`; mark the most recently modified as
-`latest`. Offer: a single plan (from a numbered list), all plans, or `latest`.
-Accept a number, name, `all`, or `latest`.
+Use `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list` to list plans;
+the numbered folders appear in numeric order. `latest` is the highest plan ID
+when numbered plans exist, or the most recently modified legacy plan otherwise.
+Offer: a single plan (by ID or name), all plans, or `latest`.
+Accept an ID, name, `all`, or `latest`.
+
+Resolve a single selection with `../shared/plan_paths.py --plans-dir
+<dwp_dir>/plans resolve <selector>`; accept full names, IDs and unique slugs.
+If a slug is ambiguous, request the full name or ID.
 
 ### Step 2 — Gather Status Information (compact projection first)
 **v6 plans first:** a plan folder with a `manifest.json` contract pointer,
@@ -105,8 +112,8 @@ For each (non-v6) plan:
 
 ### Step 3 — Generate Status Report
 
-**Single plan:** header with `Plan Status: PLAN_{name}` and location
-`.dwp/plans/PLAN_{name}/`; standard (and whether pre-approved for unattended
+**Single plan:** header with the resolved plan basename and its actual location;
+standard (and whether pre-approved for unattended
 execution); goal; progress (total / completed / pending / %); completed tasks;
 pending tasks; current status (last completed, next task, checkpoint note,
 uncommitted work, recent commits); **blocked** (reason, since, needs) if set;
@@ -123,8 +130,8 @@ uncommitted changes, full last-task completion log, the gate records of one
 task, any blockers.
 
 ### Step 5 — Quick Actions
-Suggest: resume (`/dwp-resume PLAN_{name}`), execute (`/dwp-execute PLAN_{name}`),
-refine (`/dwp-refine plan PLAN_{name}`), or open a specific task file.
+Suggest: resume (`/dwp-resume <plan>`), execute (`/dwp-execute <plan>`),
+refine (`/dwp-refine plan <plan>`), or open a specific task file.
 
 ## Status Classifications
 Not started (all `[ ]`, no commits) · In progress (mixed, recent activity) ·

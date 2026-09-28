@@ -195,12 +195,22 @@ repo"* or *"create a plan"*, it simply reads the relevant `SKILL.md` and acts:
   `.claude → .agents` / `.cursor → .agents` symlinks. It's non-destructive and idempotent, and it adds
   `.dwp/` to your `.gitignore`.
 - **Plans** land under a gitignored `.dwp/` directory at the repo root
-  (`.dwp/plans/PLAN_<slug>/`), overridable via the `DWP_DIR`
+  (`.dwp/plans/PLAN_<id>_<slug>/` for new plans; older names remain valid),
+  overridable via the `DWP_DIR`
   environment variable. Because that directory is ignored, a fresh clone has
   no plan data: moving a plan to a new machine is an explicit transfer of the
   whole plan folder (see
   [`../skills/deepworkplan/shared/dwp-paths.md`](../skills/deepworkplan/shared/dwp-paths.md),
   "Workspace persistence and transfer").
+
+New plans receive sequential, three-digit-minimum names such as
+`PLAN_001_improve_release_docs/`. The sequence is local to each `.dwp/plans/`
+directory and persists in `.next-plan-id`; removing a plan does not reuse its
+ID. Existing unnumbered plans are left at their original paths. No migration
+or rename is needed: execute, resume, status, refine and verify can still
+resolve them by full name, and `latest` selects the highest numbered plan when
+one exists. New v5 slugs use 2–4 words because the frozen v5 schemas count
+the ID as a word; v6 slugs use 2–5.
 
 Onboarding also reconciles compact **working principles** inline in
 `AGENTS.md`: agents should investigate before asking, make routine decisions

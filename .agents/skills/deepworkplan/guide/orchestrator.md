@@ -86,9 +86,9 @@ An orchestrator plan's README includes a **Child DWP Plans** section that tracks
 
 | # | Repository | Child Plan | Status | Depends On |
 |---|-----------|-----------|--------|-----------|
-| 1 | api-services | PLAN_{feature}_api | [ ] Created / [ ] Executed | — |
-| 2 | web-app | PLAN_{feature}_web | [ ] Created / [ ] Executed | Child #1 |
-| 3 | chatbot-functions | PLAN_{feature}_chatbot | [ ] Created / [ ] Executed | Child #1 |
+| 1 | api-services | pending: {feature}_api | [ ] Created / [ ] Executed | — |
+| 2 | web-app | pending: {feature}_web | [ ] Created / [ ] Executed | Child #1 |
+| 3 | chatbot-functions | pending: {feature}_chatbot | [ ] Created / [ ] Executed | Child #1 |
 
 ### Execution Mode (pick one — see §13.6 for the selection algorithm)
 - [ ] **Contract-Parallel** (recommended default): children share a frozen design contract (from orchestrator design tasks) but don't need each other's runtime code; hand off concurrently, register `DONE`s as they arrive.
@@ -99,6 +99,10 @@ An orchestrator plan's README includes a **Child DWP Plans** section that tracks
 - Child #2 (web-app) depends on Child #1 (api-services) — API endpoints must exist before web views
 - Child #3 (chatbot-functions) depends on Child #1 (api-services) — API must be ready
 ```
+
+Replace each `pending` slug with the child plan's allocated full basename
+(`PLAN_001_<slug>`, etc.) when that child is created. Each repository has its
+own counter; parent and child IDs do not need to match.
 
 **Status tracking:**
 - `[ ] Created` → child DWP plan has been generated in the sub-repo
@@ -203,9 +207,10 @@ If the target repo does NOT have the DeepWorkPlan skill installed:
 
 #### Step 4: Create the child DWP plan
 
-Create the plan at:
+Allocate the child plan in the target repository with `shared/plan_paths.py`
+and create it at the returned path:
 ```
-repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/
+repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/
 ```
 
 Create all required files:
@@ -216,7 +221,7 @@ Create all required files:
   - Global Guidelines (from the repo's AGENTS.md)
   - Task List with `[ ]` checkboxes
   - Execution Rules
-  - Parent plan reference: `> This is a child DWP created by orchestrator plan PLAN_{parent_name} in the Core Hub.`
+  - Parent plan reference: `> This is a child DWP created by orchestrator plan {PARENT_PLAN_NAME} in the Core Hub.`
 
 - **Task files** — `N.task_{title}.md` for each task, using:
   - The target repo's validation commands (NOT the Core Hub's)
@@ -384,7 +389,7 @@ The manifest solves this by providing a single file that child DWPs reference fo
 Create `ORCHESTRATOR_MANIFEST.md` in the parent plan folder:
 
 ```text
-PLAN_{feature}/
+{PARENT_PLAN_NAME}/
 ├── README.md
 ├── ORCHESTRATOR_MANIFEST.md   ← Cross-repo context manifest
 ├── PROMPTS.md
@@ -396,7 +401,7 @@ PLAN_{feature}/
 #### Manifest Template
 
 ```markdown
-# Orchestrator Context Manifest: PLAN_{feature}
+# Orchestrator Context Manifest: {PARENT_PLAN_NAME}
 
 > This manifest provides cross-repo context for all child DWP plans.
 > It is created during orchestrator plan generation and updated during execution.
@@ -418,8 +423,8 @@ PLAN_{feature}/
 
 | # | Repository | Child Plan | Role | Status |
 |---|-----------|-----------|------|--------|
-| 1 | {repo1} | PLAN_{feature}_{repo1_short} | {role} | pending |
-| 2 | {repo2} | PLAN_{feature}_{repo2_short} | {role} | pending |
+| 1 | {repo1} | {CHILD_PLAN_NAME_1} | {role} | pending |
+| 2 | {repo2} | {CHILD_PLAN_NAME_2} | {role} | pending |
 
 ## 3. Dependency Graph
 
@@ -437,8 +442,8 @@ PLAN_{feature}/
 
 | Child Plan | Expected Outputs | Description |
 |-----------|-----------------|-------------|
-| PLAN_{feature}_{repo1_short} | `analysis_results/*` (name the exact files) | API endpoints, data models |
-| PLAN_{feature}_{repo2_short} | `analysis_results/*` (name the exact files) | UI components, integration |
+| {CHILD_PLAN_NAME_1} | `analysis_results/*` (name the exact files) | API endpoints, data models |
+| {CHILD_PLAN_NAME_2} | `analysis_results/*` (name the exact files) | UI components, integration |
 
 > **Name real files, not a report.** The Executive Report is **optional** under
 > DWP 2.3.0 — it is offered once at completion and generated only on request, so
@@ -452,15 +457,15 @@ PLAN_{feature}/
 
 | Child Plan | Required Inputs | Source |
 |-----------|----------------|--------|
-| PLAN_{feature}_{repo1_short} | (none — first in chain) | — |
-| PLAN_{feature}_{repo2_short} | Predecessor's declared output artifacts | PLAN_{feature}_{repo1_short} |
+| {CHILD_PLAN_NAME_1} | (none — first in chain) | — |
+| {CHILD_PLAN_NAME_2} | Predecessor's declared output artifacts | {CHILD_PLAN_NAME_1} |
 
 ## 5. Execution State (Updated During Execution)
 
 | # | Child Plan | Created | Executed | Declared Outputs Present | Key Outputs |
 |---|-----------|---------|----------|--------------------------|-------------|
-| 1 | PLAN_{feature}_{repo1_short} | [ ] | [ ] | — | — |
-| 2 | PLAN_{feature}_{repo2_short} | [ ] | [ ] | — | — |
+| 1 | {CHILD_PLAN_NAME_1} | [ ] | [ ] | — | — |
+| 2 | {CHILD_PLAN_NAME_2} | [ ] | [ ] | — | — |
 
 ### Completed Output References
 <!-- Updated after each child DWP completes execution -->
@@ -507,13 +512,13 @@ After a child DWP completes execution, its outputs are registered in the manifes
 
 | # | Child Plan | Created | Executed | Declared Outputs Present | Key Outputs |
 |---|-----------|---------|----------|--------------------------|-------------|
-| 1 | PLAN_feature_api | [x] | [x] | Available | API endpoints, data models |
-| 2 | PLAN_feature_web | [x] | [ ] | — | — |
+| 1 | PLAN_001_feature_api | [x] | [x] | Available | API endpoints, data models |
+| 2 | PLAN_001_feature_web | [x] | [ ] | — | — |
 
 ### Completed Output References
 
-#### Child #1: PLAN_feature_api (api-services)
-- **Declared outputs:** `repositories/api-services/.dwp/plans/PLAN_feature_api/analysis_results/API_CONTRACT.md`
+#### Child #1: PLAN_001_feature_api (api-services)
+- **Declared outputs:** `repositories/api-services/.dwp/plans/PLAN_001_feature_api/analysis_results/API_CONTRACT.md`
 - **Completion evidence:** that plan's `state.json` (`status: completed`) and its
   Final Review task log.
 - **Key outputs:**
@@ -568,7 +573,7 @@ When a child DWP has predecessors, its README must include a clear blocking noti
 
 | Predecessor | Status | Declared Output Path |
 |-------------|--------|----------------------|
-| PLAN_{feature}_{predecessor_short} | [ ] Ready | `repositories/{repo}/.dwp/plans/PLAN_{feature}_{predecessor_short}/analysis_results/{declared_artifact}` |
+| {PREDECESSOR_PLAN_NAME} | [ ] Ready | `repositories/{repo}/.dwp/plans/{PREDECESSOR_PLAN_NAME}/analysis_results/{declared_artifact}` |
 
 **Before starting execution:**
 1. Verify the predecessor plan is complete — its `state.json` reads `status: completed` — and that each declared output artifact above exists

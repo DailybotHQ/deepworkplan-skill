@@ -13,7 +13,10 @@ When you want Cursor, Claude, or another agent to **generate a new deep-work pla
 >   - `.dwp/plans/` (git-ignored)
 >   - Read `create/SKILL.md` and `guide/authoring.md` for the 2.3.0 plan and task contracts
 > - Then, create a new plan folder:
->   - `.dwp/plans/PLAN_{plan_title}/`
+>   - Allocate it once with `python3 shared/plan_paths.py --plans-dir
+>     <dwp_dir>/plans allocate <slug>` (use `--max-words 4` for v5 plans).
+>   - Use the returned `.dwp/plans/{PLAN_NAME}/` path and its basename in all
+>     plan records. Keep existing unnumbered plans at their original paths.
 > - Inside that plan folder:
 >   - **BEFORE creating any files**, read the skills/agents catalog at `.agents/docs/skills_agents_catalog.md` (also reachable via `.claude/` or `.cursor/` symlinks) to identify relevant skills and agents for the plan's tasks
 >   - Create `README.md` describing:
@@ -51,7 +54,7 @@ When a plan is ready and you want an agent to **run it**, say:
 
 > **Execution prompt to the agent:**
 >
-> - Use `.dwp/plans/PLAN_{plan_title}/README.md` as your source of truth.
+> - Use `.dwp/plans/{PLAN_NAME}/README.md` as your source of truth.
 > - Follow these rules:
 >   - Work on **one task at a time**.
 >   - Always pick the **first unchecked `[ ]` task** in the Task List.
@@ -86,7 +89,7 @@ When a plan is interrupted and you want to resume execution, use this prompt:
 
 > **Resume prompt to the agent:**
 >
-> RESUME the deep work plan at: `.dwp/plans/PLAN_{plan_title}/README.md`
+> RESUME the deep work plan at: `.dwp/plans/{PLAN_NAME}/README.md`
 >
 > **Resume Instructions:**
 >
@@ -233,7 +236,7 @@ provide the minimum handoff manifest and this prompt:
 
 > **Transfer resume prompt to the agent:**
 >
-> RESUME the deep work plan transferred to `.dwp/plans/PLAN_{plan_title}/`.
+> RESUME the deep work plan transferred to `.dwp/plans/{PLAN_NAME}/`.
 >
 > Handoff manifest provided:
 >

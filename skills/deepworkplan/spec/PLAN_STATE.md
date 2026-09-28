@@ -67,7 +67,7 @@ The RFC 2119 keywords (**MUST**, **MUST NOT**, **REQUIRED**, **SHOULD**,
 A plan using the state layer has this layout (extending `DWP_SPECIFICATION.md` §4):
 
 ```text
-.dwp/plans/PLAN_{name}/
+.dwp/plans/<plan>/
 ├── README.md            ← human source of truth (unchanged)
 ├── PROGRESS.md          ← narrative log (unchanged)
 ├── PROMPTS.md           ← unchanged
@@ -77,6 +77,12 @@ A plan using the state layer has this layout (extending `DWP_SPECIFICATION.md` �
 │   └── SKILLS_CANDIDATES.md ← task-local skills ledger (DWP_SPECIFICATION §6.2; markdown, not JSON)
 └── {N}.task_{...}.md
 ```
+
+Newly created folders use `PLAN_<id>_<slug>` (for example,
+`PLAN_001_payment_webhooks`); the ID is allocated by `shared/plan_paths.py`.
+The v5 manifest and state schemas are frozen, so new v5 slugs use 2–4 words
+after the numeric ID. Existing unnumbered folders keep their recorded names
+and stay in place. This naming policy does not rewrite any existing state.
 
 - `manifest.json` **MUST** be written exactly once, as the **first file** of the
   plan folder when the `create` flow materializes the plan — before any task

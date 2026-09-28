@@ -54,7 +54,7 @@ this tiering removed.)
     classify it (resume rules and scenarios).
   - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
     plan folder cannot be located or the `DWP_DIR` override is in play
-    (Steps 0–1 already inline `.dwp/plans/PLAN_{name}/`).
+    (Steps 0–1 already inline `.dwp/plans/<plan>/`).
   - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
     only when something is already wrong (discovery failure, stale
     installation, missing test command, unsupported host capability,
@@ -71,12 +71,15 @@ this tiering removed.)
 ## Parameter Support
 
 - `/dwp-resume {plan_name}` — resume directly (skip the menu).
-- `/dwp-resume latest` — resume the most recently modified plan.
+- `/dwp-resume latest` — resume the highest numbered plan, or the most
+  recently modified legacy plan when no numbered plan exists.
 - `/dwp-resume {plan_name} trust` (or `auto`, or "run to the end") — resume
   unattended: no questions between tasks (`../execute/SKILL.md` *Autonomous mode*).
 - No parameter → interactive selection (Step 1).
 
-Normalize the `PLAN_` prefix; validate `.dwp/plans/PLAN_{name}/` and its
+Resolve the selector with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans
+resolve <selector>` (full name, ID, unique slug, or `latest`). Validate the
+resolved folder and its
 `README.md`. If not found, show available plans and ask the user to choose. A
 folder without `README.md`, or whose README says `Plan Status: materializing`,
 is a partial materialization (its `manifest.json` records the intended shape) —
@@ -123,9 +126,11 @@ README under `.dwp/plans/`, note `trust`/`auto`, and skip to Step 2. Otherwise
 go to Step 1.
 
 ### Step 1 — Identify Plan
-List `PLAN_*` folders in `.dwp/plans/`; mark the most recently modified as
-`latest`. Present a numbered menu (number / name / `latest`) and validate the
-choice.
+Use `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list` to display
+numbered plans in numeric order and then legacy plans. `latest` selects the
+highest allocated ID when numbered plans exist, or the most recently modified
+legacy plan otherwise. Present a numbered menu (ID / name / `latest`) and
+validate the choice with `resolve`.
 
 ### Step 2 — Assess Current State (CRITICAL)
 
@@ -218,7 +223,7 @@ Report, compactly: the plan's standard and pre-approval; completed `[x]` /
 pending `[ ]` counts; the task to resume from and its interruption boundary
 (Step 2.5) with the single next action; git state (uncommitted changes, recent
 commits, last commit); reconciliation or takeover findings; any blocker. Location:
-`.dwp/plans/PLAN_{name}/`.
+`.dwp/plans/<plan>/`.
 
 ### Step 4 — Handle Partial Work
 Apply the Step 2.5 decision. Interactive: if the partial work is unclear or

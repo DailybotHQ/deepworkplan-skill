@@ -198,6 +198,7 @@ jobs:
                         skills/deepworkplan/shared/scheduler.py \
                         skills/deepworkplan/shared/outcomes.py \
                         skills/deepworkplan/shared/context_manifest.py \
+                        skills/deepworkplan/shared/plan_paths.py \
                         skills/deepworkplan/shared/resources.py \
                         skills/deepworkplan/shared/migrate_v6.py \
                         skills/deepworkplan/verify/plan_contract.py; do

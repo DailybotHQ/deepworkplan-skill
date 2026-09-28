@@ -1,13 +1,15 @@
 # A v6 Plan — Minimal Worked Example
 
-A v6 plan is **two authored artifacts + one guarded sequence**. This
+A v6 plan is **two authored artifacts + one guarded sequence**. Allocate the
+folder with `shared/plan_paths.py` before authoring; this example uses the
+first ID in a new repository. This
 example shows the smallest honest shape; the normative rules live in
 [`../spec/V6_CONTRACT.md`](../spec/V6_CONTRACT.md) (contract + journal)
 and [`../spec/V6_LIFECYCLE.md`](../spec/V6_LIFECYCLE.md) (detection,
 materialization, activation, amendments, coexistence).
 
 ```
-.dwp/plans/PLAN_ship_feature_x/
+.dwp/plans/PLAN_001_ship_feature_x/
 ├── README.md          # the human plan (what the approval digests)
 ├── 1.task_implement.md
 ├── manifest.json      # WRITTEN BY materialize — contract pointer
@@ -29,7 +31,7 @@ criterion an `AC-*` id.
 {
   "schema": "https://deepworkplan.com/schema/plan-contract/v6.json",
   "spec_version": "6.0.0",
-  "plan": "PLAN_ship_feature_x",
+  "plan": "PLAN_001_ship_feature_x",
   "revision": 1,
   "created_at": "2026-09-26T12:00:00Z",
   "title": "Ship feature X under the v6 contract",
@@ -93,10 +95,10 @@ Validate it before proposing:
 ## 3. Materialization (guarded — the helper writes, never your hands)
 
 ```bash
-python3 ../shared/ledger.py --plan .dwp/plans/PLAN_ship_feature_x \
+python3 ../shared/ledger.py --plan .dwp/plans/PLAN_001_ship_feature_x \
   materialize --contract draft.json --authority sergio \
   --mechanism plan_authorship
-# OK: materialized PLAN_ship_feature_x contract <cid> (manifest, contract,
+# OK: materialized PLAN_001_ship_feature_x contract <cid> (manifest, contract,
 #     approval seq 1)
 ```
 

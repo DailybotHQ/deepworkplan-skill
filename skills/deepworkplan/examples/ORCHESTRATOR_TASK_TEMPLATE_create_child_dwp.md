@@ -1,28 +1,32 @@
 # Task {N}: Create Child DWP — {Repository Name}
 
-> **Template for orchestrator plans.** Replace all `{placeholders}` when generating a real task file.
+> **Template for orchestrator plans.** Replace known placeholders when generating
+> a real task file. `{CHILD_PLAN_NAME}` is a runtime variable bound only after
+> the target repository allocates its next plan ID. Substitute that basename
+> when running commands and writing child records; do not edit approved parent
+> task markdown merely to fill in the ID.
 
 ## 1. Context
 
 **Plan Type:** Orchestrator — Child DWP Creation
 **Target Repository:** `repositories/{repo_name}/`
-**Child Plan Name:** `PLAN_{feature}_{repo_short}`
+**Child Plan Slug:** `{feature}_{repo_short}` (the full `{CHILD_PLAN_NAME}` is allocated during this task)
 
 This task creates a complete DWP plan inside `repositories/{repo_name}/` that implements the {repo_name}-specific portion of the overall feature. The child DWP will follow {repo_name}'s own AGENTS.md, validation commands, and conventions.
 
 ### Orchestrator Context
 
-- **Parent Plan:** PLAN_{parent_plan_name} (this plan, in Core Hub)
+- **Parent Plan:** {PARENT_PLAN_NAME} (this plan, in Core Hub)
 - **Feature:** {overall feature description}
 - **This repo's role:** {what this repo contributes — e.g., "CRUD API endpoints for user preferences"}
 - **Depends on:** {list child plans that must complete first, or "None — this is the first child DWP"}
 - **Depended on by:** {list child plans that depend on this one's outputs, or "None"}
-- **Manifest:** `.dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md` {or "Not used"}
+- **Manifest:** `.dwp/plans/{PARENT_PLAN_NAME}/ORCHESTRATOR_MANIFEST.md` {or "Not used"}
 
 ### Input Dependencies (from predecessors)
 
 {If this child has predecessors, list what outputs it expects from them:}
-- From PLAN_{feature}_{predecessor_short}: {the concrete artifacts that plan declared — e.g., "analysis_results/API_CONTRACT.md with endpoint definitions and data model schemas"}
+- From {PREDECESSOR_PLAN_NAME}: {the concrete artifacts that plan declared — e.g., "analysis_results/API_CONTRACT.md with endpoint definitions and data model schemas"}
 - {Or "None — this is the first child DWP in the dependency chain"}
 
 ### Output Declarations (for successors)
@@ -157,10 +161,11 @@ Based on this repo's role in the feature, break down the work into atomic tasks:
 
 ### Step 3: Create the child DWP plan
 
-Create the plan at:
+From the target repository, allocate the child folder once with `shared/plan_paths.py --plans-dir <dwp_dir>/plans allocate <slug>` (use `--max-words 4` for a v5 child). Bind `{CHILD_PLAN_NAME}` to the returned basename and create the plan at:
 ```
-repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/
+repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/
 ```
+The target repository owns the child ID. Never derive it from the parent ID, and never rename an existing child plan.
 
 Create all required files:
 
@@ -168,7 +173,7 @@ Create all required files:
 ```markdown
 # Plan: {Feature Title} — {Repo Name}
 
-> This is a child DWP created by orchestrator plan `PLAN_{parent_plan_name}` in the Core Hub.
+> This is a child DWP created by orchestrator plan `{PARENT_PLAN_NAME}` in the Core Hub.
 
 ## 1. Goal
 {Repo-specific goal}
@@ -191,12 +196,12 @@ Create all required files:
 
 ## 6. Orchestrator Context
 
-> This child DWP is part of orchestrator plan `PLAN_{parent_plan_name}` in the Core Hub.
+> This child DWP is part of orchestrator plan `{PARENT_PLAN_NAME}` in the Core Hub.
 
 ### Parent Plan Reference
-- **Parent Plan:** PLAN_{parent_plan_name}
-- **Parent Location:** `.dwp/plans/PLAN_{parent_plan_name}/` (in the Core Hub)
-- **Manifest:** `.dwp/plans/PLAN_{parent_plan_name}/ORCHESTRATOR_MANIFEST.md` (in the Core Hub)
+- **Parent Plan:** {PARENT_PLAN_NAME}
+- **Parent Location:** `.dwp/plans/{PARENT_PLAN_NAME}/` (in the Core Hub)
+- **Manifest:** `.dwp/plans/{PARENT_PLAN_NAME}/ORCHESTRATOR_MANIFEST.md` (in the Core Hub)
 - **This repo's role:** {what this repo contributes}
 - **Dependencies:** {which child plans must complete first}
 
@@ -222,7 +227,7 @@ Create all required files:
 
 | Predecessor | Status | Declared Output Path |
 |-------------|--------|----------------------|
-| PLAN_{feature}_{predecessor_short} | [ ] Ready | `repositories/{predecessor_repo}/.dwp/plans/PLAN_{feature}_{predecessor_short}/analysis_results/{declared_artifact}` |
+| {PREDECESSOR_PLAN_NAME} | [ ] Ready | `repositories/{predecessor_repo}/.dwp/plans/{PREDECESSOR_PLAN_NAME}/analysis_results/{declared_artifact}` |
 
 **Before starting execution:**
 1. Verify the predecessor plan is complete (`state.json` → `status: completed`) and each declared artifact above exists
@@ -273,7 +278,7 @@ Update the orchestrator plan's README.md:
 ## 5. Acceptance Criteria
 
 - [ ] Target repo's AGENTS.md was read and its rules extracted
-- [ ] Child DWP plan folder created at `repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/`
+- [ ] Child DWP plan folder created at `repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/`
 - [ ] README.md references parent orchestrator plan
 - [ ] README.md uses target repo's conventions (validation, test patterns, etc.)
 - [ ] All task files use target repo's validation commands
@@ -289,26 +294,26 @@ Update the orchestrator plan's README.md:
 
 ## 6. Outputs
 
-- **Created:** `repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/`
+- **Created:** `repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/`
 - **Updated:** Parent plan README (Child DWP Plans table)
 
 ## 7. Validation
 
 ```bash
 # Verify child plan structure
-test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: README exists" || { echo "FAIL" >&2; exit 1; }
-test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/PROMPTS.md && echo "PASS: PROMPTS exists" || { echo "FAIL" >&2; exit 1; }
-test -f repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/PROGRESS.md && echo "PASS: PROGRESS exists" || { echo "FAIL" >&2; exit 1; }
-test -d repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/analysis_results && echo "PASS: analysis_results exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/README.md && echo "PASS: README exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/PROMPTS.md && echo "PASS: PROMPTS exists" || { echo "FAIL" >&2; exit 1; }
+test -f repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/PROGRESS.md && echo "PASS: PROGRESS exists" || { echo "FAIL" >&2; exit 1; }
+test -d repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/analysis_results && echo "PASS: analysis_results exists" || { echo "FAIL" >&2; exit 1; }
 
 # Verify child plan uses target repo's conventions
-grep -q "{validation_command}" repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: Uses repo validation" || { echo "FAIL" >&2; exit 1; }
+grep -q "{validation_command}" repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/README.md && echo "PASS: Uses repo validation" || { echo "FAIL" >&2; exit 1; }
 
 # Verify parent plan updated
-grep -q "PLAN_{feature}_{repo_short}" .dwp/plans/PLAN_{parent_plan_name}/README.md && echo "PASS: Parent updated" || { echo "FAIL" >&2; exit 1; }
+grep -q "{CHILD_PLAN_NAME}" .dwp/plans/{PARENT_PLAN_NAME}/README.md && echo "PASS: Parent updated" || { echo "FAIL" >&2; exit 1; }
 
 # Verify parent reference in child
-grep -q "PLAN_{parent_plan_name}" repositories/{repo_name}/.dwp/plans/PLAN_{feature}_{repo_short}/README.md && echo "PASS: Parent referenced" || { echo "FAIL" >&2; exit 1; }
+grep -q "{PARENT_PLAN_NAME}" repositories/{repo_name}/.dwp/plans/{CHILD_PLAN_NAME}/README.md && echo "PASS: Parent referenced" || { echo "FAIL" >&2; exit 1; }
 ```
 
 ## 8. Execution Checklist
@@ -325,7 +330,7 @@ grep -q "PLAN_{parent_plan_name}" repositories/{repo_name}/.dwp/plans/PLAN_{feat
 - [ ] 10. Run validation commands.
 - [ ] 11. Update the plan README to mark this task as `[x]`.
 - [ ] 12. Update PROGRESS.md with task summary.
-- [ ] 13. Commit: `git commit -m "docs(technical): create child DWP for {repo_name} - Task {N} of PLAN_{parent_plan_name}"`
+- [ ] 13. Commit: `git commit -m "docs(technical): create child DWP for {repo_name} - Task {N} of {PARENT_PLAN_NAME}"`
 - [ ] 14. Send Dailybot progress report (non-blocking).
 - [ ] 15. Update the Log section below.
 

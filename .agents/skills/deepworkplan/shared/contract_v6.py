@@ -77,7 +77,8 @@ EVIDENCE_TYPES = ('gate_run', 'observation', 'resource_sample',
 ID_TASK = re.compile(r'^T-[a-z0-9]+(-[a-z0-9]+)*$')
 ID_CRITERION = re.compile(r'^AC-[a-z0-9]+(-[a-z0-9]+)*$')
 ID_INVARIANT = re.compile(r'^INV-[a-z0-9]+(-[a-z0-9]+)*$')
-ID_PLAN = re.compile(r'^PLAN_[a-z0-9]+(_[a-z0-9]+){1,4}$')
+ID_PLAN = re.compile(
+    r'^PLAN_(?:[0-9]{3,}_)?[a-z0-9]+(?:_[a-z0-9]+){1,4}$')
 HEX64 = re.compile(r'^[0-9a-f]{64}$')
 DATETIME = re.compile(
     r'^\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}:\d{2}(\.\d+)?([Zz]|[+-]\d{2}:\d{2})$')

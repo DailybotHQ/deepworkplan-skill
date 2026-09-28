@@ -101,7 +101,8 @@ breaks discovery for some agents. The validator rejects `deepworkplan_*` names.
 ## 7. The `.dwp/` output convention (gitignored working state)
 
 All Deep Work Plan output lives in a gitignored `.dwp/` directory at the repo
-root (`.dwp/plans/PLAN_<slug>/`), resolved by
+root (`.dwp/plans/PLAN_<id>_<slug>/` for new plans; old unnumbered names are
+preserved), resolved by
 [`shared/context.sh`](../skills/deepworkplan/shared/context.sh) and overridable
 via `DWP_DIR`. We chose a single conventional, gitignored directory because:
 
@@ -113,6 +114,14 @@ via `DWP_DIR`. We chose a single conventional, gitignored directory because:
   scattering output across the tree.
 - For orchestrator hubs, child plans nest under
   `repositories/<repo>/.dwp/plans/…` — same convention, applied per managed repo.
+
+New plans receive a monotonic ID with a three-digit minimum (`001`, `002`,
+`100`). The flat tree remains stable while a local `.next-plan-id` file
+prevents reuse after deletion. Selection by ID and `latest` uses numeric order,
+not filesystem modification time; unique slugs also resolve. Old unnumbered
+plans are never renamed because their basename appears in state, contracts,
+prompts, and evidence pointers. This is a forward-only naming policy, so no
+plan migration runs on adoption.
 
 This is a public contract (see `AGENTS.md` rule #5): changing the `.dwp/` layout
 or the `DWP_DIR`/`DWP_AGENT_TOOL` env vars is a breaking change.

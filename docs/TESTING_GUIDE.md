@@ -26,7 +26,7 @@ The runtime validator must still work without third-party Python packages.
 |---|---|---|
 | State updater | `bats tests/state-updater.bats tests/state-evidence.bats tests/state-transitions.bats` | execute, resume, verifier; widen to full for shared semantics |
 | Plan verifier / schema | `bats tests/conformance-sh.bats tests/schema-contract.bats tests/lite-plans.bats` | all plan readers/writers; full suite required |
-| Context/path detection | `bats tests/context-sh.bats` | every flow; shellcheck required |
+| Context/path detection and numbered plan allocation | `bats tests/context-sh.bats tests/plan-paths.bats` | every flow; shellcheck required |
 | Installer | `bats tests/setup-sh.bats` | all host adapters; Linux/macOS setup CI |
 | Guide links | `python3 scripts/check-guide-migration.py` | flow read paths |
 | Read tiers | `bats tests/execute-read-contract.bats tests/resume-read-contract.bats tests/context-accounting.bats` | measurement, authoring, final review |

@@ -58,7 +58,7 @@ when their moment arrives. (This ordering is deliberate: reading companions
     set — is inline in Step 5 rule 3.
   - [`../shared/dwp-paths.md`](../shared/dwp-paths.md) — read only when a
     plan folder cannot be located or the `DWP_DIR` override is in play
-    (Steps 0–3 already inline `.dwp/plans/PLAN_{name}/`).
+    (Steps 0–3 already inline `.dwp/plans/<plan>/`).
   - [`../shared/troubleshooting.md`](../shared/troubleshooting.md) — read
     only when something is already wrong (discovery failure, stale
     installation, missing test command, unsupported host capability,
@@ -87,13 +87,15 @@ when their moment arrives. (This ordering is deliberate: reading companions
 ## Parameter Support
 
 - `/dwp-execute {plan_name}` — execute directly (skip the selection menu).
-- `/dwp-execute latest` — execute the most recently modified plan.
+- `/dwp-execute latest` — execute the highest numbered plan, or the most
+  recently modified legacy plan when no numbered plan exists.
 - `/dwp-execute {plan_name} trust` (or `auto`, or an explicit "run to the end")
   — unattended: no questions between tasks (see *Autonomous mode*).
 - No parameter → interactive selection (Step 1).
 
-Normalize names by adding the `PLAN_` prefix if missing. Validate that
-`.dwp/plans/PLAN_{name}/` and its `README.md` exist; if not, show available plans
+Resolve names through `../shared/plan_paths.py --plans-dir <dwp_dir>/plans
+resolve <selector>`; accept a full name, numeric ID, unique slug or `latest`.
+Validate that the resolved folder and its `README.md` exist; if not, show available plans
 and ask the user to choose. A folder **without** `README.md`, whose README says
 `Plan Status: materializing`, or whose README **links a task file that does not
 exist**, is a partial materialization — point to `refine` and stop.
@@ -183,9 +185,10 @@ README under `.dwp/plans/`, note whether `trust`/`auto` was passed, and skip to
 Step 2. Otherwise continue to Step 1.
 
 ### Step 1 — Identify Plan
-List folders in `.dwp/plans/` starting with `PLAN_`; mark the most recently
-modified as `latest`. Present a numbered menu and accept a number, plan name, or
-`latest`. Validate the chosen plan's folder + README.
+List folders with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list`.
+`latest` is the highest numbered plan when one exists, or the most recently
+modified legacy plan otherwise. Accept a full name, ID, unique slug, or
+`latest`; resolve it with the helper and validate the folder and README.
 
 ### Step 2 — Read Plan Overview
 Read the plan README (goal, context, global guidelines, task list `[x]`/`[ ]`,
@@ -237,7 +240,7 @@ An orchestrator records a separate baseline per child, in that child's session.
 
 Read the README task list; run `git status` and `git log --oneline -10`; identify
 the first `[ ]` task. Report completed/pending tasks, the starting task, git
-state, and recent commits. The location is `.dwp/plans/PLAN_{name}/`. A README
+state, and recent commits. The location is `.dwp/plans/<plan>/`. A README
 `[ ]` marked `(re-validate: …)` is a task whose evidence `refine` invalidated:
 re-run its gates and re-mark it rather than re-implementing it. Gate evidence
 prefixed `invalidated by refine` is retained history, never passing evidence —
@@ -664,7 +667,7 @@ candidate against all plan artifacts before writing state, verifies the actual
 files afterward, and records `analysis_results/FINALIZATION.json`. Do not add
 an invented passing gate for this invocation to the candidate it is validating.
 The receipt is external evidence, not its own prerequisite. Run
-`bash ../verify/conformance.sh --plan PLAN_name` on the actual artifacts next.
+`bash ../verify/conformance.sh --plan <plan>` on the actual artifacts next.
 
 An interrupted publication leaves `.finalizing.json`; normal verification fails
 until evidence is inspected and `python3 ../shared/finalize_plan.py PLAN_DIR

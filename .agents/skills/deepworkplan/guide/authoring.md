@@ -3,7 +3,7 @@
 > Part of the DeepWorkPlan methodology guide. The routing index is
 > [`GUIDE.md`](GUIDE.md); read only the guide files your flow names.
 
-## 4. Plan-Level README Structure (`PLAN_{plan_title}/README.md`)
+## 4. Plan-Level README Structure (`{PLAN_NAME}/README.md`)
 
 Each plan folder must have a `README.md` that serves as the **index and control center** for the deep-work session.
 
@@ -331,7 +331,7 @@ The agent must follow these steps sequentially:
 - [ ] 6. Review the diff and ensure it matches acceptance criteria.
 - [ ] 7. Update the plan README to mark this task as `[x]` in the Task List.
 - [ ] 8. Update PROGRESS.md with task summary.
-- [ ] 9. Commit the changes referencing the plan: `git commit -m "type(scope): description - Task {N} of PLAN_{plan_name}"`
+- [ ] 9. Commit the changes referencing the plan: `git commit -m "type(scope): description - Task {N} of {PLAN_NAME}"`
 - [ ] 10. **If the Dailybot addon is installed in this repo** (`.agents/skills/dailybot/`): send a progress report IF this task is independently significant (feature, fix, major refactor) — a standup-style *"Implemented [what] — [why it matters]."* Skip the step entirely when the addon is absent; never inject an addon step into a repo that has no addon. (non-blocking — continue if it fails)
 - [ ] 11. Update the Log section below.
 
