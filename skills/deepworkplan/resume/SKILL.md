@@ -77,10 +77,9 @@ this tiering removed.)
   unattended: no questions between tasks (`../execute/SKILL.md` *Autonomous mode*).
 - No parameter → interactive selection (Step 1).
 
-Resolve the selector with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans
-resolve <selector>` (full name, ID, unique slug, or `latest`). Validate the
-resolved folder and its
-`README.md`. If not found, show available plans and ask the user to choose. A
+Resolve the full name, ID, unique slug, or `latest` with `../shared/plan_paths.py
+--plans-dir <dwp_dir>/plans resolve <selector>`. Validate its folder and
+`README.md`; if absent, show available plans. A
 folder without `README.md`, or whose README says `Plan Status: materializing`,
 is a partial materialization (its `manifest.json` records the intended shape) —
 point to `refine`; never execute it.
@@ -126,11 +125,8 @@ README under `.dwp/plans/`, note `trust`/`auto`, and skip to Step 2. Otherwise
 go to Step 1.
 
 ### Step 1 — Identify Plan
-Use `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list` to display
-numbered plans in numeric order and then legacy plans. `latest` selects the
-highest allocated ID when numbered plans exist, or the most recently modified
-legacy plan otherwise. Present a numbered menu (ID / name / `latest`) and
-validate the choice with `resolve`.
+List plans with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list`.
+Present an ID / name / `latest` menu; validate with `resolve`.
 
 ### Step 2 — Assess Current State (CRITICAL)
 

@@ -48,6 +48,11 @@ extract_bash_block() {
 # placeholders first: {repo1_short} must be replaced before {repo1}, etc.
 render() {
     sed -e 's/{repo_name}/childrepo/g' \
+        -e 's/{CHILD_PLAN_NAME_1}/PLAN_feat_child/g' \
+        -e 's/{CHILD_PLAN_NAME_2}/PLAN_feat_other/g' \
+        -e 's/{CHILD_PLAN_NAME}/PLAN_feat_child/g' \
+        -e 's/{PARENT_PLAN_NAME}/PLAN_parent/g' \
+        -e 's/{PREDECESSOR_PLAN_NAME}/PLAN_feat_child/g' \
         -e 's/{repo1_short}/child/g' \
         -e 's/{repo2_short}/other/g' \
         -e 's/{repo_short}/child/g' \

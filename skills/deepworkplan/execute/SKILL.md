@@ -93,10 +93,9 @@ when their moment arrives. (This ordering is deliberate: reading companions
   — unattended: no questions between tasks (see *Autonomous mode*).
 - No parameter → interactive selection (Step 1).
 
-Resolve names through `../shared/plan_paths.py --plans-dir <dwp_dir>/plans
-resolve <selector>`; accept a full name, numeric ID, unique slug or `latest`.
-Validate that the resolved folder and its `README.md` exist; if not, show available plans
-and ask the user to choose. A folder **without** `README.md`, whose README says
+Resolve full names, IDs, unique slugs, or `latest` with `../shared/plan_paths.py
+--plans-dir <dwp_dir>/plans resolve <selector>`. If no folder or README exists,
+show available plans. A folder **without** `README.md`, whose README says
 `Plan Status: materializing`, or whose README **links a task file that does not
 exist**, is a partial materialization — point to `refine` and stop.
 
@@ -186,9 +185,7 @@ Step 2. Otherwise continue to Step 1.
 
 ### Step 1 — Identify Plan
 List folders with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list`.
-`latest` is the highest numbered plan when one exists, or the most recently
-modified legacy plan otherwise. Accept a full name, ID, unique slug, or
-`latest`; resolve it with the helper and validate the folder and README.
+Resolve the choice with the helper; validate its folder and README.
 
 ### Step 2 — Read Plan Overview
 Read the plan README (goal, context, global guidelines, task list `[x]`/`[ ]`,

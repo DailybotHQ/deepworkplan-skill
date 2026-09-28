@@ -82,9 +82,8 @@ through this table.
 
 This guide defines how an agent should:
 
-- Create deep-work plans under `.dwp/plans/{PLAN_NAME}/`, where new
-  `{PLAN_NAME}` values come from `shared/plan_paths.py` (`PLAN_001_<slug>`,
-  `PLAN_002_<slug>`, ...). Existing unnumbered plans keep their names.
+- Create plans under `.dwp/plans/{PLAN_NAME}/`; `plan_paths.py` allocates
+  numbered names. Existing unnumbered plans keep their names.
 - Split work into ordered, single-focus task files
 - Execute tasks sequentially, with strong validation and logging
 - Resume interrupted plans without duplicating work
