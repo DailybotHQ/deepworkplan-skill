@@ -83,7 +83,7 @@ correctness, clarity, simplicity, and verified completion.
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
 | Launch / publishing playbook | [PUBLISHING.md](PUBLISHING.md) |
 | Router meta-skill (version source of truth) | [skills/deepworkplan/SKILL.md](skills/deepworkplan/SKILL.md) |
-| Normative specification (the standard; 5 RFC-2119 docs) | [skills/deepworkplan/spec/](skills/deepworkplan/spec/README.md) |
+| Normative specification (v5 base plus v6 extensions) | [skills/deepworkplan/spec/](skills/deepworkplan/spec/README.md) |
 | `create` sub-skill | [skills/deepworkplan/create/SKILL.md](skills/deepworkplan/create/SKILL.md) |
 | `execute` sub-skill | [skills/deepworkplan/execute/SKILL.md](skills/deepworkplan/execute/SKILL.md) |
 | `refine` sub-skill | [skills/deepworkplan/refine/SKILL.md](skills/deepworkplan/refine/SKILL.md) |
@@ -158,7 +158,7 @@ deepworkplan-skill/
 ├── tmp/                                        ← gitignored scratch space (only .gitkeep tracked; NOT installed)
 └── skills/deepworkplan/                        ← THE INSTALLED ARTIFACT — only this ships
     ├── SKILL.md                                ← router (version source of truth)
-    ├── spec/                                   ← the 5 RFC-2119 normative docs (the standard; ships)
+    ├── spec/                                   ← retained v5 base and current v6 extensions (ships)
     ├── shared/                                 ← context.sh, plan_paths.py (numbered plan allocation), dwp-paths.md, adaptation.md, troubleshooting.md, install-verification.md, update-state.py, state_contract.py, finalize_plan.py
     ├── create/SKILL.md                         ← create a Deep Work Plan
     ├── execute/SKILL.md                        ← execute a plan task-by-task

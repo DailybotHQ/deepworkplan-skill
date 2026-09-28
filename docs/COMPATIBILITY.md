@@ -188,8 +188,8 @@ one-directional bridge: `shared/migrate_v6.py` (preview → guarded migrate
 its gate evidence as `imported` records with v5 provenance and blocking
 any criterion whose v5 evidence cannot carry until the gates re-run under
 v6; the v5 checker refuses a migrated folder naming the contract, so a v6
-plan can never slide back under the v5 runner. New plans get v6 only when
-the pack line is 6+ or the developer explicitly asks for the candidate;
+plan can never slide back under the v5 runner. With the current 6.x pack,
+new plans use v6 by default;
 `bats tests/v6-lifecycle.bats` is the behavior-tested evidence for the
 wiring, including the read-only status/verify surfaces and the guarded
 materialization sequence.

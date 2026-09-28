@@ -110,9 +110,9 @@ Where:
 - `PLAN_004_ai_dev_kit_cleanups`
 
 `<id>` is allocated once by `shared/plan_paths.py` and padded to at least
-three digits. New v5 plans use 2–4 slug words to fit their frozen schemas;
-v6 plans may use 2–5. Existing unnumbered folders keep their names and
-locations.
+three digits. The current v6 flow uses 2–5 slug words; the retained v5
+flow uses 2–4 to fit its frozen schemas. Existing unnumbered folders keep
+their names and locations.
 
 ### 2.2. Task files
 

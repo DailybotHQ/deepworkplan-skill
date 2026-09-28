@@ -1,5 +1,9 @@
 # PLAN_STATE.md — Machine-Readable Plan State
 
+> **Version scope:** This is a retained v5.0.0 base document. The current
+> v6 standard also requires the applicable `V6_*.md` extensions indexed in
+> [README.md](README.md). Existing v5 plans keep this document’s recorded rules.
+
 ## Abstract
 
 This document specifies the **machine-readable plan state layer** of the

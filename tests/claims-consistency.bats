@@ -68,7 +68,7 @@ setup() {
     grep -qF "state_contract.py" "$REPO_ROOT/CONTRIBUTING.md"
 }
 
-@test "every shipped spec footer states the current standard" {
+@test "retained base spec footers state the v5 standard" {
     local standard offenders
     standard="$(grep -m1 -oE '^SUPPORTED_SPEC = .[0-9]+\.[0-9]+\.[0-9]+' \
         "$SK/verify/plan_contract.py" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"

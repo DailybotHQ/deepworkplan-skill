@@ -38,11 +38,11 @@ original locations; no lifecycle flow renames them.
 
 ## 2. Activation (normative)
 
-A new plan is created under v6 only when (a) the pack's line is 6+ or
-(b) the developer explicitly requested the v6 candidate. An explicit
-candidate request overrides a 5.x line; a 5.x line never overrides an
-explicit request. Absent both, `create` composes the recorded v5 flow —
-v6 is never produced silently and never presented as the default.
+With the current 6.x pack, new plans use v6 by default. A developer's
+explicit v6 request also selects this flow when an older pack provides it.
+A 5.x pack without that request follows its recorded v5 flow. Existing
+plans are selected by their artifacts (§1), regardless of installed pack
+version; no existing plan changes generation during selection.
 
 ## 3. Materialization order (normative — A12)
 

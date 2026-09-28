@@ -126,12 +126,13 @@ setup() {
 
 @test "the provenance version onboard writes matches the standard the checker enforces" {
     # `DWP standard: X` is stamped into every onboarded repo by `onboard` and
-    # read back by `conformance.sh`, which compares it against SUPPORTED_SPEC —
-    # the DWP_SPECIFICATION version. Those drifted once: onboard wrote 2.3.0
+    # read back by `conformance.sh`, which compares it against the current
+    # repository standard. The v5 base DWP_SPECIFICATION keeps its own version.
+    # Those drifted once: onboard wrote 2.3.0
     # (the DOCUMENTATION_STANDARD version) while the checker enforced 2.4.0, so
     # every freshly onboarded repo declared a standard older than the one it had
-    # just received. Spec documents version independently, so the three sources
-    # have to be pinned together deliberately.
+    # just received. Pin the current provenance separately from the retained
+    # base document's version.
     local pack spec supported written
     pack="$REPO_ROOT/skills/deepworkplan"
 
@@ -140,11 +141,12 @@ setup() {
     supported="$(grep -m1 -E '^SUPPORTED_SPEC=' "$pack/verify/conformance.sh" \
         | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
     [ -n "$spec" ]
-    [ "$supported" = "$spec" ]
+    [ "$spec" = "5.0.0" ]
+    [ "$supported" = "6.0.0" ]
 
     # Every documented `DWP standard: X` example names that same version.
     written="$(grep -rhoE 'DWP standard: [0-9]+\.[0-9]+\.[0-9]+' "$pack" \
         | sed 's/.*: //' | sort -u)"
     [ -n "$written" ]
-    [ "$written" = "$spec" ]
+    [ "$written" = "$supported" ]
 }

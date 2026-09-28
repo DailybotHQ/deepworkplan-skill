@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-refine
 description: Refine a Deep Work Plan — safely edit scope, add, split or reorder tasks, promote a Lite plan to Full task files, recover a partial promotion, or explicitly migrate a legacy plan, always preserving completed evidence.
-version: "5.5.4"
+version: "6.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 
 Modify an **existing plan** (add / edit /
 split / reorder tasks, update the README, promote a Lite plan to Full, or — only
-on explicit request — migrate a legacy plan to the current standard).
+on explicit request — migrate a legacy ending or a v5 plan to v6).
 
 > **No drafts (2.4.0):** `create` materializes an executable Lite plan directly,
 > so there is nothing to "refine into a plan" any more. `refine` operates on a
@@ -35,7 +35,7 @@ on explicit request — migrate a legacy plan to the current standard).
 | (none) | Interactive — choose a plan | `/dwp-refine` |
 | `plan {plan_name}` | Modify an existing final plan | `/dwp-refine plan auth_refactor` |
 | `plan latest` | Modify the most recent plan | `/dwp-refine plan latest` |
-| `migrate {plan_name}` | **Explicit** migration of a legacy plan (three final tasks) to the current standard — the only way a plan changes standard | `/dwp-refine migrate auth_refactor` |
+| `migrate {plan_name}` | **Explicit** migration: a legacy three-task ending to the v5 Final Review shape, or a v5 plan to v6; never automatic | `/dwp-refine migrate auth_refactor` |
 | `promote {plan_name}` | Promote a ready Lite plan to Full task files without changing scope | `/dwp-refine promote small_fix` |
 
 ## Trust boundary (write scope)
@@ -257,7 +257,17 @@ Migration is the **only** way a plan changes standard, and it happens **only**
 when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
 `../spec/PLAN_STATE.md` §6.1). Never suggest it as a side effect of another edit.
 
-1. **Classify** (Step 3.2). If the plan is already at the current standard, say
+**Route by recorded generation before Step 4.1.** For a v5 plan, use the v5 →
+v6 migration path in Step 3.2a and `../spec/V6_LIFECYCLE.md` §8: run
+`python3 ../shared/migrate_v6.py --plan <dir> preview`, inspect the re-evidence
+list and blockers, then run `python3 ../shared/migrate_v6.py --plan <dir>
+--authority <who> migrate` on the explicit request. Report the migrated
+contract, journal, projection, and criteria requiring new evidence. Do not
+apply Steps 4.1–4.6 below to a v5 plan. Those steps only migrate a pre-v5
+three-task ending to the retained v5 Final Review shape. A v6 plan already
+uses the current generation and has no migration step.
+
+1. **Classify** (Step 3.2). If the plan already has the v5 Final Review shape, say
    so and stop.
 2. **Preserve completed work.** Any `[x]` task — including a legacy final task
    that has already run — is left exactly as it is. Only **unstarted** tasks may
@@ -340,4 +350,4 @@ a marked plan. Full-to-Lite downgrade is not automatic.
 - Plan has work in progress (a checkpoint or an `in_progress` task) → warn about
   impact; suggest finishing the current task first; never edit the in-progress
   task's evidence.
-- `migrate` on a plan already at the current standard → report and stop.
+- `migrate` on a plan already in the requested generation and shape → report and stop.
