@@ -11,7 +11,7 @@ outcome exists. This protocol follows the house rule set by
 changing an expectation means changing it here first, with a reason.
 
 It incorporates the standing lessons of
-[`token-efficiency.md`](token-efficiency.md): the earlier instrumented
+[`token-efficiency.md`](../token-efficiency.md): the earlier instrumented
 comparison was never completed and produced no claim — partial, unequally
 progressed runs measure how far each got, not how efficiently it worked. This
 design therefore preregisters exclusions, censoring, denominators and

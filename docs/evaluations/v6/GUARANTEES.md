@@ -22,7 +22,7 @@ throughout are the durable, reviewable half.
 ## The guarantee matrix
 
 Eleven boundaries from
-[`ARCHITECTURE.md`](../../../.dwp/plans/PLAN_v6_verified_autonomy/analysis_results/ARCHITECTURE.md),
+the local `.dwp/plans/PLAN_v6_verified_autonomy/analysis_results/ARCHITECTURE.md`,
 each with its clean control and its injected counterexample, mapped to the
 suite that pins it. Every row labeled *invariant* below is machine-checked;
 a regression in the named behavior fails CI.
@@ -81,7 +81,7 @@ floor" is executed there, not asserted here.
   publishes enforcement parity across untested hosts.
 - **The instruction byte measurements are not caps on a run**, and the
   efficiency numbers are published under the accounting rules of
-  [`token-efficiency.md`](token-efficiency.md), not as guarantees.
+  [`token-efficiency.md`](../token-efficiency.md), not as guarantees.
 - **Empirical rows can change with the next campaign.** A target is never
   a result; the frozen operative bar lives in the preregistration, and any
   post-freeze change requires a new identity there.
