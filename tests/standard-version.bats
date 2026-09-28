@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
-# Contract tests for the DWP standard version alignment (task 15, realigned
-# to 5.0.0 by task 10 of PLAN_v5_superiority_guarantee): new stamps say 5.0.0
-# going forward; 2.x and 4.x stay accepted as historical (no existing plan is
-# rewritten); there is no 3.x standard (the v3 launch was a product release,
-# not a standard bump); the schema URLs are the published v1/v2/v5 line, and
-# the v5 URLs are generation snapshots of the v2 shape. Three version series
-# are documented so a reader never confuses package version, standard and
-# schema URL — and the anti-lockstep rule keeps the standard from chasing the
-# skill's package version.
+# Contract tests for current v6 provenance and retained v5 base documents.
+# Older standard series remain accepted for existing plans; there is no 3.x
+# standard. Schema URLs are generation-specific and remain independent of
+# the pack version.
 #
 # Run with:  bats tests/
 # Requires:  bats-core, git, python3
@@ -18,9 +13,9 @@ setup() {
     FIXTURE="$REPO_ROOT/tests/fixtures/lite-plan/.dwp"
 }
 
-@test "the checker implements the 5.x standard with the 2.x/4.x/5.x series rule" {
+@test "repository provenance accepts v6 while the v5 plan checker stays generation-bound" {
     grep -q "SUPPORTED_SPEC = '5.0.0'" "$SK/verify/plan_contract.py"
-    grep -q 'SUPPORTED_SPEC="5.0.0"' "$SK/verify/conformance.sh"
+    grep -q 'SUPPORTED_SPEC="6.0.0"' "$SK/verify/conformance.sh"
     grep -q 'SPEC_SERIES = (2, 4, 5)' "$SK/verify/plan_contract.py"
     grep -q 'standard_series_ok' "$SK/verify/conformance.sh"
     # Both eras reject a non-series version with the same teaching.
@@ -28,14 +23,14 @@ setup() {
     [ "$(grep -c 'which is not a DWP standard' "$SK/verify/plan_contract.py")" -ge 2 ]
 }
 
-@test "new stamps say 5.0.0 — onboard, create and the spec documents" {
-    grep -q 'DWP standard: 5.0.0 (onboarded' "$SK/onboard/SKILL.md"
+@test "new provenance says 6.0.0 while retained v5 documents keep their version" {
+    grep -q 'DWP standard: 6.0.0 (onboarded' "$SK/onboard/SKILL.md"
     grep -q '"5.0.0"' "$SK/create/SKILL.md"
     grep -q '| Standard | DWP spec 5.0.0 |' "$SK/create/SKILL.md"
     grep -q '| \*\*Version\*\* | 5.0.0 |' "$SK/spec/DWP_SPECIFICATION.md"
     grep -q '| \*\*Version\*\* | 5.0.0 |' "$SK/spec/PLAN_STATE.md"
     grep -q '| Version | 5.0.0 |' "$SK/spec/LITE_PLANS.md"
-    grep -q 'DWP standard: 5.0.0 (onboarded' "$SK/spec/DOCUMENTATION_STANDARD.md"
+    grep -q 'DWP standard: 6.0.0 (onboarded' "$SK/spec/DOCUMENTATION_STANDARD.md"
     # No stale 4.0.0/2.4.0-as-current stamp survives in the shipped pack;
     # only historical prose ("plans created under 4.0.0", "removed in 2.4.0")
     # remains.

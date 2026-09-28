@@ -209,8 +209,9 @@ directory and persists in `.next-plan-id`; removing a plan does not reuse its
 ID. Existing unnumbered plans are left at their original paths. No migration
 or rename is needed: execute, resume, status, refine and verify can still
 resolve them by full name, and `latest` selects the highest numbered plan when
-one exists. New v5 slugs use 2–4 words because the frozen v5 schemas count
-the ID as a word; v6 slugs use 2–5.
+one exists. The current 6.x pack creates v6 plans with 2–5-word slugs.
+The retained v5 creation flow uses 2–4 words because its frozen schemas
+count the ID as a word.
 
 Onboarding also reconciles compact **working principles** inline in
 `AGENTS.md`: agents should investigate before asking, make routine decisions
@@ -253,8 +254,8 @@ the portable sequential path
 
 ### Existing plans when you update
 
-Nothing is migrated by updating — your v5 plans keep running under the v5
-contract forever, and new v6-candidate plans exist alongside them. If you
+Nothing is migrated by updating — existing v5 plans keep their v5
+contract, and the current 6.x pack creates new v6 plans alongside them. If you
 later want a v5 plan on the v6 contract, that is an explicit, previewed,
 one-directional migration through the pack helper:
 

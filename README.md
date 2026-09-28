@@ -21,6 +21,13 @@
 
 > The official DeepWorkPlan agent skill pack, maintained by [Dailybot](https://www.dailybot.com).
 
+The current major line is **v6**. New plans use the v6 contract, journal,
+scheduler, and live snapshot; existing v5 plans retain their recorded lifecycle.
+The v6 [manifest](https://deepworkplan.com/schema/plan-manifest/v6.json) and
+[snapshot](https://deepworkplan.com/schema/plan-snapshot/v6.json) schemas are
+published separately. The v6 architecture decision does not establish an
+empirical agent-outcome advantage over v5.
+
 DeepWorkPlan turns any repository into a **structured environment** — context,
 guardrails, and a durable plan — where any coding agent executes with precision
 and finishes short- and long-horizon work. It makes the repo AI-first (an adapted
@@ -182,8 +189,9 @@ Each repository assigns IDs starting at `001`; the counter is kept in
 `.dwp/plans/.next-plan-id`, so deleting a plan does not reuse its number.
 `latest` selects the highest numbered plan. You can also select a plan by its
 full folder name, ID, or unique slug. Existing folders such as
-`PLAN_improve_docs/` are not renamed and remain usable. New v5 plan slugs use
-2–4 words to fit the frozen v5 schemas; v6 slugs can use 2–5.
+`PLAN_improve_docs/` are not renamed and remain usable. The current 6.x pack
+creates v6 plans with 2–5-word slugs. The retained v5 creation flow uses
+2–4 words to fit its frozen schemas.
 
 ## Reproducible installs (`skills-lock.json`)
 

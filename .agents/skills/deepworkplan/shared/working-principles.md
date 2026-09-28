@@ -38,7 +38,7 @@ It is not an extra mandatory read for every task or plan flow.
 ## Bounded-autonomy records (v6 repositories)
 
 When the repository will run v6 plans (pack line 6+ or an explicit
-candidate request), the same reconciliation adds the four records taught
+v6 request), the same reconciliation adds the four records taught
 by [`../onboard/v6.md`](../onboard/v6.md): a capability declaration
 stated honestly (the eight closed-set abilities; unstated is false; an
 unmeterable limit is advisory with the missing ability named; telemetry

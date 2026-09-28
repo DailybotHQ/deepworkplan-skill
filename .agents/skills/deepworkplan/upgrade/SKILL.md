@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-upgrade
 description: Check whether a newer DeepWorkPlan skill and DWP standard exists and — only after the developer explicitly accepts — install the latest published tag through the documented channel and re-run onboarding exactly as if https://deepworkplan.com/init.md were executed fresh, preserving every plan under .dwp/ and surfacing local adaptations instead of silently overwriting them. Use when the developer asks to upgrade, update, or refresh DWP in a repository that already has it installed. Do not use it to onboard a repo for the first time (that is the onboard sub-skill) or to migrate an old plan's shape (that is refine migrate, and plans are never migrated by an upgrade).
-version: "5.5.4"
+version: "6.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -62,8 +62,7 @@ versions relative to that directory.
    GitHub CLI is present.)
 3. **Report, then stop.** State, in a few lines: installed skill version,
    latest published version, the standard each implements (the series are
-   2.x and 4.x historical and 5.x current — `../spec/DWP_SPECIFICATION.md`
-   "Status"),
+   2.x, 4.x and 5.x historical and 6.x current — `../spec/README.md`),
    and where the changelog lives
    (`https://github.com/DailybotHQ/deepworkplan-skill/blob/main/CHANGELOG.md`).
    If installed == latest, say the repository is current and **end here**.

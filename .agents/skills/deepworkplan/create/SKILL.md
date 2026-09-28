@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
 description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
-version: "5.5.4"
+version: "6.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 
 Create a new Deep Work Plan through a smooth, unified flow: the developer
 provides information once, you run the **requirements analysis**, and materialize
-a Lite plan folder under `.dwp/plans/{PLAN_NAME}/`. Guided mode presents that
+a Lite plan folder under `.dwp/plans/PLAN_<id>_<slug>/`. Guided mode presents that
 proposal for review; trust chooses its ready representation without a review.
 Both modes return control to the developer to execute later.
 
@@ -37,6 +37,9 @@ code for option words. `trust` with no context asks for the goal. The resulting
 plan is handed off; create never modifies product source or calls execute.
 
 ## Lite-first lifecycle
+
+Step 0.3 routes new plans on this pack to `v6.md`. The steps below
+retain v5 compatibility.
 
 Write `manifest.json`, `README.md`, `PROGRESS.md`, `PROMPTS.md`, appropriate
 `analysis_results/` and `state.json` using the v5 schemas. A Lite README has
@@ -101,7 +104,7 @@ reading companions "to be safe" is the failure mode this tiering removed.)
   That is the whole t0 set — no guide or spec file is compulsory.
 - **Conditional — read only when the trigger fires:**
   - [`v6.md`](v6.md) (this directory) — read only when Step 0.3 detects the
-    v6 candidate (pack line 6+ or an explicit v6 request); it carries the
+    v6 flow (the default for pack line 6+, or an explicit v6 request on an older pack); it carries the
     whole v6 authoring + materialization path. Both generations allocate new
     numbered folders; existing unnumbered plans keep their recorded names.
   - [`../spec/V6_CONTRACT.md`](../spec/V6_CONTRACT.md) — read only when
@@ -255,13 +258,12 @@ all following text is literal context. Never inspect ordinary context words.
 - `no input` / `name-only` → Step 1, then Step 2.
 - `full-context` → Step 1, then Step 3.
 
-**0.3 Detect the v6 candidate:** if this pack's line is 6+ or the developer
+**0.3 Select the plan generation:** if this pack's line is 6+ or the developer
 explicitly asked for a v6 plan (e.g. `v6` among the tokens, "create a v6
 plan"), the plan is created under the v6 execution contract instead: read
 [`v6.md`](v6.md) (this directory) and follow it — the steps below compose
-the recorded v5 lifecycle and never produce a v6 plan silently. An
-explicit candidate request overrides a 5.x line; a 5.x line never
-overrides an explicit request.
+the retained v5 lifecycle. With this 6.x pack, v6 is the default for new
+plans. Existing plans always keep their recorded generation.
 
 ### Step 1 — Quick Introduction
 
@@ -281,8 +283,9 @@ that the plan will be pre-approved for unattended execution.
 Collect, conversationally:
 - **2.1 Plan name** (skip if already extracted) — auto-convert to a lowercase
   snake_case slug. The allocator adds `PLAN_<id>_` when the folder is created.
-  A new v5 plan uses 2–4 slug words (the frozen v5 schema counts the ID as one
-  word); a v6 plan can use 2–5 slug words. Existing names are never changed.
+  The current v6 flow uses 2–5 slug words. The retained v5 flow uses 2–4
+  because its frozen schema counts the ID as one word. Existing names are
+  never changed.
 - **2.2 Objective** — one or two sentences.
 - **2.3 Context** — where the changes live, constraints/rules, tech notes.
 - **2.4 Tasks** — one bounded task is valid for Lite; split only when outcomes,

@@ -33,8 +33,8 @@ is the same — and it lives here, so no network is required.
 the developer's request was vague ("set this up", "make this repo AI-first", or a
 plain install). Before routing anywhere else:
 
-1. **Read the standard locally.** Read [`spec/`](spec/README.md) (five RFC-2119
-   documents) and [`shared/adaptation.md`](shared/adaptation.md). The overriding
+1. **Read the standard locally.** Read [`spec/`](spec/README.md) (v5 base and
+   v6 extensions) and [`shared/adaptation.md`](shared/adaptation.md). The overriding
    rule is **REASON, do not copy-paste**: this skill is the reusable engine; what
    you produce must be adapted to *this* repository, never templated.
 2. **Run onboarding.** Read [`onboard/SKILL.md`](onboard/SKILL.md) and execute it.
@@ -52,9 +52,8 @@ plain install). Before routing anywhere else:
 
 **If the repository is already AI-first but its harness predates this skill** —
 `AGENTS.md` / `.agents/` exist, yet there is no `DWP standard:` provenance line,
-the provenance line is from a non-current series (older than the 5.x this skill
-implements — 2.x and 4.x are historical series, `spec/DWP_SPECIFICATION.md`
-§6.5), or
+the provenance line is from an earlier series (2.x, 4.x, or 5.x; see
+`spec/V6_LIFECYCLE.md`), or
 `docs/TESTING_GUIDE.md` lacks the scoped-invocation and mapping content the
 standard requires, or its agent rules lack the working principles described
 in `spec/DOCUMENTATION_STANDARD.md` §2.3.1 (equivalent wording counts) —
@@ -175,9 +174,8 @@ developer which they mean before routing.
 
 ### Normative specification (ships with the skill)
 
-The methodology's authoritative standard lives at [`spec/`](spec/README.md) —
-five RFC-2119 documents (`DOCUMENTATION_STANDARD`, `DWP_SPECIFICATION`,
-`AGENT_PROTOCOL`, `ARCHETYPES`, `ADDONS`). It ships inside the skill so an agent
+The authoritative standard lives at [`spec/`](spec/README.md): retained v5
+base documents plus the four current v6 extensions. It ships inside the skill so an agent
 reads the standard **locally** — no network needed. The `onboard` flow and
 `shared/adaptation.md` reference it as the standard to produce. The public,
 rendered version lives at https://deepworkplan.com/spec.

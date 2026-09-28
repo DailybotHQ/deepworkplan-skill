@@ -146,17 +146,17 @@ PY
     echo "$output" | grep -q 'unknown state schema URL'
 }
 
-@test "the four spec docs and both checkers agree on 5.0.0, and writers emit the v5 line" {
+@test "retained v5 plan documents and checker stay at 5.0.0 while repository provenance is v6" {
     for doc in DWP_SPECIFICATION PLAN_STATE DOCUMENTATION_STANDARD; do
         grep -q '^| \*\*Version\*\* | 5\.0\.0 |$' "$PACK/spec/$doc.md" || { echo "$doc.md Version != 5.0.0"; exit 1; }
     done
     grep -q '^| Version | 5\.0\.0 |$' "$PACK/spec/LITE_PLANS.md" || { echo "LITE_PLANS.md Version != 5.0.0"; exit 1; }
     grep -q "^SUPPORTED_SPEC = '5.0.0'$" "$PACK/verify/plan_contract.py"
-    grep -q '^SUPPORTED_SPEC="5.0.0"$' "$PACK/verify/conformance.sh"
-    # writers: new plans declare the v5 URLs and spec_version 5.0.0
+    grep -q '^SUPPORTED_SPEC="6.0.0"$' "$PACK/verify/conformance.sh"
+    # The retained v5 writer declares v5 URLs and spec_version 5.0.0.
     grep -q 'plan-manifest/v5\.json' "$PACK/create/SKILL.md"
     grep -q 'plan-state/v5\.json' "$PACK/create/SKILL.md"
     grep -q '\*\*"5\.0\.0"\*\*' "$PACK/create/SKILL.md"
     grep -q 'DWP spec 5\.0\.0' "$PACK/create/SKILL.md"
-    grep -q 'DWP standard: 5\.0\.0' "$PACK/onboard/SKILL.md"
+    grep -q 'DWP standard: 6\.0\.0' "$PACK/onboard/SKILL.md"
 }

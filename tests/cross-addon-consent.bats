@@ -81,7 +81,7 @@ c_doc_has() {
 @test "Phase 7b wording matches the matrix (no blanket explicit-opt-in claim)" {
     run grep -F 'offer each as an **explicit opt-in** step' "$ONBOARD"
     [ "$status" -ne 0 ]
-    c_doc_has "$ONBOARD" "Three are **explicit opt-ins**"
+    c_doc_has "$ONBOARD" "Three active addons are **explicit opt-ins**"
     c_doc_has "$ONBOARD" "The fourth, **dependency upgrade**, is"
 }
 

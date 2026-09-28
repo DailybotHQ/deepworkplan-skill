@@ -334,13 +334,11 @@ PY
     "$SK/execute/SKILL.md"
 }
 
-@test "create/SKILL.md gates the v6 candidate behind Step 0.3 activation" {
-  grep -qF '**0.3 Detect the v6 candidate:**' "$SK/create/SKILL.md"
+@test "create/SKILL.md selects current v6 at Step 0.3" {
+  grep -qF '**0.3 Select the plan generation:**' "$SK/create/SKILL.md"
   grep -qE '^  - \[`v6\.md`\]\(v6\.md\)' "$SK/create/SKILL.md"
-  grep -qF 'never produce a v6 plan silently' "$SK/create/SKILL.md"
-  # the activation rule is stated both ways (override + never-default)
-  grep -qF 'explicit candidate request overrides a 5.x line' \
-    "$SK/create/SKILL.md"
+  grep -qF 'With this 6.x pack, v6 is the default for new' "$SK/create/SKILL.md"
+  grep -qF 'Existing plans always keep their recorded generation.' "$SK/create/SKILL.md"
 }
 
 @test "the router carries the generation rule; status/verify/refine route v6" {

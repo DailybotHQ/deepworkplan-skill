@@ -72,7 +72,7 @@ deepworkplan-skill/
 │   └── SUB_SKILL_GUIDE.md         ← step-by-step for adding a new sub-skill
 └── skills/deepworkplan/           ← THE INSTALLED ARTIFACT — only this ships
     ├── SKILL.md                   ← router meta-skill (version source of truth)
-    ├── spec/                      ← the 5 RFC-2119 normative docs
+    ├── spec/                      ← retained v5 base and current v6 extensions
     ├── shared/                    ← context.sh, dwp-paths.md, adaptation.md,
     │                                 troubleshooting.md, update-state.py,
     │                                 state_contract.py, finalize_plan.py

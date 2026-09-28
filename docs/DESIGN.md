@@ -152,7 +152,7 @@ would be dead weight in a single repo.
 
 ## 10. A normative RFC-2119 spec, shipped with the skill
 
-The standard itself — five RFC-2119 documents under
+The standard itself — retained v5 base documents and current v6 extensions under
 [`spec/`](../skills/deepworkplan/spec/README.md) — ships inside the pack, not just
 on the website. The skill *implements* a standard, and an agent benefits from
 reading the MUST/SHOULD/MAY contract directly when it needs to resolve an

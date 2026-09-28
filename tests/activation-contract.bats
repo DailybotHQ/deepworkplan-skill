@@ -197,14 +197,12 @@ PY
         "$ROUTER" "$ONBOARD" "$TPL" "$TROUBLE" \
         "$SK/create/team-agents.md" "$SK/execute/team-agents.md"
     [ "$status" -ne 0 ]
-    # The router and the onboard flow implement the 5.x standard; 2.x and 4.x
-    # are historical series, not what this skill implements.
+    # The router and onboard flow implement current v6; older generations
+    # remain historical and retain their recorded plans.
     run grep -rn '4\.x this skill implements' "$SK"
     [ "$status" -ne 0 ]
-    grep -qF '5.x this skill' "$ROUTER"
-    grep -qF '5.x this skill' "$ONBOARD"
-    grep -qF 'historical series' "$ROUTER"
-    grep -qF 'historical series' "$ONBOARD"
+    grep -qF 'earlier series (2.x, 4.x, or 5.x' "$ROUTER"
+    grep -qF 'earlier series (2.x, 4.x, or 5.x' "$ONBOARD"
 }
 
 @test "install docs enumerate exactly the sub-skills setup.sh links" {

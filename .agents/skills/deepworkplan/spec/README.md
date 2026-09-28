@@ -1,14 +1,12 @@
-# DeepWorkPlan Methodology Specification — v5.0.0
+# DeepWorkPlan Methodology Specification — v6
 
 > The canonical normative standard for an **AI-first autopilot repository** and the
-> **Deep Work Plan (DWP)** workflow. Version **5.0.0** (the series are 2.x and 4.x
-> historical and 5.x current — see `DWP_SPECIFICATION.md` "Status"; the v5 schema
-> URLs are generation snapshots of the v2 shape, published at
-> `https://deepworkplan.com/schema/`). This v5 spec **supersedes** the v2 spec
-> (4.0.0, 2.4.0, 2.2.0), which superseded the v1 baseline specs in
-> `PLAN_build_deepworkplan_brand/.../deepworkplan/spec/` (and the upstream
-> `repo-ready/` and `opensource` drafts). Reconciled from that
-> baseline plus the 6 (+1) new ideas per `../RECONCILIATION.md`.
+> The current **Deep Work Plan (DWP)** standard is v6. The v5 base documents
+> below remain versioned 5.0.0 so existing plans keep their recorded rules;
+> the four `V6_*.md` documents define the current lifecycle on top of that
+> base. New plans created by the 6.x pack use v6. Existing v1/v2/v5 plans
+> retain their recorded generation and are never silently migrated. Schema
+> URLs are published at `https://deepworkplan.com/schema/`.
 
 All documents use RFC-2119 normative language (MUST / SHOULD / MAY / MUST NOT) and
 are grounded in an audit of 6 Dailybot repositories, in which most of the
@@ -29,7 +27,7 @@ orchestrator hub, and agent workspace — are addressed throughout.
 | [`V6_CONTRACT.md`](V6_CONTRACT.md) | **v6 line** normative surfaces: the outcome/authority `contract.json` (content-addressed identity, revisions, closed adaptation enumeration) and the append-only `journal.ndjson` event catalog with trust labels; published as `schema/plan-contract-v6` + `schema/journal-event-v6`. Binds v6 new plans only — the v5 standard is untouched. |
 | [`V6_CONTEXT.md`](V6_CONTEXT.md) | **v6 line** context contract: the per-task context manifest (derived, never stored — Q6 derivation table), mandatory sections no pruning may drop, the next-action ladder, the retention-biased dead-end digest (U4), input-fingerprint freshness invalidation, history loading by trigger only, and the four-quantity accounting rule (bytes / tokens / cost / wall-clock — missing stays missing, never bytes-to-money). Binds v6 new plans only. |
 | [`V6_RESOURCES.md`](V6_RESOURCES.md) | **v6 line** resource contract: host capability negotiation (closed ability set, minimal-host floor), the counter-source split (journal vs host meter, unknown unit = advisory), limit reserves with a runtime dispatch ceiling, the `LIMIT:` exhaustion grammar with derived dispatch holds, exactly-once cancellation settlement (`RESERVATION:` grammar, double-charge refused), and fixed-model-default routing posture (grant AND host ability). Binds v6 new plans only. |
-| [`V6_LIFECYCLE.md`](V6_LIFECYCLE.md) | **v6 line** flow wiring: plan-generation detection by artifacts (manifest contract pointer / `contract.json` / `contracts/` chain — never by skill version alone), the v6 activation rule (pack line 6+ or explicit candidate request; never silent), the guarded materialization order (manifest → contract → approval, resumable, refusals that hold), the execution boundary (scheduler dispatch, runner-only observed evidence, derived completion), the amendment path (revision chain + fresh approval + evidence invalidation), read-only status/verify surfaces, v5/v6 coexistence, the explicit one-directional v5 migration (preview → backup → contract → manifest swap → journal import → projection, rollback guarded by real history), cross-agent/cold resume (journal-is-truth ladder, export handoff), and the v6 onboarding guidance (capability declaration, authority boundaries, outcome/test mapping, concise context — trigger-gated, v5-only repos get none). Binds v6 new plans only. |
+| [`V6_LIFECYCLE.md`](V6_LIFECYCLE.md) | **Current v6** flow wiring: plan-generation detection by artifacts (manifest contract pointer / `contract.json` / `contracts/` chain — never by skill version alone), the v6 activation rule (default for pack line 6+), the guarded materialization order (manifest → contract → approval, resumable, refusals that hold), the execution boundary (scheduler dispatch, runner-only observed evidence, derived completion), the amendment path (revision chain + fresh approval + evidence invalidation), read-only status/verify surfaces, v5/v6 coexistence, the explicit one-directional v5 migration (preview → backup → contract → manifest swap → journal import → projection, rollback guarded by real history), cross-agent/cold resume (journal-is-truth ladder, export handoff), and the v6 onboarding guidance (capability declaration, authority boundaries, outcome/test mapping, concise context). Binds v6 new plans only. |
 | [`V7_ROADMAP.md`](V7_ROADMAP.md) | **Non-normative** planning record for the next version: the two optional super addons (Herdr mesh wiring, DeepWorkPlan Vim), the `[herdr-mesh]` grant/stop protocol core, and the never-a-conformance-gate posture. Nothing here gates the current standard. |
 | [`ADDONS.md`](ADDONS.md) | The addon mechanism + contract (reconcile-don't-clobber); four opt-in addons plus the AI Diff Reviewer local review, required in the baseline since 2.3.0 (§6.5). |
 
@@ -83,4 +81,4 @@ orchestrator hub, and agent workspace — are addressed throughout.
 
 ---
 
-*DeepWorkPlan methodology v5.0.0, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*
+*DeepWorkPlan methodology v6, MIT License, by [Dailybot](https://dailybot.com) / dailybotops.*

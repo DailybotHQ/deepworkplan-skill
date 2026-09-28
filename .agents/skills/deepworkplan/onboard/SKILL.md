@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-onboard
 description: Make any repository AI-first — reason (never template) an adapted AGENTS.md, docs/, per-module docs and .agents/ kit from the real repo, discover and verify its full and scoped validation commands and source-to-test mapping, install the DeepWorkPlan skill, and, for a repository onboarded under an earlier version, perform a targeted, non-destructive, idempotent harness upgrade. Use when the developer wants to onboard or upgrade a repository for AI agents.
-version: "5.5.4"
+version: "6.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -53,7 +53,7 @@ work reliably without per-session human hand-holding.
   fallback and the orchestrator-hub note. See `presets/README.md` for the full
   index. Read the matching preset in Phase 1 and use it in Phases 3–6.
   **Presets are reasoning aids, not templates.**
-- **Bounded autonomy (conditional — read only when the trigger fires):** [`v6.md`](v6.md) when the repository will run v6 plans — the pack line is 6+ or the developer explicitly requested the v6 candidate. It adds the four v6 records (capability declaration, authority boundaries, outcome/test mapping, concise working context) and the upgrade scenarios. A v5-only repository never reads it.
+- **Bounded autonomy (conditional — read only when the trigger fires):** [`v6.md`](v6.md) when the repository will run v6 plans — the pack line is 6+ or the developer explicitly requested v6. It adds the four v6 records (capability declaration, authority boundaries, outcome/test mapping, concise working context) and the upgrade scenarios. A v5-only repository never reads it.
 - **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2, §10 when Phase 7 scaffolds `.dwp/` beyond the paths `../shared/dwp-paths.md` names or Phase 3b authors the first plan; [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
 - [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins). No optional addon is required for a repository to use DWP.
@@ -103,7 +103,7 @@ When this flow finishes, the target repo contains:
    escalation paths and fallback, plus the unit-first posture — so every future
    plan can select its gates instead of guessing (`../spec/DOCUMENTATION_STANDARD.md` §3.4).
 7. **A recorded standard and a first usable outcome** — the provenance line
-   `DWP standard: 5.0.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
+   `DWP standard: 6.0.0 (onboarded YYYY-MM-DD; skill x.y.z)` in `AGENTS.md`, and
    a `.dwp/onboard/REPORT.md` that names the verified command and mapping, the
    installed skill identity and version, the active capability limits (what
    could not be verified and why), and the exact post-onboarding next command
@@ -173,9 +173,8 @@ Phase 0 consent; a decline is recorded as a declared exception).
    - **Existing and previously onboarded → harness upgrade.** `AGENTS.md`
      and/or `.agents/` already exist **and** the repository's guidance predates
      the installed skill's requirements: no `DWP standard:` provenance line, a
-     provenance line from a non-current series (older than the 5.x this skill
-     implements — 2.x and 4.x are historical series,
-     `../spec/DWP_SPECIFICATION.md` §6.5), or a
+     provenance line from an earlier series (2.x, 4.x, or 5.x; see
+     `../spec/V6_LIFECYCLE.md`), or a
      `docs/TESTING_GUIDE.md` without the scoped-invocation / mapping / posture
      content of `../spec/DOCUMENTATION_STANDARD.md` §3.4, or missing working
      principles (§2.3.1; assess equivalent rules by meaning, not headings).
@@ -437,7 +436,7 @@ Record the chosen strategy (inline vs plan-driven) and its evidence in
 ### Phase 2c — Bounded-autonomy records (v6 repositories only)
 
 **Only when** the repository will run v6 plans (pack line 6+ or an
-explicit candidate request), read [`v6.md`](v6.md) and reconcile its four
+explicit v6 request), read [`v6.md`](v6.md) and reconcile its four
 records — capability declaration, authority boundaries, outcome/test
 mapping, concise working context — into the Phase 3–4 outputs, applying
 the Phase 0 rules verbatim. A v5-only repository skips this phase
@@ -472,7 +471,7 @@ context. It MUST cover these six responsibilities:
    (`full` / `scoped`). **Mark** any command that
    runs only in CI or only inside a container (e.g. "must run **inside** the
    Docker container"), and any scoped pattern that is proposed/unverified.
-4. **Provenance** — one line, `DWP standard: 5.0.0 (onboarded YYYY-MM-DD;
+4. **Provenance** — one line, `DWP standard: 6.0.0 (onboarded YYYY-MM-DD;
    skill x.y.z)` (on upgrade: `…; upgraded YYYY-MM-DD; skill x.y.z`), so a
    checker and a future agent can tell which standard the repository declares
    (`../spec/DOCUMENTATION_STANDARD.md` §3.5).
