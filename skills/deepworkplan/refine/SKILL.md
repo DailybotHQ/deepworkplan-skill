@@ -257,6 +257,16 @@ Migration is the **only** way a plan changes standard, and it happens **only**
 when the developer asks for it explicitly (`../spec/DWP_SPECIFICATION.md` §6.5,
 `../spec/PLAN_STATE.md` §6.1). Never suggest it as a side effect of another edit.
 
+**Route by recorded generation before Step 4.1.** For a v5 plan, use the v5 →
+v6 migration path in Step 3.2a and `../spec/V6_LIFECYCLE.md` §8: run
+`python3 ../shared/migrate_v6.py --plan <dir> preview`, inspect the re-evidence
+list and blockers, then run `python3 ../shared/migrate_v6.py --plan <dir>
+--authority <who> migrate` on the explicit request. Report the migrated
+contract, journal, projection, and criteria requiring new evidence. Do not
+apply Steps 4.1–4.6 below to a v5 plan. Those steps only migrate a pre-v5
+three-task ending to the retained v5 Final Review shape. A v6 plan already
+uses the current generation and has no migration step.
+
 1. **Classify** (Step 3.2). If the plan already has the v5 Final Review shape, say
    so and stop.
 2. **Preserve completed work.** Any `[x]` task — including a legacy final task

@@ -260,10 +260,10 @@ all following text is literal context. Never inspect ordinary context words.
 
 **0.3 Select the plan generation:** if this pack's line is 6+ or the developer
 explicitly asked for a v6 plan (e.g. `v6` among the tokens, "create a v6
-plan"), the plan is created under the v6 execution contract instead: read
-[`v6.md`](v6.md) (this directory) and follow it — the steps below compose
-the retained v5 lifecycle. With this 6.x pack, v6 is the default for new
-plans. Existing plans always keep their recorded generation.
+plan"), read [`v6.md`](v6.md) and follow that flow exclusively. Stop here:
+Steps 1 onward in this file describe the retained v5 creation lifecycle and
+MUST NOT be applied to a v6 plan. With this 6.x pack, v6 is the default for
+new plans. Existing plans always keep their recorded generation.
 
 ### Step 1 — Quick Introduction
 
