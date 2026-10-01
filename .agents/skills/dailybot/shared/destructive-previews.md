@@ -9,8 +9,8 @@ Archive doors accept `?dry_run=true`, and the CLI uses it automatically before e
 destructive call:
 
 ```bash
-dailybot task archive <task-uuid> --dry-run
-dailybot board archive <board-uuid> --dry-run
+dailybot plan task archive <task-uuid> --dry-run
+dailybot plan board archive <board-uuid> --dry-run
 ```
 
 The preview writes no rows and no audit events. It returns:
@@ -61,9 +61,9 @@ stdout for every exit code does not need a special case here.
 and nothing is written. It sends no idempotency key.
 
 ```bash
-dailybot task bulk --operation archive -f batch.json --dry-run --json
+dailybot plan task bulk --operation archive -f batch.json --dry-run --json
 # stop here: show the developer the changes and refusals; run the next line only after yes
-dailybot task bulk --operation archive -f batch.json --yes --json
+dailybot plan task bulk --operation archive -f batch.json --yes --json
 ```
 
 A preview that predicts refusals exits 1. A server too old to preview refuses the keyless
@@ -87,10 +87,10 @@ that board or project with the file you send. There is no preview of any kind: t
 (`--if-match`) only stops you from overwriting a save that happened after you read. It does
 not check that the new list is what the person wants. So:
 
-1. Read the current list: `dailybot board views <board-uuid> --json` (or `project views`).
+1. Read the current list: `dailybot plan board views <board-uuid> --json` (or `project views`).
 2. Show the developer the views that the new file drops or changes.
 3. Wait for their go-ahead, then save with the ETag you read:
-   `dailybot board view save <board-uuid> -f views.json --if-match "<etag>"`.
+   `dailybot plan board view save <board-uuid> -f views.json --if-match "<etag>"`.
 
 ## What to do as an agent
 

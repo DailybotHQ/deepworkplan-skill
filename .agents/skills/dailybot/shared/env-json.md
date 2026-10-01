@@ -68,11 +68,13 @@ Neither file overlaps on any field. Both can be present, and typically will be: 
   "profiles": [
     {
       "name": "live",
-      "api_key": "sk_live_xxxxxxxx"
+      "api_key": "sk_live_xxxxxxxx",
+      "kind": "live"
     },
     {
       "name": "local org 1",
       "api_key": "sk_local_xxxxxxxx",
+      "kind": "testing",
       "api_url": "http://localhost:8000",
       "app_url": "http://localhost:8090"
     },
@@ -95,8 +97,33 @@ Neither file overlaps on any field. Both can be present, and typically will be: 
 | `profiles[].api_key` | string | **required** | The API key for this environment. Plain-text on disk — gitignore is mandatory. |
 | `profiles[].api_url` | string | optional | Overrides `DAILYBOT_API_URL` / `credentials.json` when this profile is active. Falls through to `https://api.dailybot.com` when absent. |
 | `profiles[].app_url` | string | optional | Overrides `DAILYBOT_APP_URL` when this profile is active. Falls through to `https://app.dailybot.com` when absent. |
+| `profiles[].kind` | `"live"` \| `"testing"` | optional (default `live`) | **Label only** — does not change which profile is used. `testing` = local/dev API; `live` = production/staging. Shown in `env list` / `env show`. On `env add`, if `--kind` is omitted, a local `--api-url` (`localhost`, `127.0.0.1`, `host.docker.internal`) infers `testing`; otherwise `live`. |
 
 Unknown keys are logged as a warning and ignored (forward-compatibility). snake_case only — camelCase is a schema violation.
+
+---
+
+## Dual session — production reports + testing profiles
+
+The skill pack is **production-first**: `dailybot login` (or a live API key) is how agents send reports, email, chat, and releases. `env.json` does not replace that. It lets the **same machine** keep extra **named profiles** (live *and* testing) and switch them without losing the OTP session.
+
+| You want | Do this |
+| --- | --- |
+| Production (reports, default CLI) | `dailybot env off` — file stays on disk; login / `agents.json` apply |
+| Local or staging org for this repo | `dailybot env use <name>` |
+| See every profile | `dailybot env list` (column **Kind**) |
+| Restore last env profile | `dailybot env on` |
+| Production `agents.json` identity | `dailybot agent --profile <slug> …` still beats env.json (layer 1) |
+
+**Agent rules**
+
+1. Send **progress reports to production** unless the developer explicitly asked to report into a local/staging org. If a testing profile is active, `dailybot env off` first, then `dailybot agent update`.
+2. Do **not** `dailybot login` while a testing profile is active — OTP would hit that profile's `api_url`.
+3. Switching is the same command as always: `env use`. Mix `kind: live` and `kind: testing` in one file; only one `active` at a time.
+4. Never print raw `env.json`.
+5. A testing profile never borrows the production login: the session token only travels to the host that issued it (see the precision notes under the auth resolution order).
+
+Worked flow: Example 5 below. CLI docs: [CONFIGURATION.md Dual session](https://github.com/DailybotHQ/cli/blob/main/docs/CONFIGURATION.md#dual-session--production-default--testing-profiles).
 
 ---
 
@@ -110,9 +137,10 @@ dailybot env add \
   --key sk_local_xxxxxxxx \
   --api-url http://localhost:8000 \
   --app-url http://localhost:8090
+# infers --kind testing from the local URL; pass --kind live|testing to override
 
 # Additional profiles — appended, active pointer unchanged.
-dailybot env add --name live    --key sk_live_yyyyyyyy
+dailybot env add --name live    --key sk_live_yyyyyyyy --kind live
 dailybot env add --name staging --key sk_staging_zzzzzzzz \
   --api-url https://staging-api.example.com
 
@@ -158,6 +186,7 @@ When `env.json::disabled` is `true`, or `active` is empty/null/unknown, the file
 Two precision notes (CLI >= 3.7.0):
 
 - **Layer 2 holds on the wire, not just in resolution.** When the key comes from `env.json`, the HTTP client sends `X-API-KEY` on the **first** attempt even if a Bearer login session exists — the per-repo key wins even against a server that would have accepted the Bearer, and the global session token is never transmitted to the env.json server. Keys from layers 5–6 keep the historical Bearer-first wire order.
+- **A login token only travels to the API host that issued it.** A testing profile whose `api_url` points at another host never receives the production session — not even as a fallback when its key is refused. On Plan, a structure write refused for a testing key (an agent or organization key) therefore ends as `insufficient_scope` (exit 4), not as a silent retry under the production login. Sign in against that host, or use a personal API key that host issued.
 - **Layer 1 vs layer 2 for `agent *` commands:** a keyed `agents.json` profile beats `env.json` only when selected with an explicit `--profile` flag. The same profile resolved implicitly (via `profile.json::profile` or as the `agents.json` default) yields to `env.json`. `dailybot agent profiles --resolve` always shows exactly what will be sent.
 
 ---
@@ -369,7 +398,33 @@ dailybot status --auth           # → Authenticated via API key (local org agai
 
 If step 2 does not fall back — i.e., the CLI keeps using the env.json profile after `env off` — that's a bug; report it.
 
-### Example 4 — Removing an environment cleanly
+### Example 4 — Dual session: keep production login, test locally, report to prod
+
+Developer: *"Stay logged into production for reports, but I need to hit my local Plan org as several test users."*
+
+```bash
+# Production OTP is already in credentials.json (dailybot login, env off).
+dailybot env off
+dailybot status --auth          # Authenticated via login (OTP) → production
+
+# Add as many testing profiles as needed (same file, different people/orgs).
+dailybot env add --name local-admin --key sk_local_admin \
+  --api-url http://localhost:8000 --kind testing
+dailybot env add --name local-member --key sk_local_member \
+  --api-url http://localhost:8000 --kind testing
+
+dailybot env use local-member
+dailybot me                     # local member
+dailybot plan task list --limit 5    # local Plan
+
+dailybot env off                # REQUIRED before reporting
+dailybot agent update "Shipped X" --metadata '{"model":"<model>"}'
+# → production dashboard
+```
+
+If you leave `env use local-member` on, `dailybot agent update` goes to **local**. That is usually wrong.
+
+### Example 5 — Removing an environment cleanly
 
 ```bash
 dailybot env remove staging --yes
