@@ -31,6 +31,8 @@ __pycache__/
 venv/
 env/
 ENV/
+# The vendored Dailybot pack ships an `env` sub-skill; keep it tracked.
+!.agents/skills/dailybot/env/
 .python-version
 
 # Node (some contributors may run `npx skills` locally for testing)
