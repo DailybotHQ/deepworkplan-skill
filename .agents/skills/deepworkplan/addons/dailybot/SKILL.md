@@ -19,9 +19,11 @@ be AI-first, and it **never blocks** the actual work.
 >
 > The official **Dailybot agent skill** (currently **3.23.2**) already owns
 > install, consent, auth, context detection, the writing style, and the
-> non-blocking guarantee. It exposes **14 coordinated capabilities** (report,
+> non-blocking guarantee. It exposes **17 coordinated capabilities** (report,
 > ask, messages, email, chat, conversations, health, check-ins, kudos, teams,
-> forms, workflows, report channels, per-repo API keys) — but **this addon's job is narrow**: (1)
+> forms, workflows, report channels, per-repo API keys, organization labels,
+> featured stars, and Plan — a Beta workspace surface under `dailybot plan` that
+> needs CLI `>= 3.25.0` and sits outside this addon) — but **this addon's job is narrow**: (1)
 > **offer** to install the Dailybot skill/CLI through their own consent flows,
 > and (2) **wire** the optional **report** sub-skill into DWP `execute`/plan
 > lifecycle. It MUST NOT duplicate, bypass, or weaken any Dailybot consent or

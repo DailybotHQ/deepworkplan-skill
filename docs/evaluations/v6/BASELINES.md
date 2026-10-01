@@ -47,8 +47,12 @@ These are recorded harness facts, not comparator choices:
 | --- | --- | --- |
 | Shipped source (`skills/deepworkplan/`) | 5.5.4 | equals the v5.5.4 tag; the **comparator** |
 | Vendored dogfood (`.agents/skills/deepworkplan/`) | 5.4.0 | repo-adapted working copy; **never** the benchmark comparator |
-| Vendored `ai-diff-reviewer` | 3.2.2 | control reviewer differences explicitly |
-| Vendored `dailybot` | 3.23.2 (refreshed 2026-10-01; 3.14.0 at baseline) | reporting addon; not used in scoring |
+| Vendored `ai-diff-reviewer` | 3.1.1 | control reviewer differences explicitly |
+| Vendored `dailybot` | 3.16.1 (refreshed 2026-09-26; 3.14.0 at baseline) | reporting addon; not used in scoring |
+
+Both addon rows are the freeze snapshot of 2026-09-26. Since the freeze the
+vendored copies moved to `ai-diff-reviewer` 3.2.2 and `dailybot` 3.23.2
+(2026-10-01); neither is used in scoring, so the freeze values stand.
 
 The shipped-source and dogfood drift is owned by the repo's normal
 refresh procedure (`scripts/refresh-dogfood-skill.sh`), not by the evaluation

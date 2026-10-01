@@ -139,11 +139,12 @@ with explicit acceptance, and each reconciled if already present (§7):
 
 The Dailybot agent skill (currently **3.23.2**, source
 [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)) exposes
-**14 coordinated sub-skills**: report, ask, messages, email, chat,
+**17 coordinated sub-skills**: report, ask, messages, email, chat,
 conversations, health, check-ins (complete + authoring), kudos (give + browse),
 teams (list/resolve + `me`/`org`/`user get`), forms (lifecycle + authoring),
-workflows (read-only list/get), report channels, and per-repo API keys
-(`.dailybot/env.json` via `dailybot env`). **This addon wires only the
+workflows (list/get/trigger), report channels, per-repo API keys
+(`.dailybot/env.json` via `dailybot env`), organization labels, featured
+stars, and Plan (Beta; `dailybot plan`, CLI `>= 3.25.0`). **This addon wires only the
 `report` sub-skill** into DWP plan execution (§5). The other capabilities are
 available when the developer invokes the Dailybot skill directly — the addon
 **MUST NOT** wire them into DWP execution unless the developer explicitly asks.
