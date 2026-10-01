@@ -9,6 +9,13 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [6.0.2] — 2026-10-01
+
+### Changes
+
+- docs(addon): point the dailybot addon at agent-skill v3.23.2 (#53)
+
+
 ## [6.0.1] — 2026-09-28
 
 ### Changes
