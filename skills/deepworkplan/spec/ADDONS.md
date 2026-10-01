@@ -162,8 +162,8 @@ form**; only its CI surface is optional.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx --yes skills add DailybotHQ/agent-skill@v3.16.1 --skill dailybot -y`,
-  currently **3.16.1**; or OpenClaw `openclaw skills install dailybot`) and/or
+  (`npx --yes skills add DailybotHQ/agent-skill@v3.23.2 --skill dailybot -y`,
+  currently **3.23.2**; or OpenClaw `openclaw skills install dailybot`) and/or
   the **Dailybot CLI** (`dailybot-cli >= 3.9.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
   never a one-line remote-installer pipe); **defers all authentication** to the
