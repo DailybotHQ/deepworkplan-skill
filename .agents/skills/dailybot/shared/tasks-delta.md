@@ -13,8 +13,8 @@ board snapshot  ──►  delta_cursor  ──►  tasks changes --cursor …  
 ```
 
 ```bash
-dailybot board snapshot <board-uuid> --json          # → delta_cursor
-dailybot tasks changes <board-uuid> --cursor "<c>" --json   # → a new delta_cursor
+dailybot plan board snapshot <board-uuid> --json          # → delta_cursor
+dailybot plan tasks changes <board-uuid> --cursor "<c>" --json   # → a new delta_cursor
 ```
 
 **Persist the new cursor each time.** The delta door's own refusal for a missing cursor does
@@ -29,7 +29,7 @@ A cursor older than seven days is refused **permanently**. It will never be acce
 - the only correct response is a fresh snapshot.
 
 ```bash
-dailybot tasks changes <board-uuid> --cursor "<old>" --resync
+dailybot plan tasks changes <board-uuid> --cursor "<old>" --resync
 ```
 
 An agent offline over a long weekend comes back to exactly this. Handle it before it
@@ -37,7 +37,7 @@ happens.
 
 ## One read per invocation — the loop is yours
 
-`dailybot tasks changes` performs **one** delta read and exits. There is deliberately no
+`dailybot plan tasks changes` performs **one** delta read and exits. There is deliberately no
 `--follow`.
 
 That is not an omission. The rate limit is yours to respect — the server publishes **240

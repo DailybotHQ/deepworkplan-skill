@@ -1,7 +1,7 @@
 ---
 name: dailybot-report
 description: Report work progress to Dailybot. Activate after completing a discrete task or subtask, or after any batch of edits that modifies 3 or more files. Compose a standup-style update describing what changed and why.
-version: "3.16.1"
+version: "3.23.2"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📡","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -245,6 +245,15 @@ Model identifier examples: `"claude-sonnet-4-6"`, `"o3"`, `"gemini-2.5-pro"`, `"
 >
 > **Timeout**: Allow at least 30 seconds for CLI commands to complete. Do not use a shorter timeout.
 
+> ### Target org — production unless asked otherwise
+>
+> Reports belong on the team's **production** Dailybot org. If
+> `.dailybot/env.json` has a **testing** profile active (`dailybot env show`
+> lists `kind: testing` or a local `api_url`), run `dailybot env off` first
+> so `agent update` uses the login session / live key. Switch back with
+> `dailybot env on` only if you still need that testing profile. Full
+> dual-session rules: [`../shared/env-json.md` § Dual session](../shared/env-json.md#dual-session--production-reports--testing-profiles).
+
 > ### Pre-flight (mandatory) — respect the repo profile
 >
 > **Before constructing the command, do the repo-profile pre-flight from the router:** [`../SKILL.md` § Mandatory pre-flight](../SKILL.md#mandatory-pre-flight-respect-the-repo-profile). Full procedure in [`../shared/repo-profile.md`](../shared/repo-profile.md). One-liner detection:
@@ -266,6 +275,8 @@ Model identifier examples: `"claude-sonnet-4-6"`, `"o3"`, `"gemini-2.5-pro"`, `"
 | `--json-data` | `-j` | Structured JSON data | (always pass — not affected by repo profile) |
 | `--milestone` | `-m` | Mark as a milestone accomplishment | (always pass when relevant — not affected by repo profile) |
 | `--co-authors` | `-c` | Co-author email or UUID (repeatable, or comma-separated) | (always pass when relevant — not affected by repo profile) |
+
+**Same name on Plan.** When you also work Plan cards with a login session or a personal API key, set `DAILYBOT_AGENT_NAME` (or `dailybot --agent-name`) to the exact name you pass to `--name` here. With an agent or organization key, omit it: Plan writes still work but carry no `executed_by_agent`, and sending a name is refused with `invalid_agent_attribution` (exit 2). Both resolve to the same agent in the organization's registry, so the card and your reports show the same agent and avatar. See [`../tasks/SKILL.md`](../tasks/SKILL.md), "Work a task you were handed".
 
 ### Plain report — no repo profile
 

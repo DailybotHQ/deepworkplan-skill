@@ -1,6 +1,6 @@
 # Idempotent retries — what a key guarantees, and what it does not
 
-A retry that duplicates a write is worse than a retry that fails. Dailybot's Tasks API
+A retry that duplicates a write is worse than a retry that fails. Dailybot's Plan API
 accepts an `Idempotency-Key` on most writes so a call that times out can be sent again
 safely. The CLI sends one automatically.
 
@@ -31,7 +31,7 @@ Pass your own only when you genuinely want a retry to be recognised across separ
 invocations:
 
 ```bash
-dailybot task create --title "Deploy v2" --idempotency-key "deploy-2026-09-19-v2"
+dailybot plan task create --title "Deploy v2" --idempotency-key "deploy-2026-09-19-v2"
 ```
 
 ## The two refusals
@@ -45,14 +45,14 @@ dailybot task create --title "Deploy v2" --idempotency-key "deploy-2026-09-19-v2
 
 Not every write honours it. Where the server ignores it, the CLI does not send one and
 offers no `--idempotency-key` flag — advertising a guarantee that does not exist is worse
-than having none. Many Tasks doors are like this, for example: editing, restoring or
+than having none. Many Plan doors are like this, for example: editing, restoring or
 reordering columns; creating or updating milestones; updating, restoring, linking or
-unlinking goals; comment edits; board labels; saved views; task subscription. The Tasks
+unlinking goals; comment edits; board labels; saved views; task subscription. The Plan
 command reference (`tasks/commands.md`) marks every door that **does** send a key with
 `+key` (among them `project update-post` and `milestone complete` / `reopen`). For any other
 door, a retry can repeat the write, so check the state first.
 
-`POST /v1/tasks/tasks/bulk/` is the opposite: it **requires** the header.
+`POST /v1/plan/tasks/bulk/` is the opposite: it **requires** the header.
 
 ## A timeout is not a failure
 
@@ -62,7 +62,7 @@ retrying rather than assuming. The CLI says so in the message for exactly this r
 ## `_idempotency_replayed` is the CLI's own annotation
 
 The server reports a replay in the `Idempotency-Replayed` **header**, which a caller reading
-only the JSON body cannot see. So every Tasks write body the CLI emits — including under
+only the JSON body cannot see. So every Plan write body the CLI emits — including under
 `--json` — carries `_idempotency_replayed`, and a write on a `+key` door also carries
 `_idempotency_key`, the key that was actually sent:
 
@@ -108,3 +108,11 @@ server has never seen — which is precisely how a timeout becomes a duplicate.
 
 On a door without `+key`, the error carries no `idempotency_key`, and nothing makes a retry
 safe. Re-read the object's current state, and repeat the write only if it did not land.
+
+## `task create --label` is two writes
+
+With `--label` the CLI creates the task (with a key) and then attaches
+the labels through the label door (its own key). If the second write fails, the task **already
+exists**: the command exits 1, says so, and under `--json` names it in `created_task`. The
+create's key would replay that same task, but the safe move is not to re-run the create at all:
+fix the label and run `task labels <task> --mode add --label <uuid>` on the task it named.

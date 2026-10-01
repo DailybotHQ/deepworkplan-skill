@@ -97,23 +97,25 @@ standalone page (no sidebar navigation).
 
 ---
 
-### Tasks — no dashboard route is published
+### Plan
 
-**There is deliberately no Tasks section in this catalog, and you must not invent one.**
+The web app lives under `/plan`. A task payload
+carries no `url` field, so build these from ids you already hold; never invent other shapes.
 
-The web app owns its Tasks path shapes and they are not published; they also moved recently.
-The API confirms it: a task payload carries 29 fields and **none** of them is `url`,
-`web_url`, `permalink` or `app_url`.
+| Page | Path |
+|------|------|
+| Inbox | `/plan/inbox` |
+| A task by key | `/plan/{KEY}` (for example `/plan/ENG-142`) |
+| A task by uuid | `/plan/id/{uuid}` |
+| Board | `/plan/boards/{uuid}` |
+| Project (tab optional, e.g. `?tab=milestones`) | `/plan/projects/{uuid}` |
+| Goal | `/plan/goals/{uuid}` |
+| Notification settings (one kind, or the briefing) | `/plan/settings/notifications#kind-<key>` · `#briefing` |
+| Channels used by routes (optionally one board) | `/plan/settings/channels` · `?board=<uuid>` |
+| Scheduled reports | `/plan/settings/reports` |
 
-So for boards, tasks, projects, goals and milestones:
-
-- hand the developer the **API self-link** the CLI prints
-  (`/v1/tasks/tasks/<uuid>/`, `/v1/tasks/boards/<uuid>/board/`);
-- do **not** build a dashboard URL by analogy with the Forms or Check-ins routes above;
-- if a future API response starts carrying a `url` field, that still is not a licence to
-  print it until the route shapes are published here.
-
-A dead link handed to a human is worse than no link.
+If the API ever returns a `url`, prefer it. A path outside this table is unpublished: hand the
+developer the **API self-link** the CLI prints (`/v1/plan/tasks/<uuid>/`) instead of guessing.
 
 ## 3. Building full URLs
 
