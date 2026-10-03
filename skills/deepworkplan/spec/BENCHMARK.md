@@ -20,7 +20,7 @@ Benchmark mode is opt-in through a JSON configuration file:
 
 | Precedence | Path | Scope |
 |---|---|---|
-| 1 (highest) | `<repo-root>/.dwp/config.json` | this repository |
+| 1 (highest) | `<repo-root>/.dwp/config.json` | this repository — the repository **containing the plan** (the plan's `.dwp` ancestor), never the helper's working directory |
 | 2 | `~/.dwp/config.json` | all repositories of the local user |
 | 3 | absent | **disabled** |
 
