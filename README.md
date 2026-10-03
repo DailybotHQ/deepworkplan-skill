@@ -193,6 +193,50 @@ full folder name, ID, or unique slug. Existing folders such as
 creates v6 plans with 2–5-word slugs. The retained v5 creation flow uses
 2–4 words to fit its frozen schemas.
 
+## Benchmark metrics (opt-in)
+
+DWP can record how each executed plan went, so skill versions can be compared
+on recorded evidence instead of impressions. It is off unless you turn it on:
+
+```json
+// <repo>/.dwp/config.json — this repository only
+{ "benchmark": { "enabled": true } }
+```
+
+```json
+// ~/.dwp/config.json — every repository you run plans in
+{ "benchmark": { "enabled": true } }
+```
+
+The repository file wins over the global one, and anything malformed is
+disabled with a warning — the feature fails closed. When enabled, the v6
+execute flow emits two artifacts into the finished plan's `analysis_results/`
+at completion: `benchmark.json`, a machine-readable record, and `BENCHMARK.md`,
+a human summary. Both cover execution timing (a calendar span, not active
+runtime), plan shape and complexity counts, friction events (retries,
+adaptations, refusals), gate outcomes with evidence classes, and diff
+statistics — plus tokens and spend only when the host actually metered them.
+
+Three honesty rules hold by construction: nothing is imputed (unmetered
+quantities are null, never estimated), the emission is best-effort (a failure
+warns and never blocks plan completion), and nothing leaves your repositories
+— the record names only the repository basename and branch. The v5 line is
+frozen: v5 plans are listed by the aggregator as not collected and are never
+measured.
+
+To combine records across plans and repositories:
+
+```bash
+python3 skills/deepworkplan/shared/benchmark.py aggregate \
+    --roots ~/code/repo-a ~/code/repo-b --csv monthly.csv --out monthly.md
+```
+
+The aggregate report groups by skill version and repository, and carries a
+standing note: workloads differ across plans, repositories and versions, so
+aggregates are evidence for discussion, not a causal comparison. The
+specification is [`skills/deepworkplan/spec/BENCHMARK.md`](skills/deepworkplan/spec/BENCHMARK.md)
+(record schema: [`spec/schema/benchmark-record.schema.json`](skills/deepworkplan/spec/schema/benchmark-record.schema.json)).
+
 ## Reproducible installs (`skills-lock.json`)
 
 When you install at **project scope** (e.g. `npx skills add` run inside a
