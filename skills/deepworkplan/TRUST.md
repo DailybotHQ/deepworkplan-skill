@@ -13,7 +13,7 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Thirteen Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Fourteen Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check,
 `shared/plan_paths.py` for monotonic plan IDs and plan selection,
@@ -58,7 +58,15 @@ a v5 gate record is imported through the ledger writer as `imported`
 evidence with the v5 source digest as provenance (or `asserted` history
 when the v5 state kept no resolvable pointer), and `observed` is refused
 there exactly as everywhere else. The only v5 byte it ever rewrites is the
-manifest, swapped to the v6 pointer after the verified backup exists. They
+manifest, swapped to the v6 pointer after the verified backup exists. And
+`shared/benchmark.py`, the opt-in benchmark helper: **disabled unless you turn
+it on** (`.dwp/config.json` or `~/.dwp/config.json`); it derives a per-plan
+metrics record from the plan's own records — journal, contract, state — and
+writes it inside that plan's `analysis_results/`. Unmetered quantities are
+null, never estimated; the record never leaves your repositories (no network,
+no upload — it is local field data you asked for, not telemetry); and an
+emission failure degrades to a warning and can never block plan completion.
+They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
 ours: importing a Python helper can leave a `__pycache__/` bytecode cache
