@@ -1,0 +1,51 @@
+{
+  "schema": "https://deepworkplan.com/schema/learnings-record/v1.json",
+  "plan": "PLAN_106_fixture_learnings",
+  "generation": "v6",
+  "contract_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "derived": [
+    {
+      "seq": 3,
+      "event_type": "gate_run",
+      "reason": "exit_code=1"
+    },
+    {
+      "seq": 4,
+      "event_type": "adaptation",
+      "reason": "first gate run failed; rerun after fix"
+    },
+    {
+      "seq": 8,
+      "event_type": "refusal",
+      "reason": "criteria lacked in-window evidence"
+    }
+  ],
+  "curated": [
+    {
+      "id": "LRN-001",
+      "category": "spec-gap",
+      "anchor": {
+        "seq": 3,
+        "section": "Validation gates"
+      },
+      "finding": "the gate intent named a criterion the journal window could not evidence",
+      "proposal": "require task files to name the exact evidence command per criterion"
+    },
+    {
+      "id": "LRN-002",
+      "category": "instruction-gap",
+      "anchor": {
+        "section": "Read Before Starting"
+      },
+      "finding": "the adaptation was needed because a prerequisite doc was not listed",
+      "proposal": "add the missing doc to the task's Read Before Starting list"
+    },
+    {
+      "id": "LRN-003",
+      "category": "context-miss",
+      "anchor": null,
+      "finding": "a refusal traced to context no surviving artifact pinpoints",
+      "proposal": "record the missing-context subject in the refusal reason"
+    }
+  ]
+}

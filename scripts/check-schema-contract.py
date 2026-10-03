@@ -7,6 +7,9 @@ validator, then runs contract checks the schemas cannot express:
 
   * closed-schema direction: an extra top-level field is INVALID (both schema
     families are closed);
+  * learnings record: the committed fixtures validate under both halves and
+    the closed-vocabulary / anchor-grammar / finding+proposal mutants are
+    rejected (spec/BENCHMARK.md section 10);
   * both supported directions: legacy v1 plans and Lite/Full v2 plans select
     their declared schema family rather than being silently coerced;
   * unknown future spec_version: schema-valid, but flagged by the contract
@@ -51,6 +54,7 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/plan-snapshot/v6.json": json.load(open(os.path.join(d, "plan-snapshot-v6.schema.json"))),
         "https://deepworkplan.com/schema/plan-manifest/v6.json": json.load(open(os.path.join(d, "plan-manifest-v6.schema.json"))),
         "https://deepworkplan.com/schema/benchmark-record/v1.json": json.load(open(os.path.join(d, "benchmark-record.schema.json"))),
+        "https://deepworkplan.com/schema/learnings-record/v1.json": json.load(open(os.path.join(d, "learnings-record.schema.json"))),
     }
 
 
@@ -300,16 +304,18 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
 def benchmark_cases(schemas, problems, notes, pack):
     """Benchmark record (spec/BENCHMARK.md): the committed fixtures validate
     under BOTH halves - jsonschema over the published schema, and the shipped
-    benchmark.validate_record - and the halves agree on the mutants. Two
-    cross-field rules (no imputation: an unmetered record carries no values;
-    an unavailable diff window carries no counts) are runtime-expressive
-    only, so those mutants are runtime-only probes, mirroring the
-    contract-mutant convention above."""
+    benchmark.validate_record - and the halves agree on the mutants. The
+    cross-field no-imputation rules (an unmetered record carries no values;
+    an unavailable diff window carries no counts; a task span is null
+    exactly when its end is; an unavailable context-accounting block carries
+    no values) are runtime-expressive only, so those mutants are
+    runtime-only probes, mirroring the contract-mutant convention above."""
     bs = schemas["https://deepworkplan.com/schema/benchmark-record/v1.json"]
     bdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "tests", "fixtures", "v6", "benchmark-records")
     names = ("benchmark-record-metered.json", "benchmark-record-unmetered.json",
-             "benchmark-record-minimal.json")
+             "benchmark-record-minimal.json", "benchmark-record-spans.json",
+             "benchmark-record-accounting.json")
     docs = []
     for name in names:
         path = os.path.join(bdir, name)
@@ -327,7 +333,9 @@ def benchmark_cases(schemas, problems, notes, pack):
             if rerrs:
                 problems.append(f"benchmark fixture {name}: shipped validator rejects it ({rerrs[:1]})")
         if not problems:
-            notes.append("benchmark: all three record fixtures valid under both halves (jsonschema + shipped validator)")
+            notes.append("benchmark: all five record fixtures valid under both halves "
+                         "(jsonschema + shipped validator; spans present / absent-evidence "
+                         "/ accounting available + unavailable)")
 
         def both_reject(label, mutate):
             doc = copy.deepcopy(docs[0][1])
@@ -336,8 +344,8 @@ def benchmark_cases(schemas, problems, notes, pack):
             if not jerrs or not rerrs:
                 problems.append(f"benchmark mutant {label}: a half accepted it (jsonschema={bool(jerrs)} runtime={bool(rerrs)})")
 
-        def runtime_rejects(label, mutate):
-            doc = copy.deepcopy(docs[0][1])
+        def runtime_rejects(label, mutate, base=None):
+            doc = copy.deepcopy(docs[0][1] if base is None else base)
             mutate(doc)
             if not benchmark.validate_record(doc):
                 problems.append(f"benchmark mutant {label}: runtime validator accepted it")
@@ -356,8 +364,71 @@ def benchmark_cases(schemas, problems, notes, pack):
                         lambda d: d["diff_stats"].update(available=False))
         runtime_rejects("available diff lacking counts",
                         lambda d: d["diff_stats"].update(files=None))
+        by_name = dict(docs)
+        spans_doc = by_name.get("benchmark-record-spans.json")
+        if spans_doc is not None:
+            runtime_rejects("span with zeroed missing evidence (imputation)",
+                            lambda d: d["timing"]["task_spans"][1].update(span_seconds=0),
+                            base=spans_doc)
+        acct_doc = by_name.get("benchmark-record-accounting.json")
+        if acct_doc is not None:
+            runtime_rejects("imputed-looking context accounting",
+                            lambda d: d["context_accounting"].update(instruction_bytes=12),
+                            base=acct_doc)
         if not problems:
-            notes.append("benchmark: mutants rejected (schema const / closed object / grammar / no-imputation cross-rules)")
+            notes.append("benchmark: mutants rejected (schema const / closed object / grammar / no-imputation cross-rules incl. spans + accounting)")
+
+
+def learnings_cases(schemas, problems, notes, pack):
+    """Learnings record (spec/BENCHMARK.md section 10): the committed
+    fixtures validate under BOTH halves - jsonschema over the published
+    schema, and the shipped benchmark.validate_learnings - and the halves
+    agree on the mutants. The closed category vocabulary, the closed
+    top-level object, the anchor grammar (integer seq >= 1; section
+    <= 64 chars, no paths) and the required finding+proposal pair are all
+    schema-expressive, so every learnings mutant is a both-halves probe."""
+    ls = schemas["https://deepworkplan.com/schema/learnings-record/v1.json"]
+    ldir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "tests", "fixtures", "v6", "benchmark-records")
+    names = ("learnings-record-populated.json", "learnings-record-template.json")
+    docs = []
+    for name in names:
+        path = os.path.join(ldir, name)
+        if not os.path.isfile(path):
+            problems.append(f"learnings: fixture {name} missing")
+            continue
+        docs.append((name, json.load(open(path))))
+    if docs:
+        benchmark = load_pack_module(pack, "benchmark")
+        for name, doc in docs:
+            jerrs = errors(ls, doc)
+            rerrs = benchmark.validate_learnings(doc)
+            if jerrs:
+                problems.append(f"learnings fixture {name}: jsonschema rejects it ({jerrs[:1]})")
+            if rerrs:
+                problems.append(f"learnings fixture {name}: shipped validator rejects it ({rerrs[:1]})")
+        if not problems:
+            notes.append("learnings: populated + template fixtures valid under both halves "
+                         "(jsonschema + shipped validator; unanchored entry carried)")
+
+        def both_reject(label, mutate):
+            doc = copy.deepcopy(docs[0][1])
+            mutate(doc)
+            jerrs, rerrs = errors(ls, doc), benchmark.validate_learnings(doc)
+            if not jerrs or not rerrs:
+                problems.append(f"learnings mutant {label}: a half accepted it (jsonschema={bool(jerrs)} runtime={bool(rerrs)})")
+
+        both_reject("unknown category (closed vocabulary)",
+                    lambda d: d["curated"][0].update(category="performance-gap"))
+        both_reject("extra top-level field", lambda d: d.update(mystery=1))
+        both_reject("anchor section with a path",
+                    lambda d: d["curated"][0].update(anchor={"section": "spec/BENCHMARK.md"}))
+        both_reject("curated entry missing finding", lambda d: d["curated"][0].pop("finding"))
+        both_reject("curated entry missing proposal", lambda d: d["curated"][1].pop("proposal"))
+        both_reject("anchor seq as a string", lambda d: d["curated"][0].update(anchor={"seq": "3"}))
+        if not problems:
+            notes.append("learnings: mutants rejected by both halves (closed vocabulary / "
+                         "closed object / anchor grammar / required finding+proposal)")
 
 
 def errors(schema, doc):
@@ -505,6 +576,7 @@ def main():
     negative_cases(schemas, problems, notes)
     v6_cases(schemas, problems, notes, a.pack, a.fixtures)
     benchmark_cases(schemas, problems, notes, a.pack)
+    learnings_cases(schemas, problems, notes, a.pack)
     for n in notes:
         print("ok  ", n)
     for p in problems:

@@ -1,0 +1,24 @@
+{
+  "schema": "https://deepworkplan.com/schema/learnings-record/v1.json",
+  "plan": "PLAN_106_fixture_learnings",
+  "generation": "v6",
+  "contract_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "derived": [
+    {
+      "seq": 3,
+      "event_type": "gate_run",
+      "reason": "exit_code=1"
+    },
+    {
+      "seq": 4,
+      "event_type": "adaptation",
+      "reason": "first gate run failed; rerun after fix"
+    },
+    {
+      "seq": 8,
+      "event_type": "refusal",
+      "reason": "criteria lacked in-window evidence"
+    }
+  ],
+  "curated": []
+}
