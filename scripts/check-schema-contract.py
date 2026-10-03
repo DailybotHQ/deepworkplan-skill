@@ -50,6 +50,7 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/journal-event/v6.json": json.load(open(os.path.join(d, "journal-event-v6.schema.json"))),
         "https://deepworkplan.com/schema/plan-snapshot/v6.json": json.load(open(os.path.join(d, "plan-snapshot-v6.schema.json"))),
         "https://deepworkplan.com/schema/plan-manifest/v6.json": json.load(open(os.path.join(d, "plan-manifest-v6.schema.json"))),
+        "https://deepworkplan.com/schema/benchmark-record/v1.json": json.load(open(os.path.join(d, "benchmark-record.schema.json"))),
     }
 
 
@@ -296,6 +297,69 @@ def v6_cases(schemas, problems, notes, pack, fixtures):
         shutil.rmtree(mtmp, ignore_errors=True)
 
 
+def benchmark_cases(schemas, problems, notes, pack):
+    """Benchmark record (spec/BENCHMARK.md): the committed fixtures validate
+    under BOTH halves - jsonschema over the published schema, and the shipped
+    benchmark.validate_record - and the halves agree on the mutants. Two
+    cross-field rules (no imputation: an unmetered record carries no values;
+    an unavailable diff window carries no counts) are runtime-expressive
+    only, so those mutants are runtime-only probes, mirroring the
+    contract-mutant convention above."""
+    bs = schemas["https://deepworkplan.com/schema/benchmark-record/v1.json"]
+    bdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "tests", "fixtures", "v6", "benchmark-records")
+    names = ("benchmark-record-metered.json", "benchmark-record-unmetered.json",
+             "benchmark-record-minimal.json")
+    docs = []
+    for name in names:
+        path = os.path.join(bdir, name)
+        if not os.path.isfile(path):
+            problems.append(f"benchmark: fixture {name} missing")
+            continue
+        docs.append((name, json.load(open(path))))
+    if docs:
+        benchmark = load_pack_module(pack, "benchmark")
+        for name, doc in docs:
+            jerrs = errors(bs, doc)
+            rerrs = benchmark.validate_record(doc)
+            if jerrs:
+                problems.append(f"benchmark fixture {name}: jsonschema rejects it ({jerrs[:1]})")
+            if rerrs:
+                problems.append(f"benchmark fixture {name}: shipped validator rejects it ({rerrs[:1]})")
+        if not problems:
+            notes.append("benchmark: all three record fixtures valid under both halves (jsonschema + shipped validator)")
+
+        def both_reject(label, mutate):
+            doc = copy.deepcopy(docs[0][1])
+            mutate(doc)
+            jerrs, rerrs = errors(bs, doc), benchmark.validate_record(doc)
+            if not jerrs or not rerrs:
+                problems.append(f"benchmark mutant {label}: a half accepted it (jsonschema={bool(jerrs)} runtime={bool(rerrs)})")
+
+        def runtime_rejects(label, mutate):
+            doc = copy.deepcopy(docs[0][1])
+            mutate(doc)
+            if not benchmark.validate_record(doc):
+                problems.append(f"benchmark mutant {label}: runtime validator accepted it")
+
+        both_reject("extra top-level field", lambda d: d.update(mystery=1))
+        both_reject("wrong schema const", lambda d: d.update(schema="https://deepworkplan.com/schema/benchmark-record/v2.json"))
+        both_reject("short contract id", lambda d: d.update(contract_id="zz"))
+        both_reject("plan name grammar", lambda d: d.update(plan="not a plan name"))
+        both_reject("v5 generation", lambda d: d.update(generation="v5"))
+        both_reject("unknown status", lambda d: d.update(status="finished"))
+        runtime_rejects("unmetered record carrying values (imputation)",
+                        lambda d: d["metered"].update(flag=False))
+        runtime_rejects("metered flag without any value",
+                        lambda d: d["metered"].update(tokens=None, spend_usd=None))
+        runtime_rejects("unavailable diff carrying counts",
+                        lambda d: d["diff_stats"].update(available=False))
+        runtime_rejects("available diff lacking counts",
+                        lambda d: d["diff_stats"].update(files=None))
+        if not problems:
+            notes.append("benchmark: mutants rejected (schema const / closed object / grammar / no-imputation cross-rules)")
+
+
 def errors(schema, doc):
     v = jsonschema.Draft202012Validator(schema)
     return [f"{list(e.path)}: {e.message[:90]}" for e in sorted(v.iter_errors(doc), key=lambda e: list(e.path))]
@@ -440,6 +504,7 @@ def main():
         check_plan(p, schemas, problems, notes)
     negative_cases(schemas, problems, notes)
     v6_cases(schemas, problems, notes, a.pack, a.fixtures)
+    benchmark_cases(schemas, problems, notes, a.pack)
     for n in notes:
         print("ok  ", n)
     for p in problems:

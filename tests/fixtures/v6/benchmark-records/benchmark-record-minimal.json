@@ -1,0 +1,58 @@
+{
+  "schema": "https://deepworkplan.com/schema/benchmark-record/v1.json",
+  "plan": "PLAN_103_fixture_minimal",
+  "title": "edge record",
+  "generation": "v6",
+  "contract_id": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "status": "completed",
+  "versions": {
+    "dwp_skill": "6.0.2",
+    "spec": "6.0.0",
+    "agent_tool": "cursor"
+  },
+  "timing": {
+    "first_event_ts": "2026-02-03T10:00:00Z",
+    "last_event_ts": "2026-02-03T10:10:00Z",
+    "span_seconds": 600,
+    "task_count_spanned": 1
+  },
+  "shape": {
+    "tasks": 1,
+    "criteria": 1,
+    "invariants": 0,
+    "gate_intents": 1,
+    "events": 4
+  },
+  "friction": {
+    "adaptations": 0,
+    "amendments": 0,
+    "interventions": 0,
+    "refusals": 0,
+    "retries": 0
+  },
+  "gates": {
+    "runs": 1,
+    "exit_0": 1,
+    "exit_nonzero": 0,
+    "evidence_histogram": {
+      "observed": 1,
+      "imported": 0,
+      "asserted": 0
+    }
+  },
+  "metered": {
+    "flag": false,
+    "tokens": null,
+    "spend_usd": null
+  },
+  "environment": {
+    "repo": "tiny",
+    "branch": "main"
+  },
+  "diff_stats": {
+    "available": true,
+    "files": 1,
+    "insertions": 2,
+    "deletions": 0
+  }
+}
