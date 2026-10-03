@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://deepworkplan.com/schema/benchmark-record/v1.json",
-  "description": "Deep Work Plan benchmark record, v1 (spec/BENCHMARK.md). One closed JSON object per completed v6 plan, emitted into the plan's analysis_results/ by shared/benchmark.py when the repository opted into benchmark mode (.dwp/config.json or ~/.dwp/config.json). The record is derived, never imputed: every field comes from records the plan already owns (journal.ndjson events, manifest.json, contract.json, state.json, best-effort git diff stats). Quantities with no recording source are null - most notably tokens and spend, which exist only when resource_sample events were journaled by a metering host. The record carries no emission timestamp: two runs over identical plan bytes produce identical bytes (spec section 8). v5-generation plans are never measured. The subsystem is opt-in and never a conformance gate.",
+  "description": "Deep Work Plan benchmark record, v1 (spec/BENCHMARK.md). One closed JSON object per completed v6 plan, emitted into the plan's analysis_results/ by shared/benchmark.py when the repository opted into benchmark mode (.dwp/config.json or ~/.dwp/config.json). The record is derived, never imputed: every field comes from records the plan already owns (journal.ndjson events, manifest.json, contract.json, state.json, best-effort git diff stats). Quantities with no recording source are null - most notably tokens and spend, which exist only when resource_sample events were journaled by a metering host. The record carries no emission timestamp: two runs over identical plan bytes produce identical bytes (spec section 8). v5-generation plans are never measured. The subsystem is opt-in and never a conformance gate. The optional timing.task_spans and context_accounting fields are a pre-release v1 amendment (ADR-0005 in the skill repository): no released pack minted this $id before they landed, optional-only so every earlier committed record still validates.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -91,6 +91,37 @@
           "type": "integer",
           "minimum": 0,
           "description": "Number of distinct tasks with at least one task_start event - interrupted and retried tasks count once."
+        },
+        "task_spans": {
+          "type": "array",
+          "description": "Per-task calendar spans, one entry per distinct task_start event (an interrupted-and-restarted task carries one entry per start). Optional field: a pre-release v1 amendment; absent when the journal records no task_start events. Calendar span, not compute time (spec section 3).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["task", "start_ts", "end_ts", "span_seconds"],
+            "properties": {
+              "task": {
+                "type": "string",
+                "pattern": "^T-[a-z0-9]+(-[a-z0-9]+)*$",
+                "description": "Task id from the contract."
+              },
+              "start_ts": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp of the task's task_start event."
+              },
+              "end_ts": {
+                "type": ["string", "null"],
+                "format": "date-time",
+                "description": "Timestamp of the task's completion evidence; null when the window holds no completion evidence for that start - never zero, never imputed."
+              },
+              "span_seconds": {
+                "type": ["integer", "null"],
+                "minimum": 0,
+                "description": "Calendar distance start_ts to end_ts; null exactly when end_ts is null."
+              }
+            }
+          }
         }
       }
     },
@@ -263,6 +294,38 @@
           "type": ["integer", "null"],
           "minimum": 0,
           "description": "Deletions in the plan window."
+        }
+      }
+    },
+    "context_accounting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "instruction_bytes", "provider_tokens", "cost_usd", "wall_clock_hours"],
+      "description": "The four-quantity context accounting block (spec section 3), each quantity from its own source, missing as missing. Optional field: a pre-release v1 amendment. Populated only when the plan's context accounting is recoverable at emission time; otherwise available is false and all four values are null - never synthesized.",
+      "properties": {
+        "available": {
+          "type": "boolean",
+          "description": "False when the plan's context accounting could not be recovered at emission time; the four values are then null, never zero."
+        },
+        "instruction_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Measured static instruction bytes (the context manifest plus any declared bundle files); measured, not estimated."
+        },
+        "provider_tokens": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Latest observed token meter sample; null without resource_sample events. The same recording as metered.tokens, carried once more so the four quantities read as one unit."
+        },
+        "cost_usd": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Latest observed spend sample in USD, from real rates only - never bytes-to-money; null without resource_sample events. The same recording as metered.spend_usd."
+        },
+        "wall_clock_hours": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Recorded event ts span in hours; the same recording as timing.span_seconds, carried once more so the four quantities read as one unit."
         }
       }
     }

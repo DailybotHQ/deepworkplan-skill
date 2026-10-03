@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/learnings-record/v1.json",
+  "description": "Deep Work Plan learnings record, v1 (spec/BENCHMARK.md section 10). One closed JSON object per completed v6 plan in a repository that opted into benchmark mode with learnings enabled ({\"benchmark\": {\"enabled\": true, \"learnings\": true}}), emitted into the plan's analysis_results/ by shared/benchmark.py. Two halves with different disciplines: derived entries are mechanical (journal friction events carrying their recorded reason verbatim, regenerated deterministically on every run) and curated entries are agent judgment (written once when the file is created, then preserved byte-for-byte by reruns - spec section 10.5). Curated entries carry exactly one category from the closed v1 vocabulary and an anchor naming where the learning attaches (a journal seq and/or a short section id - never a path). The record contains no secrets, no prompt or file contents and no absolute user paths; anchors and recorded reasons are the whole qualitative surface (spec section 7). Learnings ride on the opt-in benchmark subsystem and are never a conformance gate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan",
+    "generation",
+    "contract_id",
+    "derived",
+    "curated"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/learnings-record/v1.json"
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_([0-9]{3,}_)?[a-z0-9]+(_[a-z0-9]+){1,4}$",
+      "description": "Plan folder name, same grammar as the journal's plan field."
+    },
+    "generation": {
+      "const": "v6",
+      "description": "Only v6-generation plans produce learnings; the v5 line is frozen."
+    },
+    "contract_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The plan's materialized outcome contract id."
+    },
+    "derived": {
+      "type": "array",
+      "description": "One entry per friction event the journal already explains: each adaptation, intervention and refusal event, and each gate_run with a non-zero recorded exit. Regenerated deterministically on every run (spec section 10.2); never categorized - categorization is judgment and this half is mechanical.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["seq", "event_type", "reason"],
+        "properties": {
+          "seq": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Journal event sequence number of the friction event."
+          },
+          "event_type": {
+            "enum": ["adaptation", "intervention", "refusal", "gate_run"],
+            "description": "The friction event type; gate_run appears here only with a non-zero recorded exit code."
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The event's recorded reason, verbatim - never paraphrased, summarized or invented (spec section 10.2). For a failing gate_run, its recorded exit outcome."
+          }
+        }
+      }
+    },
+    "curated": {
+      "type": "array",
+      "description": "Agent-judgment entries, written once at file creation and preserved byte-for-byte by reruns (spec section 10.5). Sorted by id with fixed key order at creation.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "category", "anchor", "finding", "proposal"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^LRN-[0-9]{3}$",
+            "description": "Stable per-plan entry id assigned at authoring; never renumbered, merged or deduplicated by a rerun."
+          },
+          "category": {
+            "enum": [
+              "spec-gap",
+              "instruction-gap",
+              "tooling-gap",
+              "docs-gap",
+              "gate-false-positive",
+              "gate-false-negative",
+              "context-miss"
+            ],
+            "description": "Exactly one category from the closed v1 vocabulary (spec section 10.4). Adding a category is a schema revision; an entry fitting no category is instruction-gap on the authoring surface or unanchored with the mismatch stated in the finding - never an ad-hoc category."
+          },
+          "anchor": {
+            "description": "Where the learning attaches, in terms a future version's diff can resolve. null marks an unanchored entry - preserved and reported separately, never folded into a section by proximity (spec section 10.3).",
+            "anyOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "seq": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Journal event sequence number the finding attaches to - the preferred anchor: immutable and unique within the plan."
+                  },
+                  "section": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[^/\\\\]+$",
+                    "description": "Short section identifier the finding concerns (a task file section, a spec section number, a skill heading stem). No paths, no hostnames, no user names."
+                  }
+                },
+                "anyOf": [
+                  { "required": ["seq"] },
+                  { "required": ["section"] }
+                ]
+              }
+            ]
+          },
+          "finding": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What happened, in the agent's judgment - interprets the friction rather than duplicating the derived half."
+          },
+          "proposal": {
+            "type": "string",
+            "minLength": 1,
+            "description": "What a future version of the method could do about it."
+          }
+        }
+      }
+    }
+  }
+}
