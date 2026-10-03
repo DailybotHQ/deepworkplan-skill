@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-create
 description: Create a Deep Work Plan for short or long work. Detect planning intent, materialize a compact Lite proposal first, then retain Lite or expand to Full task files when needed. Supports guided and trust handoff without executing product work.
-version: "6.0.1"
+version: "6.0.2"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -262,8 +262,8 @@ all following text is literal context. Never inspect ordinary context words.
 explicitly asked for a v6 plan (e.g. `v6` among the tokens, "create a v6
 plan"), read [`v6.md`](v6.md) and follow that flow exclusively. Stop here:
 Steps 1 onward in this file describe the retained v5 creation lifecycle and
-MUST NOT be applied to a v6 plan. With this 6.x pack, v6 is the default for
-new plans. Existing plans always keep their recorded generation.
+MUST NOT be applied to a v6 plan. With this 6.x pack, v6 is the default for new
+plans. Existing plans always keep their recorded generation.
 
 ### Step 1 — Quick Introduction
 
