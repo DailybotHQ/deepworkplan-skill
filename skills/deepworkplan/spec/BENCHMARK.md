@@ -68,6 +68,14 @@ python3 <pack>/shared/benchmark.py report --plan <dir>
    second source). The former artifact name `BENCHMARK.md` was retired
    before the first release of this subsystem; no released pack ever
    wrote it.
+- **Distinct from the Executive Report:** `DWP_REPORT.md` is not the
+  Executive Report (DWP_SPECIFICATION.md §6.3) and never replaces it. The
+  Executive Report is the on-request stakeholder summary every conformant
+  plan still offers once at completion, independent of benchmark
+  configuration; this subsystem does not touch it. `DWP_REPORT.md` exists
+  only in opted-in repositories and renders field metrics and learnings —
+  never stakeholder narrative. A completed plan in an opted-in repository
+  may carry both artifacts, each with its own trigger and audience.
 - **Atomicity:** every artifact file is written write-temp-then-rename; a
   partial write MUST NOT be observable.
 - **Idempotence and determinism:** re-running `report` on an unchanged plan

@@ -66,14 +66,17 @@ events = [
      'task': 'T-one', 'fingerprint': {'revision': '0' * 40, 'dirty': ''}},
     {'type': 'gate_run', 'ts': '2026-03-01T09:20:00Z', 'seq': 3, 'task': 'T-one',
      'criterion': 'AC-one', 'exit_code': 1, 'trust': 'observed'},
-    {'type': 'adaptation', 'ts': '2026-03-01T09:25:00Z', 'seq': 4},
+    {'type': 'adaptation', 'ts': '2026-03-01T09:25:00Z', 'seq': 4,
+     'kind': 'retry', 'rationale': 'first gate run failed; rerun after fix'},
     {'type': 'gate_run', 'ts': '2026-03-01T09:40:00Z', 'seq': 5, 'task': 'T-one',
      'criterion': 'AC-one', 'exit_code': 0, 'trust': 'observed'},
     {'type': 'task_start', 'ts': '2026-03-01T10:00:00Z', 'seq': 6,
      'task': 'T-two', 'fingerprint': {'revision': '1' * 40, 'dirty': ''}},
     {'type': 'gate_run', 'ts': '2026-03-01T10:30:00Z', 'seq': 7, 'task': 'T-two',
      'criterion': 'AC-two', 'exit_code': 0, 'trust': 'imported'},
-    {'type': 'refusal', 'ts': '2026-03-01T10:35:00Z', 'seq': 8},
+    {'type': 'refusal', 'ts': '2026-03-01T10:35:00Z', 'seq': 8,
+     'subject': 'ledger', 'stage': 'complete',
+     'reason': 'criteria lacked in-window evidence'},
 ]
 if metered == 'yes':
     events += [
@@ -116,7 +119,7 @@ PY
   [ "$status" -eq 0 ]
   [[ "$output" == *"disabled"* ]]
   [ ! -e "$PLAN/analysis_results/benchmark.json" ]
-  [ ! -e "$PLAN/analysis_results/BENCHMARK.md" ]
+  [ ! -e "$PLAN/analysis_results/DWP_REPORT.md" ]
 }
 
 @test "config precedence: repo enables, repo overrides global, global fills an absent repo key" {
@@ -126,7 +129,7 @@ PY
   run python3 "$BENCHMARK" report --plan "$PLAN"
   [ "$status" -eq 0 ]
   [[ "$output" == *"record emitted"* ]]
-  rm "$TEST_REPO/.dwp/config.json" "$PLAN/analysis_results/benchmark.json" "$PLAN/analysis_results/BENCHMARK.md"
+  rm "$TEST_REPO/.dwp/config.json" "$PLAN/analysis_results/benchmark.json" "$PLAN/analysis_results/DWP_REPORT.md"
   # repo 'false' overrides a global 'true' (per-key wholesale override)
   _enable_home
   printf '{"benchmark": {"enabled": false}}\n' > "$TEST_REPO/.dwp/config.json"
@@ -190,7 +193,7 @@ PY
   [ "$(_field "$REC" metered.flag)" = "False" ]
   [ "$(_field "$REC" metered.tokens)" = "None" ]
   [ "$(_field "$REC" metered.spend_usd)" = "None" ]
-  grep -q 'Not metered' "$PLAN/analysis_results/BENCHMARK.md"
+  grep -q 'Not metered' "$PLAN/analysis_results/DWP_REPORT.md"
 }
 
 @test "metered samples: values summed per unit and the flag flips" {
@@ -208,10 +211,10 @@ PY
   _enable_repo
   python3 "$BENCHMARK" report --plan "$PLAN" >/dev/null
   cp "$PLAN/analysis_results/benchmark.json" "$TEST_REPO/first.json"
-  cp "$PLAN/analysis_results/BENCHMARK.md" "$TEST_REPO/first.md"
+  cp "$PLAN/analysis_results/DWP_REPORT.md" "$TEST_REPO/first.md"
   python3 "$BENCHMARK" report --plan "$PLAN" >/dev/null
   cmp "$TEST_REPO/first.json" "$PLAN/analysis_results/benchmark.json"
-  cmp "$TEST_REPO/first.md" "$PLAN/analysis_results/BENCHMARK.md"
+  cmp "$TEST_REPO/first.md" "$PLAN/analysis_results/DWP_REPORT.md"
 }
 
 @test "non-blocking: an unwritable analysis_results degrades to a warning" {

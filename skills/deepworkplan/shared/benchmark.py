@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v6 opt-in benchmark field metrics (spec/BENCHMARK.md).
+"""v6 opt-in benchmark field metrics and learnings (spec/BENCHMARK.md).
 
 Derives, never imputes: the per-plan record is computed entirely from records
 the plan already owns — ``journal.ndjson`` events, ``manifest.json``,
@@ -13,13 +13,21 @@ Contract highlights (all normative in spec/BENCHMARK.md):
 
   * **Opt-in, fail-closed.** ``<repo>/.dwp/config.json`` overrides
     ``~/.dwp/config.json``; absent/malformed/wrong-typed input resolves to
-    *disabled* with exactly one warning line. Disabled repositories behave
-    byte-identically to a pack without this subsystem.
+    *disabled* with exactly one warning line per key. Disabled repositories
+    behave byte-identically to a pack without this subsystem.
+  * **Learnings ride on benchmark** (spec section 10). The nested
+    ``benchmark.learnings`` flag defaults off; ``enabled: false`` forces it
+    off regardless. Two halves: the **derived** half copies each friction
+    event's recorded reason verbatim and regenerates deterministically; the
+    **curated** half is written once — an existing ``curated`` array is
+    preserved byte-for-byte by reruns, never merged or rewritten.
   * **Never blocking.** Any derivation or emission failure degrades to a
     warning and exit status 0 — emission failure is never plan failure.
     Usage errors (bad arguments) are the only exit-2 conditions.
-  * **Deterministic.** No emission timestamp, no wall clock, sorted keys;
-    two runs over identical plan bytes produce identical artifact bytes.
+  * **Deterministic (with the learnings split).** No emission timestamp, no
+    wall clock, sorted keys; two runs over identical plan bytes produce
+    identical bytes for ``benchmark.json``, the derived learnings content
+    and ``DWP_REPORT.md``, while curated learnings are preserved (10.5-10.6).
   * **v6 only.** v5-generation plans are refused with one line and exit 0;
     the v5 line is frozen.
   * **Never a conformance gate.** ``verify`` does not read these artifacts.
@@ -43,12 +51,37 @@ except ImportError:  # pragma: no cover - direct execution from another cwd
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import ledger  # noqa: E402
 
+try:
+    import context_manifest  # noqa: E402  (sibling module, same directory)
+except ImportError:  # pragma: no cover - executed from another cwd
+    try:
+        import context_manifest  # noqa: E402
+    except ImportError:
+        context_manifest = None  # type: ignore[assignment]
+
 SCHEMA_URL = 'https://deepworkplan.com/schema/benchmark-record/v1.json'
+LEARNINGS_URL = 'https://deepworkplan.com/schema/learnings-record/v1.json'
 MANIFEST_V6_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
 
 RECORD_FIELDS = ('schema', 'plan', 'title', 'generation', 'contract_id',
                  'status', 'versions', 'timing', 'shape', 'friction',
-                 'gates', 'metered', 'environment', 'diff_stats')
+                 'gates', 'metered', 'environment', 'diff_stats',
+                 'context_accounting')
+RECORD_OPTIONAL_FIELDS = ('context_accounting',)
+
+LEARNINGS_FIELDS = ('schema', 'plan', 'generation', 'contract_id',
+                    'derived', 'curated')
+
+LEARNINGS_CATEGORIES = ('spec-gap', 'instruction-gap', 'tooling-gap',
+                        'docs-gap', 'gate-false-positive',
+                        'gate-false-negative', 'context-miss')
+
+# The derived learnings half copies one recorded field per friction event
+# type, verbatim (spec section 10.2). Each field is required by the journal
+# event schema, so a schema-valid journal always carries it; the bracketed
+# fallback asserts absence and invents nothing.
+_DERIVED_REASON_FIELDS = {'refusal': 'reason', 'adaptation': 'rationale',
+                          'intervention': 'description'}
 
 AGGREGATE_NOTE = ('aggregates describe recorded executions; workloads differ '
                   'across plans, repositories and versions - this is evidence '
@@ -78,44 +111,70 @@ def _read_config(path: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     return data, None
 
 
-def resolve_enabled(plan_dir: str) -> Tuple[bool, List[str]]:
-    """Resolve the benchmark flag for the repository that owns ``plan_dir``.
+def _benchmark_section(plan_dir: str, warnings: List[str]
+                       ) -> Optional[Dict[str, Any]]:
+    """Resolve the winning ``benchmark`` object (repo over global), or None.
 
-    Precedence per spec section 1: repo ``.dwp/config.json`` (per key, the
-    ``benchmark`` object overrides wholesale) then ``~/.dwp/config.json``,
-    then disabled. Fail-closed: any malformed input is disabled + warning.
+    A repository file that carries the object overrides the global file
+    wholesale (both flags come from that one file); a repository file that
+    omits it defers to the global file (spec section 1, per-key resolution).
     """
-    warnings: List[str] = []
     dwp_root = find_dwp_root(plan_dir)
     if dwp_root is None:
-        return False, ['benchmark: plan directory has no .dwp ancestor; benchmark disabled']
-    repo_cfg, warn = _read_config(os.path.join(dwp_root, 'config.json'))
-    if warn:
-        warnings.append('benchmark: ' + warn)
-    if repo_cfg is not None and 'benchmark' in repo_cfg:
-        section = repo_cfg['benchmark']
+        warnings.append('benchmark: plan directory has no .dwp ancestor; '
+                        'benchmark disabled')
+        return None
+    for label, path in (
+            ('.dwp/config.json', os.path.join(dwp_root, 'config.json')),
+            ('~/.dwp/config.json', os.path.join(os.path.expanduser('~'),
+                                                '.dwp', 'config.json'))):
+        cfg, warn = _read_config(path)
+        if warn:
+            warnings.append('benchmark: ' + warn)
+        if cfg is None or 'benchmark' not in cfg:
+            continue
+        section = cfg['benchmark']
         if not isinstance(section, dict):
-            return False, warnings + [
-                'benchmark: .dwp/config.json "benchmark" is not an object; benchmark disabled']
-        enabled = section.get('enabled')
-        if isinstance(enabled, bool):
-            return enabled, warnings
-        return False, warnings + [
-            'benchmark: .dwp/config.json "benchmark.enabled" is not a boolean; benchmark disabled']
-    home_cfg, warn = _read_config(os.path.join(os.path.expanduser('~'), '.dwp', 'config.json'))
-    if warn:
-        warnings.append('benchmark: ' + warn)
-    if home_cfg is not None and 'benchmark' in home_cfg:
-        section = home_cfg['benchmark']
-        if not isinstance(section, dict):
-            return False, warnings + [
-                'benchmark: ~/.dwp/config.json "benchmark" is not an object; benchmark disabled']
-        enabled = section.get('enabled')
-        if isinstance(enabled, bool):
-            return enabled, warnings
-        return False, warnings + [
-            'benchmark: ~/.dwp/config.json "benchmark.enabled" is not a boolean; benchmark disabled']
-    return False, warnings
+            warnings.append('benchmark: %s "benchmark" is not an object; '
+                            'benchmark disabled' % label)
+            return None
+        return section
+    return None
+
+
+def resolve_config(plan_dir: str) -> Tuple[bool, bool, List[str]]:
+    """Resolve (benchmark enabled, learnings enabled, warnings).
+
+    Fail-closed per key (spec section 1): ``enabled`` must be an explicit
+    boolean in the winning section; ``learnings`` defaults false, rides on
+    ``enabled``, and a wrong-typed value disables learnings only — one
+    warning — while metrics resolution is unaffected.
+    """
+    warnings: List[str] = []
+    section = _benchmark_section(plan_dir, warnings)
+    if section is None:
+        return False, False, warnings
+    enabled = section.get('enabled')
+    if not isinstance(enabled, bool):
+        warnings.append('benchmark: "benchmark.enabled" is not a boolean; '
+                        'benchmark disabled')
+        return False, False, warnings
+    if not enabled:
+        return False, False, warnings
+    learnings = section.get('learnings')
+    if learnings is None:
+        return True, False, warnings
+    if not isinstance(learnings, bool):
+        warnings.append('benchmark: "benchmark.learnings" is not a boolean; '
+                        'learnings disabled (metrics unaffected)')
+        return True, False, warnings
+    return True, learnings, warnings
+
+
+def resolve_enabled(plan_dir: str) -> Tuple[bool, List[str]]:
+    """Back-compatible view of :func:`resolve_config` (metrics flag only)."""
+    enabled, _learnings, warnings = resolve_config(plan_dir)
+    return enabled, warnings
 
 
 def find_dwp_root(plan_dir: str) -> Optional[str]:
@@ -176,6 +235,10 @@ def _parse_ts(value: str) -> Optional[datetime]:
         return parsed.replace(tzinfo=timezone.utc)
     except (TypeError, ValueError):
         return None
+
+
+def _fmt_ts(value: Optional[datetime]) -> Optional[str]:
+    return value.strftime('%Y-%m-%dT%H:%M:%SZ') if value else None
 
 
 def detect_agent_tool() -> str:
@@ -263,8 +326,100 @@ def _diff_stats(repo_root: str, base_revision: Optional[str],
     return stats
 
 
+def _context_accounting(plan_dir: str) -> Dict[str, Any]:
+    """The four-quantity context accounting block, or honest unavailability.
+
+    Recovered through the shipped ``context_manifest`` helper (it derives
+    from the same persisted records — journal, contract, manifest — and
+    MEASURES the manifest bytes). Any failure degrades to
+    ``available: false`` with null values — never synthesized (spec
+    section 3).
+    """
+    empty: Dict[str, Any] = {'available': False, 'instruction_bytes': None,
+                             'provider_tokens': None, 'cost_usd': None,
+                             'wall_clock_hours': None}
+    if context_manifest is None:
+        return empty
+    try:
+        acct = context_manifest.accounting(plan_dir)
+    except Exception:  # noqa: BLE001 — degradation, never a crash
+        return empty
+    if not isinstance(acct, dict):
+        return empty
+
+    def _num(value: Any) -> Optional[float]:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        return value
+
+    try:
+        measured = acct.get('instruction_bytes')
+        bytes_map = measured.get('bytes') if isinstance(measured, dict) else None
+        total = (sum(v for v in bytes_map.values() if isinstance(v, int))
+                 if isinstance(bytes_map, dict) else None)
+        if not isinstance(total, int):
+            return empty  # a recovered block always measures its bytes
+        tokens = acct.get('provider_tokens')
+        spend = acct.get('cost_usd')
+        wall = acct.get('wall_clock_hours')
+        return {
+            'available': True,
+            'instruction_bytes': total,
+            'provider_tokens': _num(tokens.get('value')) if isinstance(tokens, dict) else None,
+            'cost_usd': _num(spend.get('value')) if isinstance(spend, dict) else None,
+            'wall_clock_hours': _num(wall.get('value')) if isinstance(wall, dict) else None,
+        }
+    except Exception:  # noqa: BLE001 — degradation, never a crash
+        return empty
+
+
 # ---------------------------------------------------------------------------
 # derivation (spec sections 3-4)
+
+
+def _task_spans(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Per-task calendar spans, one entry per distinct ``task_start``.
+
+    A start's completion evidence is the first exit-0 ``gate_run`` bound to
+    the same task after that start and before the task's next start. No
+    evidence in the window -> ``end_ts``/``span_seconds`` null — never zero
+    (spec section 3). Order: first-start appearance (deterministic).
+    """
+    starts_by_task: Dict[str, List[Dict[str, Any]]] = {}
+    order: List[str] = []
+    passes_by_task: Dict[str, List[Dict[str, Any]]] = {}
+    for event in events:
+        kind = event.get('type')
+        if kind == 'task_start':
+            task = str(event.get('task') or '')
+            if task and task not in starts_by_task:
+                order.append(task)
+            starts_by_task.setdefault(task, []).append(event)
+        elif kind == 'gate_run' and event.get('exit_code') == 0:
+            passes_by_task.setdefault(str(event.get('task') or ''), []).append(event)
+    spans: List[Dict[str, Any]] = []
+    for task in order:
+        starts = starts_by_task.get(task, [])
+        passes = passes_by_task.get(task, [])
+        for index, start in enumerate(starts):
+            start_ts = _parse_ts(str(start.get('ts')))
+            next_start_seq = (starts[index + 1].get('seq')
+                              if index + 1 < len(starts) else None)
+            end_ts = None
+            for gate in passes:
+                gate_seq = gate.get('seq')
+                after_start = (gate_seq is not None and start.get('seq') is not None
+                               and gate_seq > start.get('seq'))
+                before_next = (next_start_seq is None
+                               or gate_seq is None or gate_seq < next_start_seq)
+                if after_start and before_next:
+                    end_ts = _parse_ts(str(gate.get('ts')))
+                    break
+            span = (int((end_ts - start_ts).total_seconds())
+                    if start_ts and end_ts and end_ts >= start_ts else None)
+            spans.append({'task': task, 'start_ts': _fmt_ts(start_ts),
+                          'end_ts': _fmt_ts(end_ts), 'span_seconds': span})
+    return spans
 
 
 def derive_record(plan_dir: str) -> Dict[str, Any]:
@@ -290,6 +445,7 @@ def derive_record(plan_dir: str) -> Dict[str, Any]:
     span = int((last_ts - first_ts).total_seconds()) if first_ts and last_ts and last_ts >= first_ts else 0
     task_starts = [event for event in events if event.get('type') == 'task_start']
     spanned_tasks = sorted({str(event.get('task')) for event in task_starts if event.get('task')})
+    task_spans = _task_spans(events)
 
     # shape - identity-derived counts from the contract
     tasks = contract.get('tasks') if isinstance(contract.get('tasks'), list) else []
@@ -386,6 +542,15 @@ def derive_record(plan_dir: str) -> Dict[str, Any]:
                 base_revision = str(fingerprint['revision'])
                 break
 
+    timing: Dict[str, Any] = {
+        'first_event_ts': _fmt_ts(first_ts),
+        'last_event_ts': _fmt_ts(last_ts),
+        'span_seconds': span,
+        'task_count_spanned': len(spanned_tasks),
+    }
+    if task_spans:
+        timing['task_spans'] = task_spans
+
     return {
         'schema': SCHEMA_URL,
         'plan': plan_name,
@@ -398,12 +563,7 @@ def derive_record(plan_dir: str) -> Dict[str, Any]:
             'spec': str(contract.get('spec_version') or 'unknown'),
             'agent_tool': detect_agent_tool(),
         },
-        'timing': {
-            'first_event_ts': first_ts.strftime('%Y-%m-%dT%H:%M:%SZ') if first_ts else None,
-            'last_event_ts': last_ts.strftime('%Y-%m-%dT%H:%M:%SZ') if last_ts else None,
-            'span_seconds': span,
-            'task_count_spanned': len(spanned_tasks),
-        },
+        'timing': timing,
         'shape': {
             'tasks': len(tasks) or len(spanned_tasks),
             'criteria': len(criteria_names),
@@ -424,11 +584,59 @@ def derive_record(plan_dir: str) -> Dict[str, Any]:
             'branch': _repo_branch(repo_root),
         },
         'diff_stats': _diff_stats(repo_root, base_revision, events),
+        'context_accounting': _context_accounting(plan_dir),
     }
 
 
 # ---------------------------------------------------------------------------
-# record validation (runtime half; the jsonschema half is Task 4's fixtures)
+# learnings derivation (spec section 10)
+
+
+def _derived_reason(event: Dict[str, Any]) -> str:
+    """The event's recorded reason, verbatim — never paraphrased.
+
+    One recorded field per event type (each required by the journal event
+    schema); a failing ``gate_run`` carries its recorded exit outcome. The
+    bracketed fallback asserts absence and invents nothing.
+    """
+    kind = str(event.get('type'))
+    if kind == 'gate_run':
+        return 'exit_code=%s' % event.get('exit_code')
+    field = _DERIVED_REASON_FIELDS.get(kind, 'reason')
+    text = str(event.get(field) or '').strip()
+    return text if text else '(no recorded %s)' % field
+
+
+def derive_learnings(contract: Dict[str, Any],
+                     events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Derive the learnings record's identity + derived half (spec 10.2).
+
+    The curated half is NOT derived — it is written once at file creation
+    and preserved afterwards; callers assemble it separately.
+    """
+    plan_name = contract.get('plan') or ''
+    derived: List[Dict[str, Any]] = []
+    for event in events:
+        kind = event.get('type')
+        if kind in ('adaptation', 'intervention', 'refusal'):
+            derived.append({'seq': int(event.get('seq') or 0),
+                            'event_type': str(kind),
+                            'reason': _derived_reason(event)})
+        elif kind == 'gate_run' and event.get('exit_code') != 0:
+            derived.append({'seq': int(event.get('seq') or 0),
+                            'event_type': 'gate_run',
+                            'reason': _derived_reason(event)})
+    return {
+        'schema': LEARNINGS_URL,
+        'plan': plan_name,
+        'generation': 'v6',
+        'contract_id': str(contract.get('contract_id') or ''),
+        'derived': derived,
+    }
+
+
+# ---------------------------------------------------------------------------
+# record validation (runtime half; the jsonschema half is the fixtures')
 
 
 def validate_record(record: Any) -> List[str]:
@@ -437,7 +645,7 @@ def validate_record(record: Any) -> List[str]:
     if not isinstance(record, dict):
         return ['record is not a JSON object']
     extra = sorted(set(record) - set(RECORD_FIELDS))
-    missing = sorted(set(RECORD_FIELDS) - set(record))
+    missing = sorted(set(RECORD_FIELDS) - set(record) - set(RECORD_OPTIONAL_FIELDS))
     if extra:
         problems.append('extra top-level field(s): %s' % ', '.join(extra))
     if missing:
@@ -457,6 +665,50 @@ def validate_record(record: Any) -> List[str]:
                     'metered', 'environment', 'diff_stats'):
         if not isinstance(record.get(section), dict):
             problems.append('%s is not an object' % section)
+    if problems:
+        return problems
+    timing = record['timing']
+    spans = timing.get('task_spans')
+    if spans is not None:
+        if not isinstance(spans, list):
+            problems.append('timing.task_spans is not an array')
+        else:
+            for item in spans:
+                if not isinstance(item, dict):
+                    problems.append('task span entry is not an object')
+                    continue
+                if sorted(item) != ['end_ts', 'span_seconds', 'start_ts', 'task']:
+                    problems.append('task span entry fields')
+                    continue
+                if not re.match(r'^T-[a-z0-9]+(-[a-z0-9]+)*$',
+                                str(item.get('task') or '')):
+                    problems.append('task span task id grammar')
+                if (item.get('end_ts') is None) != (item.get('span_seconds') is None):
+                    problems.append('task span end/span presence mismatch '
+                                    '(span null exactly when end null)')
+                elif item.get('span_seconds') is not None:
+                    if not isinstance(item['span_seconds'], int) or item['span_seconds'] < 0:
+                        problems.append('task span seconds shape')
+    accounting = record.get('context_accounting')
+    if accounting is not None:
+        if not isinstance(accounting, dict):
+            problems.append('context_accounting is not an object')
+        elif sorted(accounting) != ['available', 'cost_usd', 'instruction_bytes',
+                                    'provider_tokens', 'wall_clock_hours']:
+            problems.append('context_accounting fields')
+        else:
+            if not isinstance(accounting.get('available'), bool):
+                problems.append('context_accounting.available is not a boolean')
+            if not accounting.get('available') and any(
+                    accounting.get(k) is not None
+                    for k in ('instruction_bytes', 'provider_tokens',
+                              'cost_usd', 'wall_clock_hours')):
+                problems.append('unavailable context_accounting carries values '
+                                '(imputation)')
+            if accounting.get('available') and not isinstance(
+                    accounting.get('instruction_bytes'), int):
+                problems.append('available context_accounting lacks measured '
+                                'instruction bytes')
     if problems:
         return problems
     for key in ('adaptations', 'amendments', 'interventions', 'refusals', 'retries'):
@@ -480,12 +732,87 @@ def validate_record(record: Any) -> List[str]:
     return problems
 
 
+def validate_learnings(record: Any) -> List[str]:
+    """Closed-field structural check mirroring the learnings schema."""
+    problems: List[str] = []
+    if not isinstance(record, dict):
+        return ['learnings record is not a JSON object']
+    extra = sorted(set(record) - set(LEARNINGS_FIELDS))
+    missing = sorted(set(LEARNINGS_FIELDS) - set(record))
+    if extra:
+        problems.append('extra field(s): %s' % ', '.join(extra))
+    if missing:
+        problems.append('missing field(s): %s' % ', '.join(missing))
+    if record.get('schema') != LEARNINGS_URL:
+        problems.append('schema const mismatch')
+    if not re.match(r'^PLAN_([0-9]{3,}_)?[a-z0-9]+(_[a-z0-9]+){1,4}$',
+                    str(record.get('plan') or '')):
+        problems.append('plan name grammar')
+    if record.get('generation') != 'v6':
+        problems.append('generation must be v6')
+    if not re.match(r'^[0-9a-f]{64}$', str(record.get('contract_id') or '')):
+        problems.append('contract_id shape')
+    for half in ('derived', 'curated'):
+        if not isinstance(record.get(half), list):
+            problems.append('%s is not an array' % half)
+    if problems:
+        return problems
+    for entry in record['derived']:
+        if not isinstance(entry, dict):
+            problems.append('derived entry is not an object')
+            continue
+        if sorted(entry) != ['event_type', 'reason', 'seq']:
+            problems.append('derived entry fields')
+            continue
+        if not isinstance(entry.get('seq'), int) or entry.get('seq', 0) < 1:
+            problems.append('derived entry seq shape')
+        if entry.get('event_type') not in ('adaptation', 'intervention',
+                                           'refusal', 'gate_run'):
+            problems.append('derived entry event_type enum')
+        if not isinstance(entry.get('reason'), str) or not entry.get('reason'):
+            problems.append('derived entry reason must be non-empty text')
+    for entry in record['curated']:
+        if not isinstance(entry, dict):
+            problems.append('curated entry is not an object')
+            continue
+        if sorted(entry) != ['anchor', 'category', 'finding', 'id', 'proposal']:
+            problems.append('curated entry fields')
+            continue
+        if not re.match(r'^LRN-[0-9]{3}$', str(entry.get('id') or '')):
+            problems.append('curated entry id grammar (LRN-nnn)')
+        if entry.get('category') not in LEARNINGS_CATEGORIES:
+            problems.append('curated entry category not in the closed vocabulary')
+        anchor = entry.get('anchor')
+        if anchor is not None:
+            if not isinstance(anchor, dict):
+                problems.append('curated anchor is not an object or null')
+            else:
+                if sorted(anchor) not in (['seq'], ['section'], ['section', 'seq']):
+                    problems.append('curated anchor fields (seq and/or section, '
+                                    'at least one)')
+                else:
+                    if 'seq' in anchor and (not isinstance(anchor['seq'], int)
+                                            or anchor['seq'] < 1):
+                        problems.append('curated anchor seq shape')
+                    if 'section' in anchor and (not isinstance(anchor['section'], str)
+                                                or not anchor['section']
+                                                or len(anchor['section']) > 64
+                                                or '/' in anchor['section']):
+                        problems.append('curated anchor section shape (<=64 chars, '
+                                        'no paths)')
+        for text_key in ('finding', 'proposal'):
+            if not isinstance(entry.get(text_key), str) or not entry.get(text_key):
+                problems.append('curated entry %s must be non-empty text' % text_key)
+    return problems
+
+
 # ---------------------------------------------------------------------------
-# rendering
+# rendering (DWP_REPORT.md is a render of the JSON records, never a source)
 
 
-def render_markdown(record: Dict[str, Any]) -> str:
-    """Human summary rendered from the record - never a second source."""
+def render_markdown(record: Dict[str, Any],
+                    learnings: Optional[Dict[str, Any]] = None) -> str:
+    """Human report rendered from the records - never a second source."""
     timing = record['timing']
     shape = record['shape']
     friction = record['friction']
@@ -494,9 +821,9 @@ def render_markdown(record: Dict[str, Any]) -> str:
     env = record['environment']
     diff = record['diff_stats']
     lines = [
-        '# Benchmark record — %s' % record['title'],
+        '# DWP report — %s' % record['title'],
         '',
-        'Opt-in field metrics derived from this plan\'s own records '
+        'Opt-in field record derived from this plan\'s own records '
         '(spec/BENCHMARK.md). Calendar span is elapsed time between recorded '
         'timestamps, not compute time. Never a conformance gate.',
         '',
@@ -517,6 +844,22 @@ def render_markdown(record: Dict[str, Any]) -> str:
         '- Span: %d s' % timing['span_seconds'],
         '- Tasks spanned: %d' % timing['task_count_spanned'],
         '',
+    ]
+    task_spans = timing.get('task_spans')
+    if task_spans:
+        lines += [
+            '## Per-task spans (calendar)',
+            '',
+            '| Task | Start | End | Span (s) |',
+            '|---|---|---|---|',
+        ]
+        for item in task_spans:
+            lines.append('| %s | %s | %s | %s |' % (
+                item['task'], item['start_ts'],
+                item['end_ts'] if item['end_ts'] is not None else 'null',
+                item['span_seconds'] if item['span_seconds'] is not None else 'null'))
+        lines.append('')
+    lines += [
         '## Shape',
         '',
         '- Tasks: %d · criteria: %d · invariants: %d · gate intents: %d' % (
@@ -559,7 +902,71 @@ def render_markdown(record: Dict[str, Any]) -> str:
             diff['files'], diff['insertions'], diff['deletions']))
     else:
         lines.append('- Diff window unavailable (counts null, never estimated).')
-    lines.append('')
+    accounting = record.get('context_accounting')
+    if accounting is not None:
+        lines += [
+            '',
+            '## Context accounting',
+            '',
+        ]
+        if accounting.get('available'):
+            lines.append('- Instruction bytes (measured): %s' % accounting['instruction_bytes'])
+            lines.append('- Provider tokens: %s · cost (USD): %s' % (
+                accounting['provider_tokens'] if accounting['provider_tokens'] is not None else 'null',
+                accounting['cost_usd'] if accounting['cost_usd'] is not None else 'null'))
+            lines.append('- Wall-clock (hours, recorded span): %s' % (
+                accounting['wall_clock_hours'] if accounting['wall_clock_hours'] is not None else 'null'))
+        else:
+            lines.append('- Context accounting unavailable (values null, never '
+                         'synthesized).')
+    if learnings is not None:
+        lines += [
+            '',
+            '## Friction explained (derived)',
+            '',
+        ]
+        if learnings['derived']:
+            for entry in learnings['derived']:
+                lines.append('- seq %d · %s · %s' % (
+                    entry['seq'], entry['event_type'], entry['reason']))
+        else:
+            lines.append('- No friction events recorded.')
+        lines += [
+            '',
+            '## Learnings (curated)',
+            '',
+        ]
+        if learnings['curated']:
+            lines += [
+                '| Id | Category | Anchor | Finding | Proposal |',
+                '|---|---|---|---|---|',
+            ]
+            for entry in learnings['curated']:
+                anchor = entry['anchor']
+                if anchor is None:
+                    anchor_text = 'unanchored'
+                elif 'seq' in anchor and 'section' in anchor:
+                    anchor_text = 'seq %d / %s' % (anchor['seq'], anchor['section'])
+                elif 'seq' in anchor:
+                    anchor_text = 'seq %d' % anchor['seq']
+                else:
+                    anchor_text = anchor['section']
+                lines.append('| %s | %s | %s | %s | %s |' % (
+                    entry['id'], entry['category'], anchor_text,
+                    entry['finding'].replace('|', '\\|'),
+                    entry['proposal'].replace('|', '\\|')))
+        else:
+            lines.append('- No curated entries yet.')
+    lines += [
+        '',
+        '---',
+        '',
+        'Rendered from benchmark.json%s — a rendering, never a second '
+        'source. Aggregates over such records describe recorded executions; '
+        'they are evidence for discussion, not a causal comparison.' % (
+            ' and learnings.json' if learnings is not None else ''),
+        '',
+    ]
     return '\n'.join(lines)
 
 
@@ -585,11 +992,128 @@ def _atomic_write(path: str, data: bytes) -> None:
 
 
 # ---------------------------------------------------------------------------
+# learnings emission (written-once curated half — spec sections 10.5-10.6)
+
+
+def _extract_top_level_array(raw: str, key: str) -> Optional[str]:
+    """Return the raw text of a top-level ``"key": [ ... ]`` array, or None.
+
+    A conservative scanner: strings and escapes are honored, bracket depth
+    is matched, and any surprise returns None (the caller then refuses to
+    rewrite rather than risk damaging curated content).
+    """
+    index = 0
+    total = len(raw)
+    depth = 0
+    while index < total:
+        char = raw[index]
+        if char == '"':
+            end = raw.find('"', index + 1)
+            while end != -1 and raw[end - 1] == '\\':
+                end = raw.find('"', end + 1)
+            if end == -1:
+                return None
+            if depth == 1 and raw[index + 1:end] == key:
+                cursor = end + 1
+                while cursor < total and raw[cursor] in ' \t\r\n':
+                    cursor += 1
+                if cursor >= total or raw[cursor] != ':':
+                    return None
+                cursor += 1
+                while cursor < total and raw[cursor] in ' \t\r\n':
+                    cursor += 1
+                if cursor >= total or raw[cursor] != '[':
+                    return None
+                bracket = 0
+                in_string = False
+                escaped = False
+                start = cursor
+                while cursor < total:
+                    char = raw[cursor]
+                    if in_string:
+                        if escaped:
+                            escaped = False
+                        elif char == '\\':
+                            escaped = True
+                        elif char == '"':
+                            in_string = False
+                    elif char == '"':
+                        in_string = True
+                    elif char == '[':
+                        bracket += 1
+                    elif char == ']':
+                        bracket -= 1
+                        if bracket == 0:
+                            return raw[start:cursor + 1]
+                    cursor += 1
+                return None
+            index = end + 1
+            continue
+        if char in '{[':
+            depth += 1
+        elif char in '}]':
+            depth -= 1
+        index += 1
+    return None
+
+
+def _learnings_payload(plan_dir: str, derived_doc: Dict[str, Any]
+                       ) -> Tuple[Optional[bytes], bool]:
+    """Assemble the learnings file bytes honoring written-once semantics.
+
+    Returns (payload-or-None, first_creation). When the file already
+    exists, its ``curated`` array text is spliced verbatim into the freshly
+    serialized document — preserved byte-for-byte, never merged, rewritten
+    or normalized (spec 10.5). Any surprise (unreadable, unparseable,
+    unscannable) returns None and the caller leaves the file untouched.
+    """
+    path = os.path.join(plan_dir, 'analysis_results', 'learnings.json')
+    if not os.path.isfile(path):
+        draft = dict(derived_doc)
+        draft['curated'] = []
+        return _serialize(draft), True
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            raw = handle.read()
+        existing = json.loads(raw)
+    except (OSError, ValueError) as exc:
+        print('benchmark: existing learnings.json unreadable (%s); left '
+              'untouched' % exc)
+        return None, False
+    if not isinstance(existing, dict):
+        print('benchmark: existing learnings.json is not a JSON object; left '
+              'untouched')
+        return None, False
+    curated_raw = _extract_top_level_array(raw, 'curated')
+    if curated_raw is None:
+        print('benchmark: curated entries in learnings.json could not be '
+              'located verbatim; file left untouched')
+        return None, False
+    draft = dict(derived_doc)
+    draft['curated'] = []  # the raw slice is spliced in below, never re-serialized
+    payload = _serialize(draft)
+    needle = b'"curated": []'
+    if needle not in payload:
+        print('benchmark: curated splice point missing; learnings.json left '
+              'untouched')
+        return None, False
+    payload = payload.replace(
+        needle, b'"curated": ' + curated_raw.encode('utf-8'), 1)
+    try:
+        json.loads(payload.decode('utf-8'))
+    except ValueError:
+        print('benchmark: curated splice produced invalid JSON; learnings.json '
+              'left untouched')
+        return None, False
+    return payload, False
+
+
+# ---------------------------------------------------------------------------
 # commands
 
 
 def cmd_report(plan_dir: str) -> int:
-    enabled, warnings = resolve_enabled(plan_dir)
+    enabled, learnings_on, warnings = resolve_config(plan_dir)
     for warning in warnings:
         print(warning)
     if not enabled:
@@ -609,14 +1133,41 @@ def cmd_report(plan_dir: str) -> int:
             return 0
         payload = _serialize(record)
         _atomic_write(os.path.join(plan_dir, 'analysis_results', 'benchmark.json'), payload)
-        _atomic_write(os.path.join(plan_dir, 'analysis_results', 'BENCHMARK.md'),
-                      render_markdown(record).encode('utf-8'))
+        learnings_record: Optional[Dict[str, Any]] = None
+        if learnings_on:
+            events, _torn = parse_journal(plan_dir)
+            contract = _load_json(os.path.join(plan_dir, 'contract.json'))
+            if isinstance(contract, dict):
+                derived_doc = derive_learnings(contract, events)
+                if not validate_learnings(dict(derived_doc, curated=[])):
+                    learnings_payload, first = _learnings_payload(plan_dir, derived_doc)
+                    if learnings_payload is not None:
+                        _atomic_write(os.path.join(plan_dir, 'analysis_results',
+                                                   'learnings.json'),
+                                      learnings_payload)
+                        if first:
+                            print('benchmark: learnings record created -> '
+                                  'analysis_results/learnings.json (curated '
+                                  'entries are the completing agent\'s to '
+                                  'author: category, anchor, finding, proposal '
+                                  '— spec section 10)')
+                        else:
+                            print('benchmark: learnings derived half refreshed '
+                                  '(%d entries); curated preserved byte-for-byte'
+                                  % len(derived_doc['derived']))
+                        learnings_record = json.loads(
+                            learnings_payload.decode('utf-8'))
+                else:
+                    print('benchmark: derived learnings half failed validation; '
+                          'learnings emission skipped')
+        _atomic_write(os.path.join(plan_dir, 'analysis_results', 'DWP_REPORT.md'),
+                      render_markdown(record, learnings_record).encode('utf-8'))
     except Exception as exc:  # noqa: BLE001 — emission failure never blocks the plan
         print('benchmark: emission skipped after derivation failure (%s); '
               'plan completion is unaffected' % exc)
         return 0
     print('benchmark: record emitted (%d tasks, %d events, calendar span %d s) '
-          '-> analysis_results/benchmark.json + BENCHMARK.md'
+          '-> analysis_results/benchmark.json + DWP_REPORT.md'
           % (record['shape']['tasks'], record['shape']['events'],
              record['timing']['span_seconds']))
     return 0
@@ -824,14 +1375,17 @@ def _fixture_plan(root: str, generation: str = 'v6') -> str:
          'fingerprint': {'revision': '0' * 40, 'dirty': ''}},
         {'type': 'gate_run', 'ts': '2026-01-02T10:20:00Z', 'seq': 3, 'task': 'T-one',
          'criterion': 'AC-one', 'exit_code': 1, 'trust': 'observed'},
-        {'type': 'adaptation', 'ts': '2026-01-02T10:25:00Z', 'seq': 4},
+        {'type': 'adaptation', 'ts': '2026-01-02T10:25:00Z', 'seq': 4,
+         'kind': 'retry', 'rationale': 'first gate run failed; rerun after fix'},
         {'type': 'gate_run', 'ts': '2026-01-02T10:40:00Z', 'seq': 5, 'task': 'T-one',
          'criterion': 'AC-one', 'exit_code': 0, 'trust': 'observed'},
         {'type': 'task_start', 'ts': '2026-01-02T11:00:00Z', 'seq': 6, 'task': 'T-two',
          'fingerprint': {'revision': '1' * 40, 'dirty': ''}},
         {'type': 'gate_run', 'ts': '2026-01-02T11:30:00Z', 'seq': 7, 'task': 'T-two',
          'criterion': 'AC-two', 'exit_code': 0, 'trust': 'observed'},
-        {'type': 'refusal', 'ts': '2026-01-02T11:35:00Z', 'seq': 8},
+        {'type': 'refusal', 'ts': '2026-01-02T11:35:00Z', 'seq': 8,
+         'subject': 'ledger', 'stage': 'complete',
+         'reason': 'criteria lacked in-window evidence'},
         {'type': 'resource_sample', 'ts': '2026-01-02T11:36:00Z', 'seq': 9,
          'limit_id': 'spend_usd', 'value': 3.25, 'unit': 'USD'},
         {'type': 'resource_sample', 'ts': '2026-01-02T11:37:00Z', 'seq': 10,
@@ -843,6 +1397,12 @@ def _fixture_plan(root: str, generation: str = 'v6') -> str:
     return plan_dir
 
 
+def _rewrite_journal(plan_dir: str, events: List[Dict[str, Any]]) -> None:
+    with open(os.path.join(plan_dir, 'journal.ndjson'), 'w', encoding='utf-8') as handle:
+        for event in events:
+            handle.write(json.dumps(event) + '\n')
+
+
 def self_test() -> Tuple[bool, List[str], int]:
     checks: List[Tuple[str, bool]] = []
 
@@ -850,121 +1410,325 @@ def self_test() -> Tuple[bool, List[str], int]:
         checks.append((name, bool(condition)))
 
     with tempfile.TemporaryDirectory() as root:
-        plan_dir = _fixture_plan(root)
-        record = derive_record(plan_dir)
-        check('derived record passes closed-field validation',
-              not validate_record(record))
-        check('timing span is the calendar difference (5820 s)',
-              record['timing']['span_seconds'] == 5820)
-        check('task_count_spanned counts distinct tasks once',
-              record['timing']['task_count_spanned'] == 2)
-        check('shape counts tasks/criteria/invariants/gate intents',
-              (record['shape']['tasks'], record['shape']['criteria'],
-               record['shape']['invariants'], record['shape']['gate_intents'],
-               record['shape']['events']) == (2, 2, 1, 2, 10))
-        check('friction counts adaptation+refusal and the retry after failure',
-              (record['friction']['adaptations'], record['friction']['refusals'],
-               record['friction']['retries']) == (1, 1, 1))
-        check('gate outcomes split by exit code',
-              (record['gates']['runs'], record['gates']['exit_0'],
-               record['gates']['exit_nonzero']) == (3, 2, 1))
-        check('evidence histogram counts trust labels',
-              record['gates']['evidence_histogram'] ==
-              {'observed': 3, 'imported': 0, 'asserted': 0})
-        check('metered values come only from resource samples',
-              record['metered'] == {'flag': True, 'tokens': 41000, 'spend_usd': 3.25})
-        check('status projected from state.json',
-              record['status'] == 'completed')
+        # sandbox HOME so config precedence probes are host-independent
+        home_sandbox = os.path.join(root, 'home')
+        os.makedirs(home_sandbox, exist_ok=True)
+        previous_home = os.environ.get('HOME')
+        os.environ['HOME'] = home_sandbox
+        try:
+            plan_dir = _fixture_plan(root)
+            record = derive_record(plan_dir)
+            check('derived record passes closed-field validation',
+                  not validate_record(record))
+            check('timing span is the calendar difference (5820 s)',
+                  record['timing']['span_seconds'] == 5820)
+            check('task_count_spanned counts distinct tasks once',
+                  record['timing']['task_count_spanned'] == 2)
+            check('shape counts tasks/criteria/invariants/gate intents',
+                  (record['shape']['tasks'], record['shape']['criteria'],
+                   record['shape']['invariants'], record['shape']['gate_intents'],
+                   record['shape']['events']) == (2, 2, 1, 2, 10))
+            check('friction counts adaptation+refusal and the retry after failure',
+                  (record['friction']['adaptations'], record['friction']['refusals'],
+                   record['friction']['retries']) == (1, 1, 1))
+            check('gate outcomes split by exit code',
+                  (record['gates']['runs'], record['gates']['exit_0'],
+                   record['gates']['exit_nonzero']) == (3, 2, 1))
+            check('evidence histogram counts trust labels',
+                  record['gates']['evidence_histogram'] ==
+                  {'observed': 3, 'imported': 0, 'asserted': 0})
+            check('metered values come only from resource samples',
+                  record['metered'] == {'flag': True, 'tokens': 41000, 'spend_usd': 3.25})
+            check('status projected from state.json',
+                  record['status'] == 'completed')
 
-        # determinism: two derivations serialize byte-identically
-        check('deterministic serialization (two runs, same bytes)',
-              _serialize(record) == _serialize(derive_record(plan_dir)))
+            # per-task spans (calendar, completion evidence = passing gate)
+            spans = record['timing'].get('task_spans')
+            check('task spans: one entry per start with evidence-backed ends',
+                  spans == [
+                      {'task': 'T-one', 'start_ts': '2026-01-02T10:05:00Z',
+                       'end_ts': '2026-01-02T10:40:00Z', 'span_seconds': 2100},
+                      {'task': 'T-two', 'start_ts': '2026-01-02T11:00:00Z',
+                       'end_ts': '2026-01-02T11:30:00Z', 'span_seconds': 1800}])
+            no_evidence_dir = _fixture_plan(os.path.join(root, 'repo_ne'), 'v6')
+            events_ne = [event for event in parse_journal(no_evidence_dir)[0]
+                         if not (event.get('type') == 'gate_run'
+                                 and event.get('task') == 'T-two')]
+            _rewrite_journal(no_evidence_dir, events_ne)
+            spans_ne = derive_record(no_evidence_dir)['timing'].get('task_spans')
+            check('task spans: absent evidence means null end and null span, '
+                  'never zero',
+                  spans_ne is not None and spans_ne[1]['end_ts'] is None
+                  and spans_ne[1]['span_seconds'] is None
+                  and spans_ne[0]['span_seconds'] == 2100)
+            no_start_dir = _fixture_plan(os.path.join(root, 'repo_ns'), 'v6')
+            events_ns = [event for event in parse_journal(no_start_dir)[0]
+                         if event.get('type') != 'task_start']
+            _rewrite_journal(no_start_dir, events_ns)
+            check('task spans: omitted when the journal records no task_start',
+                  'task_spans' not in derive_record(no_start_dir)['timing'])
 
-        # markdown renders only numbers the record carries
-        markdown = render_markdown(record)
-        check('markdown is a rendering of the record (span present verbatim)',
-              ('Span: %d s' % record['timing']['span_seconds']) in markdown)
-        check('markdown labels calendar span, never runtime',
-              'calendar span' in markdown and 'runtime' not in markdown)
+            # context accounting: recovered or honestly unavailable
+            accounting = record.get('context_accounting')
+            check('context accounting: block present and well-formed',
+                  isinstance(accounting, dict)
+                  and isinstance(accounting.get('available'), bool))
+            if accounting and accounting.get('available'):
+                check('context accounting: measured bytes, meters never imputed',
+                      isinstance(accounting['instruction_bytes'], int)
+                      and accounting['instruction_bytes'] > 0
+                      and accounting['provider_tokens'] is None
+                      and accounting['cost_usd'] is None
+                      and abs(accounting['wall_clock_hours'] - 5820 / 3600) < 0.01)
+            else:
+                check('context accounting: degradation carries null values only',
+                      all(accounting.get(k) is None for k in
+                          ('instruction_bytes', 'provider_tokens',
+                           'cost_usd', 'wall_clock_hours')))
+            check('context accounting: deterministic across derivations',
+                  _context_accounting(plan_dir) == _context_accounting(plan_dir))
 
-        # mutants against the closed field set / no-imputation rule
-        mutant = json.loads(json.dumps(record))
-        del mutant['metered']
-        check('mutant: missing field caught', bool(validate_record(mutant)))
-        mutant = json.loads(json.dumps(record))
-        mutant['extra'] = 1
-        check('mutant: extra field caught', bool(validate_record(mutant)))
-        mutant = json.loads(json.dumps(record))
-        mutant['metered']['flag'] = False  # tokens still set -> imputation
-        check('mutant: unmetered record with values caught (imputation)',
-              bool(validate_record(mutant)))
-        mutant = json.loads(json.dumps(record))
-        mutant['contract_id'] = 'zz'
-        check('mutant: bad contract_id shape caught', bool(validate_record(mutant)))
-        mutant = json.loads(json.dumps(record))
-        mutant['diff_stats'] = {'available': False, 'files': 0,
-                                'insertions': None, 'deletions': None}
-        check('mutant: unavailable diff with counts caught', bool(validate_record(mutant)))
+            # determinism: two derivations serialize byte-identically
+            check('deterministic serialization (two runs, same bytes)',
+                  _serialize(record) == _serialize(derive_record(plan_dir)))
 
-        # unmetered fixture: tokens/spend stay null, never zero
-        plan_dir_unmetered = _fixture_plan(os.path.join(root, 'repo2'), 'v6')
-        with open(os.path.join(plan_dir_unmetered, 'journal.ndjson'), 'w',
-                  encoding='utf-8') as handle:
-            for event in json.loads(json.dumps(
-                    [e for e in parse_journal(plan_dir_unmetered)[0]
-                     if e['type'] != 'resource_sample'])):
-                handle.write(json.dumps(event) + '\n')
-        unmetered = derive_record(plan_dir_unmetered)
-        check('unmetered plan: flag false, tokens/spend null (no imputation)',
-              unmetered['metered'] == {'flag': False, 'tokens': None,
-                                       'spend_usd': None})
+            # markdown renders only numbers the record carries
+            markdown = render_markdown(record)
+            check('markdown is a rendering of the record (span present verbatim)',
+                  ('Span: %d s' % record['timing']['span_seconds']) in markdown)
+            check('markdown labels calendar span, never runtime',
+                  'calendar span' in markdown and 'runtime' not in markdown)
 
-        # torn tail: valid prefix derives, torn count surfaced
-        torn_dir = _fixture_plan(os.path.join(root, 'repo3'), 'v6')
-        with open(os.path.join(torn_dir, 'journal.ndjson'), 'a', encoding='utf-8') as handle:
-            handle.write('{"type": "gate_run", "ts": "2026-01-02T1')
-        events, torn = parse_journal(torn_dir)
-        check('torn journal tail: prefix kept, torn counted',
-              torn == 1 and len(events) == 10)
+            # mutants against the closed field set / no-imputation rule
+            mutant = json.loads(json.dumps(record))
+            del mutant['metered']
+            check('mutant: missing field caught', bool(validate_record(mutant)))
+            mutant = json.loads(json.dumps(record))
+            mutant['extra'] = 1
+            check('mutant: extra field caught', bool(validate_record(mutant)))
+            mutant = json.loads(json.dumps(record))
+            mutant['metered']['flag'] = False  # tokens still set -> imputation
+            check('mutant: unmetered record with values caught (imputation)',
+                  bool(validate_record(mutant)))
+            mutant = json.loads(json.dumps(record))
+            mutant['contract_id'] = 'zz'
+            check('mutant: bad contract_id shape caught', bool(validate_record(mutant)))
+            mutant = json.loads(json.dumps(record))
+            mutant['diff_stats'] = {'available': False, 'files': 0,
+                                    'insertions': None, 'deletions': None}
+            check('mutant: unavailable diff with counts caught', bool(validate_record(mutant)))
+            mutant = json.loads(json.dumps(record))
+            mutant['timing']['task_spans'][1]['end_ts'] = None  # span stays numeric
+            check('mutant: task span end/span presence mismatch caught',
+                  bool(validate_record(mutant)))
+            mutant = json.loads(json.dumps(record))
+            mutant['context_accounting'] = {'available': False,
+                                            'instruction_bytes': 12,
+                                            'provider_tokens': None,
+                                            'cost_usd': None,
+                                            'wall_clock_hours': None}
+            check('mutant: unavailable context accounting with values caught',
+                  bool(validate_record(mutant)))
 
-        # config: precedence and fail-closed
-        repo_cfg = os.path.join(root, '.dwp', 'config.json')
-        with open(repo_cfg, 'w', encoding='utf-8') as handle:
-            handle.write('{"benchmark": {"enabled": true}}')
-        enabled, warnings = resolve_enabled(plan_dir)
-        check('repo config enables benchmark', enabled and not warnings)
-        with open(repo_cfg, 'w', encoding='utf-8') as handle:
-            handle.write('{"benchmark": {"enabled": true}}')
-        with open(repo_cfg, 'w', encoding='utf-8') as handle:
-            handle.write('{not json')
-        enabled, warnings = resolve_enabled(plan_dir)
-        check('malformed repo config fails closed with one warning',
-              not enabled and len(warnings) == 1)
-        with open(repo_cfg, 'w', encoding='utf-8') as handle:
-            handle.write('{"benchmark": {"enabled": "yes"}}')
-        enabled, warnings = resolve_enabled(plan_dir)
-        check('wrong-typed enabled fails closed', not enabled and warnings)
-        os.unlink(repo_cfg)
+            # learnings derived half: verbatim reasons in seq order
+            events = parse_journal(plan_dir)[0]
+            contract = _load_json(os.path.join(plan_dir, 'contract.json'))
+            derived_doc = derive_learnings(contract, events)
+            check('learnings derived: friction explained in seq order with '
+                  'verbatim reasons',
+                  derived_doc['derived'] == [
+                      {'seq': 3, 'event_type': 'gate_run',
+                       'reason': 'exit_code=1'},
+                      {'seq': 4, 'event_type': 'adaptation',
+                       'reason': 'first gate run failed; rerun after fix'},
+                      {'seq': 8, 'event_type': 'refusal',
+                       'reason': 'criteria lacked in-window evidence'}])
+            check('learnings derived: identity comes from the contract',
+                  (derived_doc['plan'], derived_doc['contract_id'])
+                  == ('PLAN_001_self_test_probe', 'a' * 64))
+            check('learnings: validate_learnings accepts the derived doc',
+                  not validate_learnings(dict(derived_doc, curated=[])))
 
-        # v5 refusal: one line, no artifacts
-        v5_dir = _fixture_plan(os.path.join(root, 'repo4'), 'v5')
-        manifest_v5 = _load_json(os.path.join(v5_dir, 'manifest.json'))
-        check('v5 fixture detected as non-v6 by manifest pointer',
-              manifest_v5 is not None and manifest_v5.get('schema') != MANIFEST_V6_URL)
+            # learnings mutants (closed vocabulary, anchor grammar, ids)
+            bad_learnings = json.loads(json.dumps(dict(derived_doc, curated=[
+                {'id': 'LRN-001', 'category': 'performance-gap',
+                 'anchor': {'seq': 3}, 'finding': 'f', 'proposal': 'p'}])))
+            check('learnings mutant: category outside the closed vocabulary caught',
+                  bool(validate_learnings(bad_learnings)))
+            bad_learnings['curated'][0]['category'] = 'spec-gap'
+            bad_learnings['curated'][0]['id'] = 'lrn-1'
+            check('learnings mutant: malformed id caught',
+                  bool(validate_learnings(bad_learnings)))
+            bad_learnings['curated'][0]['id'] = 'LRN-001'
+            bad_learnings['curated'][0]['anchor'] = {}
+            check('learnings mutant: anchor without seq or section caught',
+                  bool(validate_learnings(bad_learnings)))
+            bad_learnings['curated'][0]['anchor'] = {'section': 'a/b'}
+            check('learnings mutant: anchor section with a path caught',
+                  bool(validate_learnings(bad_learnings)))
+            bad_learnings['curated'][0]['anchor'] = None
+            bad_learnings['derived'][0]['reason'] = ''
+            check('learnings mutant: empty derived reason caught',
+                  bool(validate_learnings(bad_learnings)))
 
-        # aggregate: grouping + the verbatim note + csv determinism
-        out_dir = os.path.join(plan_dir, 'analysis_results')
-        os.makedirs(out_dir, exist_ok=True)
-        with open(os.path.join(out_dir, 'benchmark.json'), 'wb') as handle:
-            handle.write(_serialize(record))
-        records, v5_names, skipped_names = _iter_plan_records(root)
-        check('aggregate collects the emitted record', len(records) == 1)
-        report = _aggregate_report(records, v5_names, skipped_names)
-        check('aggregate carries the non-causality note verbatim',
-              AGGREGATE_NOTE in report)
-        csv_one = '\n'.join(','.join(_csv_row(row)) for row in records)
-        csv_two = '\n'.join(','.join(_csv_row(row)) for row in _iter_plan_records(root)[0])
-        check('aggregate CSV rows deterministic', csv_one == csv_two)
+            # config: nested learnings key, per-key fail-closed matrix
+            repo_cfg = os.path.join(root, '.dwp', 'config.json')
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true}}')
+            enabled_flag, learnings_flag, warns = resolve_config(plan_dir)
+            check('nested config: enabled without learnings -> metrics only',
+                  (enabled_flag, learnings_flag, warns) == (True, False, []))
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true, "learnings": true}}')
+            enabled_flag, learnings_flag, warns = resolve_config(plan_dir)
+            check('nested config: enabled+learnings -> both on',
+                  (enabled_flag, learnings_flag, warns) == (True, True, []))
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true, "learnings": "yes"}}')
+            enabled_flag, learnings_flag, warns = resolve_config(plan_dir)
+            check('nested config: wrong-typed learnings disables learnings only '
+                  '(one warning, metrics unaffected)',
+                  (enabled_flag, learnings_flag) == (True, False)
+                  and len(warns) == 1 and 'learnings' in warns[0])
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": false, "learnings": true}}')
+            enabled_flag, learnings_flag, warns = resolve_config(plan_dir)
+            check('nested config: enabled false forces learnings off',
+                  (enabled_flag, learnings_flag, warns) == (False, False, []))
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{not json')
+            enabled_flag, learnings_flag, warns = resolve_config(plan_dir)
+            check('malformed repo config fails closed with one warning',
+                  (enabled_flag, learnings_flag) == (False, False)
+                  and len(warns) == 1)
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": "yes"}}')
+            enabled_flag, learnings_flag, warns = resolve_config(plan_dir)
+            check('wrong-typed enabled fails closed',
+                  (enabled_flag, learnings_flag) == (False, False) and bool(warns))
+            os.unlink(repo_cfg)
+
+            # emission: metrics-only repository writes no learnings artifact
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true}}')
+            check('emission (metrics only): exit 0 and no learnings.json',
+                  cmd_report(plan_dir) == 0
+                  and not os.path.exists(os.path.join(
+                      plan_dir, 'analysis_results', 'learnings.json')))
+            check('emission (metrics only): DWP_REPORT.md is the render target',
+                  os.path.isfile(os.path.join(plan_dir, 'analysis_results',
+                                             'DWP_REPORT.md')))
+
+            # emission with learnings: template creation + invitation semantics
+            with open(repo_cfg, 'w', encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true, "learnings": true}}')
+            check('emission (learnings on): exit 0',
+                  cmd_report(plan_dir) == 0)
+            learnings_path = os.path.join(plan_dir, 'analysis_results',
+                                          'learnings.json')
+            emitted = _load_json(learnings_path)
+            check('learnings file: template with derived populated and '
+                  'curated empty',
+                  isinstance(emitted, dict)
+                  and emitted.get('curated') == []
+                  and len(emitted.get('derived') or []) == 3)
+
+            # written-once: curated survives a rerun byte-for-byte while the
+            # derived half refreshes from a grown journal
+            curated_entry = {'id': 'LRN-001', 'category': 'instruction-gap',
+                             'anchor': {'seq': 3, 'section': 'Validation'},
+                             'finding': 'gate intent wording ambiguous',
+                             'proposal': 'state the exact command in the task'}
+            edited = json.loads(open(learnings_path, encoding='utf-8').read())
+            edited['curated'] = [curated_entry]
+            with open(learnings_path, 'w', encoding='utf-8') as handle:
+                json.dump(edited, handle, indent=4)  # non-canonical hand format
+            curated_raw_before = _extract_top_level_array(
+                open(learnings_path, encoding='utf-8').read(), 'curated')
+            grown = parse_journal(plan_dir)[0] + [
+                {'type': 'refusal', 'ts': '2026-01-02T12:00:00Z', 'seq': 11,
+                 'subject': 'scheduler', 'stage': 'dispatch',
+                 'reason': 'invariant evaluated before task start'}]
+            _rewrite_journal(plan_dir, grown)
+            check('learnings rerun: exit 0 after journal growth',
+                  cmd_report(plan_dir) == 0)
+            after = open(learnings_path, encoding='utf-8').read()
+            check('written-once: curated array preserved byte-for-byte',
+                  _extract_top_level_array(after, 'curated') == curated_raw_before)
+            refreshed = _load_json(learnings_path)
+            check('written-once: derived half refreshed from the grown journal',
+                  len(refreshed['derived']) == 4
+                  and refreshed['derived'][-1]['seq'] == 11)
+            report_after = open(os.path.join(plan_dir, 'analysis_results',
+                                             'DWP_REPORT.md'),
+                                encoding='utf-8').read()
+            check('render: curated entry and anchors render from the JSON only',
+                  'LRN-001' in report_after
+                  and 'instruction-gap' in report_after
+                  and 'seq 3 / Validation' in report_after)
+            check('render: derived friction reasons render verbatim',
+                  'invariant evaluated before task start' in report_after)
+
+            # determinism with curated present: a rerun rewrites identical bytes
+            first_json = open(os.path.join(plan_dir, 'analysis_results',
+                                           'benchmark.json'), 'rb').read()
+            first_report = open(os.path.join(plan_dir, 'analysis_results',
+                                             'DWP_REPORT.md'), 'rb').read()
+            first_learnings = open(learnings_path, 'rb').read()
+            cmd_report(plan_dir)
+            check('determinism: rerun rewrites byte-identical artifacts '
+                  '(record, report, learnings)',
+                  first_json == open(os.path.join(plan_dir, 'analysis_results',
+                                                  'benchmark.json'), 'rb').read()
+                  and first_report == open(os.path.join(plan_dir, 'analysis_results',
+                                                        'DWP_REPORT.md'), 'rb').read()
+                  and first_learnings == open(learnings_path, 'rb').read())
+
+            # unmetered fixture: tokens/spend stay null, never zero
+            plan_dir_unmetered = _fixture_plan(os.path.join(root, 'repo2'), 'v6')
+            with open(os.path.join(plan_dir_unmetered, 'journal.ndjson'), 'w',
+                      encoding='utf-8') as handle:
+                for event in json.loads(json.dumps(
+                        [e for e in parse_journal(plan_dir_unmetered)[0]
+                         if e['type'] != 'resource_sample'])):
+                    handle.write(json.dumps(event) + '\n')
+            unmetered = derive_record(plan_dir_unmetered)
+            check('unmetered plan: flag false, tokens/spend null (no imputation)',
+                  unmetered['metered'] == {'flag': False, 'tokens': None,
+                                           'spend_usd': None})
+
+            # torn tail: valid prefix derives, torn count surfaced
+            torn_dir = _fixture_plan(os.path.join(root, 'repo3'), 'v6')
+            with open(os.path.join(torn_dir, 'journal.ndjson'), 'a', encoding='utf-8') as handle:
+                handle.write('{"type": "gate_run", "ts": "2026-01-02T1')
+            events, torn = parse_journal(torn_dir)
+            check('torn journal tail: prefix kept, torn counted',
+                  torn == 1 and len(events) == 10)
+
+            # v5 refusal: one line, no artifacts
+            v5_dir = _fixture_plan(os.path.join(root, 'repo4'), 'v5')
+            manifest_v5 = _load_json(os.path.join(v5_dir, 'manifest.json'))
+            check('v5 fixture detected as non-v6 by manifest pointer',
+                  manifest_v5 is not None and manifest_v5.get('schema') != MANIFEST_V6_URL)
+
+            # aggregate: grouping + the verbatim note + csv determinism
+            out_dir = os.path.join(plan_dir, 'analysis_results')
+            os.makedirs(out_dir, exist_ok=True)
+            with open(os.path.join(out_dir, 'benchmark.json'), 'wb') as handle:
+                handle.write(_serialize(derive_record(plan_dir)))
+            records, v5_names, skipped_names = _iter_plan_records(root)
+            check('aggregate collects the emitted record', len(records) == 1)
+            report = _aggregate_report(records, v5_names, skipped_names)
+            check('aggregate carries the non-causality note verbatim',
+                  AGGREGATE_NOTE in report)
+            csv_one = '\n'.join(','.join(_csv_row(row)) for row in records)
+            csv_two = '\n'.join(','.join(_csv_row(row)) for row in _iter_plan_records(root)[0])
+            check('aggregate CSV rows deterministic', csv_one == csv_two)
+        finally:
+            if previous_home is None:
+                del os.environ['HOME']
+            else:
+                os.environ['HOME'] = previous_home
 
     failures = [name for name, ok_flag in checks if not ok_flag]
     return (not failures), failures, len(checks)
