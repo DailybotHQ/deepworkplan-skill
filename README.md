@@ -193,7 +193,7 @@ full folder name, ID, or unique slug. Existing folders such as
 creates v6 plans with 2–5-word slugs. The retained v5 creation flow uses
 2–4 words to fit its frozen schemas.
 
-## Benchmark metrics (opt-in)
+## Benchmark metrics and learnings (opt-in)
 
 DWP can record how each executed plan went, so skill versions can be compared
 on recorded evidence instead of impressions. It is off unless you turn it on:
@@ -211,11 +211,25 @@ on recorded evidence instead of impressions. It is off unless you turn it on:
 The repository file wins over the global one, and anything malformed is
 disabled with a warning — the feature fails closed. When enabled, the v6
 execute flow emits two artifacts into the finished plan's `analysis_results/`
-at completion: `benchmark.json`, a machine-readable record, and `BENCHMARK.md`,
-a human summary. Both cover execution timing (a calendar span, not active
-runtime), plan shape and complexity counts, friction events (retries,
-adaptations, refusals), gate outcomes with evidence classes, and diff
-statistics — plus tokens and spend only when the host actually metered them.
+at completion: `benchmark.json`, a machine-readable record, and `DWP_REPORT.md`,
+a human summary rendered from it. Both cover execution timing (calendar
+spans — overall and per task — never active runtime), plan shape and
+complexity counts, friction events (retries, adaptations, refusals), gate
+outcomes with evidence classes, context accounting, and diff statistics —
+plus tokens and spend only when the host actually metered them.
+
+A nested flag adds the learnings half:
+
+```json
+{ "benchmark": { "enabled": true, "learnings": true } }
+```
+
+`DWP_REPORT.md` then also carries the friction **explained** — each friction
+event's recorded reason, copied verbatim from the journal — and a curated
+learnings table the completing agent authors once (category, anchor, finding,
+proposal). Reruns regenerate the derived half and preserve the curated
+entries byte-for-byte. The report is a rendering of the JSON records, never a
+second source, and it is distinct from the on-request Executive Report.
 
 Three honesty rules hold by construction: nothing is imputed (unmetered
 quantities are null, never estimated), the emission is best-effort (a failure
@@ -231,11 +245,15 @@ python3 skills/deepworkplan/shared/benchmark.py aggregate \
     --roots ~/code/repo-a ~/code/repo-b --csv monthly.csv --out monthly.md
 ```
 
-The aggregate report groups by skill version and repository, and carries a
-standing note: workloads differ across plans, repositories and versions, so
-aggregates are evidence for discussion, not a causal comparison. The
-specification is [`skills/deepworkplan/spec/BENCHMARK.md`](skills/deepworkplan/spec/BENCHMARK.md)
-(record schema: [`spec/schema/benchmark-record.schema.json`](skills/deepworkplan/spec/schema/benchmark-record.schema.json)).
+The aggregate report groups by skill version and repository, adds a learnings
+digest (curated entries grouped by version and category, most-flagged
+sections, plans with at least one spec-gap, median per-task span, metered
+coverage) plus one CSV row per plan with flattened learnings columns, and
+carries a standing note: workloads differ across plans, repositories and
+versions, so aggregates are evidence for discussion, not a causal comparison.
+The specification is [`skills/deepworkplan/spec/BENCHMARK.md`](skills/deepworkplan/spec/BENCHMARK.md)
+(record schemas: [`benchmark-record`](skills/deepworkplan/spec/schema/benchmark-record.schema.json)
+and [`learnings-record`](skills/deepworkplan/spec/schema/learnings-record.schema.json)).
 
 ## Reproducible installs (`skills-lock.json`)
 

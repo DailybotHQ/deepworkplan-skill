@@ -66,6 +66,13 @@ writes it inside that plan's `analysis_results/`. Unmetered quantities are
 null, never estimated; the record never leaves your repositories (no network,
 no upload — it is local field data you asked for, not telemetry); and an
 emission failure degrades to a warning and can never block plan completion.
+With the nested `learnings` flag on, the same helper additionally writes
+`learnings.json` beside the record, still only inside that `analysis_results/`
+directory: its derived half copies friction reasons the journal already
+recorded, verbatim, and its curated half — agent judgment, written once —
+carries a closed-vocabulary category, an anchor naming only a journal event
+seq and/or a short section id, and the finding/proposal text; never file
+contents, paths or secrets. Reruns preserve curated entries byte-for-byte.
 They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
