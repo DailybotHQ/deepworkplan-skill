@@ -36,6 +36,7 @@ Stdlib-only, Python 3.9+ floor, like every shipped helper.
 """
 
 import argparse
+import csv
 import json
 import os
 import re
@@ -1173,14 +1174,23 @@ def cmd_report(plan_dir: str) -> int:
     return 0
 
 
-def _iter_plan_records(root: str) -> Tuple[List[Dict[str, Any]], List[str], List[str]]:
-    """Collect records + v5 plan names under one repository root."""
+def _iter_plan_records(root: str) -> Tuple[List[Dict[str, Any]],
+                                           Dict[str, Dict[str, Any]],
+                                           List[str], List[str]]:
+    """Collect records, learnings docs, v5 plan names under one root.
+
+    Learnings docs are keyed by ``contract_id`` — the same identity the
+    benchmark record carries — so the join is by plan identity, never by
+    folder name. A learnings file that fails validation is named on stdout
+    and treated as not collected (never an error, never silently dropped).
+    """
     plans_dir = os.path.join(root, '.dwp', 'plans')
     records: List[Dict[str, Any]] = []
+    learnings: Dict[str, Dict[str, Any]] = {}
     v5: List[str] = []
     skipped: List[str] = []
     if not os.path.isdir(plans_dir):
-        return records, v5, skipped
+        return records, learnings, v5, skipped
     for name in sorted(os.listdir(plans_dir)):
         plan_dir = os.path.join(plans_dir, name)
         record_path = os.path.join(plan_dir, 'analysis_results', 'benchmark.json')
@@ -1190,11 +1200,20 @@ def _iter_plan_records(root: str) -> Tuple[List[Dict[str, Any]], List[str], List
                 records.append(record)
             else:
                 skipped.append(name)
+                continue
+            learnings_path = os.path.join(plan_dir, 'analysis_results', 'learnings.json')
+            if os.path.isfile(learnings_path):
+                doc = _load_json(learnings_path)
+                if isinstance(doc, dict) and not validate_learnings(doc):
+                    learnings[str(doc.get('contract_id') or '')] = doc
+                else:
+                    print('benchmark: learnings.json in %s failed validation; '
+                          'treated as not_collected' % name)
             continue
         manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
         if isinstance(manifest, dict) and manifest.get('schema') != MANIFEST_V6_URL:
             v5.append(name)
-    return records, v5, skipped
+    return records, learnings, v5, skipped
 
 
 def _median(values: List[int]) -> int:
@@ -1207,7 +1226,103 @@ def _median(values: List[int]) -> int:
     return (ordered[mid - 1] + ordered[mid]) // 2
 
 
-def _aggregate_report(records: List[Dict[str, Any]], v5: List[str],
+def _curated_counts(doc: Dict[str, Any]) -> Tuple[int, Dict[str, int], int]:
+    """(total, per-category counts over the closed vocabulary, unanchored)."""
+    counts = {category: 0 for category in LEARNINGS_CATEGORIES}
+    unanchored = 0
+    total = 0
+    for entry in doc.get('curated') or []:
+        total += 1
+        if entry.get('category') in counts:
+            counts[entry['category']] += 1
+        if entry.get('anchor') is None:
+            unanchored += 1
+    return total, counts, unanchored
+
+
+def _learnings_digest(records: List[Dict[str, Any]],
+                      learnings_by_cid: Dict[str, Dict[str, Any]]) -> List[str]:
+    """The learnings digest section (spec section 6) — descriptive only.
+
+    Curated entries grouped by skill version then category with counts;
+    section anchors ranked by flag frequency (unanchored entries never
+    folded in); per-version pattern stats as named raw counts (plans with
+    >=1 spec-gap, derived-friction totals, median per-task span, metered
+    coverage); plans without learnings listed as not_collected. No digest
+    at all when no input plan carries a learnings.json.
+    """
+    lines: List[str] = []
+    if not any(record['contract_id'] in learnings_by_cid for record in records):
+        return lines
+    by_version: Dict[str, List[Dict[str, Any]]] = {}
+    for record in records:
+        by_version.setdefault(record['versions']['dwp_skill'], []).append(record)
+    lines += ['## Learnings digest', '',
+              'Note: %s.' % AGGREGATE_NOTE, '']
+    for skill in sorted(by_version):
+        group = by_version[skill]
+        entries = [entry for record in group
+                   if record['contract_id'] in learnings_by_cid
+                   for entry in (learnings_by_cid[record['contract_id']].get('curated') or [])]
+        spec_gap_plans = sum(
+            1 for record in group
+            if record['contract_id'] in learnings_by_cid
+            and any(entry.get('category') == 'spec-gap'
+                    for entry in (learnings_by_cid[record['contract_id']].get('curated') or [])))
+        metered = sum(1 for record in group if record['metered']['flag'])
+        spans = [span['span_seconds'] for record in group
+                 for span in (record['timing'].get('task_spans') or [])
+                 if span.get('span_seconds') is not None]
+        lines.append('### Skill %s' % skill)
+        lines.append('')
+        lines.append('- Plans: %d · with ≥1 spec-gap: %d · metered: %d/%d'
+                     % (len(group), spec_gap_plans, metered, len(group)))
+        lines.append('- Derived friction across plans: adaptations %d · '
+                     'amendments %d · interventions %d · refusals %d · '
+                     'failed gates %d'
+                     % (sum(record['friction']['adaptations'] for record in group),
+                        sum(record['friction']['amendments'] for record in group),
+                        sum(record['friction']['interventions'] for record in group),
+                        sum(record['friction']['refusals'] for record in group),
+                        sum(record['gates']['exit_nonzero'] for record in group)))
+        if spans:
+            lines.append('- Median per-task span: %d s (%d spans)'
+                         % (_median(spans), len(spans)))
+        total, counts, unanchored = _curated_counts({'curated': entries})
+        parts = ['%s %d' % (category, counts[category])
+                 for category in LEARNINGS_CATEGORIES if counts[category]]
+        lines.append('- Curated: %d total — %s'
+                     % (total, ' · '.join(parts) if parts else 'none'))
+        section_counts: Dict[str, int] = {}
+        for entry in entries:
+            anchor = entry.get('anchor')
+            if isinstance(anchor, dict) and anchor.get('section'):
+                name = str(anchor['section'])
+                section_counts[name] = section_counts.get(name, 0) + 1
+        ranking = sorted(section_counts.items(),
+                         key=lambda item: (-item[1], item[0]))[:5]
+        if ranking:
+            lines.append('- Most-flagged sections: %s'
+                         % ', '.join('`%s` (%d)' % (name, count)
+                                     for name, count in ranking))
+        lines.append('- Unanchored: %d' % unanchored)
+        lines.append('')
+    missing = ['%s/%s' % (record['environment']['repo'], record['plan'])
+               for record in sorted(records,
+                                    key=lambda item: (item['environment']['repo'],
+                                                      item['plan']))
+               if record['contract_id'] not in learnings_by_cid]
+    if missing:
+        lines.append('### Learnings not collected')
+        lines.append('')
+        for name in missing:
+            lines.append('- `%s` — learnings: "not_collected"' % name)
+        lines.append('')
+    return lines
+
+
+def _aggregate_report(records: List[Dict[str, Any]],
+                      learnings_by_cid: Dict[str, Dict[str, Any]], v5: List[str],
                       skipped: List[str]) -> str:
     lines: List[str] = ['# DWP benchmark aggregate', '']
     lines.append('Note: %s.' % AGGREGATE_NOTE)
@@ -1246,6 +1361,7 @@ def _aggregate_report(records: List[Dict[str, Any]], v5: List[str],
         lines.append('')
         lines.append('Note: %s.' % AGGREGATE_NOTE)
         lines.append('')
+    lines += _learnings_digest(records, learnings_by_cid)
     if v5:
         lines.append('## Not collected (v5, frozen line)')
         lines.append('')
@@ -1266,10 +1382,22 @@ CSV_COLUMNS = ['plan', 'repo', 'branch', 'dwp_skill', 'spec', 'agent_tool',
                'retries', 'gate_runs', 'exit_0', 'exit_nonzero',
                'evidence_observed', 'evidence_imported', 'evidence_asserted',
                'metered', 'tokens', 'spend_usd', 'diff_available', 'files',
-               'insertions', 'deletions']
+               'insertions', 'deletions',
+               'learnings_total', 'lrn_spec_gap', 'lrn_instruction_gap',
+               'lrn_tooling_gap', 'lrn_docs_gap', 'lrn_gate_false_positive',
+               'lrn_gate_false_negative', 'lrn_context_miss', 'lrn_unanchored']
 
 
-def _csv_row(record: Dict[str, Any]) -> List[str]:
+def _csv_row(record: Dict[str, Any],
+             learnings_by_cid: Dict[str, Dict[str, Any]]) -> List[str]:
+    doc = learnings_by_cid.get(record['contract_id'])
+    if doc is None:
+        learnings_values = ['0'] * (2 + len(LEARNINGS_CATEGORIES))
+    else:
+        total, counts, unanchored = _curated_counts(doc)
+        learnings_values = ([str(total)]
+                            + [str(counts[category]) for category in LEARNINGS_CATEGORIES]
+                            + [str(unanchored)])
     return [str(record['plan']), record['environment']['repo'],
             record['environment']['branch'], record['versions']['dwp_skill'],
             record['versions']['spec'], record['versions']['agent_tool'],
@@ -1292,7 +1420,7 @@ def _csv_row(record: Dict[str, Any]) -> List[str]:
             str(record['diff_stats']['available']),
             str(record['diff_stats']['files']),
             str(record['diff_stats']['insertions']),
-            str(record['diff_stats']['deletions'])]
+            str(record['diff_stats']['deletions'])] + learnings_values
 
 
 def cmd_aggregate(roots: List[str], scan: Optional[str], csv_path: Optional[str],
@@ -1304,21 +1432,25 @@ def cmd_aggregate(roots: List[str], scan: Optional[str], csv_path: Optional[str]
             if os.path.isdir(os.path.join(candidate, '.dwp')) and candidate not in all_roots:
                 all_roots.append(candidate)
     records: List[Dict[str, Any]] = []
+    learnings_by_cid: Dict[str, Dict[str, Any]] = {}
     v5: List[str] = []
     skipped: List[str] = []
     for root in all_roots:
-        root_records, root_v5, root_skipped = _iter_plan_records(os.path.abspath(root))
+        root_records, root_learnings, root_v5, root_skipped = _iter_plan_records(
+            os.path.abspath(root))
         records.extend(root_records)
+        learnings_by_cid.update(root_learnings)
         v5.extend('%s/%s' % (os.path.basename(os.path.normpath(root)), name)
                   for name in root_v5)
         skipped.extend('%s/%s' % (os.path.basename(os.path.normpath(root)), name)
                        for name in root_skipped)
     records.sort(key=lambda record: (record['environment']['repo'], record['plan']))
-    report = _aggregate_report(records, v5, skipped)
+    report = _aggregate_report(records, learnings_by_cid, v5, skipped)
     if csv_path:
         lines = [','.join(CSV_COLUMNS)]
         lines.extend(','.join('"%s"' % value.replace('"', '""')
-                              for value in _csv_row(record)) for record in records)
+                              for value in _csv_row(record, learnings_by_cid))
+                     for record in records)
         _atomic_write(csv_path, ('\n'.join(lines) + '\n').encode('utf-8'))
         print('benchmark: CSV written (%d row(s)) -> %s' % (len(records), csv_path))
     payload = report.encode('utf-8')
@@ -1336,11 +1468,12 @@ def cmd_aggregate(roots: List[str], scan: Optional[str], csv_path: Optional[str]
 # self-test
 
 
-def _fixture_plan(root: str, generation: str = 'v6') -> str:
+def _fixture_plan(root: str, generation: str = 'v6',
+                  contract_seed: str = 'a') -> str:
     """Materialize a minimal synthetic plan folder and return its path."""
     plan_dir = os.path.join(root, '.dwp', 'plans', 'PLAN_001_self_test_probe')
     os.makedirs(plan_dir, exist_ok=True)
-    contract_id = 'a' * 64
+    contract_id = contract_seed * 64
     manifest = {'schema': MANIFEST_V6_URL if generation == 'v6'
                 else 'https://deepworkplan.com/schema/plan-manifest/v5.json',
                 'plan': 'PLAN_001_self_test_probe',
@@ -1711,19 +1844,97 @@ def self_test() -> Tuple[bool, List[str], int]:
             check('v5 fixture detected as non-v6 by manifest pointer',
                   manifest_v5 is not None and manifest_v5.get('schema') != MANIFEST_V6_URL)
 
-            # aggregate: grouping + the verbatim note + csv determinism
+            # aggregate: two-version record set with learnings present, absent
+            # and unanchored — the mining half's probes (spec section 6)
             out_dir = os.path.join(plan_dir, 'analysis_results')
             os.makedirs(out_dir, exist_ok=True)
             with open(os.path.join(out_dir, 'benchmark.json'), 'wb') as handle:
                 handle.write(_serialize(derive_record(plan_dir)))
-            records, v5_names, skipped_names = _iter_plan_records(root)
+            # root B: metrics only — no learnings.json anywhere
+            repo_b = os.path.join(root, 'repo_b')
+            plan_b = _fixture_plan(repo_b, 'v6', 'b')
+            with open(os.path.join(repo_b, '.dwp', 'config.json'), 'w',
+                      encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true}}')
+            cmd_report(plan_b)
+            # root C: a second skill version + richer curated learnings
+            repo_c = os.path.join(root, 'repo_c')
+            plan_c = _fixture_plan(repo_c, 'v6', 'c')
+            with open(os.path.join(repo_c, '.dwp', 'config.json'), 'w',
+                      encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true, "learnings": true}}')
+            cmd_report(plan_c)
+            rec_c_path = os.path.join(plan_c, 'analysis_results', 'benchmark.json')
+            rec_c = json.loads(open(rec_c_path, encoding='utf-8').read())
+            rec_c['versions']['dwp_skill'] = '6.1.0'
+            with open(rec_c_path, 'wb') as handle:
+                handle.write(_serialize(rec_c))
+            learn_c_path = os.path.join(plan_c, 'analysis_results', 'learnings.json')
+            learn_c = json.loads(open(learn_c_path, encoding='utf-8').read())
+            learn_c['curated'] = [
+                {'id': 'LRN-001', 'category': 'spec-gap',
+                 'anchor': {'section': 'Gates'}, 'finding': 'f1', 'proposal': 'p1'},
+                {'id': 'LRN-002', 'category': 'spec-gap', 'anchor': None,
+                 'finding': 'f2', 'proposal': 'p2'},
+                {'id': 'LRN-003', 'category': 'docs-gap', 'anchor': {'seq': 2},
+                 'finding': 'f3', 'proposal': 'p3'}]
+            with open(learn_c_path, 'w', encoding='utf-8') as handle:
+                json.dump(learn_c, handle, indent=2, sort_keys=True)
+                handle.write('\n')
+            csv_path = os.path.join(root, 'agg.csv')
+            out_path = os.path.join(root, 'agg.md')
+            cmd_aggregate([root, repo_b, repo_c], None, csv_path, out_path)
+            agg = open(out_path, encoding='utf-8').read()
+            records, learnings_docs, v5_names, skipped_names = _iter_plan_records(root)
             check('aggregate collects the emitted record', len(records) == 1)
-            report = _aggregate_report(records, v5_names, skipped_names)
-            check('aggregate carries the non-causality note verbatim',
-                  AGGREGATE_NOTE in report)
-            csv_one = '\n'.join(','.join(_csv_row(row)) for row in records)
-            csv_two = '\n'.join(','.join(_csv_row(row)) for row in _iter_plan_records(root)[0])
-            check('aggregate CSV rows deterministic', csv_one == csv_two)
+            check('learnings discovery joins records to learnings by contract id',
+                  bool(learnings_docs)
+                  and 'a' * 64 in learnings_docs
+                  and learnings_docs['a' * 64]['plan'] == records[0]['plan'])
+            check('aggregate carries the non-causality note verbatim '
+                  '(metrics groups and digest)',
+                  agg.count(AGGREGATE_NOTE) >= 2)
+            check('learnings digest groups by skill version',
+                  '## Learnings digest' in agg and '### Skill 6.1.0' in agg)
+            check('version-over-version table appears only with two versions',
+                  '## Version over version' in agg)
+            check('digest counts categories within a version',
+                  '- Curated: 3 total — spec-gap 2 · docs-gap 1' in agg)
+            check('section ranking excludes unanchored and seq-only anchors '
+                  '(Gates counts 1, not 2)',
+                  '`Gates` (1)' in agg)
+            check('unanchored entries counted separately, never dropped',
+                  '- Unanchored: 1' in agg)
+            check('pattern stat: plans with at least one spec-gap',
+                  '- Plans: 1 · with ≥1 spec-gap: 1 · metered: 1/1' in agg)
+            check('pattern stat: median per-task span as a named raw count',
+                  'Median per-task span: 1950 s' in agg)
+            check('absent learnings named not_collected, never guessed',
+                  'learnings: "not_collected"' in agg and 'repo_b' in agg)
+            with open(csv_path, 'r', encoding='utf-8', newline='') as handle:
+                rows = list(csv.reader(handle))
+            header = rows[0]
+
+            def _cell(repo_name: str, column: str) -> str:
+                row = next(item for item in rows[1:]
+                           if item[header.index('repo')] == repo_name)
+                return row[header.index(column)]
+
+            check('csv: learnings columns match the curated JSON sources',
+                  _cell('repo_c', 'learnings_total') == '3'
+                  and _cell('repo_c', 'lrn_spec_gap') == '2'
+                  and _cell('repo_c', 'lrn_docs_gap') == '1'
+                  and _cell('repo_c', 'lrn_unanchored') == '1')
+            check('csv: plans without learnings carry zeros, never blanks',
+                  all(_cell('repo_b', column) == '0' for column in
+                      ('learnings_total', 'lrn_spec_gap', 'lrn_unanchored')))
+            check('csv: one row per plan across roots', len(rows) - 1 == 3)
+            csv_again = os.path.join(root, 'agg2.csv')
+            out_again = os.path.join(root, 'agg2.md')
+            cmd_aggregate([root, repo_b, repo_c], None, csv_again, out_again)
+            check('aggregate rerun byte-identical (report + csv)',
+                  open(csv_path, 'rb').read() == open(csv_again, 'rb').read()
+                  and open(out_path, 'rb').read() == open(out_again, 'rb').read())
         finally:
             if previous_home is None:
                 del os.environ['HOME']
