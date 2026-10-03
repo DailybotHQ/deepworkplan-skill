@@ -38,8 +38,9 @@ teardown() { rm -rf "$TMPDIR_TEST"; }
     [ -n "$urls" ]
     # v1/v2/v5 for manifest+state, plus the v6 candidate line for manifest,
     # snapshot, contract, journal-event and context-manifest (DWP v6
-    # campaign) = eleven URLs, all shipped files.
-    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 11 ]
+    # campaign), plus benchmark-record v1 (opt-in field metrics) = twelve
+    # URLs, all shipped files.
+    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 12 ]
     while IFS= read -r url; do
         label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"

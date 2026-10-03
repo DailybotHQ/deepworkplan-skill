@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/benchmark-record/v1.json",
+  "description": "Deep Work Plan benchmark record, v1 (spec/BENCHMARK.md). One closed JSON object per completed v6 plan, emitted into the plan's analysis_results/ by shared/benchmark.py when the repository opted into benchmark mode (.dwp/config.json or ~/.dwp/config.json). The record is derived, never imputed: every field comes from records the plan already owns (journal.ndjson events, manifest.json, contract.json, state.json, best-effort git diff stats). Quantities with no recording source are null - most notably tokens and spend, which exist only when resource_sample events were journaled by a metering host. The record carries no emission timestamp: two runs over identical plan bytes produce identical bytes (spec section 8). v5-generation plans are never measured. The subsystem is opt-in and never a conformance gate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan",
+    "title",
+    "generation",
+    "contract_id",
+    "status",
+    "versions",
+    "timing",
+    "shape",
+    "friction",
+    "gates",
+    "metered",
+    "environment",
+    "diff_stats"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/benchmark-record/v1.json"
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_([0-9]{3,}_)?[a-z0-9]+(_[a-z0-9]+){1,4}$",
+      "description": "Plan folder name, same grammar as the journal's plan field."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human plan title from the manifest."
+    },
+    "generation": {
+      "const": "v6",
+      "description": "Only v6-generation plans are measured; the v5 line is frozen."
+    },
+    "contract_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "The plan's materialized outcome contract id."
+    },
+    "status": {
+      "enum": ["ready", "in_progress", "blocked", "completed"],
+      "description": "Plan status projected from state.json at derivation time."
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dwp_skill", "spec", "agent_tool"],
+      "properties": {
+        "dwp_skill": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Version of the emitting pack (its SKILL.md frontmatter version)."
+        },
+        "spec": {
+          "type": "string",
+          "description": "DWP standard the plan recorded (for example 6.0.0)."
+        },
+        "agent_tool": {
+          "type": "string",
+          "description": "Detected agent tool name, or 'unknown'."
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_event_ts", "last_event_ts", "span_seconds", "task_count_spanned"],
+      "properties": {
+        "first_event_ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the first journal event (the approval)."
+        },
+        "last_event_ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last journal event at derivation time."
+        },
+        "span_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Calendar span between first and last event. NOT compute time: sessions idle, hosts restart, humans review (spec section 3)."
+        },
+        "task_count_spanned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of distinct tasks with at least one task_start event - interrupted and retried tasks count once."
+        }
+      }
+    },
+    "shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tasks", "criteria", "invariants", "gate_intents", "events"],
+      "properties": {
+        "tasks": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Task count from the contract."
+        },
+        "criteria": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Acceptance criteria declared in the contract."
+        },
+        "invariants": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Invariants declared in the contract."
+        },
+        "gate_intents": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Sum of declared gate-intent criteria across tasks."
+        },
+        "events": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total journal events at derivation time."
+        }
+      }
+    },
+    "friction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adaptations", "amendments", "interventions", "refusals", "retries"],
+      "properties": {
+        "adaptations": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of adaptation events."
+        },
+        "amendments": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of amendment events (contract revisions)."
+        },
+        "interventions": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of intervention events (human or host break-ins)."
+        },
+        "refusals": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of refusal events (every refusal is itself recorded)."
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of gate_run events sharing a criterion with an earlier failing gate_run for the same task."
+        }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runs", "exit_0", "exit_nonzero", "evidence_histogram"],
+      "properties": {
+        "runs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total gate_run events."
+        },
+        "exit_0": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Gate runs that exited 0."
+        },
+        "exit_nonzero": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Gate runs that exited nonzero, including 124 timeouts."
+        },
+        "evidence_histogram": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["observed", "imported", "asserted"],
+          "properties": {
+            "observed": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Evidence minted by a shipped executor itself (A1)."
+            },
+            "imported": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Evidence carried in from outside the journal's own execution."
+            },
+            "asserted": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Claims by a mediating actor - never behavior."
+            }
+          }
+        }
+      }
+    },
+    "metered": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["flag", "tokens", "spend_usd"],
+      "properties": {
+        "flag": {
+          "type": "boolean",
+          "description": "False unless resource_sample events were journaled by a metering host; never synthesized."
+        },
+        "tokens": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Summed token total from resource_sample events; null when not metered (spec section 3 - missing stays missing)."
+        },
+        "spend_usd": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Summed spend from resource_sample events, unit USD; null when not metered."
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "branch"],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Repository name (basename only - the privacy boundary forbids absolute user paths, spec section 7)."
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Branch name of the plan's repository at derivation time; 'unknown' outside git."
+        }
+      }
+    },
+    "diff_stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "files", "insertions", "deletions"],
+      "properties": {
+        "available": {
+          "type": "boolean",
+          "description": "False whenever the git window could not be computed; the three counts are then null, never zero (spec section 3)."
+        },
+        "files": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Files changed in the plan window."
+        },
+        "insertions": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Insertions in the plan window."
+        },
+        "deletions": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Deletions in the plan window."
+        }
+      }
+    }
+  }
+}
