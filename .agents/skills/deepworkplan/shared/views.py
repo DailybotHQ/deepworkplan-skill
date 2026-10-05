@@ -190,14 +190,15 @@ def render(plan_dir, names, out_dir=None, reconcile=None, authority=None,
                     existing = fh.read()
                 if existing == content:
                     continue  # unchanged records: an idempotent no-op
-            if existing is not None and (
-                    existing.startswith('<!-- dwp-view:') or
-                    not _machine_written(writer.events, name, existing)):
-                # N3: a file that differs from render output is treated
-                # as human-edited whether or not its marker survived —
-                # marker-less edits are divergence, never silent
-                # overwrites. _machine_written consults the per-view
-                # digests the last render recorded.
+            if existing is not None and not _machine_written(
+                    writer.events, name, existing):
+                # N3: the bytes on disk are compared with the per-view
+                # digest the last render recorded. A file that differs
+                # from render output AND from that digest is human-edited
+                # whether or not its marker survived — never a silent
+                # overwrite. A file that still matches the recorded
+                # digest is the untouched output of an earlier snapshot,
+                # so refreshing it loses nothing.
                 if reconcile is None:
                     raise DivergenceError(
                         '%s was human-edited after its last render; '
@@ -359,21 +360,39 @@ def self_test():
         check('reconciliation recorded with authority',
               len(reconciliations) == 1 and
               reconciliations[0].get('authority') == 'selftest operator')
-        # 4. a view rendered before new state events is stale: refresh
-        #    refuses until reconciled (nothing silently overwrites a
-        #    marker-carrying file), then reconciles with recorded authority
+        # 4. a view rendered before new state events is stale but intact
+        #    (its bytes still match the digest its render recorded): it
+        #    refreshes in place with no divergence and no reconciliation
+        #    event — only bytes no render produced count as a human edit
+        audit_path = os.path.join(plan, 'views', 'audit.md')
+        with open(audit_path, encoding='utf-8') as fh:
+            stale_audit = fh.read()
         try:
-            render(plan, ['audit'])
-            check('stale render must refuse refresh', False)
-        except DivergenceError:
-            check('stale render refuses silent refresh', True)
-        render(plan, ['audit'], reconcile='generated-wins',
-               authority='selftest operator')
-        with open(os.path.join(plan, 'views', 'audit.md'),
-                  encoding='utf-8') as fh:
+            refreshed = render(plan, ['audit'])
+            check('stale intact view refreshes without divergence',
+                  refreshed == ['audit'], 'rendered %r' % (refreshed,))
+        except DivergenceError as exc:
+            check('stale intact view refreshes without divergence',
+                  False, str(exc))
+        with open(audit_path, encoding='utf-8') as fh:
             audit = fh.read()
+        check('refresh replaced the stale snapshot marker',
+              audit != stale_audit)
         check('audit states the empty-refusal meaning',
               'nothing was proposed' in audit)
+        events, _torn, _framing = ledger.PlanRecords(plan).read_journal()
+        check('refreshing an intact view records no reconciliation',
+              len([e for e in events
+                   if e.get('type') == 'reconciliation']) == 1)
+        # 5. a marker-carrying view edited after its refresh still refuses:
+        #    the edit makes the bytes differ from the recorded digest
+        with open(audit_path, 'a', encoding='utf-8') as fh:
+            fh.write('\nHUMAN NOTE\n')
+        try:
+            render(plan, ['audit'])
+            check('edited marker-carrying view must refuse overwrite', False)
+        except DivergenceError:
+            check('edited marker-carrying view refuses overwrite', True)
     return (not failures, failures, probes[0])
 
 
