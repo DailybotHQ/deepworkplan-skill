@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-herdr
 description: Proposed DeepWorkPlan addon for discovering and coordinating a Herdr agent mesh across machines. The addon ships as an unwired v7 candidate; v6 onboarding, creation, execution, and verification do not activate it. A repository without Herdr stays fully conformant and runs single-agent.
-version: "6.0.1"
+version: "6.0.2"
 documentation_url: https://deepworkplan.com
 user-invocable: false
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
