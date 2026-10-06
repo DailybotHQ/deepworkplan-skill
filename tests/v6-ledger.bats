@@ -478,6 +478,33 @@ for t in doc["tasks"]:
   grep -q 'refusing to overwrite silently' <<<"$output"
 }
 
+@test "an intact generated view refreshes after the snapshot changes; a hand-edited one still refuses" {
+  python3 "$LEDGER" --plan "$PLAN" append --type approval \
+    --json '{"authority": "bats", "mechanism": "plan_authorship",
+             "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
+    --actor-kind human --actor-identity bats --idempotent
+  run python3 "$VIEWS" --plan "$PLAN" render --view tasks,evidence,audit
+  [ "$status" -eq 0 ]
+  cp "$PLAN/views/tasks.md" "$TEST_REPO/tasks-1.md"
+  # new records move the snapshot on; the views on disk are untouched
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  python3 "$LEDGER" --plan "$PLAN" project
+  cmp "$TEST_REPO/tasks-1.md" "$PLAN/views/tasks.md"
+  # intact + stale: refreshed in place, no divergence, no reconciliation
+  run python3 "$VIEWS" --plan "$PLAN" render --view tasks,evidence,audit
+  [ "$status" -eq 0 ]
+  grep -q 'OK: rendered' <<<"$output"
+  run ! cmp -s "$TEST_REPO/tasks-1.md" "$PLAN/views/tasks.md"
+  run grep -q 'reconciliation' "$PLAN/journal.ndjson"
+  [ "$status" -eq 1 ]
+  # the refreshed bytes are the recorded ones: an edit after it still refuses
+  printf '\nHUMAN NOTE\n' >> "$PLAN/views/tasks.md"
+  run python3 "$VIEWS" --plan "$PLAN" render --view tasks
+  [ "$status" -eq 5 ]
+  grep -q 'refusing to overwrite silently' <<<"$output"
+}
+
 @test "generated-wins reconciliation preserves the human copy and records authority" {
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
