@@ -1,7 +1,7 @@
 ---
 name: dailybot-env
 description: Manage per-repo API key overrides in `.dailybot/env.json` — an opt-in, gitignored file that carries API keys + optional URLs for one or more environments (live, local, staging). One profile is active at a time; when set, it overrides `DAILYBOT_API_KEY`, `config.json`, and the login Bearer session for the enclosing repo. Use when the developer wants to be "logged into different orgs in different repos" simultaneously, needs a local dev key just for this project, or wants to toggle between staging and prod without touching global config or env vars. Requires CLI >= 3.9.0 (pack baseline; `env` shipped in 3.7.0).
-version: "3.23.2"
+version: "3.23.3"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔑","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}

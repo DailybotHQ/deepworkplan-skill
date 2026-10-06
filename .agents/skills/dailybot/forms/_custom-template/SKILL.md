@@ -1,7 +1,7 @@
 ---
 name: dailybot-custom-form-template
 description: STARTER TEMPLATE — do not consume this file in place. Copy it to .agents/skills/dailybot-custom/<your-skill-name>/SKILL.md in your own repo, then customize. This is the bootstrap skeleton for authoring a per-form custom skill that the universal dailybot-forms resolver will load from .dailybot/profile.json.
-version: "3.23.2"
+version: "3.23.3"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: false
 allowed-tools: Bash, Read, Grep, Glob

@@ -2108,3 +2108,56 @@ Change a goal, or declare its status.
   - `--team` `<text>` — Team (uuid).
   - `--status` `<not_started|on_track|at_risk|off_track|achieved|missed>` — Declare where the goal stands. Not derived from progress.
 - **Example:** `dailybot plan goal update 00000000-0000-0000-0000-000000000003 --status at_risk`
+
+
+## Agent-first T5 leaves (OpenAPI `x-cli-command`)
+
+> **Hand-maintained addendum** until this file is regenerated from a CLI that includes these leaves. The bulk of this reference still matches `dailybot-cli >= 3.25.0`. T5 leaves require DailybotHQ/cli#129 (or a release after `3.26.2` that includes it).
+
+Prefer these exact command strings. Scope notes match the public Plan OpenAPI.
+
+### `dailybot plan project reorder PROJECT [--before UUID | --after UUID] [--json]`
+- **API.** `POST /v1/plan/projects/{p}/reorder/` body `{before?, after?}` — **one** neighbour only (both → `400 reorder_anchor_invalid`; neither → last). Scope `tasks:admin`. No Idempotency-Key / If-Match.
+
+### `dailybot plan board reorder BOARD [--before UUID | --after UUID] [--project UUID] [--json]`
+- **API.** `POST /v1/plan/boards/{b}/reorder/` body `{before?, after?, project?}`. A different `project` **moves** the board (milestones on tasks tied only to the old project are cleared; board key unchanged). Scope `tasks:admin`. Preview first with `board move-preview`.
+
+### `dailybot plan board move-preview BOARD --project UUID [--json]`
+- **API.** `GET /v1/plan/boards/{b}/move-preview/?project=` (**required**). Read-only. Scope `tasks:admin`.
+
+### `dailybot plan board view create BOARD -n NAME [-f filters.json] [--view-mode list|board|kanban|timeline|calendar] [--group-by …] [--sub-group-by …] [--sort …] [--visibility personal|shared|board_default] [--idempotency-key KEY] [--json]`
+- **API.** `POST /v1/plan/boards/{b}/views/` body SavedView (`name*`, `filters*`, …). **Idempotency-Key accepted.** No If-Match (creates one view; does not replace the array). `shared` / `board_default` need `tasks:admin`.
+
+### `dailybot plan project view create PROJECT -n NAME [-f filters.json] [--view-mode …] [--group-by …] [--sub-group-by …] [--sort …] [--visibility personal|shared] [--idempotency-key KEY] [--json]`
+- **API.** `POST /v1/plan/projects/{p}/views/` body SavedView. **Idempotency-Key accepted.** No If-Match. `shared` needs `tasks:admin`.
+
+### `dailybot plan views workspace [--etag] [--json]`
+- **API.** `GET /v1/plan/views/workspace/`. Person-only (`actor_required` without a person). Returns ETag covering **this caller's** workspace views for save.
+
+### `dailybot plan views workspace save -f views.json (--if-match ETAG | --fetch-etag) [--json]`
+- **API.** `PUT /v1/plan/views/workspace/` body `SavedView[]`. **If-Match required** (412 stale / 428 absent). Replaces the caller's whole workspace view list. `board_default` visibility is refused.
+
+### `dailybot plan tasks board [filters…] [--group-by category|owner|priority|project|board|milestone|state|label] [--sub-group-by none|…] [--tasks-per-group N] [--offset N] [--group KEY] [--lane KEY] [--json]`
+- **API.** `GET /v1/plan/tasks/board/`. Grouped (optional swimlanes) snapshot over any task slice; flat-list filters apply. Prefer `dailybot plan board snapshot BOARD` when you already know one board uuid.
+
+### `dailybot plan board member update BOARD USER [--json]`
+- **API.** `PATCH /v1/plan/boards/{b}/members/{u}/` empty body — inspect the grant row; **role is read-only** (sending `role` → 400). Scope `tasks:admin`.
+
+### `dailybot plan project member update PROJECT USER [--json]`
+- **API.** `PATCH /v1/plan/projects/{p}/members/{u}/` empty body — inspect only. Scope `tasks:admin`.
+
+### `dailybot plan label list [--search TEXT] [--include-archived] [--page …] [--json]`
+- **API.** `GET /v1/plan/labels/`. Organization Plan taxonomy (not board-scoped create).
+
+### `dailybot plan label create -n NAME [--color HEX] [-d DESC] [--json]`
+- **API.** `POST /v1/plan/labels/`.
+
+### `dailybot plan label update LABEL [-n NAME] [--color HEX] [-d DESC] [--archive|--unarchive] [--json]`
+- **API.** `PATCH /v1/plan/labels/{l}/`.
+
+### `dailybot plan label delete LABEL [--dry-run | --yes] [--json]`
+- **API.** `DELETE /v1/plan/labels/{l}/`. Prefer `--archive` via update when `label_in_use`.
+
+`dailybot plan task brief` is documented earlier in this file (not repeated here).
+
+**Phase2 — do not invent commands:** task `delegate` / handback / revoke → API **501**. Goals review = `goal list` + progress includes, not `/goals/review/`. `author_kind=agent` never from an org agent key.
