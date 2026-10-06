@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # v6 opt-in benchmark field metrics + learnings (spec/BENCHMARK.md): config
 # discovery and fail-closed precedence, journal-derived derivation, the
-# no-imputation rule for metered quantities, determinism, the never-blocking
+# no-imputation rule for metered quantities (latest observed sample per
+# selection, AGENT_PROTOCOL 8.4 — never a sum; advisory-only samples leave
+# the flag false without skipping emission), determinism, the never-blocking
 # emission contract, v5 refusal, the aggregate report, and the learnings
 # lifecycle (nested sub-flag, written-once curated half, render parity,
 # aggregate learnings digest and CSV columns).
@@ -225,14 +227,34 @@ PY
   grep -q 'Not metered' "$PLAN/analysis_results/DWP_REPORT.md"
 }
 
-@test "metered samples: values summed per unit and the flag flips" {
+@test "metered samples: latest observed value wins and the flag flips" {
   _write_plan "$PLAN" yes
   _enable_repo
+  # a metering host re-samples its gauges: the LATEST observation per
+  # selection wins (AGENT_PROTOCOL 8.4) - samples are never summed
+  cat >> "$PLAN/journal.ndjson" <<'EOF'
+{"type": "resource_sample", "ts": "2026-03-01T10:38:00Z", "seq": 11, "limit_id": "tokens", "value": 31000, "unit": "tokens"}
+{"type": "resource_sample", "ts": "2026-03-01T10:39:00Z", "seq": 12, "limit_id": "spend_usd", "value": 6.25, "unit": "USD"}
+EOF
   python3 "$BENCHMARK" report --plan "$PLAN"
   REC="$PLAN/analysis_results/benchmark.json"
   [ "$(_field "$REC" metered.flag)" = "True" ]
-  [ "$(_field "$REC" metered.tokens)" = "25000" ]
-  [ "$(_field "$REC" metered.spend_usd)" = "4.5" ]
+  [ "$(_field "$REC" metered.tokens)" = "31000" ]
+  [ "$(_field "$REC" metered.spend_usd)" = "6.25" ]
+}
+
+@test "advisory samples: unknown limit ids never set the flag or skip emission" {
+  _write_plan "$PLAN" no
+  _enable_repo
+  printf '%s\n' '{"type": "resource_sample", "ts": "2026-03-01T10:36:00Z", "seq": 9, "limit_id": "wall_clock_hours", "value": 1.6, "unit": "hours"}' >> "$PLAN/journal.ndjson"
+  run python3 "$BENCHMARK" report --plan "$PLAN"
+  [ "$status" -eq 0 ]
+  REC="$PLAN/analysis_results/benchmark.json"
+  [ -f "$REC" ]
+  [ "$(_field "$REC" metered.flag)" = "False" ]
+  [ "$(_field "$REC" metered.tokens)" = "None" ]
+  [ "$(_field "$REC" metered.spend_usd)" = "None" ]
+  grep -q 'Not metered' "$PLAN/analysis_results/DWP_REPORT.md"
 }
 
 @test "determinism: two report runs rewrite byte-identical artifacts" {
@@ -505,5 +527,5 @@ PY
   run python3 "$BENCHMARK" self-test
   [ "$status" -eq 0 ]
   # the probe count is pinned: losing or silently shrinking probes is a regression
-  [[ "$output" == *"self-test: OK (67 probes)"* ]]
+  [[ "$output" == *"self-test: OK (76 probes)"* ]]
 }

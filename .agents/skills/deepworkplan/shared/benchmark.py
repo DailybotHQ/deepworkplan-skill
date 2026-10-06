@@ -46,6 +46,8 @@ import tempfile
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
+sys.dont_write_bytecode = True  # never leave caches inside an installed pack
+
 try:
     import ledger
 except ImportError:  # pragma: no cover - direct execution from another cwd
@@ -88,10 +90,6 @@ AGGREGATE_NOTE = ('aggregates describe recorded executions; workloads differ '
                   'across plans, repositories and versions - this is evidence '
                   'for discussion, not a causal comparison')
 
-# limit_id values the record understands; unknown ids are ignored with their
-# unit named (V6_RESOURCES: an unknown counter family is advisory).
-_METER_SPEND_IDS = ('spend_usd',)
-_METER_TOKEN_IDS = ('tokens', 'token_count')
 
 
 # ---------------------------------------------------------------------------
@@ -243,16 +241,28 @@ def _fmt_ts(value: Optional[datetime]) -> Optional[str]:
 
 
 def detect_agent_tool() -> str:
-    """Best-effort agent detection; mirrors the context.sh families."""
+    """Best-effort agent detection; mirrors context.sh's families and labels.
+
+    Same precedence, env vars and labels as ``shared/context.sh`` (override >
+    claude > codex > cursor > openclaw > gemini > windsurf), so the record's
+    ``agent_tool`` bucket matches the one context.sh reports and one host
+    cannot split into two buckets across aggregates.
+    """
     override = os.environ.get('DWP_AGENT_TOOL')
     if override:
         return override
-    if os.environ.get('CLAUDECODE'):
+    if os.environ.get('CLAUDE_PLUGIN_ROOT') or os.environ.get('CLAUDECODE'):
         return 'claude-code'
-    if os.environ.get('CURSOR'):
+    if os.environ.get('CODEX_SESSION_ID') or os.environ.get('CODEX_HOME'):
+        return 'codex-cli'
+    if os.environ.get('CURSOR_SESSION_ID') or os.environ.get('CURSOR_TRACE_ID'):
         return 'cursor'
-    if os.environ.get('OPENAI_CODEX') or os.environ.get('CODEX_HOME'):
-        return 'codex'
+    if os.environ.get('OPENCLAW_SESSION'):
+        return 'openclaw'
+    if os.environ.get('GEMINI_SESSION_ID'):
+        return 'gemini-cli'
+    if os.environ.get('WINDSURF_SESSION_ID'):
+        return 'windsurf'
     return 'unknown'
 
 
@@ -423,6 +433,30 @@ def _task_spans(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return spans
 
 
+def _latest_sample(events: List[Dict[str, Any]], unit: Optional[str] = None,
+                   limit_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """The latest observed ``resource_sample`` for one selection.
+
+    Same selection rule as ``context_manifest.accounting``: the matching
+    sample with the highest ``seq`` wins. A host that samples a gauge
+    repeatedly reports its latest value — samples are never summed
+    (AGENT_PROTOCOL 8.4: ``spent`` is the latest observed sample for that
+    limit id), which keeps ``metered`` and ``context_accounting`` the same
+    recordings by construction.
+    """
+    best: Optional[Dict[str, Any]] = None
+    for event in events:
+        if event.get('type') != 'resource_sample':
+            continue
+        if unit is not None and event.get('unit') != unit:
+            continue
+        if limit_id is not None and event.get('limit_id') != limit_id:
+            continue
+        if best is None or event.get('seq', 0) > best.get('seq', 0):
+            best = event
+    return best
+
+
 def derive_record(plan_dir: str) -> Dict[str, Any]:
     """Derive the closed benchmark record from the plan's own records."""
     manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
@@ -500,22 +534,24 @@ def derive_record(plan_dir: str) -> Dict[str, Any]:
             elif key in failed_pairs:
                 friction['retries'] += 1
 
-    # metered - only what a metering host journaled; never synthesized
-    tokens: Optional[int] = None
-    spend: Optional[float] = None
-    metered = False
-    for event in events:
-        if event.get('type') != 'resource_sample':
-            continue
-        limit_id = str(event.get('limit_id') or '')
-        value = event.get('value')
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
-            continue
-        metered = True
-        if limit_id in _METER_TOKEN_IDS:
-            tokens = (tokens or 0) + int(value)
-        elif limit_id in _METER_SPEND_IDS:
-            spend = round((spend or 0.0) + float(value), 2)
+    # metered - only what a metering host journaled; the latest observed
+    # sample per selection (never a sum), mirroring context_manifest's
+    # selection; samples for other limit ids are advisory and never set the
+    # flag (spec section 3, AGENT_PROTOCOL 8.4)
+
+    def _sample_value(sample: Optional[Dict[str, Any]]) -> Optional[float]:
+        if sample is None:
+            return None
+        value = sample.get('value')
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    tokens_value = _sample_value(_latest_sample(events, unit='tokens'))
+    spend_value = _sample_value(_latest_sample(events, limit_id='spend_usd'))
+    tokens = int(tokens_value) if tokens_value is not None else None
+    spend = round(spend_value, 2) if spend_value is not None else None
+    metered = tokens is not None or spend is not None
 
     # status - projected from state.json
     status = 'ready'
@@ -1572,6 +1608,67 @@ def self_test() -> Tuple[bool, List[str], int]:
                   {'observed': 3, 'imported': 0, 'asserted': 0})
             check('metered values come only from resource samples',
                   record['metered'] == {'flag': True, 'tokens': 41000, 'spend_usd': 3.25})
+            latest_dir = _fixture_plan(os.path.join(root, 'repo_latest'), 'v6')
+            _rewrite_journal(latest_dir, parse_journal(latest_dir)[0] + [
+                {'type': 'resource_sample', 'ts': '2026-01-02T11:38:00Z',
+                 'seq': 11, 'limit_id': 'tokens', 'value': 47000,
+                 'unit': 'tokens'},
+                {'type': 'resource_sample', 'ts': '2026-01-02T11:39:00Z',
+                 'seq': 12, 'limit_id': 'spend_usd', 'value': 4.10,
+                 'unit': 'USD'}])
+            check('metered: latest observed sample wins, samples never summed '
+                  '(8.4)',
+                  derive_record(latest_dir)['metered'] ==
+                  {'flag': True, 'tokens': 47000, 'spend_usd': 4.1})
+            advisory_root = os.path.join(root, 'repo_advisory')
+            advisory_dir = _fixture_plan(advisory_root, 'v6')
+            _rewrite_journal(advisory_dir, [
+                event for event in parse_journal(advisory_dir)[0]
+                if event['type'] != 'resource_sample'] + [
+                {'type': 'resource_sample', 'ts': '2026-01-02T11:40:00Z',
+                 'seq': 9, 'limit_id': 'wall_clock_hours', 'value': 1.6,
+                 'unit': 'hours'}])
+            with open(os.path.join(advisory_root, '.dwp', 'config.json'), 'w',
+                      encoding='utf-8') as handle:
+                handle.write('{"benchmark": {"enabled": true}}')
+            advisory_record_path = os.path.join(advisory_dir, 'analysis_results',
+                                                'benchmark.json')
+            check('advisory-only samples: metered stays false and emission '
+                  'still happens',
+                  cmd_report(advisory_dir) == 0
+                  and os.path.isfile(advisory_record_path)
+                  and json.load(open(advisory_record_path))['metered'] ==
+                  {'flag': False, 'tokens': None, 'spend_usd': None})
+
+            # agent tool detection mirrors context.sh families and labels
+            _env_keys = ('DWP_AGENT_TOOL', 'CLAUDE_PLUGIN_ROOT', 'CLAUDECODE',
+                         'CODEX_SESSION_ID', 'CODEX_HOME', 'CURSOR_SESSION_ID',
+                         'CURSOR_TRACE_ID', 'OPENCLAW_SESSION',
+                         'GEMINI_SESSION_ID', 'WINDSURF_SESSION_ID')
+            _saved_env = {key: os.environ.get(key) for key in _env_keys}
+            try:
+                for key in _env_keys:
+                    os.environ.pop(key, None)
+                for var, label in (('CLAUDECODE', 'claude-code'),
+                                   ('CODEX_HOME', 'codex-cli'),
+                                   ('CURSOR_TRACE_ID', 'cursor'),
+                                   ('OPENCLAW_SESSION', 'openclaw'),
+                                   ('GEMINI_SESSION_ID', 'gemini-cli'),
+                                   ('WINDSURF_SESSION_ID', 'windsurf')):
+                    os.environ[var] = '1'
+                    check('agent tool: %s -> %s (context.sh parity)'
+                          % (var, label), detect_agent_tool() == label)
+                    os.environ.pop(var, None)
+                os.environ['DWP_AGENT_TOOL'] = 'custom-host'
+                os.environ['CLAUDECODE'] = '1'
+                check('agent tool: DWP_AGENT_TOOL override wins over harness '
+                      'vars', detect_agent_tool() == 'custom-host')
+            finally:
+                for key, value in _saved_env.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
             check('status projected from state.json',
                   record['status'] == 'completed')
 

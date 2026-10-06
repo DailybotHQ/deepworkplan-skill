@@ -101,7 +101,7 @@ Every field in the record comes from exactly one provenance class:
 | journal-derived | `journal.ndjson` events | timing spans (event `ts`), per-task calendar spans (`task_start` → completion evidence), friction counts (`adaptation`, `amendment`, `intervention`, `refusal`), gate outcomes (`gate_run` exit codes), evidence-class histogram (`observed` / `imported` / `asserted`), control pairs, event count |
 | identity-derived | `manifest.json`, `contract.json`, `state.json` | plan name/title, generation, `contract_id`, spec version, task count, criteria/invariant counts, completion status |
 | environment-derived | pack frontmatter, plan's repository | DWP skill version (the emitting pack's own `version:`), agent tool, repository name, branch |
-| metered-only | `resource_sample` events | token and spend totals, per unit, `metered` flag |
+| metered-only | `resource_sample` events | token and spend, each the **latest observed** sample for its selection (AGENT_PROTOCOL §8.4), `metered` flag |
 | context-manifest-derived | the plan's context accounting, recovered at emission | `context_accounting` (instruction bytes measured; tokens, cost and wall-clock each from its own recorded source) |
 
 - **Wall-clock is calendar span** between recorded timestamps (first event
@@ -120,6 +120,14 @@ Every field in the record comes from exactly one provenance class:
   never synthesize values, never default to zero — the journal rule
   (*missing data is exposed as missing, never imputed*) carries over
   verbatim.
+- **Metered values are the latest observed sample, never a sum.** For each
+  selection (tokens by `unit: "tokens"`, spend by `limit_id: "spend_usd"`),
+  the `resource_sample` with the highest `seq` wins — the same selection
+  rule as `context_manifest.accounting` and the envelope rule
+  (AGENT_PROTOCOL §8.4: `spent` is the latest observed sample for that
+  limit id). A host that samples a gauge repeatedly reports its final
+  value; samples for other limit ids are advisory and leave `metered`
+  false.
 - **Context accounting is the four-quantity block** —
   `instruction_bytes`, `provider_tokens`, `cost_usd`, `wall_clock_hours` —
   each from its own source, missing as missing. It is populated only when

@@ -196,15 +196,16 @@ creates v6 plans with 2–5-word slugs. The retained v5 creation flow uses
 ## Benchmark metrics and learnings (opt-in)
 
 DWP can record how each executed plan went, so skill versions can be compared
-on recorded evidence instead of impressions. It is off unless you turn it on:
+on recorded evidence instead of impressions. It is off unless you turn it on.
+In `<repo>/.dwp/config.json` (this repository only):
 
 ```json
-// <repo>/.dwp/config.json — this repository only
 { "benchmark": { "enabled": true } }
 ```
 
+Or in `~/.dwp/config.json` (every repository you run plans in):
+
 ```json
-// ~/.dwp/config.json — every repository you run plans in
 { "benchmark": { "enabled": true } }
 ```
 

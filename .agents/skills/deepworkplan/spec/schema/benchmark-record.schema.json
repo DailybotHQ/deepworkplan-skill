@@ -44,13 +44,22 @@
       "description": "The plan's materialized outcome contract id."
     },
     "status": {
-      "enum": ["ready", "in_progress", "blocked", "completed"],
+      "enum": [
+        "ready",
+        "in_progress",
+        "blocked",
+        "completed"
+      ],
       "description": "Plan status projected from state.json at derivation time."
     },
     "versions": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["dwp_skill", "spec", "agent_tool"],
+      "required": [
+        "dwp_skill",
+        "spec",
+        "agent_tool"
+      ],
       "properties": {
         "dwp_skill": {
           "type": "string",
@@ -63,14 +72,19 @@
         },
         "agent_tool": {
           "type": "string",
-          "description": "Detected agent tool name, or 'unknown'."
+          "description": "Detected agent tool name, mirroring context.sh's families and labels (claude-code, codex-cli, cursor, openclaw, gemini-cli, windsurf), or 'unknown'."
         }
       }
     },
     "timing": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["first_event_ts", "last_event_ts", "span_seconds", "task_count_spanned"],
+      "required": [
+        "first_event_ts",
+        "last_event_ts",
+        "span_seconds",
+        "task_count_spanned"
+      ],
       "properties": {
         "first_event_ts": {
           "type": "string",
@@ -98,7 +112,12 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["task", "start_ts", "end_ts", "span_seconds"],
+            "required": [
+              "task",
+              "start_ts",
+              "end_ts",
+              "span_seconds"
+            ],
             "properties": {
               "task": {
                 "type": "string",
@@ -111,12 +130,18 @@
                 "description": "Timestamp of the task's task_start event."
               },
               "end_ts": {
-                "type": ["string", "null"],
+                "type": [
+                  "string",
+                  "null"
+                ],
                 "format": "date-time",
                 "description": "Timestamp of the task's completion evidence; null when the window holds no completion evidence for that start - never zero, never imputed."
               },
               "span_seconds": {
-                "type": ["integer", "null"],
+                "type": [
+                  "integer",
+                  "null"
+                ],
                 "minimum": 0,
                 "description": "Calendar distance start_ts to end_ts; null exactly when end_ts is null."
               }
@@ -128,7 +153,13 @@
     "shape": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["tasks", "criteria", "invariants", "gate_intents", "events"],
+      "required": [
+        "tasks",
+        "criteria",
+        "invariants",
+        "gate_intents",
+        "events"
+      ],
       "properties": {
         "tasks": {
           "type": "integer",
@@ -160,7 +191,13 @@
     "friction": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["adaptations", "amendments", "interventions", "refusals", "retries"],
+      "required": [
+        "adaptations",
+        "amendments",
+        "interventions",
+        "refusals",
+        "retries"
+      ],
       "properties": {
         "adaptations": {
           "type": "integer",
@@ -192,7 +229,12 @@
     "gates": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["runs", "exit_0", "exit_nonzero", "evidence_histogram"],
+      "required": [
+        "runs",
+        "exit_0",
+        "exit_nonzero",
+        "evidence_histogram"
+      ],
       "properties": {
         "runs": {
           "type": "integer",
@@ -212,7 +254,11 @@
         "evidence_histogram": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["observed", "imported", "asserted"],
+          "required": [
+            "observed",
+            "imported",
+            "asserted"
+          ],
           "properties": {
             "observed": {
               "type": "integer",
@@ -236,28 +282,41 @@
     "metered": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["flag", "tokens", "spend_usd"],
+      "required": [
+        "flag",
+        "tokens",
+        "spend_usd"
+      ],
       "properties": {
         "flag": {
           "type": "boolean",
-          "description": "False unless resource_sample events were journaled by a metering host; never synthesized."
+          "description": "False unless a token or spend resource_sample was observed; samples for other limit ids are advisory and never set the flag. Never synthesized."
         },
         "tokens": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
-          "description": "Summed token total from resource_sample events; null when not metered (spec section 3 - missing stays missing)."
+          "description": "Latest observed token resource_sample (highest seq, selection unit \"tokens\" - AGENT_PROTOCOL 8.4, never a sum of samples); null when not metered (spec section 3 - missing stays missing)."
         },
         "spend_usd": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
-          "description": "Summed spend from resource_sample events, unit USD; null when not metered."
+          "description": "Latest observed spend resource_sample (highest seq, selection limit_id \"spend_usd\", unit USD - never a sum of samples); null when not metered."
         }
       }
     },
     "environment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repo", "branch"],
+      "required": [
+        "repo",
+        "branch"
+      ],
       "properties": {
         "repo": {
           "type": "string",
@@ -274,24 +333,38 @@
     "diff_stats": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["available", "files", "insertions", "deletions"],
+      "required": [
+        "available",
+        "files",
+        "insertions",
+        "deletions"
+      ],
       "properties": {
         "available": {
           "type": "boolean",
           "description": "False whenever the git window could not be computed; the three counts are then null, never zero (spec section 3)."
         },
         "files": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "description": "Files changed in the plan window."
         },
         "insertions": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "description": "Insertions in the plan window."
         },
         "deletions": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "description": "Deletions in the plan window."
         }
@@ -300,7 +373,13 @@
     "context_accounting": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["available", "instruction_bytes", "provider_tokens", "cost_usd", "wall_clock_hours"],
+      "required": [
+        "available",
+        "instruction_bytes",
+        "provider_tokens",
+        "cost_usd",
+        "wall_clock_hours"
+      ],
       "description": "The four-quantity context accounting block (spec section 3), each quantity from its own source, missing as missing. Optional field: a pre-release v1 amendment. Populated only when the plan's context accounting is recoverable at emission time; otherwise available is false and all four values are null - never synthesized.",
       "properties": {
         "available": {
@@ -308,22 +387,34 @@
           "description": "False when the plan's context accounting could not be recovered at emission time; the four values are then null, never zero."
         },
         "instruction_bytes": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "description": "Measured static instruction bytes (the context manifest plus any declared bundle files); measured, not estimated."
         },
         "provider_tokens": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0,
           "description": "Latest observed token meter sample; null without resource_sample events. The same recording as metered.tokens, carried once more so the four quantities read as one unit."
         },
         "cost_usd": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "description": "Latest observed spend sample in USD, from real rates only - never bytes-to-money; null without resource_sample events. The same recording as metered.spend_usd."
         },
         "wall_clock_hours": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "minimum": 0,
           "description": "Recorded event ts span in hours; the same recording as timing.span_seconds, carried once more so the four quantities read as one unit."
         }
