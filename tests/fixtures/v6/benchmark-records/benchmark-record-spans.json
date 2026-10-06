@@ -1,0 +1,79 @@
+{
+  "schema": "https://deepworkplan.com/schema/benchmark-record/v1.json",
+  "plan": "PLAN_104_fixture_spans",
+  "title": "enriched record with per-task spans and recovered accounting",
+  "generation": "v6",
+  "contract_id": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "status": "completed",
+  "versions": {
+    "dwp_skill": "6.0.2",
+    "spec": "6.0.0",
+    "agent_tool": "claude-code"
+  },
+  "timing": {
+    "first_event_ts": "2026-02-02T09:00:00Z",
+    "last_event_ts": "2026-02-02T10:45:00Z",
+    "span_seconds": 6300,
+    "task_count_spanned": 2,
+    "task_spans": [
+      {
+        "task": "T-one",
+        "start_ts": "2026-02-02T09:05:00Z",
+        "end_ts": "2026-02-02T09:40:00Z",
+        "span_seconds": 2100
+      },
+      {
+        "task": "T-two",
+        "start_ts": "2026-02-02T10:00:00Z",
+        "end_ts": null,
+        "span_seconds": null
+      }
+    ]
+  },
+  "shape": {
+    "tasks": 2,
+    "criteria": 2,
+    "invariants": 1,
+    "gate_intents": 2,
+    "events": 9
+  },
+  "friction": {
+    "adaptations": 1,
+    "amendments": 0,
+    "interventions": 0,
+    "refusals": 1,
+    "retries": 1
+  },
+  "gates": {
+    "runs": 3,
+    "exit_0": 2,
+    "exit_nonzero": 1,
+    "evidence_histogram": {
+      "observed": 3,
+      "imported": 0,
+      "asserted": 0
+    }
+  },
+  "metered": {
+    "flag": true,
+    "tokens": 25000,
+    "spend_usd": 4.5
+  },
+  "environment": {
+    "repo": "fixture-repo",
+    "branch": "feat/fixture"
+  },
+  "diff_stats": {
+    "available": false,
+    "files": null,
+    "insertions": null,
+    "deletions": null
+  },
+  "context_accounting": {
+    "available": true,
+    "instruction_bytes": 9238,
+    "provider_tokens": 25000,
+    "cost_usd": 4.5,
+    "wall_clock_hours": 1.75
+  }
+}

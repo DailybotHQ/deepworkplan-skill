@@ -1,0 +1,58 @@
+{
+  "schema": "https://deepworkplan.com/schema/benchmark-record/v1.json",
+  "plan": "PLAN_101_fixture_metered",
+  "title": "fully metered synthetic record",
+  "generation": "v6",
+  "contract_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "completed",
+  "versions": {
+    "dwp_skill": "6.0.2",
+    "spec": "6.0.0",
+    "agent_tool": "claude-code"
+  },
+  "timing": {
+    "first_event_ts": "2026-02-01T09:00:00Z",
+    "last_event_ts": "2026-02-01T12:30:00Z",
+    "span_seconds": 12600,
+    "task_count_spanned": 4
+  },
+  "shape": {
+    "tasks": 4,
+    "criteria": 5,
+    "invariants": 2,
+    "gate_intents": 5,
+    "events": 41
+  },
+  "friction": {
+    "adaptations": 1,
+    "amendments": 0,
+    "interventions": 1,
+    "refusals": 2,
+    "retries": 3
+  },
+  "gates": {
+    "runs": 9,
+    "exit_0": 6,
+    "exit_nonzero": 3,
+    "evidence_histogram": {
+      "observed": 9,
+      "imported": 0,
+      "asserted": 0
+    }
+  },
+  "metered": {
+    "flag": true,
+    "tokens": 1284000,
+    "spend_usd": 19.38
+  },
+  "environment": {
+    "repo": "fixture-repo",
+    "branch": "feat/fixture"
+  },
+  "diff_stats": {
+    "available": true,
+    "files": 23,
+    "insertions": 4102,
+    "deletions": 887
+  }
+}

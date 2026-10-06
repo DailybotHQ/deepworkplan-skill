@@ -1,0 +1,65 @@
+{
+  "schema": "https://deepworkplan.com/schema/benchmark-record/v1.json",
+  "plan": "PLAN_105_fixture_accounting",
+  "title": "enriched record with honest accounting unavailability",
+  "generation": "v6",
+  "contract_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "status": "completed",
+  "versions": {
+    "dwp_skill": "6.0.2",
+    "spec": "6.0.0",
+    "agent_tool": "unknown"
+  },
+  "timing": {
+    "first_event_ts": "2026-02-03T09:00:00Z",
+    "last_event_ts": "2026-02-03T11:00:00Z",
+    "span_seconds": 7200,
+    "task_count_spanned": 1
+  },
+  "shape": {
+    "tasks": 1,
+    "criteria": 1,
+    "invariants": 0,
+    "gate_intents": 1,
+    "events": 5
+  },
+  "friction": {
+    "adaptations": 0,
+    "amendments": 0,
+    "interventions": 0,
+    "refusals": 0,
+    "retries": 0
+  },
+  "gates": {
+    "runs": 1,
+    "exit_0": 1,
+    "exit_nonzero": 0,
+    "evidence_histogram": {
+      "observed": 1,
+      "imported": 0,
+      "asserted": 0
+    }
+  },
+  "metered": {
+    "flag": false,
+    "tokens": null,
+    "spend_usd": null
+  },
+  "environment": {
+    "repo": "fixture-repo",
+    "branch": "unknown"
+  },
+  "diff_stats": {
+    "available": false,
+    "files": null,
+    "insertions": null,
+    "deletions": null
+  },
+  "context_accounting": {
+    "available": false,
+    "instruction_bytes": null,
+    "provider_tokens": null,
+    "cost_usd": null,
+    "wall_clock_hours": null
+  }
+}

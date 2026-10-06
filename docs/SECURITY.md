@@ -34,6 +34,20 @@ this repo.
 - `verify/conformance.sh` is **read-only**: it reads plan files, `AGENTS.md`,
   `docs/` and `.gitignore` to produce a verdict, and writes nothing. It makes no
   network call.
+- `shared/benchmark.py` (opt-in via `.dwp/config.json`) reads the plan's own
+  records (`journal.ndjson`, `manifest.json`, `contract.json`, `state.json`),
+  read-only `git` queries via an argv subprocess call, and the two documented
+  config files. Its only writes land inside the measured plan's
+  `analysis_results/`. Records carry the repository **basename**, branch and
+  counts — never full paths, file contents, or environment values. With the
+  nested `learnings` flag on, it also writes `learnings.json` there: the
+  derived half copies friction reasons the journal already recorded, and the
+  curated half is written once and then preserved byte-for-byte by reruns —
+  never merged or rewritten. Curated entries carry a closed-vocabulary
+  category, an anchor naming only a journal event seq and/or a short section
+  id (never a path), and finding/proposal text — no file contents, no user
+  paths, no secrets. It makes no network call and there is nothing to
+  transmit to.
 - Releases publish from `main` via CI; publishing credentials live **only** in
   GitHub Actions secrets, never in the tree. Do not echo, log, or commit them.
 - **A secret in a pushed commit MUST be treated as leaked and rotated**, not

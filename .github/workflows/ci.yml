@@ -201,6 +201,7 @@ jobs:
                         skills/deepworkplan/shared/plan_paths.py \
                         skills/deepworkplan/shared/resources.py \
                         skills/deepworkplan/shared/migrate_v6.py \
+                        skills/deepworkplan/shared/benchmark.py \
                         skills/deepworkplan/verify/plan_contract.py; do
             python3 -m py_compile "$helper"
             echo "OK: $helper compiles on $(python3 --version)"
@@ -241,6 +242,12 @@ jobs:
           # repository state.
           PYTHONDONTWRITEBYTECODE=1 python3 \
             skills/deepworkplan/shared/migrate_v6.py self-test
+          # The opt-in benchmark helper as well: config resolution, record
+          # derivation, closed-field validation and the aggregate report;
+          # its self-test builds throwaway plans in a temp directory,
+          # touches no repository state and makes no network call.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/benchmark.py self-test
           # And they must actually run, not merely parse: the read-only checker
           # over a real fixture plan, with no optional dependency available.
           python3 -c 'import jsonschema' 2>/dev/null && { echo "FAIL: jsonschema present — this job must prove the stdlib-only path"; exit 1; }
