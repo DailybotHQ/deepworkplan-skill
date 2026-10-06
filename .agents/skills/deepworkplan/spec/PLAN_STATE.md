@@ -525,12 +525,16 @@ bytes yields byte-identical `state.json` and view files. Positions the
 journal cannot support after a markdown-wins reconciliation are recorded
 `regenerated`, never fabricated (D2-8), and are ignored for roll bounding.
 
-**The human-edit rule (views).** A generated view that differs from what
-render would produce — its identity header proves it was machine-rendered
-— is never silently overwritten. Render reports the divergence and the
-operator reconciles: `human-wins` (the human edit stays; the generated
-output sits beside it as `<name>.generated.md`) or `generated-wins` (the
-human edit is preserved as `<name>.human.md`). Both record a
+**The human-edit rule (views).** A generated view whose bytes differ from
+what render would produce AND from the digest its last render recorded
+(`view_render.digests`) is a human edit — whether or not its identity
+header survived — and is never silently overwritten. A view that still
+matches its recorded digest is merely stale (the records moved on): render
+refreshes it in place without a reconciliation. Render reports the
+divergence and the operator reconciles: `human-wins` (the human edit
+stays; the generated output sits beside it as `<name>.generated.md`) or
+`generated-wins` (the human edit is preserved as `<name>.human.md`). Both
+record a
 `reconciliation` event with the trigger, the editor whose change won, and
 the operator-supplied authority. `README.md` and `PROGRESS.md` remain
 markdown-wins human documents.
