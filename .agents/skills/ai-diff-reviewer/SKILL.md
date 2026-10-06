@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer
 description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for six capabilities — (1) review the current branch diff locally (same methodology as CI); (2) generate repo-tailored .review/extension.md overrides (generate-extension); (3) install and configure the Action, and answer action.yml input questions (setup); (4) author a documented pull request from the branch diff (open-pr); (5) read the CI review and walk findings to apply, defer or skip — read-only (apply-review); (6) close the loop in one invocation — resolve the CI review's findings (commits and pushes), repair the PR's other failing workflows (codecheck, tests, branch not up to date), and re-arm the reviewer per the repo label configuration (address-review). Auto-detects .review/extension.md. Use when the developer asks to review changes, customize the reviewer, set up the Action, open a PR, read the CI review, close the review loop (resolve, re-trigger, arm an unreviewed PR), or fix failing PR workflows.
-version: "3.2.2"
+version: "3.2.3"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔍","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
