@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [6.1.0] — 2026-10-06
+
+### Changes
+
+- feat(skill): add opt-in benchmark field metrics and plan learnings (#56)
+- fix(shared): refresh an intact generated view instead of reporting a human edit (#55)
+
+
 ## [6.0.2] — 2026-10-01
 
 ### Changes
