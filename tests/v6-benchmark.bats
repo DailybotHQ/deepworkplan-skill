@@ -529,3 +529,32 @@ PY
   # the probe count is pinned: losing or silently shrinking probes is a regression
   [[ "$output" == *"self-test: OK (76 probes)"* ]]
 }
+
+@test "benchmark self-test keeps distinct version groups across package versions" {
+  run python3 - "$BENCHMARK" <<'PY'
+import contextlib, importlib.util, io, os, sys
+from unittest.mock import patch
+
+path = sys.argv[1]
+sys.path.insert(0, os.path.dirname(path))
+spec = importlib.util.spec_from_file_location('benchmark_version_probe', path)
+benchmark = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(benchmark)
+
+for version in ('6.0.1', '6.1.0', '0.0.0', '99.0.0'):
+    output = io.StringIO()
+    with patch.object(benchmark, 'pack_version', return_value=version):
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            status = benchmark.main(['self-test'])
+    text = output.getvalue()
+    assert status == 0, 'version {}:\n{}'.format(version, text)
+    assert 'self-test: OK (76 probes)' in text, text
+    print('OK: version {}'.format(version))
+PY
+  printf '%s\n' "$output"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OK: version 6.0.1"* ]]
+  [[ "$output" == *"OK: version 6.1.0"* ]]
+  [[ "$output" == *"OK: version 0.0.0"* ]]
+  [[ "$output" == *"OK: version 99.0.0"* ]]
+}
