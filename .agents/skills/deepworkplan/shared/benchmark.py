@@ -1963,7 +1963,8 @@ def self_test() -> Tuple[bool, List[str], int]:
             cmd_report(plan_c)
             rec_c_path = os.path.join(plan_c, 'analysis_results', 'benchmark.json')
             rec_c = json.loads(open(rec_c_path, encoding='utf-8').read())
-            rec_c['versions']['dwp_skill'] = '6.1.0'
+            other_version = '0.0.0' if pack_version() != '0.0.0' else '0.0.1'
+            rec_c['versions']['dwp_skill'] = other_version
             with open(rec_c_path, 'wb') as handle:
                 handle.write(_serialize(rec_c))
             learn_c_path = os.path.join(plan_c, 'analysis_results', 'learnings.json')
@@ -1992,7 +1993,7 @@ def self_test() -> Tuple[bool, List[str], int]:
                   '(metrics groups and digest)',
                   agg.count(AGGREGATE_NOTE) >= 2)
             check('learnings digest groups by skill version',
-                  '## Learnings digest' in agg and '### Skill 6.1.0' in agg)
+                  '## Learnings digest' in agg and ('### Skill ' + other_version) in agg)
             check('version-over-version table appears only with two versions',
                   '## Version over version' in agg)
             check('digest counts categories within a version',
