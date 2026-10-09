@@ -88,6 +88,11 @@ jobs:
             echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Smoke — the ecosystem products install at the pinned tags
+        # Before anything is committed or tagged (scripts/smoke-ecosystem-pins.sh
+        # reads the pins from the addon descriptors; throwaway HOME).
+        run: bash scripts/smoke-ecosystem-pins.sh
+
       - name: Stamp the version in ALL SKILL.md files
         env:
           NEW_VERSION: ${{ steps.version.outputs.version }}

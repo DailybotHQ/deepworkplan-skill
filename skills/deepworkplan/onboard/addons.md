@@ -82,7 +82,7 @@ records its Phase 7a status). Offer the seven optional ones independently:
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
 [`SPEC.md`](../addons/devcontainer/SPEC.md)), a thin integrator of
-devcontainer-kit (`dck`, pinned `v0.1.0`). If the developer accepts: read
+devcontainer-kit (`dck`, pinned `v0.1.2`). If the developer accepts: read
 that addon's `SKILL.md` and run its flow — detect the kit (`dck doctor
 --json`), reason the flavour, service, ports and layers from the stack you
 detected in Phase 1, show `dck init --dry-run`, and let `dck init` reconcile

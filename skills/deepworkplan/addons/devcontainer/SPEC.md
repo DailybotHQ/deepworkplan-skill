@@ -17,7 +17,7 @@ validation.
 |-------|-------|
 | **Version** | 2.0.0 |
 | **Status** | Beta (DeepWorkPlan 7.0.0-beta.1) — supersedes the 1.x in-pack templates |
-| **Product pin** | `DailybotHQ/devcontainer-kit` `v0.1.0`, interface `1` |
+| **Product pin** | `DailybotHQ/devcontainer-kit` `v0.1.2`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md` |
 
 ## 1. Conventions
@@ -53,7 +53,7 @@ company-specific network, volume, CLI or profile file.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Install:
-  `git clone --branch v0.1.0 https://github.com/DailybotHQ/devcontainer-kit` then
+  `git clone --branch v0.1.2 https://github.com/DailybotHQ/devcontainer-kit` then
   `./devcontainer-kit/install.sh`. A fetch-and-execute pipeline **MUST NOT**
   appear in this pack's text.
 - Options **MUST** be reasoned from the repository's real files
@@ -68,7 +68,7 @@ company-specific network, volume, CLI or profile file.
   enabled and asks for it. The `agents` layer installs coding-agents-kit at
   the kit's pinned tag; its wrappers add no permission-bypass flag.
 - On acceptance: `addons.devcontainer` = `{"enabled": true, "version":
-  "v0.1.0"}` via `shared/config.py enable`.
+  "v0.1.2"}` via `shared/config.py enable`.
 
 ## 6. Security Defaults (inherited, never weakened)
 
@@ -92,7 +92,7 @@ container (`../herdr/install.md` §3).
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist; no
    layout/entrypoint/image copy ships in this folder; `addon.json` pins
-   `DailybotHQ/devcontainer-kit` `v0.1.0`, interface 1.
+   `DailybotHQ/devcontainer-kit` `v0.1.2`, interface 1.
 2. `dck doctor --json`: interface 1; repo config valid; drift reported.
 3. Existing files changed only through accepted `dck init` diffs with
    backups.

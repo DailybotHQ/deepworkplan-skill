@@ -1,7 +1,7 @@
 {
   "schema": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
   "key": "devcontainer",
-  "product": { "repo": "DailybotHQ/devcontainer-kit", "tag": "v0.1.0", "interface": 1 },
+  "product": { "repo": "DailybotHQ/devcontainer-kit", "tag": "v0.1.2", "interface": 1 },
   "detect": { "command": "dck doctor --json", "interface_from": "json:interface" },
   "provides_abilities": [],
   "requires_grants": []

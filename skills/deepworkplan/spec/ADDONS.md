@@ -133,7 +133,7 @@ form**; only its CI surface is optional.
 - An optional addon at `skills/deepworkplan/addons/devcontainer/` that gives a
   repository a reproducible dev container through **devcontainer-kit**
   (`dck`; `https://github.com/DailybotHQ/devcontainer-kit`, MIT, its own
-  release cycle) pinned at `v0.1.0` (interface `1`). The kit owns the Dev
+  release cycle) pinned at `v0.1.2` (interface `1`). The kit owns the Dev
   Containers layout (`dck init`, which reconciles and never clobbers), the
   pinned base images, the entrypoint library, the launcher, SSH agent
   forwarding and Herdr registration; the addon owns detection, the offer, the
@@ -427,7 +427,7 @@ The shipped set:
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.3` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
-| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.1.0`, interface 1 | — | — | — |
+| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.1.2`, interface 1 | — | — | — |
 | `herdr` | `DailybotHQ/herdr-peers` `v0.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
 | `vim` | `DailybotHQ/deepworkplan-vim` `v0.4.0`, interface 1 | — | — | — |
 

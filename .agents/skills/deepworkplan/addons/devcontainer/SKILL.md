@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-devcontainer
-description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.1.0, interface 1) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers `dck init` (which reconciles an existing layout and never clobbers it), maps the detected stack to a base-image flavour and the opt-in layers (agents through coding-agents-kit, the editor, Dailybot only when that addon asks), optionally registers the container as a Herdr machine, and validates the result. Opt-in, never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.1.2, interface 1) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers `dck init` (which reconciles an existing layout and never clobbers it), maps the detected stack to a base-image flavour and the opt-in layers (agents through coding-agents-kit, the editor, Dailybot only when that addon asks), optionally registers the container as a Herdr machine, and validates the result. Opt-in, never required, never a conformance gate.
 version: "6.1.0"
 documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
@@ -26,7 +26,7 @@ result. It carries no company-specific network, volume or file name.
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/devcontainer-kit` |
-| Tag | `v0.1.0` |
+| Tag | `v0.1.2` |
 | Interface | `1` (`dck doctor --json` → `"interface": 1`) |
 | Registry key | `devcontainer` (`.dwp/config.json` → `addons.devcontainer`) |
 | Abilities | none (it provides an environment, not a delegation transport) |
@@ -81,7 +81,7 @@ inside) and what it costs (Docker, an image pull). Declining is complete.
 ### Step 2 — Install the kit (pinned; point-don't-run by default)
 
 ```
-git clone --branch v0.1.0 https://github.com/DailybotHQ/devcontainer-kit
+git clone --branch v0.1.2 https://github.com/DailybotHQ/devcontainer-kit
 ./devcontainer-kit/install.sh
 ```
 
@@ -94,7 +94,7 @@ person accepted the shown diffs). Then `dck setup && dck up`.
 
 ### Step 4 — Record and validate
 
-`python3 ../../shared/config.py enable devcontainer --version v0.1.0 --repo <repo>`,
+`python3 ../../shared/config.py enable devcontainer --version v0.1.2 --repo <repo>`,
 then `dck doctor --json` (runtime, repo config, layers, ssh, drift) and
 `dck exec -- <the repo's real test command>` — every result recorded, none
 blocking.
@@ -112,7 +112,7 @@ blocking.
 ## Validation checklist (component 4 — mirrored from SPEC §8)
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist; the
-   descriptor pins `DailybotHQ/devcontainer-kit` `v0.1.0`, interface 1.
+   descriptor pins `DailybotHQ/devcontainer-kit` `v0.1.2`, interface 1.
 2. `dck doctor --json` reports interface 1 and a valid repo config.
 3. Existing files were changed only through consented `dck init` diffs, each
    with a `*.dck-bak-*` backup.
