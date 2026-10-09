@@ -54,11 +54,14 @@ import calendar
 import json
 import os
 import re
+import shlex
+import subprocess
 import sys
 import time
 
 sys.dont_write_bytecode = True  # never leave caches inside an installed pack
 
+import config as dwp_config  # noqa: E402  (registry + descriptors, spec/CONFIG.md)
 import contract_v6  # noqa: E402
 import ledger  # noqa: E402
 import scheduler  # noqa: E402
@@ -375,6 +378,143 @@ def pending_after_settlements(contract, events):
     return pending
 
 
+# ------------------------------------------- addon-provided abilities (v7)
+
+DETECT_TIMEOUT_S = 10
+
+
+def _run_detect(command, timeout=DETECT_TIMEOUT_S):
+    """Run one descriptor detect command: argv, no shell, read-only, bounded.
+
+    Returns (present, stdout, reason). A missing binary is "not installed",
+    never an error.
+    """
+    try:
+        argv = shlex.split(command)
+    except ValueError as exc:
+        return False, '', 'detect command unparsable (%s)' % exc
+    try:
+        proc = subprocess.run(argv, stdin=subprocess.DEVNULL,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              timeout=timeout, check=False)
+    except FileNotFoundError:
+        return False, '', '%s not installed' % argv[0]
+    except subprocess.TimeoutExpired:
+        return False, '', 'detect timed out after %ss' % timeout
+    except OSError as exc:
+        return False, '', 'detect failed to start (%s)' % exc
+    out = proc.stdout.decode('utf-8', 'replace')
+    if proc.returncode != 0:
+        return False, out, 'detect exited %d' % proc.returncode
+    return True, out, None
+
+
+def _read_interface(spec, stdout):
+    """The integer interface named by ``interface_from``, or None."""
+    try:
+        if spec.startswith('json:'):
+            value = json.loads(stdout).get(spec[5:])
+        elif spec.startswith('regex:'):
+            match = re.search(spec[6:], stdout)
+            value = match.group(1) if match else None
+        elif spec.startswith('file-json:'):
+            path, field = spec[10:].rsplit('#', 1)
+            with open(os.path.expanduser(path), encoding='utf-8') as fh:
+                value = json.load(fh).get(field)
+        else:
+            return None
+        if isinstance(value, bool):
+            return None
+        return int(value)
+    except (ValueError, TypeError, AttributeError, OSError, IndexError):
+        return None
+
+
+def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S):
+    """Detection verdict for ONE enabled addon (opens its descriptor).
+
+    ``{"descriptor_ok", "detected", "interface", "compatible", "provides",
+    "reason"}`` — ``compatible`` is True only when the descriptor is valid,
+    detection succeeded and the interface major matches what the
+    descriptor pins (or the product publishes none).
+    """
+    doc, errs = dwp_config.load_descriptor(
+        key, addons_dir or dwp_config.ADDONS_DIR)
+    verdict = {'descriptor_ok': not errs, 'detected': False,
+               'interface': None, 'compatible': False, 'provides': [],
+               'reason': None}
+    if errs:
+        verdict['reason'] = 'invalid descriptor (%s)' % errs[0]
+        return verdict
+    verdict['provides'] = list(doc.get('provides_abilities', []))
+    det = doc['detect']
+    stdout = ''
+    if 'command' in det:
+        present, stdout, reason = _run_detect(det['command'], timeout)
+    else:
+        base = repo_root or os.getcwd()
+        present = any(os.path.isfile(os.path.expanduser(p) if p.startswith('~/')
+                                     else os.path.join(base, p))
+                      for p in det['paths'])
+        reason = None if present else 'none of %s present' % ', '.join(det['paths'])
+    verdict['detected'] = present
+    if not present:
+        verdict['reason'] = reason
+        return verdict
+    pinned = (doc.get('product') or {}).get('interface')
+    if pinned is None:
+        verdict['compatible'] = True
+        return verdict
+    spec = det.get('interface_from')
+    found = _read_interface(spec, stdout) if spec else None
+    verdict['interface'] = found
+    if found is None:
+        verdict['reason'] = 'interface unreadable; treated as not available'
+    elif found != pinned:
+        verdict['reason'] = ('unknown interface major %d (pinned %d); treated '
+                             'as not available' % (found, pinned))
+    else:
+        verdict['compatible'] = True
+    return verdict
+
+
+def effective_abilities(host_caps=None, dwp_root=None, home=None,
+                        addons_dir=None, timeout=DETECT_TIMEOUT_S):
+    """Host abilities united with what enabled-and-healthy addons provide.
+
+    Computed per call from the host declaration, the registry
+    (spec/CONFIG.md) and live detection — never persisted into a plan. An
+    addon contributes only when it is enabled AND its descriptor is valid
+    AND detection succeeds AND the interface major is compatible; every
+    other outcome is exactly one warning and no contribution. No addon file
+    is opened for a key the registry does not enable.
+    """
+    caps = host_capabilities(host_caps)  # closed set; unknown keys refused
+    sources = {name: (['host'] if caps.get(name) else []) for name in caps}
+    keys = dwp_config.addon_keys(addons_dir or dwp_config.ADDONS_DIR)
+    enabled, warnings = dwp_config.enabled_addons(dwp_root, home, keys)
+    repo_root = os.path.dirname(dwp_root) if dwp_root else None
+    addons = {}
+    for key in enabled:
+        verdict = addon_status(key, repo_root, addons_dir, timeout)
+        addons[key] = verdict
+        if verdict['compatible']:
+            for name in verdict['provides']:
+                if name not in HOST_CAPABILITIES:  # never invented
+                    warnings.append('addon %s: unknown ability %r refused'
+                                    % (key, name))
+                    continue
+                caps[name] = True
+                sources[name].append('addon:' + key)
+        elif verdict['provides']:
+            warnings.append('addon %s: enabled but contributes nothing — %s'
+                            % (key, verdict['reason']))
+        elif verdict['reason'] and not verdict['descriptor_ok']:
+            warnings.append('addon %s: %s' % (key, verdict['reason']))
+    return {'abilities': caps, 'sources': sources, 'addons': addons,
+            'warnings': warnings, 'persisted': False}
+
+
 # ------------------------------------------------------------ routing
 
 def routing_posture(contract, host_caps=None):
@@ -626,6 +766,79 @@ def self_test():
               row['effective_mode'].startswith('advisory (counter family') and
               report['unsupported_counters'] == [row['limit_id']],
               row['effective_mode'])
+
+    # 19. v7 effective abilities: host ∪ enabled-and-healthy addons
+    with tempfile.TemporaryDirectory() as tmp:
+        addons = os.path.join(tmp, 'addons')
+        bindir = os.path.join(tmp, 'bin')
+        dwp = os.path.join(tmp, 'repo', '.dwp')
+        home = os.path.join(tmp, 'home')
+        for d in (bindir, dwp, home):
+            os.makedirs(d)
+        desc_url = dwp_config.DESCRIPTOR_SCHEMA_URL
+
+        def descriptor(key, command, interface=1, provides=('subagents',)):
+            os.makedirs(os.path.join(addons, key))
+            with open(os.path.join(addons, key, 'addon.json'), 'w') as fh:
+                json.dump({'schema': desc_url, 'key': key,
+                           'product': {'repo': 'Example/' + key,
+                                       'tag': 'v0.1.0', 'interface': interface},
+                           'detect': {'command': command,
+                                      'interface_from': 'json:interface'},
+                           'provides_abilities': list(provides),
+                           'requires_grants': ['agent_delegation'],
+                           'transport': 'headless'}, fh)
+
+        def fake(name, body):
+            path = os.path.join(bindir, name)
+            with open(path, 'w') as fh:
+                fh.write('#!/bin/sh\n' + body + '\n')
+            os.chmod(path, 0o755)
+
+        fake('fake-ak', 'echo \'{"interface": 1}\'')
+        fake('fake-v2', 'echo \'{"interface": 2}\'')
+        descriptor('good', 'fake-ak doctor --json',
+                   provides=('subagents', 'cancel_children'))
+        descriptor('newer', 'fake-v2 doctor --json', provides=('subagents', 'model_routing'))
+        descriptor('absent', 'no-such-binary-dwp --version')
+        os.makedirs(os.path.join(addons, 'broken'))
+        with open(os.path.join(addons, 'broken', 'addon.json'), 'w') as fh:
+            fh.write('{not json')
+        old_path = os.environ.get('PATH', '')
+        os.environ['PATH'] = bindir + os.pathsep + old_path
+        try:
+            eff = effective_abilities(None, dwp, home, addons)
+            check('v7: nothing enabled = the all-False minimal host',
+                  not any(eff['abilities'].values()) and not eff['warnings']
+                  and eff['persisted'] is False, repr(eff))
+            with open(os.path.join(dwp, 'config.json'), 'w') as fh:
+                json.dump({'addons': {k: {'enabled': True} for k in
+                                      ('good', 'newer', 'absent')}}, fh)
+            eff = effective_abilities({'telemetry': True}, dwp, home, addons)
+            check('v7: an enabled, detected, compatible addon contributes',
+                  eff['abilities']['subagents'] and
+                  eff['abilities']['cancel_children'] and
+                  eff['sources']['subagents'] == ['addon:good'], repr(eff))
+            check('v7: host abilities survive the union',
+                  eff['sources']['telemetry'] == ['host'], repr(eff['sources']))
+            check('v7: an unknown interface major contributes nothing',
+                  not eff['abilities']['model_routing'] and any(
+                      'unknown interface major 2' in w for w in eff['warnings']),
+                  repr(eff['warnings']))
+            check('v7: a missing binary is one warning, never an error',
+                  sum('absent' in w for w in eff['warnings']) == 1 and
+                  any('not installed' in w for w in eff['warnings']),
+                  repr(eff['warnings']))
+            check('v7: a disabled addon is never opened (broken JSON unread)',
+                  'broken' not in eff['addons'] and
+                  not any('broken' in w for w in eff['warnings']))
+            with open(os.path.join(dwp, 'config.json'), 'w') as fh:
+                json.dump({'addons': {'good': {'enabled': False}}}, fh)
+            eff = effective_abilities(None, dwp, home, addons)
+            check('v7: disabling the addon removes its abilities',
+                  not eff['abilities']['subagents'], repr(eff))
+        finally:
+            os.environ['PATH'] = old_path
     return (not failures, failures, probes[0])
 
 
@@ -658,7 +871,8 @@ def _schema_rejects_reserve(value):
 
 def main(argv):
     usage = ('usage: resources.py --plan DIR {report [--caps JSON] | routing '
-             '[--caps JSON] | capabilities [--json JSON] | exhaust --limit '
+             '[--caps JSON] | abilities [--caps JSON] (add --host-only to '
+             'ignore enabled addons) | capabilities [--json JSON] | exhaust --limit '
              'ID [--detail D] | recover --limit ID [--detail D] | settle '
              '--key K --disposition released|committed [--detail D] | hold | '
              'self-test}')
@@ -666,6 +880,7 @@ def main(argv):
     parser.add_argument('--plan')
     parser.add_argument('command')
     parser.add_argument('--caps', default='{}')
+    parser.add_argument('--host-only', action='store_true')
     parser.add_argument('--limit', dest='limit_id')
     parser.add_argument('--key')
     parser.add_argument('--disposition')
@@ -694,7 +909,12 @@ def main(argv):
             print(usage)
             return 2
         plan = ledger.find_plan_dir(args.plan)
-        caps = host_capabilities(json.loads(args.caps))
+        host = host_capabilities(json.loads(args.caps))
+        effective = effective_abilities(
+            host, None if args.host_only else dwp_config.find_dwp_root(plan))
+        for line in effective['warnings']:
+            print('WARNING: %s' % line, file=sys.stderr)
+        caps = effective['abilities']
         rec = ledger.PlanRecords(plan)
         events = rec.archived_events() + rec.read_journal()[0]
         if args.command == 'report':
@@ -702,8 +922,13 @@ def main(argv):
                              sort_keys=True, indent=2))
             return 0
         if args.command == 'routing':
-            print(json.dumps(routing_posture(rec.contract, caps),
-                             sort_keys=True, indent=2))
+            posture = routing_posture(rec.contract, caps)
+            posture['ability_sources'] = {
+                k: v for k, v in effective['sources'].items() if v}
+            print(json.dumps(posture, sort_keys=True, indent=2))
+            return 0
+        if args.command == 'abilities':
+            print(json.dumps(effective, sort_keys=True, indent=2))
             return 0
         if args.command == 'hold':
             hold = dispatch_hold(rec.contract, events)

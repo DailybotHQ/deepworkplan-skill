@@ -51,7 +51,14 @@ no lock and writes nothing unless you pass `--out`); and
 scheduler's envelope accounting and the ledger's record discipline to
 negotiate host abilities, apply reserves, record exhaustion and settle
 cancellations — the only events it writes are journal observations
-through the ledger writer, and it never mints observed trust; and
+through the ledger writer, and it never mints observed trust. From 7.0.0
+it also computes addon-provided abilities (`spec/V7_ABILITIES.md`): for an
+addon **you enabled** in `.dwp/config.json` it runs that addon's declared
+detect command — a plain argv line from the addon's `addon.json` (no shell
+metacharacters allowed by schema), executed without a shell, stdin closed,
+10-second timeout, output only parsed for an interface number — or checks
+the declared file paths; a disabled addon is never consulted and nothing
+it learns is written to a plan; and
 `shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,
 guarded resumable migrate, verified rollback. It never executes anything:
 a v5 gate record is imported through the ledger writer as `imported`
