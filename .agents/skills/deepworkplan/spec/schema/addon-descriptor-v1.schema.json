@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
+  "description": "DeepWorkPlan addon descriptor, v1 (spec/ADDONS.md section 7): addons/<key>/addon.json, one per in-pack addon, key equal to the directory name (ecosystem contract amendment A1). Declares the product an integrator pins (repo, tag, integer interface), how presence is detected, which host abilities the addon can contribute at runtime when enabled and detected (spec/V7_ABILITIES.md), which contract grants its use requires, and its delegation transport. Data only: the pack never executes anything a descriptor names except the detect command, run without a shell, read-only, bounded by a timeout, and only for an addon the registry enables.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "key",
+    "detect",
+    "provides_abilities",
+    "requires_grants"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/addon-descriptor/v1.json"
+    },
+    "key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$",
+      "description": "Equals the addon's directory name under addons/ and its registry key in .dwp/config.json."
+    },
+    "product": {
+      "type": "object",
+      "description": "The separate product a thin integrator pins. Absent for in-pack-only addons.",
+      "additionalProperties": false,
+      "required": [
+        "repo",
+        "tag"
+      ],
+      "properties": {
+        "repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$"
+        },
+        "tag": {
+          "type": "string",
+          "pattern": "^v\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.]+)?$"
+        },
+        "interface": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "The product interface major the integrator speaks (ecosystem contract section 2.0). Omitted for products that publish no interface integer; their compatibility is decided by the pinned tag alone."
+        }
+      }
+    },
+    "detect": {
+      "type": "object",
+      "description": "Read-only presence check. Exactly one of command (an argv line: no shell metacharacters, run without a shell; exit 0 means present) or paths (present when at least one listed file exists; repo-relative, or ~/-prefixed for machine-level installs).",
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/ -]*$",
+          "maxLength": 200
+        },
+        "paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(~/)?[A-Za-z0-9._][A-Za-z0-9._/-]*$"
+          }
+        },
+        "interface_from": {
+          "type": "string",
+          "description": "Where the integer interface is read: json:<field> (command stdout is one JSON object), regex:<pattern> (first group of the first match on stdout), or file-json:<path>#<field>.",
+          "pattern": "^(json:[A-Za-z_][A-Za-z0-9_]*|regex:.+|file-json:(~/)?[A-Za-z0-9._/-]+#[A-Za-z_][A-Za-z0-9_]*)$"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "command"
+          ],
+          "not": {
+            "required": [
+              "paths"
+            ]
+          }
+        },
+        {
+          "required": [
+            "paths"
+          ],
+          "not": {
+            "required": [
+              "command"
+            ]
+          }
+        }
+      ]
+    },
+    "provides_abilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "stop_agent",
+          "meter_spend",
+          "meter_tokens",
+          "meter_wall_clock",
+          "cancel_children",
+          "model_routing",
+          "subagents",
+          "telemetry"
+        ]
+      }
+    },
+    "requires_grants": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "gate_command_exec",
+          "fs_write_plan_scope",
+          "fs_write_repo_scope",
+          "git_operations",
+          "network_access",
+          "host_adapter_metering",
+          "agent_delegation",
+          "context_export"
+        ]
+      }
+    },
+    "transport": {
+      "enum": [
+        "headless",
+        "interactive"
+      ],
+      "description": "Delegation transport (spec/V7_CONTRACT.md). Present only on delegation addons."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "transport"
+        ]
+      },
+      "then": {
+        "properties": {
+          "provides_abilities": {
+            "contains": {
+              "const": "subagents"
+            }
+          },
+          "requires_grants": {
+            "contains": {
+              "const": "agent_delegation"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

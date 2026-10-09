@@ -56,6 +56,7 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/benchmark-record/v1.json": json.load(open(os.path.join(d, "benchmark-record.schema.json"))),
         "https://deepworkplan.com/schema/learnings-record/v1.json": json.load(open(os.path.join(d, "learnings-record.schema.json"))),
         "https://deepworkplan.com/schema/dwp-config/v1.json": json.load(open(os.path.join(d, "dwp-config-v1.schema.json"))),
+        "https://deepworkplan.com/schema/addon-descriptor/v1.json": json.load(open(os.path.join(d, "addon-descriptor-v1.schema.json"))),
     }
 
 
@@ -489,6 +490,59 @@ def config_cases(schemas, problems, notes, pack):
                      "mutants rejected")
 
 
+def descriptor_cases(schemas, problems, notes, pack):
+    """Addon descriptors (spec/ADDONS.md section 7): every shipped addon.json
+    is valid under BOTH halves - jsonschema over the published descriptor
+    schema and the shipped config.descriptor_errors - its key equals its
+    directory, and the halves agree on the mutants."""
+    ds = schemas["https://deepworkplan.com/schema/addon-descriptor/v1.json"]
+    config = load_pack_module(pack, "config")
+    addons = os.path.join(pack, "addons")
+    keys = config.addon_keys(addons)
+    before = len(problems)
+    shipped = []
+    for key in keys:
+        path = os.path.join(addons, key, "addon.json")
+        if not os.path.isfile(path):
+            problems.append(f"descriptor: addons/{key}/addon.json missing")
+            continue
+        doc = json.load(open(path))
+        shipped.append(doc)
+        jerrs, rerrs = errors(ds, doc), config.descriptor_errors(doc, key)
+        if jerrs:
+            problems.append(f"descriptor {key}: jsonschema rejects it ({jerrs[:1]})")
+        if rerrs:
+            problems.append(f"descriptor {key}: shipped validator rejects it ({rerrs[:1]})")
+    base = next((d for d in shipped if d.get("transport")), None)
+    if base is None:
+        problems.append("descriptor: no transport descriptor to mutate")
+        return
+    mutants = (
+        ("unknown field", lambda d: d.update(extra=1)),
+        ("missing detect", lambda d: d.pop("detect")),
+        ("shell metacharacter", lambda d: d["detect"].update(command="x; rm -rf /")),
+        ("command and paths", lambda d: d["detect"].update(paths=["a"])),
+        ("unknown ability", lambda d: d.update(provides_abilities=["root_shell"])),
+        ("repeated grant", lambda d: d.update(requires_grants=["agent_delegation", "agent_delegation"])),
+        ("unknown transport", lambda d: d.update(transport="carrier-pigeon")),
+        ("transport without subagents", lambda d: d.update(provides_abilities=["cancel_children"])),
+        ("floating product tag", lambda d: d["product"].update(tag="main")),
+        ("interface zero", lambda d: d["product"].update(interface=0)),
+        ("bad interface_from", lambda d: d["detect"].update(interface_from="eval:x")),
+        ("wrong schema const", lambda d: d.update(schema="https://deepworkplan.com/schema/addon-descriptor/v2.json")),
+    )
+    for label, mutate in mutants:
+        doc = copy.deepcopy(base)
+        mutate(doc)
+        jerrs, rerrs = errors(ds, doc), config.descriptor_errors(doc)
+        if not jerrs or not rerrs:
+            problems.append(f"descriptor mutant {label}: a half accepted it "
+                            f"(jsonschema={bool(jerrs)} runtime={bool(rerrs)})")
+    if len(problems) == before:
+        notes.append(f"descriptor: {len(shipped)} shipped addon.json valid under both "
+                     f"halves with key == directory; {len(mutants)} mutants rejected by both")
+
+
 def errors(schema, doc):
     v = jsonschema.Draft202012Validator(schema)
     return [f"{list(e.path)}: {e.message[:90]}" for e in sorted(v.iter_errors(doc), key=lambda e: list(e.path))]
@@ -636,6 +690,7 @@ def main():
     benchmark_cases(schemas, problems, notes, a.pack)
     learnings_cases(schemas, problems, notes, a.pack)
     config_cases(schemas, problems, notes, a.pack)
+    descriptor_cases(schemas, problems, notes, a.pack)
     for n in notes:
         print("ok  ", n)
     for p in problems:

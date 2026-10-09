@@ -1,0 +1,8 @@
+{
+  "schema": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
+  "key": "dailybot",
+  "product": { "repo": "DailybotHQ/agent-skill", "tag": "v3.23.3" },
+  "detect": { "command": "dailybot --version" },
+  "provides_abilities": ["telemetry"],
+  "requires_grants": []
+}

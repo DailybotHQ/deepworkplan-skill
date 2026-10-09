@@ -395,7 +395,49 @@ implementation lives at `skills/deepworkplan/addons/vim/` — see its
 install paths, validation), and `templates/INTEGRATION.md` (reasoning
 template).
 
-## 7. References
+## 7. Addon Descriptors (`addon.json`)
+
+Every in-pack addon **MUST** ship `addons/<key>/addon.json`, a closed JSON
+object published as
+[`schema/addon-descriptor-v1.schema.json`](schema/addon-descriptor-v1.schema.json)
+(`https://deepworkplan.com/schema/addon-descriptor/v1.json`) and validated
+at runtime by `shared/config.py` (`descriptor_errors`; `config.py
+descriptors` audits the whole set). Its `key` **MUST** equal the directory
+name, which is also the addon's registry key in `.dwp/config.json`
+([`CONFIG.md`](CONFIG.md) §3).
+
+| Field | Meaning |
+|---|---|
+| `schema` | the descriptor schema URL (const) |
+| `key` | the directory name |
+| `product` | optional — the separate product a thin integrator pins: `repo` (`owner/name`), `tag` (exact `vX.Y.Z[-pre]`, never a branch or floating version), `interface` (integer major, when the product publishes one) |
+| `detect` | read-only presence check: exactly one of `command` (an argv line with no shell metacharacters, run **without a shell**, bounded by a timeout; exit 0 = present) or `paths` (present when at least one listed file exists; repo-relative or `~/`-prefixed); optional `interface_from` (`json:<field>`, `regex:<pattern>`, `file-json:<path>#<field>`) |
+| `provides_abilities` | host abilities (the closed v6 set) the addon contributes at runtime **only** when enabled and detected with a compatible interface (`V7_ABILITIES.md`) |
+| `requires_grants` | contract permissions its use requires (the closed v6 capability set) |
+| `transport` | delegation addons only: `headless` or `interactive`; a transport addon **MUST** provide `subagents` and require `agent_delegation` |
+
+The shipped set:
+
+| key | product (pinned) | provides_abilities | requires_grants | transport |
+|---|---|---|---|---|
+| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.1.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
+| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.2.3` | — | — | — |
+| `dailybot` | `DailybotHQ/agent-skill` `v3.23.3` | `telemetry` (reporting only, consent-gated) | — | — |
+| `dependency-upgrade` | in-pack only | — | — | — |
+| `design-system` | in-pack only | — | — | — |
+| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.1.0`, interface 1 | — | — | — |
+| `herdr` | `DailybotHQ/herdr-peers` `v0.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
+| `vim` | `DailybotHQ/deepworkplan-vim` `v0.4.0`, interface 1 | — | — | — |
+
+A descriptor is **data**: the pack executes nothing it names except its
+`detect.command`, and only for an addon the registry enables. A product
+reporting an interface major other than the descriptor's is treated as
+**not available** with one warning — never an error of the plan or the
+repository. Descriptors never gate conformance: an addon whose descriptor
+is absent or invalid contributes nothing, and the methodology runs
+unchanged (`tests/standalone-methodology.bats`).
+
+## 8. References
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `DOCUMENTATION_STANDARD.md` (§7 reason-per-repo), `AGENT_PROTOCOL.md` (approval gates), `ARCHETYPES.md`, `DWP_SPECIFICATION.md`

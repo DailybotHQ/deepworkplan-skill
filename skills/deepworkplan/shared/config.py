@@ -30,6 +30,7 @@ Usage::
     config.py enable  KEY [--version vX.Y.Z] --repo DIR   # onboarding writer
     config.py disable KEY --repo DIR
     config.py keys                                 # in-pack addon keys
+    config.py descriptors                          # audit every addon.json (opens them)
     config.py self-test
 
 Standard library only (Python 3.9+).
@@ -255,6 +256,112 @@ def enabled_addons(dwp_root: Optional[str], home: Optional[str] = None,
 
 
 # ---------------------------------------------------------------------------
+# addon descriptors (spec/ADDONS.md §7) — opened only for an addon a caller
+# already decided to consult (an enabled key, or an explicit audit)
+
+
+DESCRIPTOR_SCHEMA_URL = 'https://deepworkplan.com/schema/addon-descriptor/v1.json'
+ABILITIES = ('stop_agent', 'meter_spend', 'meter_tokens', 'meter_wall_clock',
+             'cancel_children', 'model_routing', 'subagents', 'telemetry')
+GRANTS = ('gate_command_exec', 'fs_write_plan_scope', 'fs_write_repo_scope',
+          'git_operations', 'network_access', 'host_adapter_metering',
+          'agent_delegation', 'context_export')
+TRANSPORTS = ('headless', 'interactive')
+_KEY_RE = re.compile(r'^[a-z][a-z0-9-]{0,63}$')
+_REPO_RE = re.compile(r'^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$')
+_COMMAND_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._/ -]*$')
+_PATH_RE = re.compile(r'^(~/)?[A-Za-z0-9._][A-Za-z0-9._/-]*$')
+_IFACE_RE = re.compile(r'^(json:[A-Za-z_][A-Za-z0-9_]*|regex:.+|'
+                       r'file-json:(~/)?[A-Za-z0-9._/-]+#[A-Za-z_][A-Za-z0-9_]*)$')
+
+
+def descriptor_errors(doc: Any, dirname: Optional[str] = None) -> List[str]:
+    """Runtime half of schema/addon-descriptor-v1 (closed object)."""
+    errs: List[str] = []
+    if not isinstance(doc, dict):
+        return ['descriptor is not an object']
+    allowed = {'schema', 'key', 'product', 'detect', 'provides_abilities',
+               'requires_grants', 'transport'}
+    for extra in sorted(set(doc) - allowed):
+        errs.append('unknown field %r' % extra)
+    for req in ('schema', 'key', 'detect', 'provides_abilities', 'requires_grants'):
+        if req not in doc:
+            errs.append('missing %r' % req)
+    if doc.get('schema', DESCRIPTOR_SCHEMA_URL) != DESCRIPTOR_SCHEMA_URL:
+        errs.append('schema is not %s' % DESCRIPTOR_SCHEMA_URL)
+    key = doc.get('key')
+    if 'key' in doc and (not isinstance(key, str) or not _KEY_RE.match(key)):
+        errs.append('key is not a kebab-case name')
+    if dirname is not None and key != dirname:
+        errs.append('key %r does not equal its directory %r' % (key, dirname))
+    if 'product' in doc:
+        prod = doc['product']
+        if not isinstance(prod, dict):
+            errs.append('product is not an object')
+        else:
+            for extra in sorted(set(prod) - {'repo', 'tag', 'interface'}):
+                errs.append('product: unknown field %r' % extra)
+            if not isinstance(prod.get('repo'), str) or not _REPO_RE.match(prod['repo']):
+                errs.append('product.repo is not owner/name')
+            if not isinstance(prod.get('tag'), str) or not VERSION_RE.match(prod['tag']):
+                errs.append('product.tag is not an exact tag')
+            if 'interface' in prod and (type(prod['interface']) is not int
+                                        or prod['interface'] < 1):
+                errs.append('product.interface is not an integer >= 1')
+    if 'detect' in doc:
+        det = doc['detect']
+        if not isinstance(det, dict):
+            errs.append('detect is not an object')
+        else:
+            for extra in sorted(set(det) - {'command', 'paths', 'interface_from'}):
+                errs.append('detect: unknown field %r' % extra)
+            if ('command' in det) == ('paths' in det):
+                errs.append('detect needs exactly one of command or paths')
+            if 'command' in det and (not isinstance(det['command'], str)
+                                     or len(det['command']) > 200
+                                     or not _COMMAND_RE.match(det['command'])):
+                errs.append('detect.command is not a plain argv line')
+            if 'paths' in det:
+                paths = det['paths']
+                if (not isinstance(paths, list) or not paths
+                        or len(set(map(str, paths))) != len(paths)
+                        or not all(isinstance(x, str) and _PATH_RE.match(x)
+                                   for x in paths)):
+                    errs.append('detect.paths is not a non-empty list of plain paths')
+            if 'interface_from' in det and (not isinstance(det['interface_from'], str)
+                                            or not _IFACE_RE.match(det['interface_from'])):
+                errs.append('detect.interface_from has an unknown form')
+    for field, vocab in (('provides_abilities', ABILITIES), ('requires_grants', GRANTS)):
+        if field in doc:
+            vals = doc[field]
+            if (not isinstance(vals, list) or len(set(map(str, vals))) != len(vals)
+                    or not all(v in vocab for v in vals)):
+                errs.append('%s holds an unknown or repeated value' % field)
+    if 'transport' in doc:
+        if doc['transport'] not in TRANSPORTS:
+            errs.append('transport is not headless|interactive')
+        else:
+            if 'subagents' not in (doc.get('provides_abilities') or []):
+                errs.append('a transport addon must provide subagents')
+            if 'agent_delegation' not in (doc.get('requires_grants') or []):
+                errs.append('a transport addon must require agent_delegation')
+    return errs
+
+
+def load_descriptor(key: str, addons_dir: str = ADDONS_DIR
+                    ) -> Tuple[Optional[Dict[str, Any]], List[str]]:
+    """(descriptor or None, errors) for one addon key. Never raises."""
+    path = os.path.join(addons_dir, key, 'addon.json')
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            doc = json.load(handle)
+    except (OSError, ValueError) as exc:
+        return None, ['%s unreadable (%s)' % (path, exc)]
+    errs = descriptor_errors(doc, key)
+    return (doc if not errs else None), errs
+
+
+# ---------------------------------------------------------------------------
 # writer (onboarding consent; spec/CONFIG.md §4)
 
 
@@ -342,6 +449,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if name == 'enable':
             p.add_argument('--version')
     sub.add_parser('keys')
+    sub.add_parser('descriptors')
     sub.add_parser('self-test')
     args = parser.parse_args(argv)
     if args.command == 'show':
@@ -365,6 +473,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 2
         print('OK: addons.%s = %s' % (args.key, json.dumps(entry, sort_keys=True)))
         return 0
+    if args.command == 'descriptors':
+        bad = 0
+        for key in addon_keys():
+            _doc, errs = load_descriptor(key)
+            print('%s %s' % ('OK  ' if not errs else 'FAIL', key)
+                  + ('' if not errs else ': ' + '; '.join(errs)))
+            bad += bool(errs)
+        return 1 if bad else 0
     if args.command == 'keys':
         for key in addon_keys():
             print(key)
@@ -379,7 +495,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 # self-test
 
 
-SELF_TEST_PROBES = 26
+SELF_TEST_PROBES = 33
 
 
 def self_test() -> int:
@@ -518,6 +634,26 @@ def self_test() -> int:
         check('addon keys', 'vim' in addon_keys() and all(
             os.path.isdir(os.path.join(ADDONS_DIR, k)) for k in addon_keys()),
             repr(addon_keys()))
+        # 17b. descriptor validator: the shipped set is valid; mutants refused
+        good = {'schema': DESCRIPTOR_SCHEMA_URL, 'key': 'herdr',
+                'product': {'repo': 'DailybotHQ/herdr-peers', 'tag': 'v0.1.0',
+                            'interface': 1},
+                'detect': {'command': 'herdr-peers --version'},
+                'provides_abilities': ['subagents'],
+                'requires_grants': ['agent_delegation'],
+                'transport': 'interactive'}
+        check('descriptor ok', descriptor_errors(good, 'herdr') == [],
+              repr(descriptor_errors(good, 'herdr')))
+        for label, mutate in (
+                ('key mismatch', lambda d: d.update(key='vim')),
+                ('shell command', lambda d: d['detect'].update(command='ak doctor | sh')),
+                ('both detect', lambda d: d['detect'].update(paths=['x'])),
+                ('unknown ability', lambda d: d.update(provides_abilities=['root'])),
+                ('transport without grant', lambda d: d.update(requires_grants=[])),
+                ('floating tag', lambda d: d['product'].update(tag='main'))):
+            bad = json.loads(json.dumps(good))
+            mutate(bad)
+            check('descriptor ' + label, bool(descriptor_errors(bad, 'herdr')))
         # 18. find_dwp_root
         plan = os.path.join(repo, 'plans', 'PLAN_x')
         os.makedirs(plan)
