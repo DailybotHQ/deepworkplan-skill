@@ -379,7 +379,7 @@ lives in its own public repository
 (`https://github.com/DailybotHQ/deepworkplan-vim`, GPL-3.0, versioned
 independently of the pack); this folder is the DWP-side integration
 contract only, a **thin integrator** pinned to the product tag
-`deepworkplan-vim@v0.4.2`: detection, feature claims and the install steps
+`deepworkplan-vim@v0.5.1`: detection, feature claims and the install steps
 are read from the product's machine-readable surface (`addon/surface.json`,
 interface `1`); an unknown interface major is one warning and "not
 available", never an error. `onboard` Phase 7b offers it as an **explicit
@@ -444,7 +444,7 @@ The shipped set:
 | `design-system` | in-pack only | — | — | — |
 | `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.2.0`, interface 2 | — | — | — |
 | `herdr` | `DailybotHQ/herdr-peers` `v0.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
-| `vim` | `DailybotHQ/deepworkplan-vim` `v0.4.2`, interface 1 | — | — | — |
+| `vim` | `DailybotHQ/deepworkplan-vim` `v0.5.1`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
 `detect.command`, and only for an addon the registry enables. A product

@@ -199,7 +199,7 @@ _declared() { printf '%s' "$output" | python3 -c 'import json,sys; print(json.lo
   [ "$(printf '%s\n' "$stderr" | grep -c 'addon vim: installed without its interface surface')" -eq 1 ] || { echo "$stderr"; return 1; }
   printf '%s' "$output" | python3 -c 'import json,sys; v=json.load(sys.stdin)["addons"]["vim"]; assert v["state"] == "installed-without-surface" and not v["compatible"], v' || return 1
   mkdir -p "$HOME/.config/nvim/addon"
-  printf '{"interface": 1, "version": "v0.4.2"}\n' > "$HOME/.config/nvim/addon/surface.json"
+  printf '{"interface": 1, "version": "v0.5.1"}\n' > "$HOME/.config/nvim/addon/surface.json"
   run --separate-stderr _abilities
   [[ "$stderr" != *"vim"* ]] || return 1
   printf '%s' "$output" | python3 -c 'import json,sys; v=json.load(sys.stdin)["addons"]["vim"]; assert v["compatible"] and "state" not in v, v'
