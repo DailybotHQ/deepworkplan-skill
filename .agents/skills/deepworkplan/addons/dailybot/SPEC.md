@@ -73,7 +73,7 @@ with explicit acceptance, and each reconciled if already present (§7):
 - The addon **SHOULD** offer the **Dailybot agent skill** as the primary path,
   because it brings its own install/consent/auth flow and the `report`
   sub-skill. Supported install methods (the addon **MUST** offer, not force):
-  - `npx --yes skills add DailybotHQ/agent-skill@v3.23.3 --skill dailybot -y`
+  - `npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.3 --skill dailybot -y`
     (cross-agent, recommended — **pinned to a published tag**; the `skills` CLI
     records source + content hash in `skills-lock.json`), **or**
   - OpenClaw native: `openclaw skills install dailybot` (registry-managed pin).

@@ -88,7 +88,7 @@ signalling ("Flow A / Flow B" phrases every subsequent request).
 # Tag-pinned install: pin the current published tag at install time (this is
 # the reproducible form; the moving @v3 is the documented default pin for
 # CI workflows).
-npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y
+npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.0 --skill ai-diff-reviewer -y
 
 # Verify the vendored version matches the requested tag
 VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
@@ -326,7 +326,7 @@ Decision notes:
   `apply-review` walkthrough, the `address-review` loop, or the review
   methodology. Point at the vendored sub-skills.
 - **Verified install only:** never recommend piping a remote installer to
-  a shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
+  a shell. Use `npx --yes skills add https://github.com/<owner/repo>/tree/<tag> … -y` — the tag pin plus
   `skills-lock.json` content-hash verification is what makes the install
   reproducible and auditable.
 - **Never block (invocation only):** the wired **local** review step is

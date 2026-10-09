@@ -235,7 +235,7 @@ resolves the latest published tags of `agent-skill` and `ai-diff-reviewer`
 if either moved runs:
 
 ```bash
-npx --yes skills add <repo>@<tag> --skill <name> --force -y
+npx --yes skills add https://github.com/<owner/repo>/tree/<tag> --skill <name> --force -y
 ```
 
 Both `--yes` (npm's proceed prompt) AND `-y` (the skills CLI's agent-picker
@@ -258,15 +258,24 @@ pushes. The `[skip release]` marker prevents an infinite auto-release loop.
 Release dogfood updates the *vendored copy* under `.agents/skills/`. It does
 **not** rewrite the install commands the shipped pack **teaches** under
 `skills/deepworkplan/`, because those live in prose
-(`npx --yes skills add DailybotHQ/ai-diff-reviewer@vX.Y.Z …`). The two drifted
+(`npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/vX.Y.Z …`). The two drifted
 apart once — the pack taught `@v2.0.0` while the vendored addon was already
 `2.0.1`, so every repository onboarded from it installed a stale reviewer.
 
-The invariant is now a CI gate: **every exact `ai-diff-reviewer@vX.Y.Z` pin in
-`skills/deepworkplan/` must equal the `version:` of the vendored
-`.agents/skills/ai-diff-reviewer/SKILL.md`** (`tests/agents-dogfood.bats`). When
-a release moves the vendored addon, update the documented pins in the same PR —
-`grep -rn 'ai-diff-reviewer@v[0-9]' skills/` finds them all.
+The invariant is now a CI gate: **every exact
+`ai-diff-reviewer/tree/vX.Y.Z` install pin in `skills/deepworkplan/` must equal
+the `version:` of the vendored `.agents/skills/ai-diff-reviewer/SKILL.md`**
+(`tests/agents-dogfood.bats`). When a release moves the vendored addon, update
+the documented pins in the same PR — `grep -rn 'ai-diff-reviewer/tree/v[0-9]'
+skills/` finds them all.
+
+**Why the tree-URL form (7.0.1).** The skills CLI (1.7.1, verified
+2026-10-09) ignores the ref of the shorthand `skills add OWNER/REPO@vX.Y.Z`:
+it installs the default branch (`@v6.1.0` installed 7.0.0; `@v3.2.3` of the
+reviewer installed 3.3.0). `skills add https://github.com/OWNER/REPO/tree/vX.Y.Z`
+installs the tag. Every install line in the pack, the docs, the workflows
+and the smoke script uses the tree-URL form, and
+`tests/packaging-reliability.bats` refuses the shorthand in `skills/`.
 
 `DailybotHQ/ai-diff-reviewer@v2` (no patch) is a different thing: the **GitHub
 Action's floating major tag**, deliberately left floating so patch fixes flow

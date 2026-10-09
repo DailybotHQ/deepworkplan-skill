@@ -232,3 +232,30 @@ PY
         grep -q 'run: bash scripts/smoke-ecosystem-pins.sh' "$REPO_ROOT/.github/workflows/$wf.yml"
     done
 }
+
+@test "install lines pin with the tree-URL form; the ignored @ref shorthand never ships" {
+    # skills CLI 1.7.1 ignores the ref of `skills add OWNER/REPO@vX.Y.Z` and
+    # installs the default branch (verified 2026-10-09: @v6.1.0 installed
+    # 7.0.0). `skills add https://github.com/OWNER/REPO/tree/vX.Y.Z` pins.
+    SCAN="$REPO_ROOT/tests/fixtures/pins/scan_install_pins.py"
+    run python3 "$SCAN" "$REPO_ROOT"
+    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+    # the scanner itself refuses every unpinned shape
+    probe="$(mktemp -d)"
+    mkdir -p "$probe/skills"
+    cat > "$probe/skills/bad.md" <<'MD'
+npx --yes skills add DailybotHQ/x@v1.2.3 --skill x -y
+npx --yes skills add <repo>@<tag> --skill x -y
+npx --yes skills add https://github.com/DailybotHQ/x --skill x -y
+npx --yes skills add "https://github.com/DailybotHQ/x/tree/main" --skill x -y
+MD
+    run python3 "$SCAN" "$probe" skills
+    [ "$status" -eq 1 ] && [ "$(printf '%s\n' "$output" | grep -c 'bad.md')" -eq 4 ] || { echo "$output"; rm -rf "$probe"; return 1; }
+    # and so does the published TRUST.md self-audit (grep #5)
+    audit="$(sed -n '/^grep -RInE --exclude=TRUST.md --exclude=install-verification.md/,/tag-pinned or package-managed/p' "$REPO_ROOT/skills/deepworkplan/TRUST.md" | sed "s#skills/deepworkplan#$probe/skills#")"
+    run bash -c "$audit"
+    rm -rf "$probe"
+    [ "$(printf '%s\n' "$output" | grep -c 'bad.md')" -eq 4 ] || { echo "$output"; return 1; }
+    grep -qF 'skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/' "$REPO_ROOT/skills/deepworkplan/upgrade/SKILL.md"
+    grep -qF 'skills add "https://github.com/DailybotHQ/deepworkplan-skill/tree/${NEW_TAG}"' "$REPO_ROOT/.github/workflows/auto-release.yml"
+}

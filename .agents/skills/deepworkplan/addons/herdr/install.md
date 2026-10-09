@@ -16,8 +16,8 @@ the pinned official skill).
 ## 2. The two skills (host)
 
 ```
-npx --yes skills add herdrdev/herdr@v0.9.3 --skill herdr -g -y
-npx --yes skills add DailybotHQ/herdr-peers@v0.1.0 --skill herdr-peers -g -y
+npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y
+npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.1.0 --skill herdr-peers -g -y
 ```
 
 Both `-y` flags are required in an agent's non-interactive shell (`npx
@@ -31,7 +31,7 @@ For a scoped trial in one repository without touching `$HOME` (F-10),
 install the helper skill repo-locally — drop `-g`:
 
 ```
-npx --yes skills add DailybotHQ/herdr-peers@v0.1.0 --skill herdr-peers -y
+npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.1.0 --skill herdr-peers -y
 ```
 
 It lands under the repository's agent skills directory (e.g.

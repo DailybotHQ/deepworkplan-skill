@@ -223,7 +223,10 @@ for t in doc['tasks']: t.pop('parallel_safe', None)" && run _amend
   [ "$status" -ne 0 ] && [[ "$output" == *"human-authority marker"* ]] || { echo "$output"; return 1; }
   [ "$before" = "$(shasum -a 256 "$PLAN/journal.ndjson")" ] || return 1
   [ ! -e "$PLAN/contracts/contract.r2.json" ] || return 1
-  ! ls -a "$PLAN/contracts" 2>/dev/null | grep -q pending
+  # nothing at all: the chain is bootstrapped only after a draft validates,
+  # so materialize still resumes untouched (final review I3)
+  [ ! -e "$PLAN/contracts" ] || { ls -la "$PLAN/contracts"; return 1; }
+  _L materialize --contract "$WORK/draft.json" --authority bats >/dev/null
 }
 
 @test "a different draft is refused while another revision is pending" {

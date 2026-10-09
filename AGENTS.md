@@ -263,7 +263,7 @@ The `auto-release.yml` workflow runs on every merge to `main` and:
  + addons), prepends a section to `CHANGELOG.md`, commits as
  `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and pushes.
 5. **Smoke-tests the just-published tag** — runs `npx skills add
- DailybotHQ/deepworkplan-skill@vX.Y.Z` into a **temp directory** and asserts
+ https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z` into a **temp directory** and asserts
  the installed `version:` matches. This proves the release installs for
  consumers **without** overwriting the dogfood copy at
  `.agents/skills/deepworkplan/`.
@@ -410,8 +410,8 @@ and commit the updated lockfile. Auto-release smoke-tests the published tag
 in a temporary directory; it does not refresh this mirror.
 
 Do not hand-edit the Dailybot or AI Diff Reviewer copies; contribute upstream.
-Auto-release refreshes those two addons. Every exact `ai-diff-reviewer@vX.Y.Z`
-install pin in the shipped pack must match the vendored reviewer's version
+Auto-release refreshes those two addons. Every exact
+`https://github.com/DailybotHQ/ai-diff-reviewer/tree/vX.Y.Z` install pin in the shipped pack must match the vendored reviewer's version
 (`tests/agents-dogfood.bats`). The Action's floating `@v2` pin is exempt.
 
 The full refresh procedure, rationale, and release-loop safeguards are in

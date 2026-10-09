@@ -103,7 +103,7 @@ flow applies, defer to it rather than prompting yourself.
 
 - **Dailybot agent skill** (the recommended path — it brings the consent/auth
   flow and the full 17-capability pack; currently **3.23.3**):
-  - `npx --yes skills add DailybotHQ/agent-skill@v3.23.3 --skill dailybot -y`
+  - `npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.3 --skill dailybot -y`
     (cross-agent, recommended — **pinned to a published tag** so the exact
     content is reproducible; both `--yes` and `-y` are required in non-TTY
     contexts), or

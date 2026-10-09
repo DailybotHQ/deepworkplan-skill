@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-upgrade
 description: Check whether a newer DeepWorkPlan skill and DWP standard exists and — only after the developer explicitly accepts — install the latest published tag through the documented channel and re-run onboarding exactly as if https://deepworkplan.com/init.md were executed fresh, preserving every plan under .dwp/ and surfacing local adaptations instead of silently overwriting them. Use when the developer asks to upgrade, update, or refresh DWP in a repository that already has it installed. Do not use it to onboard a repo for the first time (that is the onboard sub-skill) or to migrate an old plan's shape (that is refine migrate, and plans are never migrated by an upgrade).
-version: "7.0.0-beta.1"
+version: "7.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -116,7 +116,7 @@ versions relative to that directory.
    command a fresh consumer would run through the skills.sh channel (both
    `-y` flags are required in a non-interactive session):
    ```bash
-   npx --yes skills add DailybotHQ/deepworkplan-skill@vX.Y.Z --skill deepworkplan --force -y
+   npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z --skill deepworkplan --force -y
    ```
    A repository that installed via Method 2 or 3 upgrades through its own
    documented channel instead (`openclaw skills update deepworkplan`, or

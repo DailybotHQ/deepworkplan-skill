@@ -25,7 +25,7 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
    > `.github/ai-pr-reviewer/extension.md`), a `.review/.skip-bootstrap`
    marker, and any existing `pr-review.yml`. Fill gaps only.
 2. **Install the vendored skill, pinned:**
-   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
+   `npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.0 --skill ai-diff-reviewer -y`
    (both `--yes` and `-y` are required in non-TTY; never an unpinned ref, never
    a remote installer piped to a shell). Assert the vendored `SKILL.md` version
    equals the requested tag.
@@ -99,7 +99,7 @@ reporting; in trust mode, recommend it **only** on that signal and **never
 auto-install it for everyone**. If accepted: read that addon's `SKILL.md` and run
 its flow — detect whether the Dailybot skill/CLI is already present
 (reconcile-don't-clobber), offer the **opt-in** install paths (Dailybot agent
-skill via `npx --yes skills add DailybotHQ/agent-skill@v3.23.3 --skill dailybot -y`
+skill via `npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.3 --skill dailybot -y`
 / `npx --yes skills update dailybot -y` / OpenClaw `openclaw skills install dailybot`,
 or the Dailybot CLI **>= 3.9.0** via pip / Homebrew / the skill's verified
 installer flow), **defer

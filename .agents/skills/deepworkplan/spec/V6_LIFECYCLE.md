@@ -133,8 +133,9 @@ derived); it MUST keep the plan and its generation and pass the draft
 checks (`V6_CONTRACT.md` §2). The order is normative: the revision is
 staged as `contracts/.contract.rN.json.pending` (invisible to the
 loader); the `amendment` event lists the revised criteria in
-`evidence_invalidated` — their earlier gate runs never satisfy them
-again; a fresh `approval` cites the new contract id (human actor, with
+`evidence_invalidated` — once the amendment is approved, their earlier
+gate runs and control pairs never satisfy them again (an amendment that
+never reaches approval invalidates nothing); a fresh `approval` cites the new contract id (human actor, with
 the authority marker of `V6_CONTRACT.md` §3); only then does an atomic
 rename switch the live contract. Re-running the same amendment after an
 interruption resumes at the first missing step without duplicate events;

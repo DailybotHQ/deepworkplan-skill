@@ -161,7 +161,7 @@ form**; only its CI surface is optional.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx --yes skills add DailybotHQ/agent-skill@v3.23.3 --skill dailybot -y`,
+  (`npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.3 --skill dailybot -y`,
   currently **3.23.3**; or OpenClaw `openclaw skills install dailybot`) and/or
   the **Dailybot CLI** (`dailybot-cli >= 3.9.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
@@ -276,7 +276,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.0 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding

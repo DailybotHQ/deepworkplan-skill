@@ -112,6 +112,7 @@ def review_state(events):
 def _control_pairs(events, criterion, floor_seq):
     """In-window control pairs on the criterion, executed (observed) only."""
     pairs = []
+    retired_before = ledger.invalidated_before(events).get(criterion, 0)
     for event in events:
         if event.get('type') != 'control_pair':
             continue
@@ -119,8 +120,7 @@ def _control_pairs(events, criterion, floor_seq):
             continue
         if event.get('seq', 0) < floor_seq:
             continue  # stale: recorded before the current attempt started
-        if event.get('seq', 0) < ledger.invalidated_before(events).get(
-                criterion, 0):
+        if event.get('seq', 0) < retired_before:
             continue  # W2: recorded before an approved amendment revised it
         pairs.append(event)
     return pairs

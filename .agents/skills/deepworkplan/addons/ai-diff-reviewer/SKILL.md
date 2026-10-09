@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-ai-diff-reviewer
 description: "DeepWorkPlan addon — required local review (baseline since standard 2.3.0), optional CI surface — connects an AI-first repo to the AI Diff Reviewer. Onboarding installs the vendored coding-agent skill and extension with consent; the Final Review runs the local pass when present or records a missing-reviewer finding without bootstrapping. Flow B CI setup remains an explicit opt-in delegated to upstream. Invocation errors never block, completed-review critical findings still follow the Final Review contract, and all install/auth/wizard details defer to upstream consent flows."
-version: "7.0.0-beta.1"
+version: "7.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -120,7 +120,7 @@ happen.
 
 **Writes (only after explicit developer acceptance of the relevant step):**
 
-- **Vendored skill install** — via `npx --yes skills add <repo>@<tag> … -y` /
+- **Vendored skill install** — via `npx --yes skills add https://github.com/<owner/repo>/tree/<tag> … -y` /
   `npx --yes skills update … -y` into `.agents/skills/ai-diff-reviewer/` +
   `skills-lock.json`. Installs are tag-pinned (Step 1); never run without
   Step 1 consent.
@@ -212,7 +212,7 @@ Run the pinned install unless the developer explicitly declined in Step 0
 - **Vendored coding-agent skill** (recommended — brings the six-sub-skill
   router and the byte-identical prompt parity guarantee; pinned **v3.3.0**;
   the moving `@v3` is the documented default pin for CI workflows):
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
+  - `npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.0 --skill ai-diff-reviewer -y`
     (**pinned to a published tag**; vendors into
     `.agents/skills/ai-diff-reviewer/` and records source + content hash in
     `skills-lock.json`; both `--yes` and `-y` are required — `--yes` covers
@@ -380,7 +380,7 @@ skip, and do not fail the onboarding.
   reimplementation, no `apply-review`/`address-review` reimplementation.
   Point at the vendored sub-skills.
 - **Verified install only.** Never recommend piping a remote installer to a
-  shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
+  shell. Use `npx --yes skills add https://github.com/<owner/repo>/tree/<tag> … -y` — the tag pin plus
   `skills-lock.json` content-hash verification is what makes the install
   reproducible and auditable.
 - **Reconcile, don't clobber.** An existing extension file, workflow, or

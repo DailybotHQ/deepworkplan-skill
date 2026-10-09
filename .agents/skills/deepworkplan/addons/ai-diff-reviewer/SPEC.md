@@ -159,7 +159,7 @@ acceptance — each reconciled if already present (§8):
 - The addon **MUST** install the vendored skill (the only supported install
   path) unless the developer recorded a declared exception (§2).
   Supported install method:
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
+  - `npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.0 --skill ai-diff-reviewer -y`
     (**tag-pinned**; both flags are required — `--yes` covers npm's own "Ok to
     proceed?" prompt; the subcommand `-y` covers the `skills` CLI's own "Which
     agents do you want to install to?" picker, which hangs in non-TTY without

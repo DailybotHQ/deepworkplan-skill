@@ -8,6 +8,13 @@ upstream, every install site in this pack (`onboard` Phase 7 and Phase 7a,
 `upgrade` Phase 3) defends its own users. **Read this when — and only when —
 a phase below performs or verifies a `skills add` install.**
 
+**Pin with the tree-URL form.** Re-verified on skills CLI 1.7.1
+(2026-10-09): the shorthand `skills add OWNER/REPO@vX.Y.Z` prints the tag but
+installs the default branch, while `skills add
+https://github.com/OWNER/REPO/tree/vX.Y.Z --skill <name>` installs the tag.
+Every install line in this pack uses the tree-URL form; the checks below
+still apply to it.
+
 Around every `skills add` call:
 
 - **Pre-create the target** `.agents/skills/<name>/` first, and remove any

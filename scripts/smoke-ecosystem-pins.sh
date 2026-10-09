@@ -54,8 +54,8 @@ smoke_herdr() {
     mkdir -p "$proj"
     git -C "$proj" init -q
     printf '%s\n' '{"name":"dwp-pin-smoke","private":true}' > "$proj/package.json"
-    ( cd "$proj" && npx --yes skills add "${repo}@${tag}" --skill herdr-peers -y >/dev/null 2>&1 ) \
-        || { fail "herdr: skills add ${repo}@${tag} failed"; return; }
+    ( cd "$proj" && npx --yes skills add "https://github.com/${repo}/tree/${tag}" --skill herdr-peers -y >/dev/null 2>&1 ) \
+        || { fail "herdr: skills add https://github.com/${repo}/tree/${tag} failed"; return; }
     skill="$(find "$proj" -path '*/herdr-peers/SKILL.md' | head -1)"
     [ -n "$skill" ] || { fail "herdr: installed SKILL.md not found"; return; }
     grep -qE "^[[:space:]]+protocol: ${iface}\$" "$skill" \

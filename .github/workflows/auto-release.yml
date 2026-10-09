@@ -281,10 +281,10 @@ jobs:
           #     the "Ok to proceed?" download prompt.
           #   * `skills add ... -y` — auto-selects the default install targets
           #     without the interactive agent-picker.
-          echo "::group::smoke: npx skills add DailybotHQ/deepworkplan-skill@${NEW_TAG} (temp dir)"
+          echo "::group::smoke: npx skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/${NEW_TAG} (temp dir)"
           (
             cd "$SMOKE_DIR"
-            npx --yes skills add "DailybotHQ/deepworkplan-skill@${NEW_TAG}" \
+            npx --yes skills add "https://github.com/DailybotHQ/deepworkplan-skill/tree/${NEW_TAG}" \
               --skill deepworkplan --force -y
           )
           echo "::endgroup::"
@@ -333,8 +333,8 @@ jobs:
           fi
           echo "::notice::dailybot: latest published release is ${DB_TAG}"
 
-          echo "::group::npx skills add DailybotHQ/agent-skill@${DB_TAG} --skill dailybot --force -y"
-          npx --yes skills add "DailybotHQ/agent-skill@${DB_TAG}" --skill dailybot --force -y
+          echo "::group::npx skills add https://github.com/DailybotHQ/agent-skill/tree/${DB_TAG} --skill dailybot --force -y"
+          npx --yes skills add "https://github.com/DailybotHQ/agent-skill/tree/${DB_TAG}" --skill dailybot --force -y
           echo "::endgroup::"
 
           VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' .agents/skills/dailybot/SKILL.md | head -n1)
@@ -385,8 +385,8 @@ jobs:
           fi
           echo "::notice::ai-diff-reviewer: latest published release is ${AIDR_TAG}"
 
-          echo "::group::npx skills add DailybotHQ/ai-diff-reviewer@${AIDR_TAG} --skill ai-diff-reviewer --force -y"
-          npx --yes skills add "DailybotHQ/ai-diff-reviewer@${AIDR_TAG}" --skill ai-diff-reviewer --force -y
+          echo "::group::npx skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/${AIDR_TAG} --skill ai-diff-reviewer --force -y"
+          npx --yes skills add "https://github.com/DailybotHQ/ai-diff-reviewer/tree/${AIDR_TAG}" --skill ai-diff-reviewer --force -y
           echo "::endgroup::"
 
           VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' .agents/skills/ai-diff-reviewer/SKILL.md | head -n1)

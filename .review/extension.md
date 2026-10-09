@@ -209,7 +209,11 @@ silent pass. Addons and CI may change; the core loop must not.
   Executing whatever a remote default branch currently holds is an
   unverifiable external dependency (no version, no checksum, no rollback);
   Snyk W012 cited exactly this shape. Every documented install of another
-  skill/CLI must be tag-pinned (`@vX.Y.Z`) or package-manager installed,
+  skill/CLI must be tag-pinned — `skills add
+  https://github.com/OWNER/REPO/tree/vX.Y.Z` (the `OWNER/REPO@vX.Y.Z`
+  shorthand is **not** a pin: the skills CLI installs the default branch;
+  treat it as unpinned) or `git clone --branch vX.Y.Z` — or
+  package-manager installed,
   and the `skills` CLI's `skills-lock.json` content-hash recording is the
   verification story to point at.
 - **Always `critical` (skills.sh / Gen Agent Trust Hub):** a `SKILL.md`
@@ -433,7 +437,7 @@ task files.
      credential-copy / SSH-seeding prose without the explicit opt-in gate
      (Snyk E006).
   5. Every cross-repo install mentioned in the pack is tag-pinned
-     (`@vX.Y.Z`) or package-manager installed — no unpinned
+     (`/tree/vX.Y.Z`, never the `@ref` shorthand) or package-manager installed — no unpinned
      clone-and-run paths (Snyk/Socket W012).
   6. After merge + release, expect the
      [skills.sh listing](https://www.skills.sh/dailybothq/deepworkplan-skill/deepworkplan)
