@@ -3,6 +3,7 @@
   "skills": {
     "ai-diff-reviewer": {
       "source": "DailybotHQ/ai-diff-reviewer",
+      "ref": "v3.3.0",
       "sourceType": "github",
       "skillPath": "skills/ai-diff-reviewer/SKILL.md",
       "computedHash": "d88307a2e6c8cb0294dcfda9792ef8a0be3e9fbf76bb520c2c2100fee9e04d15"
