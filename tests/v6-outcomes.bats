@@ -65,7 +65,7 @@ PY
 
 _approve() {
   run python3 "$LEDGER" --plan "$PLAN" append --type approval --idempotent \
-    --actor-kind human --actor-identity tester \
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity tester \
     --json '{"authority": "bats tester", "mechanism": "plan_authorship", "plan_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'
   [ "$status" -eq 0 ]
 }
@@ -328,13 +328,13 @@ PY
   _approve
   _start
   run python3 "$LEDGER" --plan "$PLAN" append --type reconciliation \
-    --actor-kind human --actor-identity operator \
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity operator \
     --json '{"trigger": "generated-view divergence for AC-prose-only-criterion", "editor": "human edit of views/tasks.md", "authority": "operator A"}'
   [ "$status" -eq 0 ]
   run _closure_field "$AC_PROSE" mechanism
   grep -q 'blocked (reconciliation without amendment authority' <<<"$output"
   run python3 "$LEDGER" --plan "$PLAN" append --type amendment \
-    --actor-kind human --actor-identity operator \
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity operator \
     --json "$(cat <<'JSON'
 {"original_criterion": "AC-prose-only-criterion: prose criteria may declare no control",
  "observed_finding": "wording drifted from the shipped anatomy",

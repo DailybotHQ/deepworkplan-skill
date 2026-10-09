@@ -151,6 +151,12 @@ def _reconciliation_for(events, criterion):
     return found
 
 
+def _is_signoff(events, seq):
+    """True when the closing record is a human sign-off (never executed)."""
+    return any(e.get('seq') == seq and e.get('type') == 'gate_run' and
+               e.get('command') == ledger.SIGNOFF_COMMAND for e in events)
+
+
 def closure(contract, events):
     """Per-criterion closure decisions + the plan-level review state.
 
@@ -208,7 +214,10 @@ def closure(contract, events):
             state = next((s for s in states
                           if s.get('criterion') == crit_id), None)
             if state and state.get('satisfied'):
-                entry.update(satisfied=True, mechanism='evidence',
+                entry.update(satisfied=True,
+                             mechanism='signoff' if _is_signoff(
+                                 events, state.get('via_seq'))
+                             else 'evidence',
                              via_seq=state.get('via_seq'),
                              trust=state.get('trust'),
                              evidence_path=state.get('evidence_path'))

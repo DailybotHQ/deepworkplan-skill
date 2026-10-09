@@ -305,6 +305,57 @@ def contract_errors(doc, parents=None):
     return errors
 
 
+def closure_errors(doc, warnings=None):
+    """Criteria that no evidence can ever close (field report F-11).
+
+    Checked when a draft is validated or materialized, never when an
+    existing plan is loaded (a recorded contract keeps loading; the
+    verifier reports it). What mints each accepted class for a criterion
+    some task's gate_intent declares:
+
+      observed  the gate executor (the run is bound to that intent, M5)
+      asserted  ``ledger.py signoff`` - a human sign-off bound to it
+      imported  migration only (shared/migrate_v6.py), never a live plan
+
+    A regression/discrimination control closes through an executed control
+    pair. A criterion no task declares has no evidence path at all: it
+    closes only by reconciliation with amendment authority, so it is a
+    warning (appended to ``warnings`` when given), not an error.
+    """
+    errors = []
+    if not isinstance(doc, dict):
+        return errors
+    owned = set()
+    for task in doc.get('tasks') or []:
+        if isinstance(task, dict):
+            for intent in task.get('gate_intent') or []:
+                if isinstance(intent, dict):
+                    owned.add(intent.get('criterion'))
+    for crit in (doc.get('acceptance') or {}).get('criteria') or []:
+        if not isinstance(crit, dict):
+            continue
+        control = crit.get('control') if isinstance(crit.get('control'), dict) else {}
+        if control.get('kind') in ('regression', 'discrimination'):
+            continue
+        accepted = set(crit.get('accepted_evidence') or [])
+        if crit.get('id') not in owned:
+            if warnings is not None:
+                warnings.append(
+                    'contract.acceptance: %s is declared by no task '
+                    'gate_intent - no gate or sign-off can close it; it '
+                    'closes only by reconciliation with amendment authority '
+                    '(declare it in the gate_intent of the task that proves '
+                    'it)' % crit.get('id'))
+            continue
+        if not accepted & {'observed', 'asserted'}:
+            errors.append(
+                'contract.acceptance: %s accepts only %s and nothing can '
+                'ever close it: imported evidence comes only from a '
+                'migration - accept observed (a gate) or asserted (ledger.py '
+                'signoff)' % (crit.get('id'), '/'.join(sorted(accepted))))
+    return errors
+
+
 def _outcome_errors(doc, errors):
     outcome = doc.get('outcome')
     if not isinstance(outcome, dict):
@@ -1637,6 +1688,11 @@ def main(argv):
                 print(usage)
                 return 2
         errors = contract_errors(doc, parents=parents)
+        warnings = []
+        if not errors:
+            errors = closure_errors(doc, warnings)
+        for warning in warnings:
+            print('WARN', warning)
         for err in errors:
             print('FAIL', err)
         if errors:

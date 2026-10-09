@@ -58,7 +58,9 @@ with `AC-*` ids, and `Validation` gates. The last task is the Final Review.
         { "criterion": "AC-tests-pass", "check": "pytest -q" }] },
     { "id": "T-final-review", "title": "Final Review",
       "prerequisites": ["T-implement"], "touched_surface": ["src/", "tests/"],
-      "gate_intent": [] }
+      "gate_intent": [
+        { "criterion": "AC-human-review",
+          "check": "a human reviews the diff (recorded by ledger.py signoff, not executed)" }] }
   ],
   "invariants": [
     { "id": "INV-no-publication",
@@ -104,6 +106,19 @@ python3 ../shared/ledger.py --plan .dwp/plans/PLAN_001_ship_feature_x \
   --mechanism plan_authorship
 # OK: materialized PLAN_001_ship_feature_x contract <cid> (manifest, contract,
 #     approval seq 1)
+```
+
+`AC-human-review` accepts only `asserted`, so no gate closes it: once
+`T-final-review` has started and the human has reviewed the diff and
+written their note, record their sign-off (the intent's `check` describes
+the human check; it is never executed):
+
+```bash
+python3 ../shared/ledger.py --plan .dwp/plans/PLAN_001_ship_feature_x \
+  signoff --criterion AC-human-review \
+  --evidence-path analysis_results/REVIEW_NOTE.md --authority sergio
+# OK: signoff AC-human-review by sergio at seq <n> (asserted: a human claim,
+#     never executed)
 ```
 
 From here the v6 execute loop runs the plan:

@@ -113,6 +113,11 @@ the conditions above, in orchestrator and individual plans alike.
 
 ## 6. Conformance
 
+- Human sign-off (`ledger.py signoff`) and the human-authority marker are
+  generation-neutral: they use the v6 record shapes unchanged
+  (`V6_CONTRACT.md` §3), so v6 and v7 plans close asserted criteria the
+  same way.
+
 - v6 schema bytes, v6 plans and their lifecycle are unchanged
   (`tests/v6-contract.bats` pins the schema hashes).
 - The v7 schemas and the runtime validator agree on the v7 fixtures and

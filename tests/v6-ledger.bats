@@ -83,7 +83,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   run python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   [ "$status" -eq 0 ]
@@ -99,7 +99,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
@@ -115,7 +115,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
@@ -129,7 +129,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
@@ -149,7 +149,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   # array form: exec'd without a shell — a missing binary never ran
@@ -173,7 +173,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   python3 "$LEDGER" --plan "$PLAN" project >/dev/null
@@ -188,7 +188,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
@@ -202,7 +202,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
@@ -234,7 +234,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   mkdir -p "$PLAN/analysis_results"
@@ -288,7 +288,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   # observed evidence exists only inside an attempt: no task_start, no gate
   run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
     --criterion AC-valid-contract-shape --json '"cat src/check.txt"'
@@ -315,7 +315,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   # revision 2 exists but carries no approval: the replayed event would
@@ -344,7 +344,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
@@ -378,7 +378,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
@@ -412,7 +412,7 @@ PY
     || python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   # run gates for every criterion the task's gate_intent declares
@@ -435,7 +435,7 @@ for t in doc["tasks"]:
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   printf '{"schema": "https://deepworkplan.com/schema/journal' >> "$PLAN/journal.ndjson"
   run python3 "$LEDGER" --plan "$PLAN" inspect
   grep -q 'TORN TAIL' <<<"$output"
@@ -463,7 +463,7 @@ for t in doc["tasks"]:
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   run python3 "$VIEWS" --plan "$PLAN" render --view tasks,evidence,audit
@@ -482,7 +482,7 @@ for t in doc["tasks"]:
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   run python3 "$VIEWS" --plan "$PLAN" render --view tasks,evidence,audit
   [ "$status" -eq 0 ]
   cp "$PLAN/views/tasks.md" "$TEST_REPO/tasks-1.md"
@@ -509,7 +509,7 @@ for t in doc["tasks"]:
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$VIEWS" --plan "$PLAN" render --view tasks >/dev/null
   printf '\nHUMAN NOTE\n' >> "$PLAN/views/tasks.md"
   run python3 "$VIEWS" --plan "$PLAN" render --view tasks \
@@ -525,7 +525,7 @@ for t in doc["tasks"]:
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas \
@@ -563,7 +563,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
              "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-publish-schemas"}' --idempotent
   run python3 "$LEDGER" --plan "$PLAN" roll

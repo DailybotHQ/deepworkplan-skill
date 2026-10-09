@@ -52,7 +52,7 @@ PY
 
 _approve() {
   run python3 "$LEDGER" --plan "$PLAN" append --type approval --idempotent \
-    --actor-kind human --actor-identity tester \
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity tester \
     --json '{"authority": "bats tester", "mechanism": "plan_authorship", "plan_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}'
   [ "$status" -eq 0 ]
 }

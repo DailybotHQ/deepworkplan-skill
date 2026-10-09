@@ -294,6 +294,9 @@ def records(plan, documents, report):
     if not report.extend(problems, f'contract valid ({generation}, revision '
                          f'{rec.contract.get("revision", 1)}; {len(chain)} revision(s) checked)'):
         return None
+    warnings = []
+    for finding in contract_v6.closure_errors(rec.contract, warnings) + warnings:
+        report.note(finding)
     pointer = (manifest.get('contract') or {}).get('id')
     report.verdict(pointer in parents,
                    'manifest points at a contract of this plan',

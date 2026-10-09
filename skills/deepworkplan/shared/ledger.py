@@ -92,6 +92,8 @@ MANIFEST_SCHEMA_URLS = tuple(MANIFEST_URL_BY_GENERATION.values())
 PROVENANCE_TYPES = ('view_render',)
 JOURNAL_NAME = 'journal.ndjson'
 EVIDENCE_NAME = 'evidence.jsonl'
+# The command recorded by a human sign-off (F-11): nothing was executed.
+SIGNOFF_COMMAND = 'signoff (asserted, not executed)'
 GATES_DIRNAME = 'gates'
 
 
@@ -199,7 +201,8 @@ def materialize_plan(plan_dir, contract_file, authority='developer',
     with open(contract_file, encoding='utf-8') as fh:
         contract = json.load(fh)
     contract.pop('contract_id', None)
-    errors = contract_v6.contract_errors(contract)
+    errors = contract_v6.contract_errors(contract) or \
+        contract_v6.closure_errors(contract)
     if errors:
         raise LedgerError('contract invalid: %s' % errors[0])
     folder = os.path.basename(os.path.normpath(plan_dir))
@@ -1391,6 +1394,71 @@ class Writer:
 
     # -- completion ---------------------------------------------------------
 
+    def signoff(self, criterion, evidence_path, authority, task_id=None):
+        """F-11: a human sign-off bound to one criterion, minted asserted.
+
+        The record is a ``gate_run`` with ``trust: asserted``, actor kind
+        ``human`` and the command ``signoff (asserted, not executed)`` - no
+        command ran, and the trust label says so. It closes only a
+        criterion whose ``accepted_evidence`` includes ``asserted``; an
+        observed-only criterion refuses it. A criterion owned by a task is
+        bound to its owning task and needs that task's task_start (the
+        evidence window).
+        Trust limit (V7_CONTRACT.md section 5): the ledger cannot
+        authenticate a person - it records who claimed the authority and
+        the artifact (path + digest) the claim rests on.
+        """
+        self._check_position()
+        crit = next((c for c in self.r.contract['acceptance']['criteria']
+                     if c.get('id') == criterion), None)
+        if crit is None:
+            raise LedgerError('signoff refused: %r is not a criterion of '
+                              'this contract' % criterion)
+        if 'asserted' not in (crit.get('accepted_evidence') or []):
+            raise LedgerError(
+                'signoff refused: %s accepts only %s - a sign-off is '
+                'asserted evidence and can never close it; run its gate '
+                '(ledger.py gate)' % (criterion, '/'.join(
+                    crit.get('accepted_evidence') or [])))
+        authority = (authority or '').strip()
+        if not authority or len(authority) > 100:
+            raise LedgerError('signoff requires --authority: who signs, '
+                              'as a non-empty name (<= 100 chars)')
+        if not evidence_path:
+            raise LedgerError('signoff requires --evidence-path: the '
+                              'artifact the sign-off rests on (a review '
+                              'note, an approval record)')
+        self._check_evidence_path(evidence_path)
+        owners = [t['id'] for t in self.r.contract.get('tasks', [])
+                  if any(i.get('criterion') == criterion
+                         for i in t.get('gate_intent', []))]
+        if not owners:
+            raise LedgerError(
+                'signoff refused: no task gate_intent declares %s - a '
+                'sign-off is bound to the task that owns the criterion '
+                '(amend the contract to declare it; until then it closes '
+                'only by reconciliation with amendment authority)'
+                % criterion)
+        if task_id is None:
+            task_id = owners[0]
+        if task_id not in owners:
+            raise LedgerError('signoff refused: %s is declared by %s, not '
+                              '%s' % (criterion, ', '.join(owners), task_id))
+        if self.task_start_seq(task_id) is None:
+            raise LedgerError('signoff refused: %s has not started - a '
+                              'sign-off counts only inside the task\'s '
+                              'evidence window (ledger.py start)' % task_id)
+        payload = {'command': SIGNOFF_COMMAND, 'cwd': '.',
+                   'timeout_seconds': 1, 'exit_code': 0,
+                   'criterion': criterion, 'task': task_id}
+        return self._append_raw(
+            'gate_run', payload,
+            actor={'kind': 'human', 'identity': authority}, ts=_utc_now(),
+            note='human sign-off: asserted, never executed; evidence '
+                 'sha256:%s' % _hash_marker(self.r.dir, self.repo_root(),
+                                            evidence_path),
+            trust='asserted', evidence_path=evidence_path)
+
     def complete_task(self, task_id, actor=None):
         """Refuse completion unless every gate_intent criterion has
         in-window accepted evidence (zero-test control)."""
@@ -1738,6 +1806,41 @@ class Writer:
 
 
 # ---------------------------------------------------------------- helpers
+
+def _hash_marker(plan_dir, repo_root, path):
+    """First 16 hex of the sha256 of an artifact a human record rests on."""
+    for candidate in ([path] if os.path.isabs(path) else []) + [
+            os.path.join(plan_dir, path), os.path.join(repo_root, path)]:
+        if os.path.isfile(candidate):
+            return _hash_file(candidate)[:16]
+    raise LedgerError('artifact %r does not resolve' % path)
+
+
+def human_marker(note_path):
+    """F-20: the explicit human-authority marker for a human-actor record.
+
+    A signed note (an existing file: recorded by path and digest) or, on
+    an interactive terminal, a typed confirmation. The ledger cannot
+    authenticate a person; the marker makes the claim explicit and
+    auditable, and the record stays what it is (V7_CONTRACT.md section 5).
+    """
+    if note_path:
+        if not os.path.isfile(note_path):
+            raise LedgerError('--human-note %r is not a file - the marker is '
+                              'the note the human wrote' % note_path)
+        return 'human authority marker: note %s sha256:%s' % (
+            note_path, _hash_file(note_path)[:16])
+    if sys.stdin.isatty():
+        answer = input('Human authority: type "yes, I authorize this" to '
+                       'record it as yours: ')
+        if answer.strip() == 'yes, I authorize this':
+            return 'human authority marker: interactive confirmation'
+    raise LedgerError(
+        '--actor-kind human needs an explicit human-authority marker: '
+        '--human-note PATH (the note the human wrote) or an interactive '
+        'confirmation on a terminal (F-20). An agent records its own claims '
+        'with --actor-kind agent')
+
 
 def _utc_now():
     return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
@@ -2283,8 +2386,11 @@ def _writer_for(args, force=False):
 def main(argv):
     usage = ('usage: ledger.py --plan DIR {materialize --contract FILE '
              '[--authority WHO] [--mechanism plan_authorship|'
-             'pre_authorization] [--note TEXT] | append|start|gate|reuse|'
-             'project|complete|export|roll|inspect|self-test | delegate '
+             'pre_authorization] [--note TEXT] | append [--actor-kind human '
+             '--human-note FILE] | start|gate|reuse|'
+             'project|complete|export|roll|inspect|self-test | signoff '
+             '--criterion AC --evidence-path P --authority WHO [--task T] '
+             '| delegate '
              'launch|observe|collect|cancel --task T [--json OBJ] '
              '[--caps JSON]} [options]')
     parser = argparse.ArgumentParser(add_help=False)
@@ -2310,6 +2416,7 @@ def main(argv):
     parser.add_argument('--contract')
     parser.add_argument('--authority')
     parser.add_argument('--mechanism')
+    parser.add_argument('--human-note')
     try:
         args = parser.parse_args(argv)
     except SystemExit:
@@ -2397,6 +2504,10 @@ def main(argv):
             if not args.type or not args.json:
                 print('append requires --type and --json')
                 return 2
+            note = args.note
+            if args.actor_kind == 'human':
+                marker = human_marker(args.human_note)
+                note = (note + ' | ' + marker) if note else marker
             rec, lock, writer = _writer_for(args, args.force)
             try:
                 payload = json.loads(args.json)
@@ -2404,10 +2515,26 @@ def main(argv):
                     args.type, payload,
                     actor={'kind': args.actor_kind,
                            'identity': args.actor_identity},
-                    note=args.note, idempotent=args.idempotent,
+                    note=note, idempotent=args.idempotent,
                     trust=args.trust, evidence_path=args.evidence_path)
                 print('OK: appended %s seq %d' % (event['type'],
                                                   event['seq']))
+                return 0
+            finally:
+                lock.release()
+        if args.command == 'signoff':
+            if not args.criterion:
+                print('signoff requires --criterion, --evidence-path and '
+                      '--authority')
+                return 2
+            rec, lock, writer = _writer_for(args, args.force)
+            try:
+                event = writer.signoff(args.criterion, args.evidence_path,
+                                       args.authority, task_id=args.task)
+                print('OK: signoff %s by %s at seq %d (asserted: a human '
+                      'claim, never executed)' % (
+                          args.criterion, event['actor']['identity'],
+                          event['seq']))
                 return 0
             finally:
                 lock.release()

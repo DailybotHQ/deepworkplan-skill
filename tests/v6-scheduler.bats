@@ -111,7 +111,7 @@ PY
 _approve() {
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json "$(python3 -c 'import json,sys;print(json.dumps({"authority":"bats","mechanism":"plan_authorship","plan_digest":sys.argv[1]}))' "$(_cid)")" \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
 }
 
 _cid() {
@@ -475,7 +475,7 @@ PY
   _gate_ok T-prepare AC-prepare
   _b_append --type approval \
     --json "$(python3 -c 'import json,sys;print(json.dumps({"authority":"bats","mechanism":"plan_authorship","plan_digest":sys.argv[1]}))' "$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]+"/contract.json"))["contract_id"])' "$B")")" \
-    --actor-kind human --actor-identity bats --idempotent
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
   _b_append --type observation \
     --json '{"statement": "INV-closed-objects: pass"}' \
     --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
