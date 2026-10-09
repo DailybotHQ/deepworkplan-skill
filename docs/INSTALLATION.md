@@ -241,6 +241,17 @@ agents, parallel teams or persistent sessions fall back per capability to
 the portable sequential path
 ([`COMPATIBILITY.md`](COMPATIBILITY.md), "Portable sequential path").
 
+### Which version is installed (and which is stable)
+
+The installed version is the `version:` field of the installed
+`deepworkplan/SKILL.md` frontmatter — `skills-lock.json` records a content
+hash, not the tag, so note the ref beside it when you vendor a copy. A
+pre-release is labelled as one (`7.0.0-beta.1`); anything that displays
+"the stable version" should read the latest non-pre-release GitHub release
+(`gh release view --repo DailybotHQ/deepworkplan-skill --json tagName`
+without a tag argument, or the `releases/latest` API), never the frontmatter
+of a vendored pre-release.
+
 ---
 
 ## Updating the skill

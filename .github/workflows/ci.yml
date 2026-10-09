@@ -213,10 +213,14 @@ jobs:
                         skills/deepworkplan/shared/migrate_v6.py \
                         skills/deepworkplan/shared/benchmark.py \
                         skills/deepworkplan/shared/config.py \
+                        skills/deepworkplan/shared/delegators.py \
                         skills/deepworkplan/verify/plan_contract.py; do
             python3 -m py_compile "$helper"
             echo "OK: $helper compiles on $(python3 --version)"
           done
+          # The delegator drift report runs read-only on this repository.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/delegators.py check --repo .
           # The v6 record validator must also RUN on the floor, not just
           # parse: its self-test is stdlib-only and touches no repository.
           PYTHONDONTWRITEBYTECODE=1 python3 \

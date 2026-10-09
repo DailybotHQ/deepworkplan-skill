@@ -140,6 +140,18 @@ versions relative to that directory.
    re-offers addons under their standing policies (AI Diff Reviewer local
    install rides onboarding authorization; every optional addon still needs
    explicit acceptance).
+   **Short path for an onboarded repository (F-09).** When the repository
+   already declares `DWP standard: 6.x` and was conformant before the
+   upgrade, the re-onboarding is this checklist instead of a full run: (a)
+   `python3 <pack>/shared/delegators.py check --repo .` — present each
+   `DRIFT` as keep (a deliberate adaptation) or refresh (from
+   `../onboard/command-templates/`), and offer each `MISSING` (F-23); (b)
+   step 4's registry back-fill and `.gitignore` exception; (c) the host
+   capability record from the existing `AGENTS.md` declaration
+   (`config.py host <capability> true`, `../onboard/v6.md` §1); (d) Phase
+   7b's offer of addons the registry does not name yet; then step 3 and
+   step 6. Run the full onboarding when conformance failed, the
+   declaration predates 6.0, or the developer asks for it.
 3. **Re-stamp the standard.** The provenance line in `AGENTS.md` becomes
    `DWP standard: <the standard the new pack implements> (onboarded
    YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)` — the upgrade variant of
@@ -161,6 +173,17 @@ versions relative to that directory.
    adaptations applied or dropped, and the conformance verdict.
 
 ---
+
+## Version discovery (consumers)
+
+- The installed version is the `version:` of the installed
+  `deepworkplan/SKILL.md` frontmatter. `skills-lock.json` records only a
+  content hash (`computedHash`), never the tag — record the ref beside it by
+  hand when you need it (F-07).
+- A pre-release carries its identifier (`7.0.0-beta.1`). A page or manifest
+  that shows the **stable** line reads the latest non-pre-release (GitHub
+  `releases/latest`), never the frontmatter of a vendored pre-release
+  (F-26).
 
 ## Guarantees
 
