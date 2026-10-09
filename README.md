@@ -9,6 +9,8 @@
 
 **Models matter. Context matters more.**
 
+[![CI](https://github.com/DailybotHQ/deepworkplan-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/DailybotHQ/deepworkplan-skill/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/DailybotHQ/deepworkplan-skill?include_prereleases&sort=semver)](https://github.com/DailybotHQ/deepworkplan-skill/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Open Agent Skills](https://img.shields.io/badge/format-Open%20Agent%20Skills-7b2d26)](https://agentskills.io)
 [![skills.sh](https://img.shields.io/badge/install-skills.sh-000)](https://skills.sh)
@@ -18,6 +20,8 @@
 </div>
 
 ---
+
+## What it is
 
 > The official DeepWorkPlan agent skill pack, maintained by [Dailybot](https://www.dailybot.com).
 
@@ -72,7 +76,7 @@ and report with all plan output living in a gitignored
 - **Format:** [Open Agent Skills](https://agentskills.io) standard
 - **Docs:** <https://deepworkplan.com>
 
-## Skills
+### Skills
 
 | Skill | What it does |
 |-------|-------------|
@@ -103,6 +107,11 @@ The [skills.sh](https://skills.sh) CLI auto-detects your agent and installs the
 skill in the right place:
 
 ```bash
+# pinned to a release tag (recommended — reproducible):
+npx --yes skills add DailybotHQ/deepworkplan-skill@v6.1.0 --skill deepworkplan -y
+# the v7 pre-release (field test):
+npx --yes skills add DailybotHQ/deepworkplan-skill@v7.0.0-beta.1 --skill deepworkplan -y
+# or the latest published release:
 npx skills add DailybotHQ/deepworkplan-skill
 ```
 
@@ -175,7 +184,70 @@ sub-skill:
 
 Or invoke directly: `/deepworkplan-create`, `/deepworkplan-onboard`, etc.
 
-## The `.dwp/` convention
+### Reproducible installs (`skills-lock.json`)
+
+When you install at **project scope** (e.g. `npx skills add` run inside a
+workspace), the skills.sh CLI writes the resolved skill source, path, and a
+content hash to a `skills-lock.json` at your workspace root. Commit that file to
+pin the exact version of DeepWorkPlan your team uses — re-running the installer
+later restores the same revision. This skill repo does **not** ship a
+`skills-lock.json` of its own; it is a consumer-side artifact that lives in
+*your* workspace, not in the skill pack.
+
+### Update
+
+```bash
+# npx
+npx skills update DailybotHQ/deepworkplan-skill
+
+# Git clone
+cd <skill-path> && git pull && ./setup.sh
+
+# OpenClaw
+openclaw skills update deepworkplan
+```
+
+### Uninstall
+
+```bash
+# Remove the skill pack itself
+rm -rf <skill-path>
+
+# Remove sub-skill symlinks (Claude Code example)
+rm -f ~/.claude/skills/deepworkplan \
+      ~/.claude/skills/deepworkplan-create \
+      ~/.claude/skills/deepworkplan-execute \
+      ~/.claude/skills/deepworkplan-refine \
+      ~/.claude/skills/deepworkplan-resume \
+      ~/.claude/skills/deepworkplan-status \
+      ~/.claude/skills/deepworkplan-onboard
+
+# OpenClaw
+openclaw skills remove deepworkplan
+```
+
+## Quickstart
+
+1. **Install** the pack (pinned, above) in the repository you want to make AI-first.
+2. **Onboard** it: run `/deepworkplan-onboard` (Claude Code) or
+   `#deepworkplan-onboard` in any other agent — it writes an adapted
+   `AGENTS.md`, `docs/`, `.agents/` (including the short `/dwp-*` commands
+   used below) and offers the optional addons.
+3. **Plan** real work: `/dwp-create <what you want done>` writes a Deep Work
+   Plan under the gitignored `.dwp/plans/`.
+4. **Execute** it: `/dwp-execute <plan>` works task by task, validates each
+   one against its gates and commits; `/dwp-resume` picks up after an
+   interruption; `/dwp-status` and `/dwp-verify` report.
+
+## Documentation
+
+- [deepworkplan.com](https://deepworkplan.com) — the methodology, the kit pages and the published schemas
+- [`skills/deepworkplan/spec/`](skills/deepworkplan/spec/README.md) — the normative standard (7.0.0)
+- [`skills/deepworkplan/guide/GUIDE.md`](skills/deepworkplan/guide/GUIDE.md) — the methodology guide
+- [`docs/`](docs/) — [installation](docs/INSTALLATION.md), [design](docs/DESIGN.md), [compatibility](docs/COMPATIBILITY.md), [testing](docs/TESTING_GUIDE.md)
+- [CHANGELOG.md](CHANGELOG.md) · [Open Agent Skills standard](https://agentskills.io) · [skills.sh](https://skills.sh)
+
+### The `.dwp/` convention
 
 All Deep Work Plan output lives in a gitignored `.dwp/` directory at the repo
 root:
@@ -201,7 +273,7 @@ full folder name, ID, or unique slug. Existing folders such as
 creates v7 plans (v6 on explicit request) with 2–5-word slugs. The retained v5 creation flow uses
 2–4 words to fit its frozen schemas.
 
-## Benchmark metrics and learnings (opt-in)
+### Benchmark metrics and learnings (opt-in)
 
 DWP can record how each executed plan went, so skill versions can be compared
 on recorded evidence instead of impressions. It is off unless you turn it on.
@@ -264,47 +336,13 @@ The specification is [`skills/deepworkplan/spec/BENCHMARK.md`](skills/deepworkpl
 (record schemas: [`benchmark-record`](skills/deepworkplan/spec/schema/benchmark-record.schema.json)
 and [`learnings-record`](skills/deepworkplan/spec/schema/learnings-record.schema.json)).
 
-## Reproducible installs (`skills-lock.json`)
+## Security
 
-When you install at **project scope** (e.g. `npx skills add` run inside a
-workspace), the skills.sh CLI writes the resolved skill source, path, and a
-content hash to a `skills-lock.json` at your workspace root. Commit that file to
-pin the exact version of DeepWorkPlan your team uses — re-running the installer
-later restores the same revision. This skill repo does **not** ship a
-`skills-lock.json` of its own; it is a consumer-side artifact that lives in
-*your* workspace, not in the skill pack.
-
-## Update
-
-```bash
-# npx
-npx skills update DailybotHQ/deepworkplan-skill
-
-# Git clone
-cd <skill-path> && git pull && ./setup.sh
-
-# OpenClaw
-openclaw skills update deepworkplan
-```
-
-## Uninstall
-
-```bash
-# Remove the skill pack itself
-rm -rf <skill-path>
-
-# Remove sub-skill symlinks (Claude Code example)
-rm -f ~/.claude/skills/deepworkplan \
-      ~/.claude/skills/deepworkplan-create \
-      ~/.claude/skills/deepworkplan-execute \
-      ~/.claude/skills/deepworkplan-refine \
-      ~/.claude/skills/deepworkplan-resume \
-      ~/.claude/skills/deepworkplan-status \
-      ~/.claude/skills/deepworkplan-onboard
-
-# OpenClaw
-openclaw skills remove deepworkplan
-```
+Report vulnerabilities privately — see [SECURITY.md](SECURITY.md) (GitHub
+private vulnerability reporting or security@dailybot.com). What the pack may
+and may not do on your machine, with a self-audit you can run, is in
+[`skills/deepworkplan/TRUST.md`](skills/deepworkplan/TRUST.md). CI runs a
+public-hygiene check on every change.
 
 ## Contributing
 
@@ -318,13 +356,15 @@ checklist. Deeper background lives under [`docs/`](docs/) — [DESIGN.md](docs/D
 (the *why* behind the layout), [INSTALLATION.md](docs/INSTALLATION.md),
 [OPENCLAW.md](docs/OPENCLAW.md), and [SUB_SKILL_GUIDE.md](docs/SUB_SKILL_GUIDE.md).
 
-## Links
+## License
 
-- [DeepWorkPlan](https://deepworkplan.com)
-- [Dailybot](https://www.dailybot.com)
-- [Open Agent Skills standard (agentskills.io)](https://agentskills.io)
-- [skills.sh](https://skills.sh) — cross-agent skills directory
+[MIT](LICENSE). Contributions are accepted under the same license; see
+[CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## :electric_plug: Powered by [Dailybot](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill)
 
 [Dailybot](https://www.dailybot.com/product/ai) is an AI-powered async communication platform that keeps **people and agents** visible — without adding more meetings or tools. It lives where your team already works (Slack, Teams, Google Chat, Discord, VS Code, and the CLI) and turns scattered signals into clear progress: async check-ins and standups, AI summaries that detect blockers and read team sentiment, workflow automation and approvals, team analytics, and recognition. As AI agents join the workflow, Dailybot surfaces their status and activity right alongside your team's — so long-running agents never go dark. [Learn more](https://www.dailybot.com?utm_source=dailybotopensource&utm_medium=deepworkplan-skill).
+
+---
+
+Part of the [DeepWorkPlan](https://deepworkplan.com) ecosystem — works on its own.

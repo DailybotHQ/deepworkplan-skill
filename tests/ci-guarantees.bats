@@ -270,3 +270,24 @@ PY
     ( cd "$R" && GITHUB_OUTPUT="$R/vout" REQUESTED=6.2.0-rc.1 bash "$R/validate.sh" >/dev/null )
     rm -rf "$R"
 }
+
+@test "releases publish the CHANGELOG section as notes, with SHA256SUMS and annotated tags" {
+    python3 - "$REPO_ROOT/.github/workflows" <<'PY'
+import os, sys, yaml
+wf = yaml.safe_load(open(os.path.join(sys.argv[1], 'auto-release.yml')))
+steps = wf['jobs']['release']['steps']
+by = {s.get('name'): s for s in steps}
+rel = by['Create GitHub Release']['with']
+assert rel.get('body_path') == '${{ runner.temp }}/RELEASE_NOTES.md', rel
+assert 'generate_release_notes' not in rel, rel
+assert rel.get('files') == 'SHA256SUMS', rel
+assert 'cp /tmp/new_section.md "$RUNNER_TEMP/RELEASE_NOTES.md"' in by['Update CHANGELOG.md']['run']
+assert 'git tag -a "$NEW_TAG"' in by['Commit, tag, push']['run']
+pre = yaml.safe_load(open(os.path.join(sys.argv[1], 'prerelease.yml')))
+run = '\n'.join(s.get('run') or '' for s in pre['jobs']['prerelease']['steps'])
+assert 'cp /tmp/new_section.md RELEASE_NOTES.md' in run and '--notes-file RELEASE_NOTES.md' in run
+assert 'git tag -a "$TAG"' in run
+assert 'git add -A -- skills CHANGELOG.md' in run   # the notes file is never committed
+print('ok')
+PY
+}

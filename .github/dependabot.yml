@@ -1,0 +1,13 @@
+# Dependabot: keep the GitHub Actions used by the workflows current
+# (ecosystem public repository standard, A3). The pack has no package
+# manifest (stdlib Python + bash), so github-actions is the only ecosystem.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    labels:
+      - dependencies

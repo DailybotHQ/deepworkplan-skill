@@ -222,6 +222,10 @@ jobs:
             }
           ' CHANGELOG.md > CHANGELOG.md.new
           mv CHANGELOG.md.new CHANGELOG.md
+          # The same section is the GitHub release notes (public repository
+          # standard: release notes come from the CHANGELOG). Kept outside the
+          # workspace so the release commit can never include it.
+          cp /tmp/new_section.md "$RUNNER_TEMP/RELEASE_NOTES.md"
 
       - name: Commit, tag, push
         if: steps.version.outputs.skip != 'true'
@@ -414,5 +418,5 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.new_tag }}
           name: ${{ steps.version.outputs.new_version }}
-          generate_release_notes: true
+          body_path: ${{ runner.temp }}/RELEASE_NOTES.md
           files: SHA256SUMS

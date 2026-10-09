@@ -49,6 +49,8 @@ yarn-error.log*
 
 # Local environment overrides
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
 .envrc

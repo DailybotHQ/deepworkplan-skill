@@ -13,9 +13,14 @@ reporting** rather than opening a public issue (which would disclose the problem
 before a fix exists):
 
 **Report a vulnerability:** <https://github.com/DailybotHQ/deepworkplan-skill/security>
-(GitHub → the **Security** tab → "Report a vulnerability"). If private reporting is
-ever unavailable, open a minimal issue asking us to enable it — do **not** post
-exploit details publicly.
+(GitHub → the **Security** tab → "Report a vulnerability"), or email
+**security@dailybot.com**. Never open a public issue for a vulnerability and do
+**not** post exploit details publicly.
+
+**Response targets:** acknowledgement within **3 business days**; an initial
+assessment within **7 days**; a fix or mitigation plan for confirmed issues
+within **30 days** (sooner for critical ones), released as a new version with
+the reporter credited unless they ask otherwise.
 
 Include in your report:
 
@@ -26,13 +31,15 @@ Include in your report:
 
 ## Supported Versions
 
-The skill auto-releases from `main`; the latest tagged `vX.Y.Z` release is the
-only supported version. Security fixes ship as a new release rather than
+The skill auto-releases from `main`; the latest stable `vX.Y.Z` release is the
+supported version, and the current pre-release line is supported for the
+duration of its field test. Security fixes ship as a new release rather than
 backports.
 
 | Version | Supported |
 |---------|-----------|
-| Latest `2.x` release | ✅ |
+| Latest `6.x` stable release (currently `v6.1.0`) | ✅ |
+| `7.0.0` pre-releases (`v7.0.0-beta.N`) | ✅ until `v7.0.0` ships |
 | Anything older | ❌ — upgrade to the latest release |
 
 ## In Scope
@@ -50,10 +57,13 @@ backports.
 
 ## Threat Model (Markdown-first skill)
 
-DeepWorkPlan is a **Markdown-first** skill. It has **no CLI, no HTTP API, no
-auth flow, and makes no network calls** — `shared/context.sh` reads local git
+DeepWorkPlan is a **Markdown-first** skill. It has **no HTTP API, no auth
+flow, and makes no network calls** — `shared/context.sh` reads local git
 metadata and environment variables only and emits a single-line JSON blob; no
-telemetry leaves the machine. The skill's only security-relevant action is that
+telemetry leaves the machine. Its only external process calls are `git` and,
+from 7.0.0, the read-only detect command of an addon the developer enabled
+(see `skills/deepworkplan/TRUST.md`); addons install third-party tools only
+after explicit acceptance, always pinned. The skill's only security-relevant action is that
 it **mutates the user's repository**:
 
 - `deepworkplan-onboard` generates or reconciles `AGENTS.md`, `docs/`,

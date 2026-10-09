@@ -128,6 +128,17 @@ anywhere under the pack.
 | Release workflows | Inputs and commit messages reach shell only through `env:`; multi-line step outputs use a random delimiter; versions are re-validated where used; pre-releases only from `main`, above the last stable release, never moving a tag, never `latest`; third-party installers (the ecosystem pin smoke) run in a separate job with read-only permissions and no persisted credentials, before any job that can push. |
 | Public hygiene (ecosystem amendment A3) | `scripts/check-public-hygiene.sh` runs in CI over tracked files: no personal paths, private organization/repository/tooling names, non-public `@dailybot.com` addresses or secret-shaped strings (fixtures must be obviously fake and listed in `.public-hygiene-allow` with a reason). History is not rewritten for non-secret names. |
 
+## Repository settings (ecosystem amendment A3, S2)
+
+Secret scanning with push protection, private vulnerability reporting and
+Dependabot alerts are on; `main` is protected (required CI checks —
+frontmatter, shellcheck, bats, public hygiene, schema/contract, Python
+floor — one approving review, no force pushes or deletions; administrators
+and the release automation may bypass). Wiki and Discussions are off; head
+branches are deleted on merge. `bash scripts/check-github-settings.sh
+DailybotHQ/deepworkplan-skill` verifies these read-only; it checks that CI
+checks are required, not their names, and does not inspect the bypass list.
+
 ## Security review (dogfooding the spec)
 
 Every Deep Work Plan in this repo ends with the mandatory **Security Review**

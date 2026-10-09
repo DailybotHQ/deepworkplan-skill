@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: What you'd like to do
+      description: 1-2 sentences describing the goal. Focus on the WHAT, not the HOW.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: The use case. Who benefits and what does it unlock?
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What you've tried (if anything)
+      description: Workarounds, related issues, or external tools.
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - Inside skills/deepworkplan/ (runtime behavior shipped to users)
+        - Repository root (tests, CI, scripts, docs)
+        - Not sure — need maintainer input
+    validations:
+      required: true
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Compatibility considerations
+      options:
+        - label: It may affect the public surface (the /deepworkplan-* commands, the .dwp/ convention, setup.sh flags, skill name fields) — a breaking change.
+        - label: It keeps the skill markdown-first and self-contained under skills/deepworkplan/ (no new runtime dependency, no network requirement).
+        - label: Shell helpers would still work on bash 3.2 (macOS default).
+        - label: The methodology still works with no addon installed or enabled.
