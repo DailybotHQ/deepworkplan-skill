@@ -22,6 +22,7 @@ piloting this repo) can reason about why a job did or didn't run.
 | **Skip guard** | Skips if head commit starts with `chore(release):` OR contains `[skip release]` (breaks the auto-release loop); while the router version is a pre-release (`X.Y.Z-beta.N`), skips unless the head commit carries `[graduate]` |
 | **Last release** | The last **stable** `vX.Y.Z` tag — pre-release tags (`-` suffix) never move the bump base |
 | **Graduation** | With `[graduate]`, a stamped `X.Y.Z-pre.N` becomes `X.Y.Z` (never bumped past) |
+| **Release notes** | The release's CHANGELOG section (written to `$RUNNER_TEMP`, never committed) is the GitHub release body; `SHA256SUMS` attached; annotated tag |
 | **Token** | `AUTOMATION_GITHUB_TOKEN` (org convention) so the bot user can push to protected `main`; falls back to `GITHUB_TOKEN` |
 
 ### Job: `release`

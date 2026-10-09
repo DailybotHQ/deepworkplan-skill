@@ -66,8 +66,9 @@ On every merge to `main`, `auto-release.yml`:
 3. Syncs the new version into **all** SKILL.md files (router, every
    sub-skill, every addon).
 4. Prepends a dated section to `CHANGELOG.md`.
-5. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, pushes, and
-   creates a GitHub Release.
+5. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z` (annotated),
+   pushes, and creates a GitHub Release whose notes are that version's
+   CHANGELOG section, with `SHA256SUMS` attached.
 
 Maintainers' only job is to **write good conventional commits**. Never hand-edit
 `version:` fields, `CHANGELOG.md`, or tags — see [AGENTS.md](AGENTS.md) rule 4.
