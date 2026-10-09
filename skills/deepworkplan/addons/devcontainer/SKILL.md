@@ -1,141 +1,121 @@
 ---
 name: deepworkplan-addon-devcontainer
-description: Optional DeepWorkPlan addon that adds (or reconciles) a compose-based devcontainer to a repo — base image and supporting services reasoned from the detected stack, with persistent AI-CLI auth, the dailybot-project-network, the DOCKER_DEV_ENV=vscode convention, and project-identity precedence. Opt-in, never required, reconciles existing setups instead of clobbering them. Use when the developer wants a reproducible isolated dev container for an AI-first repo.
+description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.1.0, interface 1) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers `dck init` (which reconciles an existing layout and never clobbers it), maps the detected stack to a base-image flavour and the opt-in layers (agents through coding-agents-kit, the editor, Dailybot only when that addon asks), optionally registers the container as a Herdr machine, and validates the result. Opt-in, never required, never a conformance gate.
 version: "6.1.0"
-documentation_url: https://deepworkplan.com
+documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
-metadata: {"openclaw":{"emoji":"📦","homepage":"https://deepworkplan.com","requires":{"anyBins":["docker","git"]}}}
+metadata: {"openclaw":{"emoji":"📦","homepage":"https://deepworkplan.com/kit/devcontainer","requires":{"anyBins":["docker","git"]}}}
 ---
 
 # DeepWorkPlan — Devcontainer Addon
 
-Add a **reproducible, isolated dev container** to the target repo so any human or
-AI agent gets the same environment, with **AI-CLI auth that survives rebuilds**.
-This is the methodology's **first opt-in addon** — it is **never** required for a
-repo to be AI-first.
+Give the repository a **reproducible, isolated dev container** that any human
+or AI agent can open the same way — from a terminal (`dck up`), from VS Code /
+Cursor ("Reopen in Container"), or with the `devcontainer` CLI. This is an
+**opt-in addon**, never required for a repo to be AI-first and never a
+conformance gate.
 
-> ## The rule that overrides everything: REASON about the repo, then generate
->
-> ~85% of every Dailybot devcontainer is identical — that **common skeleton** is
-> the stable part you carry forward. ~15% is repo-specific — base image, user,
-> `workspaceFolder`, supporting services, ports, secrets — and that part you
-> **reason out from the target repo's actual stack**, never by copying one
-> reference repo. The one near-verbatim exception is the **AI-CLI persistence
-> entrypoint** (`templates/entrypoint.md`): it is stable enough to copy with only
-> the home-path / user adjusted.
+This addon is a **thin integrator** of **devcontainer-kit**
+(`https://github.com/DailybotHQ/devcontainer-kit`, MIT, works without DWP).
+The layout, the pinned base images, the entrypoint library, the launcher,
+SSH and Herdr registration are the kit's; this addon decides **whether** to
+offer it, **which options** fit the repository, and **how to validate** the
+result. It carries no company-specific network, volume or file name.
+
+| Pin | Value |
+|-----|-------|
+| Product | `DailybotHQ/devcontainer-kit` |
+| Tag | `v0.1.0` |
+| Interface | `1` (`dck doctor --json` → `"interface": 1`) |
+| Registry key | `devcontainer` (`.dwp/config.json` → `addons.devcontainer`) |
+| Abilities | none (it provides an environment, not a delegation transport) |
 
 ## Read these first (all relative inside the skill)
 
-- [`SPEC.md`](SPEC.md) — the normative (RFC-2119) contract: common skeleton,
-  per-repo reasoning checklist, project-identity precedence, validation rule,
-  public-OSS variant.
-- [`templates/presets.md`](templates/presets.md) — the **7 reasoning presets**
-  (node-web, node-service, node-lambda, python-service, python-cli-oss,
-  static-site, orchestrator-hub). Match one as a *starting checklist*, then
-  verify every assumption against the real repo — **detected reality wins**.
-- The other `templates/*.md` — reasoning guides for each file you generate.
-- `../README.md` — the addon mechanism (opt-in, reconcile-don't-clobber, contract).
+- [`SPEC.md`](SPEC.md) — the normative contract.
+- [`templates/INTEGRATION.md`](templates/INTEGRATION.md) — reasoning aid:
+  stack → flavour and layers, the Herdr container profile, validation.
 
 ## When this runs
 
-- From **`onboard` Phase 7b** — after the core AI-first scaffolding, `onboard`
-  offers this addon; if accepted it reads this SKILL and runs the flow below.
-- **Directly** — `/deepworkplan-addon-devcontainer` on an already-onboarded repo
-  to add or reconcile a devcontainer.
+`onboard` Phase 7b offers it when the repository benefits from an isolated,
+reproducible environment (services, a pinned toolchain, agents that should
+not touch the host); or on direct invocation. No other flow requires it.
 
 ## Trust boundary (write scope)
 
-`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`. Exactly what
-this addon may write — and what it MUST NOT — is enumerated below. Skills.sh /
-Gen Agent Trust Hub treat `allowed-tools` as a trust boundary; this section is
-the human-readable contract for that field. Anything not listed here does not
-happen.
+`allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`:
 
-**Reads (always allowed, no consent needed):** the target repo's tree (stack
-detection, existing `.devcontainer/` / `docker/` files, lockfiles, RECON notes),
-Docker metadata where available.
-
-**Writes (only after the developer accepts the addon offer, per file):**
-
-- `.devcontainer/devcontainer.json`, `docker/local/**` (compose, Dockerfile,
-  entrypoint, custom commands), and — for public repos — `.dockerignore` +
-  secret-free `.env.example`. Reconcile mode: existing values are preserved;
-  replacing or deleting anything the developer already has requires explicit
-  approval.
-- Optional docs notes describing the devcontainer (only on an accepted
-  docs-update prompt).
-
-**It MUST NOT:**
-
-- Put secrets in images, compose files, or `.env.example` — ever.
-- Enable SSH key seeding (the `~/.ssh` read-only mount + `SEED_SSH_KEYS=1`
-  pair) without the developer's explicit opt-in, or pre-set that flag in
-  generated files.
-- Generate AI-CLI wrappers that inject permission-bypass flags — wrappers are
-  pass-through; the developer opts into elevated modes themselves.
-- Add services the app does not actually depend on, publish host ports on the
-  devcontainer service, or run network installers (installs go through package
-  managers or the verified two-step flow in `templates/Dockerfile.md`).
-- Push, commit, or mutate anything on the host outside the repo checkout.
+- **Before consent: read-only.** `command -v dck docker`, `dck doctor --json`,
+  and reading the repository's existing `.devcontainer/` and `docker/` files.
+- **Writes (only after explicit acceptance):** the kit install (pinned tagged
+  clone + `install.sh`), `dck init` in the repository — which shows a plan and
+  diffs and changes an existing file only with consent, after a timestamped
+  backup — the `addons.devcontainer` registry entry, and the validation record.
+- **It MUST NOT:** pass `dck init --yes` without the developer's explicit
+  acceptance of the shown diff; add `privileged`, `cap_add`, host namespaces,
+  the Docker socket or host bind mounts; publish a port beyond loopback unless
+  the repository's own config says so; pass `--trust` on the developer's
+  behalf; copy a private key into an image or container; run `dck herdr add`
+  (it edits `~/.ssh/config`) without its own explicit approval; or write any
+  secret value (`.env` files are created `0600` by `dck setup` and stay
+  gitignored).
 
 ## The flow
 
-### Step 0 — Consent + reconcile check
-1. Confirm the developer wants a devcontainer (skip silently if declined — the
-   repo stays baseline-conformant).
-2. **Detect existing setup.** Look for `.devcontainer/`, `docker/`,
-   `docker-compose.{yml,yaml}`, a `Dockerfile`. If any exist, you are in
-   **reconcile mode**: you MUST preserve working values and MUST NOT overwrite or
-   delete files without explicit approval (see SPEC §Reconcile).
+### Step 0 — Detect (read-only)
 
-### Step 1 — Reason about the stack (reuse onboard's RECON)
-If `onboard` already produced `.dwp/onboard/RECON.md`, read it. Otherwise detect:
-language/runtime, package manager (from the lockfile that exists), build/test/
-lint/typecheck commands, supporting services implied by the app's dependencies
-(DB / cache / queue / emulators), exposed ports, and whether the repo is
-**public** (OSS) or private. Pick the matching **preset** from
-`templates/presets.md` as a checklist.
+`command -v dck` → `dck doctor --json`: `interface` must be `1` (otherwise one
+warning and "not available"); read `runtime` (Docker/OrbStack/colima and
+Compose), `repo` (config validity) and `drift`. Note an existing
+`.devcontainer/` or `docker/` layout — it will be **reconciled**, never
+replaced silently.
 
-### Step 2 — Decide the reasoned ~15% (SPEC §3 checklist)
-- **Base image + user + `workspaceFolder`** from the language (Node vs Python; a
-  `node` vs created `dev-user`; `/app` vs `/workspace` vs `/code/js`).
-- **Supporting services** from real dependencies — only those the app actually
-  uses (postgres / pgvector / redis / mailpit / dynamodb / localstack / chromium).
-- **Ports**, **secrets handling** (public vs private), **multi-stage** build need,
-  locales, extra CLIs (AWS, Lighthouse/chromium).
+### Step 1 — Offer (never impose)
 
-### Step 3 — Generate / reconcile the files
-Using the templates, produce or reconcile:
-`.devcontainer/devcontainer.json`, `docker/local/docker-compose.{yaml,yml}`,
-`docker/local/{service}/Dockerfile`, `docker/local/{service}/entrypoint.sh`
-(the near-verbatim AI-CLI persistence piece), `docker/custom_commands.sh`, and —
-**for public repos** — `.dockerignore` + a secret-free `.env.example`. Always:
-keep the **common skeleton** (AI-CLI persistence volumes, `dailybot-project-network`,
-`DOCKER_DEV_ENV=vscode`→`sleep infinity`, `codecheck`/`check`/`fix`/`test`).
-Two security-shaped decisions to surface explicitly: (a) **SSH key seeding is
-opt-in** — offer the read-only `~/.ssh` mount + `SEED_SSH_KEYS=1` pair only when
-the developer needs git-over-SSH, never enable it silently (see
-`templates/entrypoint.md` § Blast radius); (b) **AI-CLI wrappers are
-pass-through** — they forward flags verbatim and never inject a
-permission-bypass flag (see `templates/custom_commands.md`).
+Explain what it adds (one reproducible environment, loopback-only ports,
+agent forwarding instead of key copies, optional coding agents and editor
+inside) and what it costs (Docker, an image pull). Declining is complete.
 
-### Step 4 — Project identity
-Set identity by the precedence in SPEC §4
-(`.dailybot/profile.json` → `DAILYBOT_PROJECT_NAME` → `devcontainer.json name`).
-Do not invent a new name if one already resolves.
+### Step 2 — Install the kit (pinned; point-don't-run by default)
 
-### Step 5 — Validate (SPEC §6)
-Run the validation checklist. Report what was created/reconciled, the chosen
-base image + services + ports, identity source, and any deferred items. If a
-container build/smoke test cannot run here, say why (don't silently skip).
+```
+git clone --branch v0.1.0 https://github.com/DailybotHQ/devcontainer-kit
+./devcontainer-kit/install.sh
+```
+
+### Step 3 — Render the layout (reconcile, never clobber)
+
+Reason the options from the real stack (`templates/INTEGRATION.md`), then
+`dck init --dry-run …` to show the plan and diffs; only after acceptance run
+`dck init …` (the kit asks per changed file on a terminal, or `--yes` once the
+person accepted the shown diffs). Then `dck setup && dck up`.
+
+### Step 4 — Record and validate
+
+`python3 ../../shared/config.py enable devcontainer --version v0.1.0 --repo <repo>`,
+then `dck doctor --json` (runtime, repo config, layers, ssh, drift) and
+`dck exec -- <the repo's real test command>` — every result recorded, none
+blocking.
 
 ## Failure-mode guardrails
 
-- **Never required, never blocking.** If the developer declines, stop cleanly.
-- **No clobber.** Existing devcontainer/docker files are reconciled or
-  backed-up-and-asked, never silently overwritten.
-- **No phantom services.** Only add a service the app actually depends on.
-- **No secrets in images or in `.env.example`** — especially for public repos.
-- **Reason wins over preset.** If the preset and the real repo disagree,
-  re-derive from the repo.
+- **Never required, never blocking.** No Docker, no kit, an unknown
+  interface, a declined diff: record and continue on the host.
+- **Reconcile, don't clobber.** Only `dck init`'s consented, backed-up
+  changes touch existing files; nothing outside its managed blocks moves.
+- **Vendor-neutral.** No company network, volume, CLI or profile file is a
+  requirement; the Dailybot CLI layer appears only when the `dailybot` addon
+  asks for it.
+
+## Validation checklist (component 4 — mirrored from SPEC §8)
+
+1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist; the
+   descriptor pins `DailybotHQ/devcontainer-kit` `v0.1.0`, interface 1.
+2. `dck doctor --json` reports interface 1 and a valid repo config.
+3. Existing files were changed only through consented `dck init` diffs, each
+   with a `*.dck-bak-*` backup.
+4. Ports bind loopback; no privileged options; no key material in the image.
+5. The repository's real test command runs inside the container (or the
+   failure is recorded).

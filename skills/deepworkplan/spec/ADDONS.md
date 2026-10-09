@@ -126,30 +126,27 @@ install runs no upgrade). The fifth, the
 **AI Diff Reviewer** (§6.5), is a **required baseline component in its local
 form**; only its CI surface is optional.
 
-### 6.1 Devcontainer Support (first addon)
+### 6.1 Devcontainer Support (first addon — thin integrator of devcontainer-kit)
 
-- **Devcontainer support** is the **first** addon. Its full normative content
-  (spec, reasoning templates, onboarding hook, validation step, per-stack presets,
-  and the public-OSS variant) **MUST** live at:
-
-  ```
-  skills/deepworkplan/addons/devcontainer/
-  ```
-
-- Scope (per `ORCHESTRATOR_MANIFEST.md`): a compose-based `.devcontainer/` + `docker/`
-  setup that preserves **AI-CLI persistence**, the **`dailybot-project-network`**,
-  the **`DOCKER_DEV_ENV=vscode`** flag, and **project-identity precedence** —
-  reconciled, not clobbered, against any existing devcontainer setup.
-- The full implementation lives at
-  `skills/deepworkplan/addons/devcontainer/` — see its
-  [`SKILL.md`](../addons/devcontainer/SKILL.md)
-  (onboarding hook), [`SPEC.md`](../addons/devcontainer/SPEC.md)
-  (RFC-2119 common skeleton, reasoning checklist, project-identity precedence,
-  public-OSS variant, validation), and `templates/` (reasoning templates + the 7
-  presets).
-- Each child-DWP **MAY** include one optional task to reconcile its repo's
-  devcontainer to this addon, and **MUST** skip it if declined
-  (`ORCHESTRATOR_MANIFEST.md` key decision).
+- An optional addon at `skills/deepworkplan/addons/devcontainer/` that gives a
+  repository a reproducible dev container through **devcontainer-kit**
+  (`dck`; `https://github.com/DailybotHQ/devcontainer-kit`, MIT, its own
+  release cycle) pinned at `v0.1.0` (interface `1`). The kit owns the Dev
+  Containers layout (`dck init`, which reconciles and never clobbers), the
+  pinned base images, the entrypoint library, the launcher, SSH agent
+  forwarding and Herdr registration; the addon owns detection, the offer, the
+  stack → options reasoning, the registry record and validation.
+- **Vendor-neutral (7.0.0):** the 1.x in-pack templates and their
+  company-specific requirements are retired; no network, volume, CLI or
+  profile file of any one organization is required. The Dailybot CLI layer
+  appears only when the `dailybot` addon asks for it.
+- Security defaults are the kit's and are never weakened by the addon:
+  loopback-only ports, no privileged options or Docker socket, agent
+  forwarding instead of key copies, `0600` gitignored `.env` files.
+- Full contract: [`SKILL.md`](../addons/devcontainer/SKILL.md),
+  [`SPEC.md`](../addons/devcontainer/SPEC.md), `templates/INTEGRATION.md`.
+- It is **never required**; each child DWP **MAY** include one optional task
+  to adopt it and **MUST** skip it if declined.
 
 ### 6.2 Dailybot Integration (second addon)
 

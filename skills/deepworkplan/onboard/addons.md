@@ -81,22 +81,15 @@ records its Phase 7a status). Offer the seven optional ones independently:
 
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
-[`SPEC.md`](../addons/devcontainer/SPEC.md)). If the developer accepts: read that
-addon's `SKILL.md` and run its flow — match a preset in
-`../addons/devcontainer/templates/presets.md` to the stack you detected in
-Phase 1, then **reason out** a devcontainer adapted to that stack (base image,
-user, `workspaceFolder`, supporting services from the app's real dependencies,
-ports, public-vs-private secrets handling) while preserving the common skeleton
-(AI-CLI persistence volumes for claude/codex/cursor/gh/dailybot + read-only
-ssh/gitconfig mounts, `dailybot-project-network`, `DOCKER_DEV_ENV=vscode` →
-`sleep infinity`, the `codecheck`/`check`/`fix`/`test` validation aliases, and
-project-identity precedence per the addon SPEC §4). An **existing devcontainer
-MUST be reconciled, not clobbered** — preserve working ports/network/identity and
-only add missing skeleton pieces; back up and ask before any destructive change.
-For a **public** repo, the addon also adds a secret-excluding `.dockerignore` and
-keeps `.env.example` secret-free. After applying, run the addon's validation step
-(SPEC §6). If declined, skip it and continue — the repo stays
-baseline-conformant.
+[`SPEC.md`](../addons/devcontainer/SPEC.md)), a thin integrator of
+devcontainer-kit (`dck`, pinned `v0.1.0`). If the developer accepts: read
+that addon's `SKILL.md` and run its flow — detect the kit (`dck doctor
+--json`), reason the flavour, service, ports and layers from the stack you
+detected in Phase 1, show `dck init --dry-run`, and let `dck init` reconcile
+any **existing devcontainer — never clobbered**: an existing file changes
+only after its diff was accepted, and the kit backs it up first. Record
+`addons.devcontainer`, then run the addon's validation step (SPEC §8). If
+declined, skip it and continue — the repo stays baseline-conformant.
 
 The second addon is **Dailybot integration**
 ([`../addons/dailybot/SKILL.md`](../addons/dailybot/SKILL.md) +
