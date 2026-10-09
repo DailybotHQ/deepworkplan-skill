@@ -120,7 +120,8 @@
           "network_access",
           "host_adapter_metering",
           "agent_delegation",
-          "context_export"
+          "context_export",
+          "model_routing"
         ]
       }
     },

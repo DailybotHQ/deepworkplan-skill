@@ -209,8 +209,9 @@ def check(plan, is_git=True, state_override=None, allow_finalizing=False):
             # error names the contract pointer instead of a generic
             # "unknown URL" — the caller is sent to the v6 flow, never to
             # an upgrade that would silently change generations.
-            if url == 'https://deepworkplan.com/schema/plan-manifest/v6.json':
-                report.bad(f'this plan is v6 (manifest points at contract.json {doc.get("contract", {}).get("id", "?")!r}) — '
+            if url in ('https://deepworkplan.com/schema/plan-manifest/v6.json',
+                       'https://deepworkplan.com/schema/plan-manifest/v7.json'):
+                report.bad(f'this plan is {url.rsplit("/", 1)[-1][:-5]} (manifest points at contract.json {doc.get("contract", {}).get("id", "?")!r}) — '
                            'the v5 runner does not execute v6 plans; open it with the v6 flow (execute Step 2.0). '
                            'v6 plans are never migrated back; a v5 plan is migrated forward only through shared/migrate_v6.py')
             elif (plan / 'contract.json').exists():

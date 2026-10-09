@@ -160,7 +160,8 @@ developer which they mean before routing.
   or mutate files — regardless of how they are invoked.
 - **Plan generation is detected, never assumed.** A plan folder carrying a
   `manifest.json` contract pointer, a `contract.json`, or a `contracts/`
-  revision chain is **v6** — create and execute route it through their
+  revision chain is **v6** (contract generation v6 or v7,
+  `spec/V7_CONTRACT.md`) — create and execute route it through their
   `v6.md` loops (contract, journal, scheduler, verified closure). Anything
   else keeps the recorded v5 lifecycle, is never migrated silently, and a
   v5-only runner that meets a v6 plan reports it as unsupported rather

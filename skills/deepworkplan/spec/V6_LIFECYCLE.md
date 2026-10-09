@@ -36,10 +36,26 @@ original locations; no lifecycle flow renames them.
   plan as unsupported and stop (D2-10b) — approximating the contract with
   v5 bookkeeping is the failure this rule exists to prevent.
 
+**Contract generations of the record layer (7.0.0 line).** A plan detected
+as v6 above carries one of two contract generations, named by the
+contract's `schema` URL and mirrored by its manifest and every journal
+event:
+
+| Generation | Contract | Journal events | Manifest | Adds |
+|---|---|---|---|---|
+| v6 | `plan-contract/v6` | `journal-event/v6` | `plan-manifest/v6` | — |
+| v7 | `plan-contract/v7` | `journal-event/v7` | `plan-manifest/v7` | `tasks[].parallel_safe`, the `delegation` event ([`V7_CONTRACT.md`](V7_CONTRACT.md)) |
+
+Both generations run through the same loops and helpers and project into
+the same `plan-snapshot/v6` shape. A plan never changes generation: a v6
+plan keeps v6 forever, and a journal mixing generations is refused.
+
 ## 2. Activation (normative)
 
-With the current 6.x pack, new plans use v6 by default. A developer's
-explicit v6 request also selects this flow when an older pack provides it.
+With the current 7.x pack, new plans use the v7 contract generation by
+default (§1 table); an explicit `v6` request materializes a v6 contract. A
+developer's explicit v6 request also selects this flow when an older pack
+provides it.
 A 5.x pack without that request follows its recorded v5 flow. Existing
 plans are selected by their artifacts (§1), regardless of installed pack
 version; no existing plan changes generation during selection.

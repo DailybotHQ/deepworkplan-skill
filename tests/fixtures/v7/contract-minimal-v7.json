@@ -1,0 +1,175 @@
+{
+  "acceptance": {
+    "criteria": [
+      {
+        "accepted_evidence": [
+          "observed"
+        ],
+        "control": {
+          "kind": "regression",
+          "rationale": "draft-4 D2-3: the contract is REQUIRED for v6 new plans; a validator that accepts anything would make the requirement vacuous"
+        },
+        "id": "AC-valid-contract-shape",
+        "observable_check": "contract_v6.py validate-contract exits 0 on the fixture",
+        "statement": "A well-formed v6 contract validates."
+      },
+      {
+        "accepted_evidence": [
+          "observed"
+        ],
+        "control": {
+          "kind": "discrimination",
+          "rationale": "an open catalog would let unrecorded decisions enter the audit surface"
+        },
+        "id": "AC-journal-catalog-closed",
+        "observable_check": "an event whose type is outside the catalog is refused with the catalog named",
+        "statement": "The journal event catalog is closed with per-type payloads."
+      },
+      {
+        "accepted_evidence": [
+          "asserted"
+        ],
+        "id": "AC-prose-only-criterion",
+        "observable_check": "the criterion validates without a control object",
+        "statement": "Minor prose criteria may declare no control."
+      }
+    ]
+  },
+  "authorization": {
+    "authority": "session user (developer-reviewed plan markdown)",
+    "boundaries": "This contract governs the v6 schema deliverable only; no publication, no pushes, no merges.",
+    "consent_checkpoints": [
+      "GO is required for the verified-upgrade milestone"
+    ],
+    "mechanism": "plan_authorship",
+    "timestamp": "2026-09-26T20:00:00Z"
+  },
+  "contract_id": "f9195efa11fabe898eb056db2ec80dc1199480c4b5026deb80b6fb846a7726b4",
+  "created_at": "2026-10-09T00:00:00Z",
+  "dependencies": [
+    {
+      "detail": ">= 3.9, stdlib only at runtime",
+      "kind": "pinned_input",
+      "name": "python3"
+    },
+    {
+      "detail": "contributor-side independent validation only (pip); never a runtime dependency",
+      "kind": "external_system",
+      "name": "jsonschema"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "INV-historical-bytes",
+      "statement": "Published v1/v2/v5 schema bytes never change when v6 files are added."
+    }
+  ],
+  "outcome": {
+    "out_of_scope": [
+      "The v6 state snapshot schema (owned by the ledger task)",
+      "Migration tooling (owned by the migration task)"
+    ],
+    "statement": "The v6 outcome and authority contract is representable and enforceable.",
+    "success_definition": "Every fixture validates under both the runtime validator and the published schema; every mutant fails at least one."
+  },
+  "permissions": {
+    "granted": [
+      "gate_command_exec",
+      "fs_write_repo_scope",
+      "git_operations",
+      "agent_delegation"
+    ],
+    "not_granted": [
+      "network_access",
+      "host_adapter_metering",
+      "context_export",
+      "fs_write_plan_scope"
+    ]
+  },
+  "plan": "PLAN_v7_fixture_minimal",
+  "resource_envelope": {
+    "limits": [
+      {
+        "enforcement": "enforced",
+        "id": "spend_usd",
+        "limit": 4000,
+        "metering_source": "claude-adapter: usage.total_cost_usd",
+        "unit": "USD"
+      },
+      {
+        "enforcement": "advisory",
+        "id": "wall_clock_hours",
+        "limit": 16,
+        "unit": "hours"
+      },
+      {
+        "enforcement": "enforced",
+        "id": "gate_retries",
+        "limit": 3,
+        "metering_source": "core-runner: journal gate_run count",
+        "unit": "retries"
+      }
+    ]
+  },
+  "revision": 1,
+  "scheduling": {
+    "handoff": {
+      "cross_host_resume": "custodian seal broken",
+      "fresh_context": "context pressure at 60%"
+    },
+    "max_adaptations_per_task": 2,
+    "max_retries_per_gate": 1,
+    "starvation_threshold_events": 24
+  },
+  "schema": "https://deepworkplan.com/schema/plan-contract/v7.json",
+  "scope": {
+    "allowed_command_classes": [
+      "declared-gate-python",
+      "declared-gate-bats"
+    ],
+    "allowed_paths": [
+      "skills/deepworkplan/spec/schema/",
+      "skills/deepworkplan/shared/"
+    ],
+    "forbidden_operations": [
+      "publish",
+      "force-push",
+      "delete-unsuccessful-trials"
+    ]
+  },
+  "spec_version": "6.0.0",
+  "tasks": [
+    {
+      "gate_intent": [
+        {
+          "check": "jsonschema Draft 2020-12 accepts the fixture document",
+          "criterion": "AC-valid-contract-shape"
+        }
+      ],
+      "id": "T-publish-schemas",
+      "parallel_safe": true,
+      "prerequisites": [],
+      "title": "Publish the v6 contract and journal-event schemas",
+      "touched_surface": [
+        "src/product.py"
+      ]
+    },
+    {
+      "gate_intent": [
+        {
+          "check": "contract_v6 self-test mutant: unknown event type",
+          "criterion": "AC-journal-catalog-closed"
+        }
+      ],
+      "id": "T-ship-validator",
+      "prerequisites": [
+        "T-publish-schemas"
+      ],
+      "title": "Ship the runtime validator and prove the catalog closed",
+      "touched_surface": [
+        "src/product.py"
+      ]
+    }
+  ],
+  "title": "v6 contract schema fixture"
+}

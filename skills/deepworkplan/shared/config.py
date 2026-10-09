@@ -265,9 +265,10 @@ ABILITIES = ('stop_agent', 'meter_spend', 'meter_tokens', 'meter_wall_clock',
              'cancel_children', 'model_routing', 'subagents', 'telemetry')
 GRANTS = ('gate_command_exec', 'fs_write_plan_scope', 'fs_write_repo_scope',
           'git_operations', 'network_access', 'host_adapter_metering',
-          'agent_delegation', 'context_export')
+          'agent_delegation', 'context_export', 'model_routing')
 TRANSPORTS = ('headless', 'interactive')
 _KEY_RE = re.compile(r'^[a-z][a-z0-9-]{0,63}$')
+ID_SAFE_RE = _KEY_RE  # an addon key that is safe to join under addons/
 _REPO_RE = re.compile(r'^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$')
 _COMMAND_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._/ -]*$')
 _PATH_RE = re.compile(r'^(~/)?[A-Za-z0-9._][A-Za-z0-9._/-]*$')

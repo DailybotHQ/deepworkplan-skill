@@ -56,6 +56,9 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/benchmark-record/v1.json": json.load(open(os.path.join(d, "benchmark-record.schema.json"))),
         "https://deepworkplan.com/schema/learnings-record/v1.json": json.load(open(os.path.join(d, "learnings-record.schema.json"))),
         "https://deepworkplan.com/schema/dwp-config/v1.json": json.load(open(os.path.join(d, "dwp-config-v1.schema.json"))),
+        "https://deepworkplan.com/schema/plan-contract/v7.json": json.load(open(os.path.join(d, "plan-contract-v7.schema.json"))),
+        "https://deepworkplan.com/schema/journal-event/v7.json": json.load(open(os.path.join(d, "journal-event-v7.schema.json"))),
+        "https://deepworkplan.com/schema/plan-manifest/v7.json": json.load(open(os.path.join(d, "plan-manifest-v7.schema.json"))),
         "https://deepworkplan.com/schema/addon-descriptor/v1.json": json.load(open(os.path.join(d, "addon-descriptor-v1.schema.json"))),
     }
 
@@ -433,6 +436,86 @@ def learnings_cases(schemas, problems, notes, pack):
                          "closed object / anchor grammar / required finding+proposal)")
 
 
+def v7_cases(schemas, problems, notes, pack):
+    """v7 generation (spec/V7_CONTRACT.md): the ledger-generated fixtures
+    under tests/fixtures/v7/ are valid under BOTH halves - jsonschema over
+    plan-contract/v7, journal-event/v7 and plan-manifest/v7, and the shipped
+    contract_v6 validator - and the halves agree on every mutant: the v7
+    additions (parallel_safe, delegation) are refused under the v6 URLs, and
+    a delegation that claims evidence or skips its digest is refused."""
+    cs = schemas["https://deepworkplan.com/schema/plan-contract/v7.json"]
+    js = schemas["https://deepworkplan.com/schema/journal-event/v7.json"]
+    ms = schemas["https://deepworkplan.com/schema/plan-manifest/v7.json"]
+    cs6 = schemas["https://deepworkplan.com/schema/plan-contract/v6.json"]
+    js6 = schemas["https://deepworkplan.com/schema/journal-event/v6.json"]
+    fdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "tests", "fixtures", "v7")
+    cv6 = load_pack_module(pack, "contract_v6")
+    before = len(problems)
+    try:
+        contract = json.load(open(os.path.join(fdir, "contract-minimal-v7.json")))
+        manifest = json.load(open(os.path.join(fdir, "manifest-v7.json")))
+        events = [json.loads(l) for l in open(os.path.join(fdir, "journal-delegation-v7.ndjson")) if l.strip()]
+    except (OSError, ValueError) as exc:
+        problems.append(f"v7: fixtures unreadable ({exc})")
+        return
+    if errors(cs, contract) or cv6.contract_errors(contract):
+        problems.append(f"v7 contract fixture rejected (jsonschema={errors(cs, contract)[:1]} runtime={cv6.contract_errors(contract)[:1]})")
+    if errors(ms, manifest):
+        problems.append(f"v7 manifest fixture rejected ({errors(ms, manifest)[:1]})")
+    for ev in events:
+        if errors(js, ev) or cv6.journal_event_errors(ev, contract):
+            problems.append(f"v7 journal fixture seq {ev.get('seq')} rejected")
+    if cv6.journal_errors(events, contract):
+        problems.append("v7 journal fixture fails the sequence rules")
+    if not any(e.get("type") == "delegation" for e in events):
+        problems.append("v7 journal fixture carries no delegation event")
+
+    def contract_both_reject(label, mutate, schema=cs):
+        doc = copy.deepcopy(contract)
+        doc.pop("contract_id", None)
+        mutate(doc)
+        if not errors(schema, doc) or not cv6.contract_errors(doc):
+            problems.append(f"v7 contract mutant {label}: a half accepted it")
+
+    contract_both_reject("parallel_safe not boolean",
+                         lambda d: d["tasks"][0].update(parallel_safe="yes"))
+    contract_both_reject("parallel_safe under the v6 URL",
+                         lambda d: d.update(schema="https://deepworkplan.com/schema/plan-contract/v6.json"),
+                         schema=cs6)
+
+    launch = next(e for e in events if e.get("type") == "delegation" and e.get("state") == "launched")
+    done = next(e for e in events if e.get("type") == "delegation" and e.get("state") == "completed")
+
+    def event_both_reject(label, base, mutate, schema=js, runtime_contract=contract):
+        ev = copy.deepcopy(base)
+        mutate(ev)
+        if not errors(schema, ev) or not cv6.journal_event_errors(ev, runtime_contract):
+            problems.append(f"v7 event mutant {label}: a half accepted it "
+                            f"(jsonschema={bool(errors(schema, ev))} runtime={bool(cv6.journal_event_errors(ev, runtime_contract))})")
+
+    v6_contract = dict(contract, schema="https://deepworkplan.com/schema/plan-contract/v6.json")
+    event_both_reject("delegation under the v6 journal URL", launch,
+                      lambda e: e.update(schema="https://deepworkplan.com/schema/journal-event/v6.json"),
+                      schema=js6, runtime_contract=None)
+    event_both_reject("launch without prompt_digest", launch, lambda e: e.pop("prompt_digest"))
+    event_both_reject("delegation claims trust", launch, lambda e: e.update(trust="observed"))
+    event_both_reject("unknown transport", launch, lambda e: e.update(transport="email"))
+    event_both_reject("unknown state", launch, lambda e: e.update(state="paused"))
+    event_both_reject("result on a launch", launch, lambda e: e.update(result_path="a.txt"))
+    event_both_reject("absolute result path", done, lambda e: e.update(result_path="/etc/passwd"))
+    event_both_reject("traversing result path", done, lambda e: e.update(result_path="../../x"))
+    event_both_reject("bad prompt digest", launch, lambda e: e.update(prompt_digest="md5:abc"))
+    event_both_reject("unknown field", launch, lambda e: e.update(secret="x"))
+    # runtime-only: the generation binding is a cross-record rule
+    if not cv6.journal_event_errors(launch, v6_contract):
+        problems.append("v7 event under a v6 contract: runtime accepted a mixed generation")
+    if len(problems) == before:
+        notes.append("v7: contract/manifest/journal fixtures (ledger-generated) valid under both "
+                     "halves; 2 contract + 10 delegation mutants rejected by both; mixed "
+                     "generation refused at runtime")
+
+
 def config_cases(schemas, problems, notes, pack):
     """Configuration file (spec/CONFIG.md): the committed fixtures validate
     under BOTH halves - jsonschema over the published dwp-config v1 schema,
@@ -689,6 +772,7 @@ def main():
     v6_cases(schemas, problems, notes, a.pack, a.fixtures)
     benchmark_cases(schemas, problems, notes, a.pack)
     learnings_cases(schemas, problems, notes, a.pack)
+    v7_cases(schemas, problems, notes, a.pack)
     config_cases(schemas, problems, notes, a.pack)
     descriptor_cases(schemas, problems, notes, a.pack)
     for n in notes:

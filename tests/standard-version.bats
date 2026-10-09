@@ -101,7 +101,7 @@ PY
     rm -rf "$WORK"
 }
 
-@test "schema URLs are the v1/v2/v5 line plus the deliberate v6 candidate line" {
+@test "schema URLs are the v1/v2/v5 line plus the deliberate v6 line and its v7 contract generation" {
     # No v3/v4 schema URL may ever appear. plan-state stays on the published
     # v1/v2/v5 line forever — the v6 projection schema is plan-snapshot/v6,
     # never a plan-state/v6. Every other family adds exactly the deliberate
@@ -109,7 +109,11 @@ PY
     # pointer, snapshot = the projection, contract, journal-event,
     # context-manifest), each pinned below and mapped to a shipped file by
     # tests/schema-publication.bats.
-    run bash -c "grep -rn 'schema/plan-state/v[3-46-9]\|schema/plan-\(manifest\|snapshot\|contract\)/v[3-47-9]\|schema/\(journal-event\|context-manifest\)/v[3-47-9]' '$SK'"
+    # The 7.0.0 line adds exactly the v7 contract generation
+    # (spec/V7_CONTRACT.md): plan-contract/v7, journal-event/v7 and
+    # plan-manifest/v7. There is no snapshot or context-manifest v7 — v7
+    # plans project into plan-snapshot/v6.
+    run bash -c "grep -rn 'schema/plan-state/v[3-46-9]\|schema/plan-\(manifest\|contract\)/v[3-48-9]\|schema/plan-snapshot/v[3-47-9]\|schema/journal-event/v[3-48-9]\|schema/context-manifest/v[3-47-9]' '$SK'"
     [ "$status" -ne 0 ]
     grep -q 'plan-manifest/v5.json' "$SK/create/SKILL.md"
     grep -q 'plan-state/v5.json' "$SK/create/SKILL.md"
@@ -121,7 +125,10 @@ PY
         'plan-snapshot/v6.json plan-snapshot-v6.schema.json' \
         'plan-contract/v6.json plan-contract-v6.schema.json' \
         'journal-event/v6.json journal-event-v6.schema.json' \
-        'context-manifest/v6.json context-manifest-v6.schema.json'; do
+        'context-manifest/v6.json context-manifest-v6.schema.json' \
+        'plan-manifest/v7.json plan-manifest-v7.schema.json' \
+        'plan-contract/v7.json plan-contract-v7.schema.json' \
+        'journal-event/v7.json journal-event-v7.schema.json'; do
         set -- $pair
         [ -s "$SK/spec/schema/$2" ]
         grep -q "https://deepworkplan.com/schema/$1" "$SK/spec/schema/$2"

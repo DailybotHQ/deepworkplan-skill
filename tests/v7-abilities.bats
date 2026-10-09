@@ -81,7 +81,7 @@ _source() { printf '%s' "$output" | python3 -c 'import json,sys; print(",".join(
   [ "$status" -eq 0 ]
   [ "$(_ability subagents)" = "False" ]
   [ "$(printf '%s\n' "$stderr" | grep -c '^WARNING')" -eq 1 ]
-  [[ "$stderr" == *"addon agentkit: enabled but contributes nothing"*"not installed"* ]]
+  [[ "$stderr" == *"addon agentkit: enabled but contributes nothing"*"not installed"* ]] || return 1
 }
 
 @test "an unknown interface major is treated as not available with one warning" {
@@ -90,7 +90,7 @@ _source() { printf '%s' "$output" | python3 -c 'import json,sys; print(",".join(
   [ "$status" -eq 0 ]
   [ "$(_ability subagents)" = "False" ]
   [ "$(printf '%s\n' "$stderr" | grep -c '^WARNING')" -eq 1 ]
-  [[ "$stderr" == *"unknown interface major 2 (pinned 1)"* ]]
+  [[ "$stderr" == *"unknown interface major 2 (pinned 1)"* ]] || return 1
 }
 
 @test "disabling the addon removes exactly what it contributed" {
@@ -139,7 +139,7 @@ assert d["parallel"]["missing"] == ["contract grant agent_delegation"], d
 @test "an unknown host ability is still refused (no capability invented)" {
   run python3 "$RES" --plan "$PLAN" abilities --caps '{"teleport": true}'
   [ "$status" -eq 1 ]
-  [[ "$output" == *"unknown host capability 'teleport'"* ]]
+  [[ "$output" == *"unknown host capability 'teleport'"* ]] || return 1
 }
 
 @test "spec: V7_ABILITIES.md states the union, the four conditions and never-persisted; indexed" {

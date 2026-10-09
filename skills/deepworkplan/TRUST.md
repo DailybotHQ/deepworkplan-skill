@@ -33,7 +33,12 @@ each step atomic and resumable, never rewriting a different contract or
 another generation's manifest; it also captures
 each task's starting fingerprint at `task_start` and executes both legs of
 a declared control pair, materializing the old leg as a detached worktree
-at that recorded revision), `shared/views.py`
+at that recorded revision; for v7 plans its `delegate` command records
+delegation launches and results behind a gate — v7 contract,
+`agent_delegation` grant, `parallel_safe` task or read-only delegate, an
+enabled and detected transport addon — and **never runs a delegate
+itself**: the transport addon does, and a delegate's result stays
+`asserted` until this ledger's own gate observes it), `shared/views.py`
 rendering the deterministic generated views under the human-edit rule,
 `shared/scheduler.py` — the read-only authorization core that turns journal
 records into dispatch/refusal decisions (it never writes and never executes

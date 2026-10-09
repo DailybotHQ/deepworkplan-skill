@@ -40,9 +40,10 @@ teardown() { rm -rf "$TMPDIR_TEST"; }
     # snapshot, contract, journal-event and context-manifest (DWP v6
     # campaign), plus benchmark-record v1 and learnings-record v1 (opt-in
     # field metrics + learnings), plus dwp-config v1 (the configuration file,
-    # spec/CONFIG.md) and addon-descriptor v1 (spec/ADDONS.md §7) = fifteen
-    # URLs, all shipped files.
-    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 15 ]
+    # spec/CONFIG.md), addon-descriptor v1 (spec/ADDONS.md §7) and the v7
+    # contract generation (plan-contract, journal-event, plan-manifest v7;
+    # spec/V7_CONTRACT.md) = eighteen URLs, all shipped files.
+    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 18 ]
     while IFS= read -r url; do
         label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"

@@ -29,7 +29,7 @@ _field() { # _field <key> <field>  from the last show output
 @test "self-test passes with its pinned probe count" {
   run python3 "$CFG" self-test
   [ "$status" -eq 0 ]
-  [[ "$output" == "OK: config self-test ("*" probes)" ]]
+  [[ "$output" == "OK: config self-test ("*" probes)" ]] || return 1
 }
 
 @test "the key set is exactly the in-pack addon directory names" {
@@ -72,7 +72,7 @@ _field() { # _field <key> <field>  from the last show output
   [ "$status" -eq 0 ]
   [ -z "$output" ]
   [ "$(printf '%s\n' "$stderr" | grep -c WARNING)" -eq 1 ]
-  [[ "$stderr" == *".dwp/config.json"*"'vim'"*'"enabled" is not a boolean'* ]]
+  [[ "$stderr" == *".dwp/config.json"*"'vim'"*'"enabled" is not a boolean'* ]] || return 1
 }
 
 @test "fail-closed: invalid JSON warns once and never aborts; the user file still applies" {
@@ -82,7 +82,7 @@ _field() { # _field <key> <field>  from the last show output
   [ "$status" -eq 0 ]
   [ "$output" = "herdr" ]
   [ "$(printf '%s\n' "$stderr" | grep -c WARNING)" -eq 1 ]
-  [[ "$stderr" == *"unreadable"* ]]
+  [[ "$stderr" == *"unreadable"* ]] || return 1
 }
 
 @test "unknown addon keys are ignored with exactly one warning each" {
@@ -91,7 +91,7 @@ _field() { # _field <key> <field>  from the last show output
   [ "$status" -eq 0 ]
   [ "$output" = "vim" ]
   [ "$(printf '%s\n' "$stderr" | grep -c WARNING)" -eq 1 ]
-  [[ "$stderr" == *"'teleport' is not an addon this pack ships; ignored"* ]]
+  [[ "$stderr" == *"'teleport' is not an addon this pack ships; ignored"* ]] || return 1
 }
 
 @test "a floating or unprefixed version is refused by reader and writer" {
@@ -137,7 +137,7 @@ PY
   run --separate-stderr _show
   [ "$status" -eq 0 ]
   printf '%s' "$output" | python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["benchmark"]=={"enabled":False,"learnings":False}, d; assert d["addons"]["vim"]["enabled"] is True, d'
-  [[ "$stderr" == *'"benchmark.enabled" is not a boolean; benchmark disabled'* ]]
+  [[ "$stderr" == *'"benchmark.enabled" is not a boolean; benchmark disabled'* ]] || return 1
 }
 
 @test "onboard writes on consent only; status reads read-only" {

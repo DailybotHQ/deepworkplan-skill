@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/plan-manifest/v7.json",
+  "title": "DWP v7 plan manifest (identity + contract pointer)",
+  "description": "The v7 generation of the plan identity manifest (spec/V7_CONTRACT.md): the same shape and the same guarded materialization semantics as plan-manifest/v6, under its own URL so a plan's generation is discoverable from its first file. Written once by shared/ledger.py materialize for a plan-contract/v7 contract; never rewritten.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "plan",
+    "contract"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/plan-manifest/v7.json"
+    },
+    "plan": {
+      "type": "string",
+      "pattern": "^PLAN_[A-Za-z0-9_-]+$",
+      "description": "The plan folder name; identical to the contract's plan field."
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "The content-addressed identity of the contract this plan executes under (compute over the canonical contract bytes); the ledger's approval gate scans journal approvals for exactly this value."
+        },
+        "path": {
+          "const": "contract.json",
+          "description": "The live contract location at materialization time; after amendments the live contract is the highest revision under contracts/ and the pointer stays as materialized provenance."
+        }
+      }
+    }
+  }
+}

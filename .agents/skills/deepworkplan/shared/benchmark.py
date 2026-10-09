@@ -67,6 +67,7 @@ except ImportError:  # pragma: no cover - executed from another cwd
 SCHEMA_URL = 'https://deepworkplan.com/schema/benchmark-record/v1.json'
 LEARNINGS_URL = 'https://deepworkplan.com/schema/learnings-record/v1.json'
 MANIFEST_V6_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
+MANIFEST_V7_URL = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
 
 RECORD_FIELDS = ('schema', 'plan', 'title', 'generation', 'contract_id',
                  'status', 'versions', 'timing', 'shape', 'friction',
@@ -1094,6 +1095,13 @@ def cmd_report(plan_dir: str) -> int:
         print('benchmark: disabled for this repository; nothing emitted')
         return 0
     manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
+    if isinstance(manifest, dict) and manifest.get('schema') == MANIFEST_V7_URL:
+        # benchmark-record v1 pins generation "v6" (published, frozen bytes):
+        # a v7 plan is not mislabelled — it is not measured yet.
+        print('benchmark: plan is v7-generation; benchmark-record v1 measures '
+              'v6 plans only - not measured (a v7 record shape is a later '
+              'release)')
+        return 0
     if not isinstance(manifest, dict) or manifest.get('schema') != MANIFEST_V6_URL:
         print('benchmark: plan is not v6-generation (no v6 manifest contract '
               'pointer); not measured — the v5 line is frozen')
@@ -1184,7 +1192,9 @@ def _iter_plan_records(root: str) -> Tuple[List[Dict[str, Any]],
                           'treated as not_collected' % name)
             continue
         manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
-        if isinstance(manifest, dict) and manifest.get('schema') != MANIFEST_V6_URL:
+        if isinstance(manifest, dict) and manifest.get('schema') == MANIFEST_V7_URL:
+            skipped.append(name)  # v7: not measured by record v1, never "v5"
+        elif isinstance(manifest, dict) and manifest.get('schema') != MANIFEST_V6_URL:
             v5.append(name)
     return records, learnings, v5, skipped
 

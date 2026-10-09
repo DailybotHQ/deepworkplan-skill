@@ -336,7 +336,7 @@ def _adapt_event(contract, events, proposal):
     is what gets recorded (no drift between the two)."""
     event = {key: proposal[key] for key in proposal if key != 'type'}
     event.update({
-        'schema': contract_v6.JOURNAL_SCHEMA_URL,
+        'schema': contract_v6.journal_url_for(contract),
         'type': 'adaptation',
         'seq': _last_seq(events) + 1,
         'ts': _last_ts(events) or '1970-01-01T00:00:00Z',

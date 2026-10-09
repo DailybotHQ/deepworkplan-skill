@@ -259,11 +259,11 @@ all following text is literal context. Never inspect ordinary context words.
 - `full-context` → Step 1, then Step 3.
 
 **0.3 Select the plan generation:** if this pack's line is 6+ or the developer
-explicitly asked for a v6 plan (e.g. `v6` among the tokens, "create a v6
-plan"), read [`v6.md`](v6.md) and follow that flow exclusively. Stop here:
-Steps 1 onward in this file describe the retained v5 creation lifecycle and
-MUST NOT be applied to a v6 plan. With this 6.x pack, v6 is the default for new
-plans. Existing plans always keep their recorded generation.
+explicitly asked for a v6 plan, read [`v6.md`](v6.md) and follow that flow
+exclusively (it also covers v7). Stop here: Steps 1 onward describe the
+retained v5 lifecycle and MUST NOT be applied to a v6 or v7 plan. With this
+7.x pack, v7 is the default for new plans; an explicit `v6` request
+materializes a v6 contract. Existing plans always keep their recorded generation.
 
 ### Step 1 — Quick Introduction
 

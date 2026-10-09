@@ -77,6 +77,14 @@ STATE_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-snapshot/v6.json'
 # A12 contract pointer that makes a plan's v6-ness discoverable even when
 # materialization crashed between the manifest and the contract.
 MANIFEST_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
+# The v7 generation (spec/V7_CONTRACT.md) publishes its own manifest URL of
+# the same shape; the generation follows the contract's schema URL. v7
+# plans project into the unchanged v6 snapshot shape (positions are keyed
+# by event type, so the `delegation` type needs no new snapshot schema).
+MANIFEST_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
+MANIFEST_URL_BY_GENERATION = {'v6': MANIFEST_SCHEMA_URL,
+                              'v7': MANIFEST_SCHEMA_URL_V7}
+MANIFEST_SCHEMA_URLS = tuple(MANIFEST_URL_BY_GENERATION.values())
 
 # Journal types that are render provenance, not plan state: they never
 # advance the projected snapshot (a view's own bookkeeping must not change
@@ -93,6 +101,10 @@ class LedgerError(Exception):
 
 class CollisionError(LedgerError):
     """The journal grew behind this writer's back (D2-9c). Exit 2."""
+
+
+class DelegationRefused(LedgerError):
+    """A delegation the record layer does not authorize (recorded). Exit 5."""
 
 
 class ApprovalMissing(LedgerError):
@@ -196,15 +208,17 @@ def materialize_plan(plan_dir, contract_file, authority='developer',
             % (contract.get('plan'), folder))
     cid = contract_v6.compute_contract_id(contract)
     digest = plan_markdown_digest(plan_dir)
+    manifest_url = MANIFEST_URL_BY_GENERATION[
+        contract_v6.contract_generation(contract)]
 
     # -- 1. manifest: the contract pointer (written first, A12) ----------
     manifest_path = os.path.join(plan_dir, 'manifest.json')
-    manifest = {'schema': MANIFEST_SCHEMA_URL, 'plan': contract['plan'],
+    manifest = {'schema': manifest_url, 'plan': contract['plan'],
                 'contract': {'id': cid, 'path': 'contract.json'}}
     if os.path.exists(manifest_path):
         with open(manifest_path, encoding='utf-8') as fh:
             existing = json.load(fh)
-        if existing.get('schema') != MANIFEST_SCHEMA_URL:
+        if existing.get('schema') != manifest_url:
             raise LedgerError(
                 'manifest.json is %r — a different generation. v1/v2/v5 '
                 'manifests belong to their recorded lifecycle and are '
@@ -274,11 +288,11 @@ class PlanRecords:
         self.evidence_path = os.path.join(plan_dir, EVIDENCE_NAME)
         self.gates_dir = os.path.join(plan_dir, GATES_DIRNAME)
         self.contract = self._load_contract()
-        if self.contract.get('schema') != contract_v6.CONTRACT_SCHEMA_URL:
+        if contract_v6.contract_generation(self.contract) is None:
             raise LedgerError(
-                'the v6 ledger serves v6 contracts only; older plans keep '
-                'their recorded tooling (RFC 9.1): found %r' %
-                self.contract.get('schema'))
+                'the v6 ledger serves v6 contracts only (and their v7 '
+                'superset); older plans keep their recorded tooling '
+                '(RFC 9.1): found %r' % self.contract.get('schema'))
         errors = contract_v6.contract_errors(self.contract)
         if errors:
             raise LedgerError('contract invalid: %s' % errors[0])
@@ -656,7 +670,7 @@ class Writer:
                     extra=None, trust=None, evidence_path=None):
         event = dict(payload)
         event.update({
-            'schema': contract_v6.JOURNAL_SCHEMA_URL,
+            'schema': contract_v6.journal_url_for(self.r.contract),
             'type': etype,
             'seq': self.last_seq() + 1,
             'ts': ts,
@@ -733,6 +747,12 @@ class Writer:
                 'gate_run records are produced only by the gate executor '
                 '(ledger.py gate) — a mediated write can never be '
                 'observed evidence (A1)')
+        if etype == 'delegation':
+            raise LedgerError(
+                'delegation records are produced only by `ledger.py '
+                'delegate` (its gate: v7 contract, agent_delegation grant, '
+                'parallel_safe marker, enabled transport addon) — a raw '
+                'append cannot bypass it (V7_CONTRACT.md section 3)')
         if trust == 'observed':
             if etype != 'resource_sample':
                 raise LedgerError(
@@ -810,7 +830,7 @@ class Writer:
         for rel in task.get('touched_surface', []):
             path = rel if os.path.isabs(rel) else \
                 os.path.join(gate_cwd, rel)
-            files[rel] = _hash_file(path)
+            files[rel] = _hash_surface(path)
         payload = {
             'command': command,
             'cwd': os.path.basename(os.path.abspath(gate_cwd)),
@@ -1355,6 +1375,143 @@ class Writer:
                 (task_id, len(missing)))
         return states
 
+    # -- delegation (v7, spec/V7_CONTRACT.md section 3) ----------------------
+
+    def delegations(self, task_id=None):
+        """Latest state per delegation_id (read-only fold of the journal)."""
+        latest = {}
+        for event in self.events:
+            if event.get('type') != 'delegation':
+                continue
+            if task_id is not None and event.get('task') != task_id:
+                continue
+            latest[event.get('delegation_id')] = event
+        return latest
+
+    def _refuse_delegation(self, task_id, reason):
+        self._append_raw('refusal', {'subject': 'delegate %s' % task_id,
+                                     'stage': 'dispatch', 'reason': reason},
+                         actor={'kind': 'helper',
+                                'identity': LEDGER_IDENTITY},
+                         ts=_utc_now())
+        raise DelegationRefused('delegation refused: %s' % reason)
+
+    def delegate(self, op, task_id, payload, actor=None, host_caps=None,
+                 abilities_fn=None):
+        """One delegation operation: launch | collect | cancel (writes).
+
+        The record layer's gate (launch): a v7 contract, the
+        ``agent_delegation`` grant, a started task of this contract that is
+        marked ``parallel_safe`` (or a read-only delegate: ``worktree``
+        null), and a ``via`` addon whose descriptor declares the requested
+        transport and that the effective abilities (V7_ABILITIES.md) show
+        as contributing ``subagents``. Every refusal is recorded. Nothing
+        here runs the delegate: the transport addon does, and its result
+        stays asserted until this plan's runner observes it with a gate.
+        """
+        self._check_position()
+        actor = actor or {'kind': 'agent', 'identity': 'caller'}
+        contract = self.r.contract
+        if not isinstance(payload, dict):
+            raise LedgerError('delegate --json must be a JSON object')
+        if op == 'launch':
+            if contract_v6.contract_generation(contract) != 'v7':
+                self._refuse_delegation(task_id, 'this plan is %s - only v7 '
+                                        'plans record delegation (v6 plans '
+                                        'keep their lifecycle)' %
+                                        contract_v6.contract_generation(
+                                            contract))
+            granted = contract.get('permissions', {}).get('granted', [])
+            if 'agent_delegation' not in granted:
+                self._refuse_delegation(task_id, 'the contract does not grant '
+                                        'agent_delegation')
+            task = next((t for t in contract.get('tasks', [])
+                         if t.get('id') == task_id), None)
+            if task is None:
+                self._refuse_delegation(task_id, 'unknown task')
+            if self.task_start_seq(task_id) is None:
+                self._refuse_delegation(task_id, 'the task has not started - '
+                                        'start it before delegating')
+            if self.task_status(task_id) == 'completed':
+                self._refuse_delegation(task_id, 'the task is already complete')
+            read_only = payload.get('worktree', '') is None
+            if not task.get('parallel_safe') and not read_only:
+                self._refuse_delegation(task_id, 'the task is not marked '
+                                        'parallel_safe by create and the '
+                                        'delegate is not read-only '
+                                        '(worktree null)')
+            via = payload.get('via')
+            transport = payload.get('transport')
+            import config as dwp_config  # sibling; lazy (no import cycle)
+            desc, errs = (dwp_config.load_descriptor(via)
+                          if isinstance(via, str)
+                          and dwp_config.ID_SAFE_RE.match(via)
+                          else (None, ['not an addon key']))
+            if desc is None:
+                self._refuse_delegation(task_id, 'via %r is not a valid '
+                                        'in-pack addon (%s)' %
+                                        (via, errs[0] if errs else '?'))
+            if desc.get('transport') != transport:
+                self._refuse_delegation(task_id, 'addon %s carries transport '
+                                        '%r, not %r' % (via,
+                                                        desc.get('transport'),
+                                                        transport))
+            if abilities_fn is None:
+                import resources  # sibling; lazy (resources imports ledger)
+                abilities_fn = resources.effective_abilities
+            eff = abilities_fn(host_caps,
+                               os.path.dirname(os.path.dirname(self.r.dir)))
+            if 'addon:%s' % via not in eff['sources'].get('subagents', []):
+                self._refuse_delegation(task_id, 'addon %s is not enabled and '
+                                        'detected with a compatible interface '
+                                        '(effective subagents sources: %s)' %
+                                        (via, ', '.join(eff['sources'].get(
+                                            'subagents', [])) or 'none'))
+            did = payload.get('delegation_id') or \
+                'd%s%s' % (time.strftime('%Y%m%dT%H%M%S', time.gmtime()),
+                           os.urandom(3).hex())
+            if did in self.delegations():
+                self._refuse_delegation(task_id, 'delegation_id %s already '
+                                        'recorded' % did)
+            body = {k: v for k, v in payload.items()
+                    if k in ('transport', 'via', 'kind', 'profile', 'target',
+                             'worktree', 'prompt_digest')}
+            body.update({'task': task_id, 'delegation_id': did,
+                         'state': 'launched'})
+            return self._append_raw('delegation', body, actor=actor,
+                                    ts=_utc_now(), note=payload.get('note'))
+        if op in ('collect', 'cancel'):
+            did = payload.get('delegation_id')
+            prior = self.delegations().get(did)
+            if prior is None or prior.get('task') != task_id:
+                self._refuse_delegation(task_id, 'no launched delegation %r '
+                                        'for this task' % did)
+            if prior.get('state') != 'launched':
+                self._refuse_delegation(task_id, 'delegation %s is already %s'
+                                        % (did, prior.get('state')))
+            body = {k: prior[k] for k in ('task', 'delegation_id', 'transport',
+                                          'via', 'kind', 'profile', 'target',
+                                          'worktree') if k in prior}
+            if op == 'cancel':
+                body['state'] = 'cancelled'
+            else:
+                state = payload.get('state')
+                if state not in ('completed', 'failed'):
+                    raise LedgerError('collect needs state completed|failed')
+                body['state'] = state
+                rp = payload.get('result_path')
+                if rp is not None:
+                    body['result_path'] = rp
+                    for base in (self.r.dir, self.repo_root()):
+                        full = os.path.join(base, rp)
+                        if os.path.isfile(full):
+                            body['result_digest'] = 'sha256:' + \
+                                _hash_file(full)
+                            break
+            return self._append_raw('delegation', body, actor=actor,
+                                    ts=_utc_now(), note=payload.get('note'))
+        raise LedgerError('delegate op must be launch|observe|collect|cancel')
+
     # -- durability ---------------------------------------------------------
 
     def export(self, dest):
@@ -1481,6 +1638,37 @@ def _hash_file(path):
         return None
     with open(path, 'rb') as fh:
         return hashlib.sha256(fh.read()).hexdigest()
+
+
+_SURFACE_SKIP = ('.git', '__pycache__', '.ledger.lock')
+
+
+def _hash_surface(path):
+    """Content digest of one touched-surface entry: a file, a directory
+    (every file below it, by relative path) or a glob. A directory or glob
+    used to hash to None, so an edit inside it left the fingerprint
+    unchanged and replayed stale evidence; every byte now counts."""
+    if os.path.isfile(path):
+        return _hash_file(path)
+    members = []
+    if os.path.isdir(path):
+        for root, dirs, files in os.walk(path):
+            dirs[:] = sorted(d for d in dirs if d not in _SURFACE_SKIP)
+            for name in sorted(files):
+                full = os.path.join(root, name)
+                members.append((os.path.relpath(full, path), full))
+    elif any(ch in path for ch in '*?['):
+        import glob as _glob
+        for full in sorted(_glob.glob(path)):
+            if os.path.isfile(full):
+                members.append((full, full))
+    if not members:
+        return None
+    digest = hashlib.sha256()
+    for rel, full in members:
+        digest.update(rel.encode('utf-8') + b'\0')
+        digest.update((_hash_file(full) or '').encode('ascii') + b'\n')
+    return digest.hexdigest()
 
 
 def _env_subset():
@@ -1976,10 +2164,14 @@ def main(argv):
     usage = ('usage: ledger.py --plan DIR {materialize --contract FILE '
              '[--authority WHO] [--mechanism plan_authorship|'
              'pre_authorization] [--note TEXT] | append|start|gate|reuse|'
-             'project|complete|export|roll|inspect|self-test} [options]')
+             'project|complete|export|roll|inspect|self-test | delegate '
+             'launch|observe|collect|cancel --task T [--json OBJ] '
+             '[--caps JSON]} [options]')
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--plan')
     parser.add_argument('command')
+    parser.add_argument('op', nargs='?')
+    parser.add_argument('--caps', default='{}')
     parser.add_argument('--json')
     parser.add_argument('--type')
     parser.add_argument('--task')
@@ -2045,6 +2237,42 @@ def main(argv):
                                      event.get('task') or
                                      event.get('criterion') or ''))
             return 0
+        if args.command == 'delegate':
+            if args.op not in ('launch', 'observe', 'collect', 'cancel'):
+                print('delegate requires launch|observe|collect|cancel')
+                return 2
+            if args.op == 'observe':
+                rec = PlanRecords(find_plan_dir(args.plan))
+                events = rec.archived_events() + rec.read_journal()[0]
+                latest = {}
+                for event in events:
+                    if event.get('type') == 'delegation' and \
+                            (not args.task or event.get('task') == args.task):
+                        latest[event.get('delegation_id')] = event
+                print(json.dumps([{k: e.get(k) for k in (
+                    'delegation_id', 'task', 'state', 'transport', 'via',
+                    'seq', 'result_path')} for e in latest.values()],
+                    sort_keys=True, indent=2))
+                return 0
+            if not args.task:
+                print('delegate %s requires --task' % args.op)
+                return 2
+            rec, lock, writer = _writer_for(args, args.force)
+            try:
+                event = writer.delegate(
+                    args.op, args.task, json.loads(args.json or '{}'),
+                    actor={'kind': args.actor_kind,
+                           'identity': args.actor_identity},
+                    host_caps=json.loads(args.caps))
+                print('OK: delegation %s %s at seq %d (asserted until a gate '
+                      'observes the result)' % (event['delegation_id'],
+                                                event['state'], event['seq']))
+                return 0
+            except DelegationRefused as exc:
+                print('REFUSED: %s' % exc)
+                return 5
+            finally:
+                lock.release()
         if args.command == 'append':
             if not args.type or not args.json:
                 print('append requires --type and --json')

@@ -1,0 +1,8 @@
+{
+  "contract": {
+    "id": "f9195efa11fabe898eb056db2ec80dc1199480c4b5026deb80b6fb846a7726b4",
+    "path": "contract.json"
+  },
+  "plan": "PLAN_v7_fixture_minimal",
+  "schema": "https://deepworkplan.com/schema/plan-manifest/v7.json"
+}
