@@ -133,3 +133,88 @@ setup() {
     echo "$flat" | grep -qF -- "all nine"
     echo "$flat" | grep -qF -- "python-floor"
 }
+
+# ------------------------------------------------ pre-release channel (v7)
+
+# _step <workflow> <step name> — print the `run:` script of one step.
+_step() {
+    python3 - "$1" "$2" <<'PY'
+import sys, yaml
+wf = yaml.safe_load(open(sys.argv[1]))
+for job in wf['jobs'].values():
+    for step in job['steps']:
+        if step.get('name') == sys.argv[2]:
+            print(step['run'])
+            sys.exit(0)
+sys.exit('step not found: ' + sys.argv[2])
+PY
+}
+
+# _repo <version> <tags...> — a throwaway repo whose router carries <version>.
+_repo() {
+    local version="$1"; shift
+    R="$(cd "$(mktemp -d)" && pwd -P)"
+    git -C "$R" init -q
+    mkdir -p "$R/skills/deepworkplan"
+    printf -- '---\nname: deepworkplan\nversion: "%s"\n---\n' "$version" > "$R/skills/deepworkplan/SKILL.md"
+    git -C "$R" add -A
+    git -C "$R" -c user.email=t@t -c user.name=t commit -qm "chore: base"
+    for t in "$@"; do git -C "$R" tag "$t"; done
+    git -C "$R" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "feat(skill)!: something new"
+}
+
+_decide() { # _decide <head message> — run auto-release's decision step in $R
+    _step "$REPO_ROOT/.github/workflows/auto-release.yml" "Determine bump level + new version" > "$R/decide.sh"
+    ( cd "$R" && GITHUB_OUTPUT="$R/out" HEAD_MSG="$1" bash "$R/decide.sh" >/dev/null )
+    cat "$R/out"
+}
+
+@test "stable releases ignore pre-release tags when finding the last release" {
+    _repo 6.1.0 v6.1.0 v7.0.0-beta.1
+    out="$(_decide 'feat(skill)!: something new')"
+    printf '%s\n' "$out" | grep -qx 'last_tag=v6.1.0'
+    printf '%s\n' "$out" | grep -qx 'new_version=7.0.0'
+    rm -rf "$R"
+}
+
+@test "a pre-release in flight blocks stable releases unless the merge says [graduate]" {
+    _repo 7.0.0-beta.1 v6.1.0 v7.0.0-beta.1
+    out="$(_decide 'fix(docs): typo')"
+    printf '%s\n' "$out" | grep -qx 'skip=true'
+    ! printf '%s\n' "$out" | grep -q '^new_version='
+    rm -f "$R/out"
+    out="$(_decide 'Merge: release 7.0.0 [graduate]')"
+    printf '%s\n' "$out" | grep -qx 'new_version=7.0.0'
+    printf '%s\n' "$out" | grep -qx 'bump=graduate'
+    rm -rf "$R"
+}
+
+@test "prerelease.yml validates the version, refuses an existing tag, never publishes latest" {
+    WF="$REPO_ROOT/.github/workflows/prerelease.yml"
+    grep -q '^  workflow_dispatch:' "$WF"
+    ! grep -qE '^  (push|pull_request|schedule):' "$WF"
+    grep -q -- '--prerelease --latest=false' "$WF"
+    grep -qF 'files: SHA256SUMS' "$REPO_ROOT/.github/workflows/auto-release.yml"
+    grep -q 'gh release create "$TAG" SHA256SUMS' "$WF"
+    grep -q 'bash scripts/generate-checksums.sh' "$WF"
+    grep -q 'npx --yes skills add "DailybotHQ/deepworkplan-skill@${TAG}"' "$WF"
+    _repo 6.1.0 v6.1.0 v7.0.0-beta.1
+    _step "$WF" "Validate the requested version" > "$R/validate.sh"
+    for bad in 7.0.0 7.0.0-beta v7.0.0-beta.1 '7.0.0-beta.1; touch pwned' 7.0.0-nightly.1; do
+        ( cd "$R" && GITHUB_OUTPUT="$R/vout" REQUESTED="$bad" bash "$R/validate.sh" >/dev/null 2>&1 ) && { echo "accepted $bad"; return 1; }
+    done
+    [ ! -e "$R/pwned" ]
+    # an existing pre-release tag is never moved
+    ( cd "$R" && GITHUB_OUTPUT="$R/vout" REQUESTED=7.0.0-beta.1 bash "$R/validate.sh" >/dev/null 2>&1 ) && { echo "moved an existing tag"; return 1; }
+    ( cd "$R" && GITHUB_OUTPUT="$R/vout" REQUESTED=7.0.0-beta.2 bash "$R/validate.sh" >/dev/null )
+    grep -qx 'tag=v7.0.0-beta.2' "$R/vout"
+    grep -qx 'last_stable=v6.1.0' "$R/vout"
+    rm -rf "$R"
+}
+
+@test "the stable channel never offers a pre-release; the docs state the release order" {
+    tr '\n' ' ' < "$SK/upgrade/SKILL.md" | tr -s ' ' | grep -qF 'ignore pre-release tags (`vX.Y.Z-beta.N`, `-rc.N`, `-alpha.N`) unless the developer explicitly asks for the pre-release channel'
+    grep -q '^## 4. prerelease.yml' "$REPO_ROOT/.github/docs/WORKFLOWS.md"
+    grep -qF 'Merge the work to `main` with `[skip release]`' "$REPO_ROOT/.github/docs/WORKFLOWS.md"
+    grep -q '^## 4.0.1 Pre-releases (manual)' "$REPO_ROOT/PUBLISHING.md"
+}

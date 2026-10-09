@@ -19,7 +19,9 @@ piloting this repo) can reason about why a job did or didn't run.
 | **Trigger** | `push` to `main` |
 | **Concurrency** | `auto-release-main`, no in-progress cancellation |
 | **Permissions** | `contents: write` at workflow level |
-| **Skip guard** | Skips if head commit starts with `chore(release):` OR contains `[skip release]` (breaks the auto-release loop) |
+| **Skip guard** | Skips if head commit starts with `chore(release):` OR contains `[skip release]` (breaks the auto-release loop); while the router version is a pre-release (`X.Y.Z-beta.N`), skips unless the head commit carries `[graduate]` |
+| **Last release** | The last **stable** `vX.Y.Z` tag — pre-release tags (`-` suffix) never move the bump base |
+| **Graduation** | With `[graduate]`, a stamped `X.Y.Z-pre.N` becomes `X.Y.Z` (never bumped past) |
 | **Token** | `AUTOMATION_GITHUB_TOKEN` (org convention) so the bot user can push to protected `main`; falls back to `GITHUB_TOKEN` |
 
 ### Job: `release`
@@ -132,6 +134,33 @@ suite, give it the same two guards.
 Not wired as a required merge check. Design source: `DailybotHQ/ai-diff-reviewer` `.github/workflows/self-review.yml`.
 
 ---
+
+## 4. prerelease.yml — manual pre-release (`X.Y.Z-(alpha|beta|rc).N`)
+
+| Property | Value |
+|----------|-------|
+| **Trigger** | `workflow_dispatch` only, input `version` (e.g. `7.0.0-beta.1`) — never on push |
+| **Concurrency** | shares `auto-release-main` with auto-release (one release at a time) |
+| **Validation** | version must match `^X.Y.Z-(alpha|beta|rc).N$` (passed via env, never inlined); an existing tag is refused — pre-release tags are never moved |
+| **Steps** | stamp every SKILL.md → CHANGELOG section (commits since the last stable tag) → commit `chore(release): X (pre-release) [skip ci]` → push branch, then tag → temp-dir smoke install asserting the version → `SHA256SUMS` → `gh release create --prerelease --latest=false` with `SHA256SUMS`, verified `isPrerelease` |
+| **Token** | `AUTOMATION_GITHUB_TOKEN`, falling back to `GITHUB_TOKEN` |
+
+### Failure semantics
+
+- An invalid version or an existing tag fails before anything is written.
+- A rejected branch push fails before the tag exists (no dangling tag).
+- A smoke-install version mismatch fails before the release is published;
+  the tag then exists without a release — re-run only the publish by hand
+  after investigating (never move the tag).
+
+### Pre-release then graduation (the release order for a major)
+
+1. Merge the work to `main` with `[skip release]` in the merge commit (the
+   stable workflow must not cut the major yet).
+2. Dispatch `prerelease.yml` on `main` with `X.Y.Z-beta.1`; field-test it.
+   Further merges during the field test do **not** release (no `[graduate]`).
+3. A later merge carrying `[graduate]` releases `X.Y.Z` stable, with every
+   commit since the last stable tag in its changelog section.
 
 ## Workflow interactions
 

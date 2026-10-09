@@ -57,9 +57,11 @@ versions relative to that directory.
    ```bash
    git ls-remote --tags https://github.com/DailybotHQ/deepworkplan-skill.git
    ```
-   Sort the `vX.Y.Z` tags numerically and take the highest. (`gh release view
-   --repo DailybotHQ/deepworkplan-skill` is an equivalent alternative when the
-   GitHub CLI is present.)
+   Sort the stable `vX.Y.Z` tags numerically and take the highest; ignore
+   pre-release tags (`vX.Y.Z-beta.N`, `-rc.N`, `-alpha.N`) unless the
+   developer explicitly asks for the pre-release channel. (`gh release view
+   --repo DailybotHQ/deepworkplan-skill` — which never returns a
+   pre-release — is an equivalent alternative when the GitHub CLI is present.)
 3. **Report, then stop.** State, in a few lines: installed skill version,
    latest published version, the standard each implements (the series are
    2.x, 4.x and 5.x historical and 6.x current — `../spec/README.md`),

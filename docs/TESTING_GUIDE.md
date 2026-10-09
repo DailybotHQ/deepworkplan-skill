@@ -34,7 +34,7 @@ The runtime validator must still work without third-party Python packages.
 | Activation / routing surface | `bats tests/activation-contract.bats` | router, onboard flow, delegator templates, generated command kits, capability docs |
 | Claims / version stamps / helper inventory | `bats tests/claims-consistency.bats` | TRUST.md, spec footers, contributor docs, the published claim table |
 | Lifecycle end to end (writer + finalizer + checker) | `bats tests/reliability-acceptance.bats` | every flow that closes a task or publishes a plan; widen to full Bats |
-| CI workflow | `bats tests/ci-guarantees.bats` | every suite CI runs; the installer's sub-skill list; the documented Python floor |
+| CI and release workflows | `bats tests/ci-guarantees.bats` (incl. the release channel: the real `auto-release.yml` / `prerelease.yml` steps extracted and run against a throwaway tagged repo — stable ignores pre-release tags, a pre-release in flight needs `[graduate]`, pre-release versions validated and tags never moved) | every suite CI runs; the installer's sub-skill list; the documented Python floor; `auto-release.yml`, `prerelease.yml`, `PUBLISHING.md`, `.github/docs/WORKFLOWS.md`, the `upgrade` tag channel |
 | Packaging / ship boundary | `bats tests/packaging-reliability.bats` | everything a downstream user installs; the dogfood mirror; the published schemas |
 | Working-principles onboarding / upgrade | `bats tests/packaging-reliability.bats tests/activation-contract.bats` then full Bats | installed resource discovery, routing, contributor `AGENTS.md` budget and links; inspect semantic coverage and reconciliation separately |
 | Frontmatter | `python3 scripts/validate-frontmatter.py` | all sub-skill discovery |

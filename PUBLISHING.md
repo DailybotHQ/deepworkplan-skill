@@ -58,16 +58,30 @@ over** — you do not tag or edit versions by hand again.
 On every merge to `main`, `auto-release.yml`:
 
 1. Reads the current version from the router `skills/deepworkplan/SKILL.md`.
-2. Inspects conventional commits since the last `vX.Y.Z` tag and picks the bump:
-   `feat(...)!:` / `BREAKING CHANGE:` → MAJOR, `feat(...):` → MINOR, else PATCH.
-3. Syncs the new version into **all** SKILL.md files (router + nine sub-skills +
-   addon).
+2. Inspects conventional commits since the last **stable** `vX.Y.Z` tag
+   (pre-release tags are ignored) and picks the bump: `feat(...)!:` /
+   `BREAKING CHANGE:` → MAJOR, `feat(...):` → MINOR, else PATCH. While the
+   router carries a pre-release version it releases nothing unless the merge
+   commit says `[graduate]`, and then graduates `X.Y.Z-beta.N` → `X.Y.Z`.
+3. Syncs the new version into **all** SKILL.md files (router, every
+   sub-skill, every addon).
 4. Prepends a dated section to `CHANGELOG.md`.
 5. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, pushes, and
    creates a GitHub Release.
 
 Maintainers' only job is to **write good conventional commits**. Never hand-edit
 `version:` fields, `CHANGELOG.md`, or tags — see [AGENTS.md](AGENTS.md) rule 4.
+
+## 4.0.1 Pre-releases (manual)
+
+A pre-release (`X.Y.Z-alpha.N`, `-beta.N`, `-rc.N`) is cut on purpose by
+dispatching `.github/workflows/prerelease.yml` with the exact version — never
+by a merge. It stamps every SKILL.md, tags, smoke-installs the tag into a temp
+directory, and publishes a GitHub **pre-release** (never `latest`) with
+`SHA256SUMS`. For a major: merge with `[skip release]`, dispatch the
+pre-release, field-test, then merge with `[graduate]` to cut the stable
+release (`.github/docs/WORKFLOWS.md` §4). The `upgrade` sub-skill offers
+pre-releases only to a developer who explicitly asks for that channel.
 
 ## 4.1 Provenance & integrity
 
