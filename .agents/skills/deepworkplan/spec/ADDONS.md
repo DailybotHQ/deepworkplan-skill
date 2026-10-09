@@ -115,10 +115,10 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Six addon folders ship: four active addons are **optional** and **never
-required**, one is the local-review baseline, and Herdr is a staged v7
-candidate with no v6 flow hook. A repository is fully conformant with
-**zero optional addons** installed. Of the four active optional addons, the
+Seven addon folders ship: five active addons are **optional** and **never
+required**, one is the local-review baseline, and Herdr (§6.6) is a staged
+candidate with no flow hook. A repository is fully conformant with **zero
+optional addons** installed. Of the five active optional addons, the
 **dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
 with declared dependencies, with its **inert** `/lib-upgrade` delegator
 installed under the onboarding consent **unless explicitly declined** (an
@@ -363,6 +363,37 @@ checklist are present for review but do not activate the addon.
 The v7 wiring plan (onboard offer, optional execute delegation,
 `parallel-safe` marks, presence-gated verify) is recorded in
 [`V7_ROADMAP.md`](V7_ROADMAP.md) — non-normative.
+
+### 6.7 DeepWorkPlan Vim (seventh addon — optional terminal editor, thin integrator)
+
+An optional addon offering **DeepWorkPlan Vim** — the terminal editor for
+Deep Work Plan (Neovim 0.12+) — as a machine-level install for the person
+behind the repo, never a repo requirement. The addon detects Neovim,
+presents the editor strictly as an offer, guides the documented install
+paths, and validates the installed surface; an existing Neovim config is
+**never** overwritten without explicit consent (non-interactive installs
+onto an existing config abort with instructions; backups go to
+`~/.config/previous-deepworkplan-vim`). The editor is **never required**
+and never a conformance gate: a repository without it stays fully
+conformant.
+
+Placement decision (recorded per the addon contract): the **editor itself**
+lives in its own public repository
+(`https://github.com/DailybotHQ/deepworkplan-vim`, GPL-3.0, versioned
+independently of the pack); this folder is the DWP-side integration
+contract only, a **thin integrator** pinned to the product tag
+`deepworkplan-vim@v0.4.0`: detection, feature claims and the install steps
+are read from the product's machine-readable surface (`addon/surface.json`,
+interface `1`); an unknown interface major is one warning and "not
+available", never an error. `onboard` Phase 7b offers it as an **explicit
+opt-in**; no other flow invokes it. Two routes: the full editor (available
+now) and the `deepworkplan.nvim` plugin (v7.1, not shipped — never offered
+for install before it exists). The full
+implementation lives at `skills/deepworkplan/addons/vim/` — see its
+[`SKILL.md`](../addons/vim/SKILL.md) (detection + offer hook),
+[`SPEC.md`](../addons/vim/SPEC.md) (RFC-2119 contract: consent gate,
+install paths, validation), and `templates/INTEGRATION.md` (reasoning
+template).
 
 ## 7. References
 

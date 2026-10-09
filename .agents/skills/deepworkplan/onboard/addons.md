@@ -1,13 +1,13 @@
 # DeepWorkPlan — Onboard: the required local review and the optional addons (read in Phase 7a and 7b)
 
-Verbatim from the main procedure. Five active addons ship under `../addons/`;
-the proposed Herdr candidate is unwired. Four active addons are
+Verbatim from the main procedure. Six active addons ship under `../addons/`;
+the proposed Herdr candidate is unwired. Five active addons are
 **optional**: a repository is fully conformant with zero optional addons, and none
-of them is required to create or execute plans. One of the four — **dependency
+of them is required to create or execute plans. One of the five — **dependency
 upgrade** — is **near-default**: offered for every repo with declared
 dependencies, and its **inert** `/lib-upgrade` delegator installs under the
 Phase 0 onboarding consent **unless explicitly declined** (an install runs no
-upgrade). The other three are signal-gated opt-ins. The fifth — the **AI Diff
+upgrade). The other four are signal-gated opt-ins. The sixth — the **AI Diff
 Reviewer local review** — is part of the baseline since standard 2.3.0
 (`../spec/ADDONS.md` §6.5) and is installed in Phase 7a; only its CI surface is
 optional. Read this file to run Phase 7a and to make the Phase 7b offer; never
@@ -45,11 +45,11 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
 
 ## Phase 7b — Offer optional addons (trigger only)
 
-After Phase 7a, offer the four active optional addons in the table below.
+After Phase 7a, offer the five active optional addons in the table below.
 The proposed Herdr addon is present in the pack for v7 design work but is
-**unwired in v6**: do not offer or activate it. Three active addons are
+**unwired**: do not offer or activate it. Four active addons are
 **explicit opt-ins** — signal-gated, installed only on the
-developer's explicit acceptance. The fourth, **dependency upgrade**, is
+developer's explicit acceptance. The fifth, **dependency upgrade**, is
 **near-default**: offered for every repo with declared dependencies, with its
 inert `/lib-upgrade` delegator installed under the Phase 0 onboarding consent
 **unless explicitly declined** (an install runs no upgrade). Optional addons
@@ -57,8 +57,8 @@ are **never required** — a
 repo is fully conformant with zero optional addons. In **trust mode**, you MAY
 recommend the obviously-applicable ones, but still surface them.
 
-Five active addons ship today; the table lists all of them (the AI Diff Reviewer row
-records its Phase 7a status). Offer the four optional ones independently:
+Six active addons ship today; the table lists all of them (the AI Diff Reviewer row
+records its Phase 7a status). Offer the five optional ones independently:
 
 | Addon | Folder | Recommend in trust mode when… |
 |-------|--------|-------------------------------|
@@ -66,6 +66,7 @@ records its Phase 7a status). Offer the four optional ones independently:
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | **near-default** — the repo has **declared dependencies** (any manifest or lockfile): offer **always**, and install the **inert** `/lib-upgrade` delegator under the onboarding consent **unless explicitly declined**. Installing the delegator runs **no** upgrade — upgrades are always explicit, gated work. |
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: when any surface is detected — even an ambiguous one — the evaluation and offer are **mandatory, not skippable**, with the detection rationale recorded. **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **strongly recommended**; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended**. Every profile **requires explicit acceptance even in trust mode — none is auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
+| **DeepWorkPlan Vim** | [`../addons/vim/`](../addons/vim/SKILL.md) | a person on this machine uses Neovim ≥ 0.12 or asks for a terminal editor for plans — a **machine-level** install, never a repo requirement; the editor is never imposed and an existing Neovim config is **never** overwritten without explicit consent (non-interactive runs onto an existing config stop at instructions). Pinned `deepworkplan-vim@v0.4.0`, detected through the product's `addon/surface.json`. |
 | **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | **not offered here — installed in Phase 7a** (required local review, baseline since 2.3.0). In Phase 7b only confirm the Flow B (CI Action) opt-in decision if it was left open; never install the CI surface unrequested. |
 
 The first addon is **devcontainer support**
@@ -171,7 +172,20 @@ WCAG AA contrast / degradation rules / plain-text fallbacks — token references
 resolve, new profiles were asked about). If declined, skip it — the repo stays
 baseline-conformant.
 
-The fifth addon, **AI Diff Reviewer**
+The **DeepWorkPlan Vim** addon
+([`../addons/vim/SKILL.md`](../addons/vim/SKILL.md) +
+[`SPEC.md`](../addons/vim/SPEC.md)) is a machine-level offer, not a repo
+change: detect Neovim and the editor read-only through the product's
+`addon/surface.json` (pinned `deepworkplan-vim@v0.4.0`, interface `1`; an
+unknown interface is one warning and "not available"), then offer — never
+impose — the editor. On acceptance run that addon's flow: the product's
+documented, checksum-verified install under its absolute consent gate (an
+existing Neovim config is never overwritten without explicit consent; a
+non-interactive run onto an existing config stops at instructions), record
+`addons.vim` in `.dwp/config.json`, and validate. If declined, skip it — the
+repo stays baseline-conformant.
+
+The sixth addon, **AI Diff Reviewer**
 ([`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md) +
 [`SPEC.md`](../addons/ai-diff-reviewer/SPEC.md)), was installed in Phase 7a as
 the required local review. Nothing is offered again here except the **Flow B**
