@@ -1096,12 +1096,6 @@ def cmd_report(plan_dir: str) -> int:
         print('benchmark: disabled for this repository; nothing emitted')
         return 0
     manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
-    if '-' in pack_version():
-        # benchmark-record v1 pins versions.dwp_skill to X.Y.Z: a pre-release
-        # pack (7.0.0-beta.1) is never truncated into a release label.
-        print('benchmark: this pack is a pre-release (%s); benchmark-record v1 '
-              'carries release versions only - not measured' % pack_version())
-        return 0
     if isinstance(manifest, dict) and manifest.get('schema') == MANIFEST_V7_URL:
         # benchmark-record v1 pins generation "v6" (published, frozen bytes):
         # a v7 plan is not mislabelled — it is not measured yet.
@@ -1112,6 +1106,12 @@ def cmd_report(plan_dir: str) -> int:
     if not isinstance(manifest, dict) or manifest.get('schema') != MANIFEST_V6_URL:
         print('benchmark: plan is not v6-generation (no v6 manifest contract '
               'pointer); not measured — the v5 line is frozen')
+        return 0
+    if '-' in pack_version():
+        # benchmark-record v1 pins versions.dwp_skill to X.Y.Z: a pre-release
+        # pack (7.0.0-beta.1) is never truncated into a release label.
+        print('benchmark: this pack is a pre-release (%s); benchmark-record v1 '
+              'carries release versions only - not measured' % pack_version())
         return 0
     try:
         record = derive_record(plan_dir)
@@ -1527,6 +1527,19 @@ def _rewrite_journal(plan_dir: str, events: List[Dict[str, Any]]) -> None:
 
 
 def self_test() -> Tuple[bool, List[str], int]:
+    # The emission probes are pack-version independent: under a pre-release
+    # pack (which declines to emit, see cmd_report) they run as its release.
+    global pack_version
+    real_pack_version = pack_version
+    release = real_pack_version().split('-', 1)[0]
+    pack_version = lambda: release  # noqa: E731
+    try:
+        return _self_test()
+    finally:
+        pack_version = real_pack_version
+
+
+def _self_test() -> Tuple[bool, List[str], int]:
     checks: List[Tuple[str, bool]] = []
 
     def check(name: str, condition: bool) -> None:

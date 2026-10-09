@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-devcontainer
 description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.1.2, interface 1) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers `dck init` (which reconciles an existing layout and never clobbers it), maps the detected stack to a base-image flavour and the opt-in layers (agents through coding-agents-kit, the editor, Dailybot only when that addon asks), optionally registers the container as a Herdr machine, and validates the result. Opt-in, never required, never a conformance gate.
-version: "6.1.0"
+version: "7.0.0-beta.1"
 documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write

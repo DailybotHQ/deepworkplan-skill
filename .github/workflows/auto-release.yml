@@ -43,7 +43,27 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  pin-smoke:
+    # Third-party installers run here, in a job that holds NO write token:
+    # read-only permissions and no persisted checkout credentials. The
+    # release job (which can push to main) only starts after this passes.
+    name: Ecosystem pins install at their tags
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    if: >-
+      ${{
+        !startsWith(github.event.head_commit.message, 'chore(release):')
+        && !contains(github.event.head_commit.message, '[skip release]')
+      }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: bash scripts/smoke-ecosystem-pins.sh
+
   release:
+    needs: pin-smoke
     name: Bump version, tag, release
     runs-on: ubuntu-latest
     # Skip our own release commits (infinite-loop guard) and any commit
@@ -149,14 +169,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
-
-      - name: Smoke — the ecosystem products install at the pinned tags
-        # Before anything is committed or tagged: every product an addon
-        # descriptor pins (herdr-peers, coding-agents-kit, devcontainer-kit,
-        # deepworkplan-vim) installs at that exact tag into a throwaway HOME
-        # and reports the interface the descriptor expects.
-        if: steps.version.outputs.skip != 'true'
-        run: bash scripts/smoke-ecosystem-pins.sh
 
       - name: Bump version in ALL SKILL.md files
         if: steps.version.outputs.skip != 'true'

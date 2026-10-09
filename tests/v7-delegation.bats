@@ -25,6 +25,10 @@ setup() {
   mkdir -p "$PLAN/analysis_results" "$REPO/src"
   printf '# Goal\n\nDelegation.\n' > "$PLAN/README.md"
   printf 'x = 1\n' > "$REPO/src/product.py"
+  # a git work tree: read-only delegates are verified against it
+  git -C "$REPO" init -q
+  printf '.dwp/\n' > "$REPO/.gitignore"
+  git -C "$REPO" add -A && git -C "$REPO" -c user.email=t@t -c user.name=t commit -qm init
   # ak: doctor answers interface 1; run writes its declared output and
   # prints the documented one-object JSON result.
   cat > "$WORK/bin/ak" <<'SH'

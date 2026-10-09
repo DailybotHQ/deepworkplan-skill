@@ -11,7 +11,19 @@ bats_require_minimum_version 1.5.0
 
 REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 SK="$REPO_ROOT/skills/deepworkplan"
-BENCHMARK="$SK/shared/benchmark.py"
+# The emission contract is pack-version independent, but benchmark-record v1
+# carries release versions only, so a pre-release-stamped pack (7.0.0-beta.1)
+# declines to emit (pinned in tests/v7-contract.bats). When the shipped pack is
+# a pre-release, run this suite against a copy stamped with its release base.
+setup_file() {
+  if grep -qE '^version: "[0-9]+\.[0-9]+\.[0-9]+-' "$SK/SKILL.md"; then
+    export BENCH_PACK="$BATS_FILE_TMPDIR/pack"
+    cp -R "$SK" "$BENCH_PACK"
+    sed -i.bak -E 's/^version: "([0-9]+\.[0-9]+\.[0-9]+)-[^"]*"/version: "\1"/' "$BENCH_PACK/SKILL.md"
+    rm -f "$BENCH_PACK/SKILL.md.bak"
+  fi
+}
+BENCHMARK="${BENCH_PACK:-$SK}/shared/benchmark.py"
 
 export PYTHONDONTWRITEBYTECODE=1
 
