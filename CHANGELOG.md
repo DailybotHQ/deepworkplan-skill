@@ -9,6 +9,30 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.0.0-beta.1] — 2026-10-09 (pre-release)
+
+### Changes
+
+- feat(skill)!: DeepWorkPlan v7 — addon registry, descriptors, abilities, v7 delegation records and ecosystem integrators (#59) [skip release]
+- fix(shared): never label a pre-release pack as a release in benchmark records - Task 16 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): pin the ecosystem products to their released tags and smoke them - Task 15 of PLAN_003_v7_beta_ecosystem_addons
+- fix(skill): harden the v7 surface and add the public-hygiene check - Task 14 of PLAN_003_v7_beta_ecosystem_addons
+- docs(skill): document the v7 surface and set the DWP standard to 7.0.0 - Task 13 of PLAN_003_v7_beta_ecosystem_addons
+- ci(release): add a manual pre-release channel that never moves the stable line - Task 12 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons)!: rewrite the devcontainer addon as a vendor-neutral devcontainer-kit integrator - Task 11 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons)!: rewrite the herdr addon as a thin integrator of herdr-peers - Task 10 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): add the agentkit addon as the headless delegation transport - Task 9 of PLAN_003_v7_beta_ecosystem_addons
+- feat(skill): wire delegation into create, execute, status and verify - Task 8 of PLAN_003_v7_beta_ecosystem_addons
+- feat(skill)!: add the v7 contract generation with delegation records - Task 7 of PLAN_003_v7_beta_ecosystem_addons
+- feat(shared): compute addon-provided abilities at runtime, never persisted - Task 6 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): ship an addon.json descriptor for every in-pack addon - Task 5 of PLAN_003_v7_beta_ecosystem_addons
+- feat(skill): add the addon registry to .dwp/config.json with one shared reader - Task 4 of PLAN_003_v7_beta_ecosystem_addons
+- test(skill): guard the standalone methodology across addon configurations - Task 3 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): integrate the vim editor addon as a pinned thin integrator - Task 2 of PLAN_003_v7_beta_ecosystem_addons
+- fix(skill): refresh dogfood pins and make the suite portable - Task 1 of PLAN_003_v7_beta_ecosystem_addons
+- fix(shared): keep benchmark self-test version fixtures distinct (#58)
+
+
 ## [6.1.0] — 2026-10-06
 
 ### Changes
