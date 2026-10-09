@@ -70,10 +70,13 @@ for key in os.listdir(root):
         assert tag.match(doc['product']['tag']), (key, doc)
     else:
         assert 'product' not in doc, (key, doc)
-# the four ecosystem products publish interface 1 (contract section 2.0)
-for key in ('agentkit', 'herdr', 'devcontainer', 'vim'):
+# the four ecosystem products publish an interface integer (contract
+# section 2.0): 1, except devcontainer-kit, which moved to 2 at v0.2.0
+# (per-repository Dockerfile, config schema v2)
+expected = {'agentkit': 1, 'herdr': 1, 'devcontainer': 2, 'vim': 1}
+for key, iface in expected.items():
     doc = json.load(open(os.path.join(root, key, 'addon.json')))
-    assert doc['product'].get('interface') == 1, (key, doc)
+    assert doc['product'].get('interface') == iface, (key, doc)
 PY
 }
 

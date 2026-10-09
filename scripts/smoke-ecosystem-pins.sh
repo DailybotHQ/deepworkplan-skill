@@ -11,7 +11,9 @@ set -euo pipefail
 #   agentkit   tagged clone + install.sh --no-rc into a temp HOME;
 #              `ak --version` names the tag, `ak doctor --json` .interface
 #   devcontainer  tagged clone + install.sh --no-rc into a temp HOME;
-#              `dck --version` names the tag, `dck doctor --json` .interface
+#              `dck --version` names the tag, `dck doctor --json` .interface;
+#              then the skills CLI installs the tag's dck-dockerfile skill
+#              into a temp project (the line the addon offers)
 #   vim        tagged clone; addon/surface.json interface and version, and the
 #              surface's install.script.sha256 equals the tag's install.sh
 #
@@ -91,6 +93,24 @@ smoke_kit() {  # smoke_kit <key> <binary> <install-dir-variable>
     fi
 }
 
+smoke_dck_skill() {
+    local repo tag proj skill
+    repo="$(field devcontainer "d['product']['repo']")"
+    tag="$(field devcontainer "d['product']['tag']")"
+    proj="$WORK/dck-skill-proj"
+    mkdir -p "$proj"
+    git -C "$proj" init -q
+    printf '%s\n' '{"name":"dwp-pin-smoke","private":true}' > "$proj/package.json"
+    ( cd "$proj" && npx --yes skills add "https://github.com/${repo}/tree/${tag}" --skill dck-dockerfile -y >/dev/null 2>&1 ) \
+        || { fail "devcontainer: skills add https://github.com/${repo}/tree/${tag} --skill dck-dockerfile failed"; return; }
+    skill="$(find "$proj" -path '*/dck-dockerfile/SKILL.md' | head -1)"
+    if [ -n "$skill" ] && grep -qE '^name: dck-dockerfile$' "$skill"; then
+        ok "devcontainer: ${repo}@${tag} dck-dockerfile skill installs"
+    else
+        fail "devcontainer: installed dck-dockerfile SKILL.md not found or misnamed"
+    fi
+}
+
 smoke_vim() {
     local repo tag iface src want got
     repo="$(field vim "d['product']['repo']")"
@@ -120,7 +140,9 @@ for key in $SELECTED; do
         herdr)        command -v npx >/dev/null || { echo "ERROR: npx is required for herdr" >&2; exit 2; }
                       smoke_herdr ;;
         agentkit)     smoke_kit agentkit ak AGENTKIT_HOME ;;
-        devcontainer) smoke_kit devcontainer dck DCK_INSTALL_DIR ;;
+        devcontainer) smoke_kit devcontainer dck DCK_INSTALL_DIR
+                      command -v npx >/dev/null || { echo "ERROR: npx is required for devcontainer" >&2; exit 2; }
+                      smoke_dck_skill ;;
         vim)          smoke_vim ;;
         *) echo "ERROR: unknown pin '$key'" >&2; exit 2 ;;
     esac
