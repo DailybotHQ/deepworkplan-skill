@@ -149,3 +149,57 @@ assert d["parallel"]["missing"] == ["contract grant agent_delegation"], d
   c "$SK/spec/V7_ABILITIES.md" "An ability never implies consent."
   grep -qF '[`V7_ABILITIES.md`](V7_ABILITIES.md)' "$SK/spec/README.md"
 }
+
+# ------------------------------------------------ F-17 / F-16 (v7.0.0)
+
+_declared() { printf '%s' "$output" | python3 -c 'import json,sys; print(json.load(sys.stdin)["host_declared"].get(sys.argv[1], "-"))' "$1"; }
+
+@test "the host capability record is read; --caps overrides it per capability (F-17)" {
+  python3 "$CFG" host subagents true --repo "$REPO" >/dev/null || return 1
+  python3 "$CFG" host cancel_children true --repo "$REPO" >/dev/null || return 1
+  run --separate-stderr _abilities
+  [ "$status" -eq 0 ] && [ -z "$stderr" ] || { echo "$stderr"; return 1; }
+  [ "$(_ability subagents)" = "True" ] && [ "$(_ability cancel_children)" = "True" ] || return 1
+  [ "$(_source subagents)" = "host" ] || return 1
+  [ "$(_declared subagents)" = "record:.dwp/config.json" ] || return 1
+  run --separate-stderr _abilities --caps '{"subagents": false}'
+  [ "$(_ability subagents)" = "False" ] && [ "$(_declared subagents)" = "declared" ] || return 1
+  [ "$(_ability cancel_children)" = "True" ] || return 1
+  # the user file applies where the repository file is silent
+  mkdir -p "$HOME/.dwp" && printf '{"host": {"model_routing": true, "subagents": false}}\n' > "$HOME/.dwp/config.json"
+  run --separate-stderr _abilities
+  [ "$(_ability model_routing)" = "True" ] && [ "$(_ability subagents)" = "True" ] || return 1
+  [ "$(_declared model_routing)" = "record:~/.dwp/config.json" ]
+}
+
+@test "the host record never invents a capability; the writer refuses unknown names (F-17)" {
+  printf '{"host": {"time_travel": true, "subagents": "yes", "telemetry": true}}\n' > "$REPO/.dwp/config.json"
+  run --separate-stderr _abilities
+  [ "$status" -eq 0 ] || return 1
+  [[ "$stderr" == *"capability 'time_travel' is not in the closed set; ignored"* ]] || return 1
+  [[ "$stderr" == *"capability 'subagents' is not a boolean; ignored"* ]] || return 1
+  [ "$(_ability subagents)" = "False" ] && [ "$(_ability telemetry)" = "True" ] || return 1
+  printf 'x' > /dev/null
+  rm "$REPO/.dwp/config.json"
+  run python3 "$CFG" host time_travel true --repo "$REPO"
+  [ "$status" -eq 2 ] && [[ "$output" == *"is not a host capability"* ]] || return 1
+  [ ! -e "$REPO/.dwp/config.json" ]
+}
+
+@test "vim installed without its surface is reported with one warning, never as absent (F-16)" {
+  python3 "$CFG" enable vim --repo "$REPO" >/dev/null
+  run --separate-stderr _abilities
+  [[ "$stderr" != *"vim"* ]] || { echo "$stderr"; return 1; }
+  mkdir -p "$HOME/.config/nvim/lua"
+  printf -- '-- install\n' > "$HOME/.config/nvim/install.lua"
+  printf -- 'return {}\n' > "$HOME/.config/nvim/lua/plugins.lua"
+  run --separate-stderr _abilities
+  [ "$status" -eq 0 ] || return 1
+  [ "$(printf '%s\n' "$stderr" | grep -c 'addon vim: installed without its interface surface')" -eq 1 ] || { echo "$stderr"; return 1; }
+  printf '%s' "$output" | python3 -c 'import json,sys; v=json.load(sys.stdin)["addons"]["vim"]; assert v["state"] == "installed-without-surface" and not v["compatible"], v' || return 1
+  mkdir -p "$HOME/.config/nvim/addon"
+  printf '{"interface": 1, "version": "v0.4.2"}\n' > "$HOME/.config/nvim/addon/surface.json"
+  run --separate-stderr _abilities
+  [[ "$stderr" != *"vim"* ]] || return 1
+  printf '%s' "$output" | python3 -c 'import json,sys; v=json.load(sys.stdin)["addons"]["vim"]; assert v["compatible"] and "state" not in v, v'
+}

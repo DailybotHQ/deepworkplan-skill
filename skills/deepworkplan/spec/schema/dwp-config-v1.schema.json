@@ -18,6 +18,21 @@
         "learnings": { "type": "boolean" }
       }
     },
+    "host": {
+      "type": "object",
+      "description": "Machine-readable host capability record (F-17, spec/CONFIG.md section 3a): which abilities the host that runs plans here provides. Per capability the repository file wins over the user file; an explicit resources.py --caps declaration wins over both. Unstated capabilities stay at the all-False floor; the reader ignores an unknown or non-boolean capability with one warning.",
+      "additionalProperties": false,
+      "properties": {
+        "stop_agent": { "type": "boolean" },
+        "meter_spend": { "type": "boolean" },
+        "meter_tokens": { "type": "boolean" },
+        "meter_wall_clock": { "type": "boolean" },
+        "cancel_children": { "type": "boolean" },
+        "model_routing": { "type": "boolean" },
+        "subagents": { "type": "boolean" },
+        "telemetry": { "type": "boolean" }
+      }
+    },
     "addons": {
       "type": "object",
       "description": "The addon registry. Keys are in-pack addon directory names (contract amendment A1); resolved per key, repository entry over user entry. Absent means not enabled.",

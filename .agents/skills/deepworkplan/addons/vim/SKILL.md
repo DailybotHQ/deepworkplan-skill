@@ -95,7 +95,9 @@ dir (`${XDG_CONFIG_HOME:-$HOME/.config}/nvim`, or `DWP_VIM_DIR` when set) →
 classify with the product's own states (`addon/surface.json` → `detect`):
 **absent**, **existing config** (foreign — lacks either identity file
 `install.lua` / `lua/plugins.lua`), **installed without surface** (a release
-older than v0.4.0 — interface unknown, treat as not compatible), or
+older than v0.4.0 — interface unknown, treat as not compatible; the
+descriptor's `legacy_paths` make `resources.py` report it with one warning,
+never as absent), or
 **installed** (read `interface` and `version` from the installed
 `addon/surface.json`). An `interface` other than `1` is an unknown major:
 one warning line, the addon is treated as **not available** — never an

@@ -413,7 +413,7 @@ name, which is also the addon's registry key in `.dwp/config.json`
 | `schema` | the descriptor schema URL (const) |
 | `key` | the directory name |
 | `product` | optional — the separate product a thin integrator pins: `repo` (`owner/name`), `tag` (exact `vX.Y.Z[-pre]`, never a branch or floating version), `interface` (integer major, when the product publishes one) |
-| `detect` | read-only presence check: exactly one of `command` (an argv line with no shell metacharacters, run **without a shell**, bounded by a timeout; exit 0 = present) or `paths` (present when at least one listed file exists; repo-relative or `~/`-prefixed); optional `interface_from` (`json:<field>`, `regex:<pattern>`, `file-json:<path>#<field>`) |
+| `detect` | read-only presence check: exactly one of `command` (an argv line with no shell metacharacters, run **without a shell**, bounded by a timeout; exit 0 = present) or `paths` (present when at least one listed file exists; repo-relative or `~/`-prefixed); optional `interface_from` (`json:<field>`, `regex:<pattern>`, `file-json:<path>#<field>`); optional `legacy_paths` beside `paths` — files that all exist when an older release is installed **without** its interface surface: that state is reported as "installed without surface" with one warning, never as absent (F-16) |
 | `provides_abilities` | host abilities (the closed v6 set) the addon contributes at runtime **only** when enabled and detected with a compatible interface (`V7_ABILITIES.md`) |
 | `requires_grants` | contract permissions its use requires (the closed v6 capability set) |
 | `transport` | delegation addons only: `headless` or `interactive`; a transport addon **MUST** provide `subagents` and require `agent_delegation` |

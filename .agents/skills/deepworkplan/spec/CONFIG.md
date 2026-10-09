@@ -102,6 +102,23 @@ Both files share one shape:
   a compatible interface major (`V7_ABILITIES.md`); being listed never
   makes a product present.
 
+## 3a. The host capability record (`host`)
+
+The abilities of the host that runs plans here, machine-readable (F-17):
+`"host": {"subagents": true, "cancel_children": true}` — the closed v6 set
+(`stop_agent`, `meter_spend`, `meter_tokens`, `meter_wall_clock`,
+`cancel_children`, `model_routing`, `subagents`, `telemetry`), booleans
+only. Per capability the repository file wins over the user file, and an
+explicit `resources.py --caps` declaration wins over both; an unstated
+capability stays at the all-False floor. An unknown or non-boolean
+capability is ignored with one warning — never invented. `resources.py
+abilities` reads it and names where each declared capability came from
+(`host_declared`). Writer: `config.py host <capability> true|false --repo
+<repo>`, run by onboarding when it records the host declaration
+([`../onboard/v6.md`](../onboard/v6.md) §1); the prose block in
+`AGENTS.md` stays the human summary. `telemetry: true` still needs the
+developer's consent; the record states the host can, not that it may.
+
 ## 4. Writers and readers
 
 | Role | Who | How |

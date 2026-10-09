@@ -67,6 +67,16 @@
           "type": "string",
           "description": "Where the integer interface is read: json:<field> (command stdout is one JSON object), regex:<pattern> (first group of the first match on stdout), or file-json:~/<path>#<field> (machine-level files only; never a repository file).",
           "pattern": "^(json:[A-Za-z_][A-Za-z0-9_]*|regex:.+|file-json:~/[A-Za-z0-9._/-]+#[A-Za-z_][A-Za-z0-9_]*)$"
+        },
+        "legacy_paths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Optional (F-16): files that ALL exist when an older release of the product is installed without its interface surface. With paths absent and these present, the state is 'installed without surface': one warning, not compatible.",
+          "items": {
+            "type": "string",
+            "pattern": "^(?!.*(^|/)\\.\\.(/|$))(~/)?[A-Za-z0-9._][A-Za-z0-9._/-]*$"
+          }
         }
       },
       "oneOf": [

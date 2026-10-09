@@ -30,6 +30,7 @@ Usage::
     config.py enabled [--repo DIR] [--plan DIR]    # enabled addon keys, one per line
     config.py enable  KEY [--version vX.Y.Z] [--note TEXT] --repo DIR   # onboarding writer
     config.py backfill --repo DIR [--write]        # upgrade: record present addons
+    config.py host CAPABILITY true|false --repo DIR  # host capability record
     config.py disable KEY --repo DIR
     config.py keys                                 # in-pack addon keys
     config.py descriptors                          # audit every addon.json (opens them)
@@ -248,15 +249,73 @@ def resolve_addons(files, keys: Optional[List[str]] = None
     return view, warnings
 
 
+HOST_KEYS = ('stop_agent', 'meter_spend', 'meter_tokens', 'meter_wall_clock',
+             'cancel_children', 'model_routing', 'subagents', 'telemetry')
+
+
+def resolve_host(files) -> Tuple[Dict[str, Dict[str, Any]], List[str]]:
+    """F-17: the machine-readable host capability record (``host`` key).
+
+    Per capability, the repository file wins over the user file. Values
+    are booleans; a non-boolean or a capability outside the closed set is
+    ignored with one warning (a capability is never invented). Returns
+    ({capability: {"value": bool, "source": label}}, warnings) for the
+    capabilities a file declares; unstated ones stay at the all-False floor.
+    """
+    warnings: List[str] = []
+    view: Dict[str, Dict[str, Any]] = {}
+    for label, _path, data, reason in files:
+        if reason or data is None or 'host' not in data:
+            continue
+        rec = data['host']
+        if not isinstance(rec, dict):
+            warnings.append('host: %s "host" is not an object; ignored' % label)
+            continue
+        for name in sorted(rec):
+            if name not in HOST_KEYS:
+                warnings.append('host: %s capability %r is not in the closed '
+                                'set; ignored' % (label, name))
+            elif not isinstance(rec[name], bool):
+                warnings.append('host: %s capability %r is not a boolean; '
+                                'ignored' % (label, name))
+            elif name not in view:
+                view[name] = {'value': rec[name], 'source': label}
+    return view, warnings
+
+
+def write_host(dwp_root: str, name: str, value: bool) -> Dict[str, Any]:
+    """Set ``host.<name>`` in the repository file (reconciling, atomic)."""
+    if name not in HOST_KEYS:
+        raise ConfigError('%r is not a host capability (%s)'
+                          % (name, ', '.join(HOST_KEYS)))
+    path = os.path.join(dwp_root, 'config.json')
+    data: Dict[str, Any] = {}
+    if os.path.exists(path):
+        parsed, reason = read_config(path)
+        if parsed is None:
+            raise ConfigError('%s %s — the writer never overwrites a file it '
+                              'cannot read' % (path, reason or 'unreadable'))
+        data = parsed
+    rec = data.get('host', {})
+    if not isinstance(rec, dict):
+        raise ConfigError('%s "host" is not an object — refusing to replace it'
+                          % path)
+    rec[name] = value
+    data['host'] = rec
+    _write_config(dwp_root, path, data)
+    return rec
+
+
 def resolve(dwp_root: Optional[str], home: Optional[str] = None,
             keys: Optional[List[str]] = None) -> Dict[str, Any]:
     """Both keys from one read of both files."""
     files = load_files(dwp_root, home)
     bench_on, learn_on, bench_warn = resolve_benchmark(files)
     addons, addon_warn = resolve_addons(files, keys)
+    host, host_warn = resolve_host(files)
     return {'benchmark': {'enabled': bench_on, 'learnings': learn_on},
-            'addons': addons,
-            'warnings': bench_warn + addon_warn}
+            'addons': addons, 'host': host,
+            'warnings': bench_warn + addon_warn + host_warn}
 
 
 def enabled_addons(dwp_root: Optional[str], home: Optional[str] = None,
@@ -326,7 +385,8 @@ def descriptor_errors(doc: Any, dirname: Optional[str] = None) -> List[str]:
         if not isinstance(det, dict):
             errs.append('detect is not an object')
         else:
-            for extra in sorted(set(det) - {'command', 'paths', 'interface_from'}):
+            for extra in sorted(set(det) - {'command', 'paths', 'interface_from',
+                                            'legacy_paths'}):
                 errs.append('detect: unknown field %r' % extra)
             if ('command' in det) == ('paths' in det):
                 errs.append('detect needs exactly one of command or paths')
@@ -342,6 +402,14 @@ def descriptor_errors(doc: Any, dirname: Optional[str] = None) -> List[str]:
                                    and '..' not in x.split('/')
                                    for x in paths)):
                     errs.append('detect.paths is not a non-empty list of plain paths')
+            if 'legacy_paths' in det:
+                legacy = det['legacy_paths']
+                if ('paths' not in det or not isinstance(legacy, list) or not legacy
+                        or len(set(map(str, legacy))) != len(legacy)
+                        or not all(isinstance(x, str) and _PATH_RE.match(x)
+                                   and '..' not in x.split('/') for x in legacy)):
+                    errs.append('detect.legacy_paths is not a non-empty list of '
+                                'plain paths beside detect.paths')
             if 'interface_from' in det and (not isinstance(det['interface_from'], str)
                                             or not _IFACE_RE.match(det['interface_from'])):
                 errs.append('detect.interface_from has an unknown form')
@@ -426,6 +494,15 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
         entry['note'] = note
     reg[key] = entry
     data['addons'] = reg
+    _write_config(dwp_root, path, data)
+    return entry
+
+
+def _write_config(dwp_root: str, path: str, data: Dict[str, Any]) -> None:
+    """Atomic, mode-preserving write that refuses symbolic links."""
+    if os.path.islink(dwp_root) or os.path.islink(path):
+        raise ConfigError('%s or its .dwp directory is a symbolic link — the '
+                          'writer refuses to write through a link' % path)
     os.makedirs(dwp_root, exist_ok=True)
     mode = (os.stat(path).st_mode & 0o777) if os.path.exists(path) else 0o644
     handle, temp = tempfile.mkstemp(dir=dwp_root, prefix='.config-')
@@ -439,7 +516,6 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
         if os.path.exists(temp):
             os.unlink(temp)
         raise
-    return entry
 
 
 def backfill(dwp_root: str, write: bool = False,
@@ -516,6 +592,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         if name == 'enable':
             p.add_argument('--version')
             p.add_argument('--note')
+    p = sub.add_parser('host')
+    p.add_argument('capability')
+    p.add_argument('value', choices=['true', 'false'])
+    p.add_argument('--repo', required=True)
     p = sub.add_parser('backfill')
     p.add_argument('--repo', required=True)
     p.add_argument('--write', action='store_true')
@@ -544,6 +624,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             print('ERROR: %s' % exc, file=sys.stderr)
             return 2
         print('OK: addons.%s = %s' % (args.key, json.dumps(entry, sort_keys=True)))
+        return 0
+    if args.command == 'host':
+        try:
+            rec = write_host(_root_from_args(args), args.capability,
+                             args.value == 'true')
+        except ConfigError as exc:
+            print('ERROR: %s' % exc, file=sys.stderr)
+            return 2
+        print('OK: host = %s' % json.dumps(rec, sort_keys=True))
         return 0
     if args.command == 'backfill':
         try:
