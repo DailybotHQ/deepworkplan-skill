@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.0.1] — 2026-10-09
+
+### Changes
+
+- fix(skill): pin installs with the tree-URL form; v7.0.0 Final Review (#64)
+- fix(skill): resolve the Final Review local-review findings - Task 13 of PLAN_005_v7_final_release
+- fix(skill): pin every install with the tree-URL form the skills CLI honours - Task 13 of PLAN_005_v7_final_release
+
+
 ## [7.0.0] — 2026-10-09
 
 ### Changes
