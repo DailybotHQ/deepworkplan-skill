@@ -1638,19 +1638,13 @@ class Writer:
                               'and its generation (%s)' %
                               contract_v6.contract_generation(live))
         chain_dir = os.path.join(self.r.dir, 'contracts')
-        first = os.path.join(chain_dir, 'contract.r1.json')
-        if not os.path.exists(first) and live.get('revision', 1) == 1:
-            # W1: bootstrap (or finish bootstrapping) the chain with the
-            # materialized revision 1 before anything reads the chain
-            os.makedirs(chain_dir, exist_ok=True)
-            with open(os.path.join(self.r.dir, 'contract.json'), 'rb') as fh:
-                _atomic_write(first, fh.read().decode('utf-8'))
         parents = {}
-        sources = ([os.path.join(chain_dir, n)
-                    for n in sorted(os.listdir(chain_dir))
-                    if n.endswith('.json')]
-                   if os.path.isdir(chain_dir) else
-                   [os.path.join(self.r.dir, 'contract.json')])
+        sources = sorted(os.path.join(chain_dir, n)
+                         for n in (os.listdir(chain_dir)
+                                   if os.path.isdir(chain_dir) else [])
+                         if n.endswith('.json'))
+        if not sources:  # no chain yet (or an interrupted bootstrap)
+            sources = [os.path.join(self.r.dir, 'contract.json')]
         for path in sources:
             doc = PlanRecords._read_json(path)
             parents[contract_v6.compute_contract_id(doc)] = doc
@@ -1660,6 +1654,14 @@ class Writer:
         if errors:
             raise LedgerError('amend refused: %s' % errors[0])
         new_id = contract_v6.compute_contract_id(draft)
+        first = os.path.join(chain_dir, 'contract.r1.json')
+        if not os.path.exists(first) and live.get('revision', 1) == 1:
+            # W1: bootstrap (or finish bootstrapping) the chain with the
+            # materialized revision 1 - only after the draft validated, so a
+            # refused amendment writes nothing
+            os.makedirs(chain_dir, exist_ok=True)
+            with open(os.path.join(self.r.dir, 'contract.json'), 'rb') as fh:
+                _atomic_write(first, fh.read().decode('utf-8'))
         final = os.path.join(chain_dir, 'contract.r%d.json' % revision)
         pending = os.path.join(chain_dir,
                                '.contract.r%d.json.pending' % revision)

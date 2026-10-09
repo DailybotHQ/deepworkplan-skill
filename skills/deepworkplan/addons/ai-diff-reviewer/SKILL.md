@@ -120,7 +120,7 @@ happen.
 
 **Writes (only after explicit developer acceptance of the relevant step):**
 
-- **Vendored skill install** — via `npx --yes skills add <repo>@<tag> … -y` /
+- **Vendored skill install** — via `npx --yes skills add https://github.com/<owner/repo>/tree/<tag> … -y` /
   `npx --yes skills update … -y` into `.agents/skills/ai-diff-reviewer/` +
   `skills-lock.json`. Installs are tag-pinned (Step 1); never run without
   Step 1 consent.
@@ -380,7 +380,7 @@ skip, and do not fail the onboarding.
   reimplementation, no `apply-review`/`address-review` reimplementation.
   Point at the vendored sub-skills.
 - **Verified install only.** Never recommend piping a remote installer to a
-  shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
+  shell. Use `npx --yes skills add https://github.com/<owner/repo>/tree/<tag> … -y` — the tag pin plus
   `skills-lock.json` content-hash verification is what makes the install
   reproducible and auditable.
 - **Reconcile, don't clobber.** An existing extension file, workflow, or

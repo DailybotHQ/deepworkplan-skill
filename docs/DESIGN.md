@@ -235,7 +235,7 @@ resolves the latest published tags of `agent-skill` and `ai-diff-reviewer`
 if either moved runs:
 
 ```bash
-npx --yes skills add <repo>@<tag> --skill <name> --force -y
+npx --yes skills add https://github.com/<owner/repo>/tree/<tag> --skill <name> --force -y
 ```
 
 Both `--yes` (npm's proceed prompt) AND `-y` (the skills CLI's agent-picker

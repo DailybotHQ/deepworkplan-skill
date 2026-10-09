@@ -26,6 +26,9 @@ routing is available, or a sub-skill path does not resolve.
 **Symptom:** `npx … skills add <repo>@<tag>` printed the requested tag (or
 "Done!") and exited 0, but the installed `SKILL.md` `version:` is not the
 requested tag, or the target directory is empty / missing its `SKILL.md`.
+The first case is systematic for the `<repo>@<tag>` shorthand (skills CLI
+1.7.1 installs the default branch); install with the tree-URL form
+`skills add https://github.com/<owner/repo>/tree/<tag>`, which pins.
 
 Two upstream CLI defects, both reproduced in the v2/v5 round-1 benchmark
 install ledgers: the `@tag` pin can be display-only (the requested tag

@@ -63,7 +63,7 @@ timeout — dropping either flag will hang this workflow. The temp smoke step
 and both addon dogfood steps carry both flags; the pattern is:
 
 ```bash
-npx --yes skills add <owner/repo>@<tag> --skill <name> --force -y
+npx --yes skills add https://github.com/<owner/repo>/tree/<tag> --skill <name> --force -y
 ```
 
 ---

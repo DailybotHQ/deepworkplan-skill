@@ -225,7 +225,8 @@ grep -RInE --exclude=TRUST.md -- '--dangerous[l]y|--full-permissio[n]|c[u]rl[^|]
 #    `OWNER/REPO@ref` shorthand — the skills CLI ignores that ref and installs
 #    the default branch; a pin is the tree-URL form
 #    `skills add https://github.com/OWNER/REPO/tree/vX.Y.Z`:
-grep -RInE --exclude=TRUST.md --exclude=install-verification.md 'git clone |skills add [A-Za-z0-9_./-]+([[:space:]]|$)|skills add "?[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+@' skills/deepworkplan \
+grep -RInE --exclude=TRUST.md --exclude=install-verification.md --exclude=troubleshooting.md 'git clone |skills add [A-Za-z0-9_./-]+([[:space:]]|$)|skills add "?[^ "]*[A-Za-z0-9_>-]@|skills add "?https://[^ "]*' skills/deepworkplan \
+  | grep -vE 'skills add "?https://github\.com/[^ "]+/tree/(v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?|vX\.Y\.Z|<[^>]+>|\$\{?[A-Za-z_]+\}?)("|[[:space:]`]|$)' \
   | grep -vE 'git clone --branch v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?([[:space:]`]|$)' \
   || echo 'OK: every install path is tag-pinned or package-managed'
 ```

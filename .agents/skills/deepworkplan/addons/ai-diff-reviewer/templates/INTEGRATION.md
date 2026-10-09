@@ -326,7 +326,7 @@ Decision notes:
   `apply-review` walkthrough, the `address-review` loop, or the review
   methodology. Point at the vendored sub-skills.
 - **Verified install only:** never recommend piping a remote installer to
-  a shell. Use `npx --yes skills add <repo>@<tag> … -y` — the tag pin plus
+  a shell. Use `npx --yes skills add https://github.com/<owner/repo>/tree/<tag> … -y` — the tag pin plus
   `skills-lock.json` content-hash verification is what makes the install
   reproducible and auditable.
 - **Never block (invocation only):** the wired **local** review step is

@@ -263,7 +263,7 @@ The `auto-release.yml` workflow runs on every merge to `main` and:
  + addons), prepends a section to `CHANGELOG.md`, commits as
  `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and pushes.
 5. **Smoke-tests the just-published tag** — runs `npx skills add
- DailybotHQ/deepworkplan-skill@vX.Y.Z` into a **temp directory** and asserts
+ https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z` into a **temp directory** and asserts
  the installed `version:` matches. This proves the release installs for
  consumers **without** overwriting the dogfood copy at
  `.agents/skills/deepworkplan/`.
