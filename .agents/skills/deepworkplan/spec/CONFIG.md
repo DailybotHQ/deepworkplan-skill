@@ -1,6 +1,6 @@
 # CONFIG.md — DeepWorkPlan configuration file (Normative)
 
-> Status: **7.0.0-beta.1 line**. Defines `.dwp/config.json` and
+> Status: **7.0.0**. Defines `.dwp/config.json` and
 > `~/.dwp/config.json`: one file shape, one parser
 > ([`../shared/config.py`](../shared/config.py)), two keys — `benchmark`
 > ([`BENCHMARK.md`](BENCHMARK.md) §1) and `addons` (the addon registry,

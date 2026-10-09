@@ -18,7 +18,7 @@ The second rule follows from the first: a capability that is useful without
 DWP is its **own product** (own repository, license, tags and interface
 number), and the pack carries a **thin integrator** for it — never a copy.
 
-## What v7 ships (7.0.0-beta.1)
+## What v7 ships (7.0.0)
 
 | Surface | What it is |
 |---|---|

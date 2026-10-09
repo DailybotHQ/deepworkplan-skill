@@ -26,7 +26,7 @@ surface (`addon/surface.json`, interface `1`) at the pinned tag
 | Field | Value |
 |-------|-------|
 | **Version** | 0.2.0 |
-| **Status** | Beta (DeepWorkPlan 7.0.0-beta.1) |
+| **Status** | Stable (DeepWorkPlan 7.0.0) |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/V7_ROADMAP.md` |
 | **License** | MIT |
 

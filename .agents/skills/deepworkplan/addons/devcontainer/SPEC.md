@@ -16,7 +16,7 @@ validation.
 | Field | Value |
 |-------|-------|
 | **Version** | 2.0.0 |
-| **Status** | Beta (DeepWorkPlan 7.0.0-beta.1) — supersedes the 1.x in-pack templates |
+| **Status** | Stable (DeepWorkPlan 7.0.0) — supersedes the 1.x in-pack templates |
 | **Product pin** | `DailybotHQ/devcontainer-kit` `v0.1.4`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md` |
 

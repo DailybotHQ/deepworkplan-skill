@@ -38,8 +38,8 @@ backports.
 
 | Version | Supported |
 |---------|-----------|
-| Latest `6.x` stable release (currently `v6.1.0`) | ✅ |
-| `7.0.0` pre-releases (`v7.0.0-beta.N`) | ✅ until `v7.0.0` ships |
+| Latest `7.x` stable release (currently `v7.0.0`) | ✅ |
+| `6.x` and the `7.0.0` pre-releases | ❌ — upgrade to `v7.0.0` (`/deepworkplan-upgrade`) |
 | Anything older | ❌ — upgrade to the latest release |
 
 ## In Scope

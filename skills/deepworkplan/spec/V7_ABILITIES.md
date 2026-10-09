@@ -1,6 +1,6 @@
 # V7_ABILITIES.md — Addon-provided abilities (Normative)
 
-> Status: **7.0.0-beta.1 line**. Extends [`V6_RESOURCES.md`](V6_RESOURCES.md)
+> Status: **7.0.0**. Extends [`V6_RESOURCES.md`](V6_RESOURCES.md)
 > §1 (host capability negotiation) without changing it: the closed ability
 > set, the all-False minimal host and the refusal of unknown keys stand.
 > What v7 adds is a second, **runtime-only** source of abilities — the

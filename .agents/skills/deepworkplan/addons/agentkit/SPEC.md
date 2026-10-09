@@ -16,7 +16,7 @@ registry record and the mapping of the four delegation operations onto
 | Field | Value |
 |-------|-------|
 | **Version** | 0.1.0 |
-| **Status** | Beta (DeepWorkPlan 7.0.0-beta.1) |
+| **Status** | Stable (DeepWorkPlan 7.0.0) |
 | **Product pin** | `DailybotHQ/coding-agents-kit` `v0.1.1`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/V7_ABILITIES.md`, `../../execute/delegation.md` |
 
