@@ -346,7 +346,8 @@ PY
   grep -qF 'Both generations can coexist' "$SK/SKILL.md"
   grep -qF 'v6 plans first' "$SK/status/SKILL.md"
   grep -qF 'stays read-only' "$SK/status/SKILL.md"
-  grep -qF 'v6 generation check' "$SK/verify/SKILL.md"
+  grep -qF 'v6/v7 generation check (automated)' "$SK/verify/SKILL.md"
+  grep -qF 'conformance.sh --plan <name|path>' "$SK/verify/SKILL.md"
   grep -qF 'contract amendments' "$SK/refine/SKILL.md"
   grep -qF 'V6_LIFECYCLE.md' "$SK/refine/SKILL.md"
 }

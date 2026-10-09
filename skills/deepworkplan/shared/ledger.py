@@ -586,6 +586,30 @@ def task_complete(contract, events, task_id):
                for state in criterion_states(contract, events, task_id))
 
 
+def snapshot_bytes(state):
+    """The exact bytes ``project`` writes for a snapshot document."""
+    return json.dumps(state, sort_keys=True, indent=2) + '\n'
+
+
+def read_only_snapshot(records):
+    """The snapshot a writer would project, computed without the lock,
+    without repairs and without writing anything (the verifier's view).
+
+    A torn journal tail is reported, never repaired: repair is a write and
+    belongs to the next writer that takes the lock.
+    """
+    events, torn, _framing = records.read_journal()
+    if torn is not None:
+        raise LedgerError('journal has a torn tail at byte %d (%s) - the '
+                          'next ledger write repairs it' % torn)
+    view = Writer.__new__(Writer)
+    view.r = records
+    view.lock = None
+    view._seq_floor = records.archive_top_seq()
+    view.events = records.archived_events() + events
+    return view.snapshot()
+
+
 # ------------------------------------------------------------------ writer
 
 class Writer:
@@ -1292,8 +1316,9 @@ class Writer:
             return 'completed'
         return 'in_progress'
 
-    def project(self):
-        """Rebuild state.json deterministically from journal + contract.
+    def snapshot(self):
+        """The state.json document, built deterministically from journal +
+        contract (``project`` writes it; ``verify`` compares it read-only).
 
         Determinism: every timestamp in the snapshot is derived from event
         ts values, never the wall clock — replaying the same journal bytes
@@ -1337,8 +1362,12 @@ class Writer:
                 'started_seq': self.task_start_seq(task['id']),
                 'criteria': self.criterion_state(task['id']),
             })
-        blob = json.dumps(state, sort_keys=True, indent=2) + '\n'
-        _atomic_write(self.r.state_path, blob)
+        return state
+
+    def project(self):
+        """Write the snapshot (see ``snapshot``) to state.json."""
+        state = self.snapshot()
+        _atomic_write(self.r.state_path, snapshot_bytes(state))
         return state
 
     def _resource_totals(self):

@@ -185,8 +185,9 @@ any point recovers by running the command again:
 backup and removes the v6 artifacts. It MUST refuse — until `--force` —
 when the journal carries more events than the migration minted:
 post-migration v6 work is real history, not debris. The reverse migration
-(v6 → v5) does not exist; a v6 plan under the v5 runner is refused by
-`verify/plan_contract.py` naming the contract pointer (D2-10).
+(v6 → v5) does not exist; a v6 plan under the v5 runner (the v5
+finalization in `verify/plan_contract.py`) is refused naming the contract
+pointer (D2-10), while the read-only verifier judges it by its v6 records.
 
 ## 9. Cross-agent and cold resume (normative)
 

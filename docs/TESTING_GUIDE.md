@@ -26,6 +26,7 @@ The runtime validator must still work without third-party Python packages.
 |---|---|---|
 | State updater | `bats tests/state-updater.bats tests/state-evidence.bats tests/state-transitions.bats` | execute, resume, verifier; widen to full for shared semantics |
 | Plan verifier / schema | `bats tests/conformance-sh.bats tests/schema-contract.bats tests/lite-plans.bats` | all plan readers/writers; full suite required |
+| v6/v7 plans in the mechanical verifier | `bats tests/v7-verify.bats tests/conformance-sh.bats tests/v6-migration.bats` (helper-materialized v6 and v7 plans CONFORMANT; tampered journal, reordered seq, missing approval, torn tail, foreign manifest pointer and wrong-generation pair fail by name; the verifier writes nothing; `--plan` name or path; the v5 finalization still refuses a v6/v7 plan, D2-10) | `verify/plan_contract.py` `records()`, `verify/conformance.sh --plan`, `ledger.py` `snapshot`/`read_only_snapshot`/`snapshot_bytes` |
 | Context/path detection and numbered plan allocation | `bats tests/context-sh.bats tests/plan-paths.bats` | every flow; shellcheck required |
 | Installer | `bats tests/setup-sh.bats` | all host adapters; Linux/macOS setup CI |
 | Guide links | `python3 scripts/check-guide-migration.py` | flow read paths |

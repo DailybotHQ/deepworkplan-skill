@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Offline plan invariants; read-only, Python standard library only.
 
-Two eras share this one implementation (DWP_SPECIFICATION.md §6.5):
+v6 and v7 plans (a v6/v7 manifest, or a contract.json / contracts/ chain) are
+judged against their own records — contract, journal, approval and the
+derived snapshot — through the shared ledger readers (records(), below);
+nothing is written and nothing is repaired. Plans of the v5 generation and
+older follow the two eras this module was written for (DWP_SPECIFICATION.md
+§6.5):
 
   * current — state.json declares the v2 or v5 schema (the v5 URLs are
     generation snapshots of the v2 shape). The full modern contract applies:
@@ -29,9 +34,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
 sys.dont_write_bytecode = True
 from state_contract import gate_findings, shape_errors, derive_status
 
-# This checker validates the retained v5 plan shape. v6 plans use the
-# contract/journal inspection path and must never be accepted here.
+# The v5 path validates the retained v5 plan shape; v6/v7 plans are routed
+# to records() and never judged by the v5 rules.
 SUPPORTED_SPEC = '5.0.0'
+MANIFEST_V6 = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
+MANIFEST_V7 = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
+RECORD_GENERATIONS = {MANIFEST_V6: 'v6', MANIFEST_V7: 'v7'}
+SNAPSHOT_V6 = 'https://deepworkplan.com/schema/plan-snapshot/v6.json'
 # The standard's released series: 2.x and 4.x are historical (plans authored
 # before each jump stay valid, §6.5), 5.x is this checker's ceiling. There is no 3.x standard
 # — the v3 launch was a product release, not a standard bump.
@@ -201,20 +210,30 @@ def check(plan, is_git=True, state_override=None, allow_finalizing=False):
                 report.bad(f'{label}.json parses: {exc}')
     if report.failed:
         return report
+    # v6/v7 plans are judged by their own records, never by the v5 rules: a
+    # v6/v7 manifest, or a contract without any manifest (an interrupted
+    # materialization, which records() names).
+    manifest_url = documents.get('manifest', {}).get('schema')
+    if manifest_url in RECORD_GENERATIONS or (
+            'manifest' not in documents and ((plan / 'contract.json').exists()
+                                             or (plan / 'contracts').is_dir())):
+        if state_override is not None:
+            # D2-10: the v5 finalization (a v5 state candidate) never runs on
+            # a v6/v7 plan — the refusal names the contract pointer and sends
+            # the caller to the v6 flow, never to a silent generation change.
+            pointer = documents.get('manifest', {}).get('contract', {}).get('id', '?')
+            report.bad(f'this plan is {RECORD_GENERATIONS.get(manifest_url, "v6")} (manifest points at '
+                       f'contract.json {pointer!r}) — the v5 runner does not execute v6 plans; open it '
+                       'with the v6 flow (execute Step 2.0). v6 plans are never migrated back; a v5 plan '
+                       'is migrated forward only through shared/migrate_v6.py')
+            return report
+        records(plan, documents, report)
+        return report
     for label, doc in documents.items():
         url = doc.get('schema')
         known = [f'https://deepworkplan.com/schema/plan-{label}/v{v}.json' for v in (1, 2, 5)]
         if url is not None and url not in known:
-            # D2-10: a v6 plan under the v5 runner is unsupported, and the
-            # error names the contract pointer instead of a generic
-            # "unknown URL" — the caller is sent to the v6 flow, never to
-            # an upgrade that would silently change generations.
-            if url in ('https://deepworkplan.com/schema/plan-manifest/v6.json',
-                       'https://deepworkplan.com/schema/plan-manifest/v7.json'):
-                report.bad(f'this plan is {url.rsplit("/", 1)[-1][:-5]} (manifest points at contract.json {doc.get("contract", {}).get("id", "?")!r}) — '
-                           'the v5 runner does not execute v6 plans; open it with the v6 flow (execute Step 2.0). '
-                           'v6 plans are never migrated back; a v5 plan is migrated forward only through shared/migrate_v6.py')
-            elif (plan / 'contract.json').exists():
+            if (plan / 'contract.json').exists() or (plan / 'contracts').is_dir():
                 report.bad(f'{label}.json is {url!r} but the folder carries a v6 contract.json — '
                            'a torn pair this checker refuses to guess about; resolve the folder by hand '
                            '(shared/migrate_v6.py rollback if a migration was interrupted)')
@@ -230,6 +249,97 @@ def check(plan, is_git=True, state_override=None, allow_finalizing=False):
     else:
         legacy(plan, state, manifest, is_git, report)
     return report
+
+
+# ------------------------------------------------------------- v6/v7 records
+def records(plan, documents, report):
+    """A v6/v7 plan judged against its own records, read-only.
+
+    The contract (every revision of its chain) validates, the manifest pairs
+    with the contract's generation and points into its chain, the journal is
+    untorn and valid under that contract, an approval cites the live contract
+    id, and state.json — a derived projection — agrees with the journal.
+    Completion is derived from gate evidence, never declared.
+    """
+    import contract_v6
+    import ledger
+    manifest = documents.get('manifest')
+    if manifest is None:
+        return report.bad('contract without manifest.json — an interrupted materialization; '
+                          're-run ledger.py materialize to resume it')
+    generation = RECORD_GENERATIONS[manifest.get('schema')]
+    try:
+        rec = ledger.PlanRecords(str(plan))
+    except ledger.LedgerError as exc:
+        return report.bad(f'contract: {exc}')
+    found = contract_v6.contract_generation(rec.contract)
+    if not report.verdict(found == generation,
+                          f'{generation} manifest pairs with a {generation} contract',
+                          f'manifest.json is {generation} but the live contract is {found} — a '
+                          'torn pair this checker refuses to guess about; resolve the folder by hand'):
+        return None
+    chain = []
+    if (plan / 'contracts').is_dir():
+        for path in sorted((plan / 'contracts').glob('*.json')):
+            doc = json.loads(path.read_text())
+            revision = doc.get('revision')
+            chain.append((revision if type(revision) is int else 0, path.name, doc))
+        chain.sort(key=lambda item: item[0])
+    else:
+        chain.append((1, 'contract.json', json.loads((plan / 'contract.json').read_text())))
+    problems, parents = [], {}
+    for _revision, name, doc in chain:
+        problems += [f'{name}: {err}' for err in contract_v6.contract_errors(doc, parents=dict(parents))]
+        parents[contract_v6.compute_contract_id(doc)] = doc
+    if not report.extend(problems, f'contract valid ({generation}, revision '
+                         f'{rec.contract.get("revision", 1)}; {len(chain)} revision(s) checked)'):
+        return None
+    pointer = (manifest.get('contract') or {}).get('id')
+    report.verdict(pointer in parents,
+                   'manifest points at a contract of this plan',
+                   f'manifest contract id {str(pointer)[:12]!r} is no revision of this plan\'s '
+                   'contract — a torn pair; resolve the folder by hand')
+    report.verdict(manifest.get('plan') == plan.name == rec.contract.get('plan'),
+                   'plan identity matches its directory',
+                   'plan identity disagrees with its directory (manifest, contract and folder '
+                   'must name the same plan)')
+    events, torn, _framing = rec.read_journal()
+    if torn is not None:
+        return report.bad(f'journal has a torn tail at byte {torn[0]} ({torn[1]}) — the next '
+                          'ledger write repairs it; run ledger.py project, then verify again')
+    try:
+        events = rec.archived_events() + events
+    except ledger.LedgerError as exc:
+        return report.bad(str(exc))
+    if not report.extend([f'journal: {err}' for err in contract_v6.journal_errors(events, rec.contract)],
+                         f'journal valid ({len(events)} events)'):
+        return None
+    report.verdict(any(e.get('type') == 'approval' and e.get('contract_id') == rec.contract_id
+                       for e in events),
+                   'an approval cites the live contract id',
+                   f'no approval cites the live contract id {rec.contract_id[:12]} — an unapproved '
+                   'contract cannot execute (amend with a fresh approval)')
+    snapshot = ledger.read_only_snapshot(rec)
+    state = documents.get('state')
+    if state is None:
+        report.note('no state.json yet — run ledger.py project (the snapshot is derived)')
+    elif state.get('schema') != SNAPSHOT_V6:
+        report.bad(f'state.json is {state.get("schema")!r}, not the derived plan snapshot — '
+                   'regenerate it with ledger.py project, never by hand')
+    elif (plan / 'state.json').read_bytes() == ledger.snapshot_bytes(snapshot).encode('utf-8'):
+        report.ok('state.json agrees with the journal (byte-identical projection)')
+    else:
+        report.note('state.json is stale against the journal — regenerate it with ledger.py '
+                    'project (derived, never hand-edited)')
+    tasks = snapshot['tasks']
+    done = sum(t['status'] == 'completed' for t in tasks)
+    report.ok(f'{done}/{len(tasks)} tasks completed (derived from gate evidence)')
+    if tasks and 'final review' not in str(tasks[-1].get('title') or '').lower():
+        report.note('the last contract task is not the Final Review (DWP_SPECIFICATION §6.1)')
+    if tasks and done == len(tasks):
+        report.extend(security_findings(plan),
+                      'completed plan SECURITY_REVIEW.md has no unresolved critical finding')
+    return None
 
 
 # ------------------------------------------------------------------- current
