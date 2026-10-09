@@ -9,6 +9,7 @@
     },
     "dailybot": {
       "source": "DailybotHQ/agent-skill",
+      "ref": "v3.23.3",
       "sourceType": "github",
       "skillPath": "skills/dailybot/SKILL.md",
       "computedHash": "d54deaafa12cccc16b05442a7a66e00d0f73ac23e5423b19b6c414401f6b3f1f"
