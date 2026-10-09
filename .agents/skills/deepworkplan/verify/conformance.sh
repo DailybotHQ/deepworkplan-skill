@@ -184,10 +184,13 @@ check_repo() {
   if [ "$IS_GIT" -eq 1 ]; then
     case "$PLAN_ROOT/" in
       "$PWD/"*)
-        if git check-ignore "${PLAN_ROOT#"$PWD"/}" >/dev/null 2>&1; then
-          pass ".dwp/ gitignored (or configured plan output directory)"
+        # plans must be ignored; .dwp/config.json (the addon registry) may
+        # be tracked through the documented `.dwp/*` + `!.dwp/config.json`
+        # exception (spec/CONFIG.md §1)
+        if git check-ignore -q "${PLAN_ROOT#"$PWD"/}/plans/.probe" 2>/dev/null; then
+          pass ".dwp/ plans gitignored (or configured plan output directory)"
         else
-          fail ".dwp/ gitignored (or configured plan output directory)"
+          fail ".dwp/ plans gitignored (or configured plan output directory)"
         fi
         ;;
       *) pass "plan output directory outside the repository (DWP_DIR override)" ;;

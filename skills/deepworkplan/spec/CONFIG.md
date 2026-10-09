@@ -21,6 +21,12 @@ flows may **offer** or **amplify** — never require.
 | 2 | `~/.dwp/config.json` | every repository of the local user |
 | 3 | absent | everything disabled |
 
+**The repository file is tracked** so teammates and CI read the same
+registry (F-04): onboarding writes the `.gitignore` rule `.dwp/*` +
+`!.dwp/config.json` — plans, onboarding notes and benchmark records stay
+ignored. A repository with a plain `.dwp/` rule stays conformant; its
+registry is then local. The file holds decisions, never secrets.
+
 Both files share one shape:
 
 ```json
@@ -70,8 +76,12 @@ Both files share one shape:
   outside the set is **ignored with one warning** (a newer pack's addon, a
   typo) — never an error.
 - **Entry shape (closed).** `enabled` (boolean, **required to enable**;
-  only `true` enables) and optional `version` (string matching
-  `^v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$`). Any other field, a missing
+  only `true` enables), optional `version` (string matching
+  `^v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$`) and optional `note` (one line,
+  1–200 characters — e.g. "accepted; machine-level install deferred").
+  An enabled addon that is not detected and carries a note is reported as
+  **deferred** (`resources.py abilities` → `deferred`), without a warning
+  (F-05). Any other field, a missing
   `enabled`, a non-boolean `enabled` or a malformed `version` makes that
   entry **not enabled** with one warning naming the file, key and reason.
   A malformed entry in the repository file decides its key (fail-closed);
@@ -98,6 +108,7 @@ Both files share one shape:
 |---|---|---|
 | Writer | `onboard` Phase 7b, on the developer's acceptance of one addon's offer | `python3 <pack>/shared/config.py enable <key> [--version <tag>] --repo <repo>` (a decline writes nothing; an explicit "turn it off" is `disable <key>`) |
 | Writer | an addon's own install step, or the human | the same command, or a hand edit |
+| Writer | `upgrade`, after the developer accepts the upgrade | `config.py backfill --repo <repo>` (dry run), then `--write`: every in-pack addon the repository file does not name and whose read-only detection succeeds is recorded `enabled` with its observed version and a back-fill note (F-15). A recorded decision — enabled or disabled — is never changed |
 | Reader | `execute`, `create`, `verify`, `status` | `python3 <pack>/shared/config.py show` / `enabled` (`--plan <dir>` resolves the plan's repository) |
 | Reader | `shared/benchmark.py` | the `benchmark` key only, at its emission point |
 

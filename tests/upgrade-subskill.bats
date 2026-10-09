@@ -96,7 +96,8 @@ up_has() {
 }
 
 @test ".dwp/ is never migrated and plans keep their authored standard" {
-    up_has "$UP" "An upgrade never touches \`.dwp/\`"
+    up_has "$UP" "An upgrade never touches"
+    up_has "$UP" "\`.dwp/\` plans — plans and their recorded evidence are history"
     up_has "$UP" "No plan, state file, gate record or evidence file is migrated, rewritten or invalidated by an upgrade"
     up_has "$UP" "an old plan declaring 2.x stays valid as historical"
     up_has "$UP" "separate, explicit \`refine migrate\` decision"
@@ -119,4 +120,10 @@ up_has() {
     [ "$status" -eq 0 ]
     run bash -c "grep -rln 'upgrade/SKILL' '$SK/create' '$SK/execute' '$SK/resume' '$SK/refine' '$SK/status' 2>/dev/null"
     [ "$status" -ne 0 ]
+}
+
+@test "upgrade back-fills the addon registry without re-deciding (F-15)" {
+  grep -qF 'shared/config.py backfill --repo .` (dry run)' "$SK/upgrade/SKILL.md"
+  grep -qF 'A key the registry already names is never changed.' "$SK/upgrade/SKILL.md"
+  grep -qF 'recorded in `.dwp/config.json` (Phase 3 step 4)' "$SK/upgrade/SKILL.md"
 }

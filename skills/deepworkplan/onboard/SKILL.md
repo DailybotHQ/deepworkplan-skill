@@ -747,9 +747,11 @@ and **stack-appropriate**, not generic boilerplate.
    fall back to the byte-exact `git archive` install — never proceed
    silently on a mismatched or empty install.
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
-   create `.dwp/plans/` with a `README.md` placeholder,
-   and add `.dwp/` to the repo's `.gitignore` (append the rule
-   non-destructively — do not rewrite the file). `.dwp/` is the only DWP output
+   create `.dwp/plans/` with a `README.md` placeholder, and append to the
+   repo's `.gitignore` (non-destructively — do not rewrite the file) the
+   two lines `.dwp/*` and `!.dwp/config.json`: plans stay ignored, the
+   addon registry is shared with teammates and CI (`../spec/CONFIG.md` §1).
+   An existing `.dwp/` rule stays conformant; propose the exception. `.dwp/` is the only DWP output
    location; it **replaces** any pre-v2 DWP output tree (see
    `../shared/dwp-paths.md` for the contrast). If an older DWP output tree
    exists, note it for migration (do not delete without asking).

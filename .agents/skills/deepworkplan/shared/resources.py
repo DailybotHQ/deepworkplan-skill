@@ -439,6 +439,32 @@ def _read_interface(spec, stdout):
         return None
 
 
+VERSION_IN_TEXT = re.compile(r'\bv?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)\b')
+
+
+def _observed_version(det, stdout, repo_root=None):
+    """The installed product's version as a tag (vX.Y.Z), or None.
+
+    From a detect command's output, or from the ``version:`` frontmatter of
+    a detected SKILL.md path (a vendored skill). Informative only: it feeds
+    the registry back-fill and verify's mismatch warning, never a gate.
+    """
+    text = stdout or ''
+    if 'paths' in det:
+        base = repo_root or os.getcwd()
+        for path in det['paths']:
+            full = os.path.expanduser(path) if path.startswith('~/') \
+                else os.path.join(base, path)
+            if path.endswith('SKILL.md') and os.path.isfile(full):
+                with open(full, encoding='utf-8', errors='replace') as fh:
+                    head = fh.read(4096)
+                match = re.search(r'(?m)^version:\s*["\']?([^"\'\s]+)', head)
+                text = match.group(1) if match else ''
+                break
+    found = VERSION_IN_TEXT.search(text)
+    return 'v' + found.group(1) if found else None
+
+
 def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S):
     """Detection verdict for ONE enabled addon (opens its descriptor).
 
@@ -451,7 +477,7 @@ def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S)
         key, addons_dir or dwp_config.ADDONS_DIR)
     verdict = {'descriptor_ok': not errs, 'detected': False,
                'interface': None, 'compatible': False, 'provides': [],
-               'reason': None}
+               'reason': None, 'version': None}
     if errs:
         verdict['reason'] = 'invalid descriptor (%s)' % errs[0]
         return verdict
@@ -470,6 +496,7 @@ def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S)
     if not present:
         verdict['reason'] = reason
         return verdict
+    verdict['version'] = _observed_version(det, stdout, repo_root)
     pinned = (doc.get('product') or {}).get('interface')
     if pinned is None:
         verdict['compatible'] = True
@@ -501,12 +528,20 @@ def effective_abilities(host_caps=None, dwp_root=None, home=None,
     caps = host_capabilities(host_caps)  # closed set; unknown keys refused
     sources = {name: (['host'] if caps.get(name) else []) for name in caps}
     keys = dwp_config.addon_keys(addons_dir or dwp_config.ADDONS_DIR)
-    enabled, warnings = dwp_config.enabled_addons(dwp_root, home, keys)
+    view, warnings = dwp_config.resolve_addons(
+        dwp_config.load_files(dwp_root, home), keys)
+    enabled = sorted(k for k, v in view.items() if v['enabled'])
     repo_root = os.path.dirname(dwp_root) if dwp_root else None
     addons = {}
+    deferred = {}
     for key in enabled:
         verdict = addon_status(key, repo_root, addons_dir, timeout)
         addons[key] = verdict
+        if not verdict['detected'] and verdict['descriptor_ok'] and \
+                view[key].get('note'):
+            # F-05: accepted with a recorded deferral - reported, not warned
+            deferred[key] = view[key]['note']
+            continue
         if verdict['compatible']:
             for name in verdict['provides']:
                 if name not in HOST_CAPABILITIES:  # never invented
@@ -521,7 +556,7 @@ def effective_abilities(host_caps=None, dwp_root=None, home=None,
         elif verdict['reason'] and not verdict['descriptor_ok']:
             warnings.append('addon %s: %s' % (key, verdict['reason']))
     return {'abilities': caps, 'sources': sources, 'addons': addons,
-            'warnings': warnings, 'persisted': False}
+            'deferred': deferred, 'warnings': warnings, 'persisted': False}
 
 
 # ------------------------------------------------------------ routing

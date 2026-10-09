@@ -19,7 +19,8 @@ JSON or a wrong-typed value resolves to *disabled* for what it affects,
 with exactly one warning naming the file, the key and the reason. An addon
 key the pack does not ship (the set of in-pack addon directory names) is
 ignored with one warning — forward compatibility. Nothing here imports an
-addon, opens an addon file or decides anything a plan depends on: the
+addon or decides anything a plan depends on, and only ``descriptors`` and
+``backfill`` (both on explicit request) open addon descriptors: the
 registry is informative input to flows that may *offer* or *amplify*,
 never to anything that gates conformance.
 
@@ -27,7 +28,8 @@ Usage::
 
     config.py show [--repo DIR] [--plan DIR]       # resolved view (JSON)
     config.py enabled [--repo DIR] [--plan DIR]    # enabled addon keys, one per line
-    config.py enable  KEY [--version vX.Y.Z] --repo DIR   # onboarding writer
+    config.py enable  KEY [--version vX.Y.Z] [--note TEXT] --repo DIR   # onboarding writer
+    config.py backfill --repo DIR [--write]        # upgrade: record present addons
     config.py disable KEY --repo DIR
     config.py keys                                 # in-pack addon keys
     config.py descriptors                          # audit every addon.json (opens them)
@@ -175,7 +177,7 @@ def _entry_error(value: Any) -> Optional[str]:
     """Why one registry entry is unusable, or None when it is well formed."""
     if not isinstance(value, dict):
         return 'entry is not an object'
-    extra = sorted(set(value) - {'enabled', 'version'})
+    extra = sorted(set(value) - {'enabled', 'version', 'note'})
     if extra:
         return 'carries unknown field(s) %s' % ', '.join(extra)
     if 'enabled' not in value:
@@ -186,7 +188,15 @@ def _entry_error(value: Any) -> Optional[str]:
         version = value['version']
         if not isinstance(version, str) or not VERSION_RE.match(version):
             return '"version" is not a tag like v1.2.3 or v1.2.3-beta.1'
+    if 'note' in value and not _note_ok(value['note']):
+        return '"note" is not a one-line string of 1-200 characters'
     return None
+
+
+def _note_ok(note: Any) -> bool:
+    """F-05: a registry note is one line, 1-200 characters."""
+    return isinstance(note, str) and 0 < len(note) <= 200 and \
+        '\n' not in note and '\r' not in note
 
 
 def resolve_addons(files, keys: Optional[List[str]] = None
@@ -232,6 +242,8 @@ def resolve_addons(files, keys: Optional[List[str]] = None
                 view[key] = {'enabled': reg[key]['enabled'],
                              'version': reg[key].get('version'),
                              'source': label}
+                if 'note' in reg[key]:
+                    view[key]['note'] = reg[key]['note']
             break
     return view, warnings
 
@@ -373,7 +385,8 @@ class ConfigError(Exception):
 
 def write_addon(dwp_root: str, key: str, enabled: bool,
                 version: Optional[str] = None,
-                keys: Optional[List[str]] = None) -> Dict[str, Any]:
+                keys: Optional[List[str]] = None,
+                note: Optional[str] = None) -> Dict[str, Any]:
     """Set ``addons.<key>`` in the repository file, reconciling, atomically.
 
     Every other byte of meaning is preserved: other top-level keys, other
@@ -386,6 +399,8 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
                           % (key, ', '.join(known)))
     if version is not None and not VERSION_RE.match(version):
         raise ConfigError('version %r is not a tag like v1.2.3' % version)
+    if note is not None and not _note_ok(note):
+        raise ConfigError('note must be one line of 1-200 characters')
     path = os.path.join(dwp_root, 'config.json')
     if os.path.islink(dwp_root) or os.path.islink(path):
         raise ConfigError('%s or its .dwp directory is a symbolic link — the '
@@ -407,6 +422,8 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
     entry: Dict[str, Any] = {'enabled': enabled}
     if version is not None:
         entry['version'] = version
+    if note is not None:
+        entry['note'] = note
     reg[key] = entry
     data['addons'] = reg
     os.makedirs(dwp_root, exist_ok=True)
@@ -423,6 +440,49 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
             os.unlink(temp)
         raise
     return entry
+
+
+def backfill(dwp_root: str, write: bool = False,
+             keys: Optional[List[str]] = None, addons_dir: Optional[str] = None
+             ) -> List[Dict[str, Any]]:
+    """F-15: record addons that are already present but not in the registry.
+
+    For every in-pack key the repository file does not name (a recorded
+    decision - enabled or disabled - is never touched), run the addon's
+    read-only detection; a detected addon is proposed as
+    ``{"enabled": true, "version": <observed tag>, "note": "back-filled
+    ..."}``. Dry run by default; ``write`` applies the proposals through the
+    reconciling writer. An addon installed before the registry existed was
+    accepted when it was installed; the back-fill records that decision,
+    it never makes a new one.
+    """
+    import resources  # sibling; imported late (resources imports config)
+    known = list(keys) if keys is not None else addon_keys(
+        addons_dir or ADDONS_DIR)
+    path = os.path.join(dwp_root, 'config.json')
+    named: List[str] = []
+    if os.path.exists(path):
+        parsed, reason = read_config(path)
+        if parsed is None:
+            raise ConfigError('%s %s - fix it before back-filling'
+                              % (path, reason or 'unreadable'))
+        reg = parsed.get('addons')
+        named = sorted(reg) if isinstance(reg, dict) else []
+    repo_root = os.path.dirname(os.path.abspath(dwp_root))
+    proposals = []
+    for key in known:
+        if key in named:
+            continue
+        verdict = resources.addon_status(key, repo_root, addons_dir)
+        if not verdict['detected']:
+            continue
+        version = verdict.get('version')
+        note = 'back-filled on upgrade: already installed (detected %s)' % (
+            version or 'present')
+        proposals.append({'key': key, 'version': version, 'note': note})
+        if write:
+            write_addon(dwp_root, key, True, version, known, note)
+    return proposals
 
 
 # ---------------------------------------------------------------------------
@@ -455,6 +515,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         p.add_argument('--repo', required=True)
         if name == 'enable':
             p.add_argument('--version')
+            p.add_argument('--note')
+    p = sub.add_parser('backfill')
+    p.add_argument('--repo', required=True)
+    p.add_argument('--write', action='store_true')
     sub.add_parser('keys')
     sub.add_parser('descriptors')
     sub.add_parser('self-test')
@@ -474,11 +538,28 @@ def main(argv: Optional[List[str]] = None) -> int:
         try:
             entry = write_addon(_root_from_args(args), args.key,
                                 args.command == 'enable',
-                                getattr(args, 'version', None))
+                                getattr(args, 'version', None),
+                                note=getattr(args, 'note', None))
         except ConfigError as exc:
             print('ERROR: %s' % exc, file=sys.stderr)
             return 2
         print('OK: addons.%s = %s' % (args.key, json.dumps(entry, sort_keys=True)))
+        return 0
+    if args.command == 'backfill':
+        try:
+            found = backfill(_root_from_args(args), write=args.write)
+        except ConfigError as exc:
+            print('ERROR: %s' % exc, file=sys.stderr)
+            return 2
+        for item in found:
+            print('%s addons.%s = enabled%s' % (
+                'WROTE' if args.write else 'WOULD', item['key'],
+                ' ' + item['version'] if item['version'] else ''))
+        if not found:
+            print('OK: nothing to back-fill (every present addon is already '
+                  'recorded)')
+        elif not args.write:
+            print('dry run - re-run with --write to record these')
         return 0
     if args.command == 'descriptors':
         bad = 0

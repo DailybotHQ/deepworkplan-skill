@@ -116,7 +116,7 @@ EOF
     rm .gitignore
     run bash "$CONFORMANCE_SH" --repo-only
     [ "$status" -eq 1 ]
-    [[ "$output" =~ ".dwp/ gitignored" ]]
+    [[ "$output" =~ ".dwp/ plans gitignored" ]]
 }
 
 @test "well-formed plan passes all plan checks" {

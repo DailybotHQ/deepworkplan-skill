@@ -39,6 +39,13 @@
           "type": "string",
           "pattern": "^v\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.]+)?$",
           "description": "Informative product tag the repository expects (verify warns on a mismatch, never fails)."
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[^\\n\\r]*$",
+          "description": "Optional one-line note on the decision, e.g. 'accepted; machine-level install deferred'. An enabled addon that is not detected and carries a note is reported as deferred, without a warning."
         }
       }
     }

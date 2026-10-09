@@ -553,6 +553,10 @@ def config_cases(schemas, problems, notes, pack):
         ("floating version", {"enabled": True, "version": "latest"}, False),
         ("unprefixed version", {"enabled": True, "version": "1.2.3"}, False),
         ("extra field", {"enabled": True, "pin": "main"}, False),
+        ("note", {"enabled": True, "note": "install deferred"}, True),
+        ("empty note", {"enabled": True, "note": ""}, False),
+        ("multi-line note", {"enabled": True, "note": "a\nb"}, False),
+        ("long note", {"enabled": True, "note": "x" * 201}, False),
         ("not an object", True, False),
     ]
     for label, entry, expect in entries:
@@ -568,7 +572,7 @@ def config_cases(schemas, problems, notes, pack):
         if not errors(cs, doc):
             problems.append(f"config mutant {label}: jsonschema accepted it")
     if len(problems) == before:
-        notes.append("config: three fixtures valid under both halves; nine registry "
+        notes.append("config: three fixtures valid under both halves; thirteen registry "
                      "entries agree (jsonschema == shipped reader); three top-level "
                      "mutants rejected")
 

@@ -157,3 +157,81 @@ PY
   grep -qF '[`CONFIG.md`](CONFIG.md)' "$SK/spec/README.md"
   grep -qF '"$id": "https://deepworkplan.com/schema/dwp-config/v1.json"' "$SK/spec/schema/dwp-config-v1.schema.json"
 }
+
+# ------------------------------------------- F-04 / F-05 / F-15 (v7.0.0)
+
+@test "a one-line note records a decision; malformed notes fail closed (F-05)" {
+  run python3 "$CFG" enable agentkit --version v0.1.1 --note "accepted; machine-level install deferred" --repo "$REPO"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run _show
+  [ "$(_field agentkit note)" = '"accepted; machine-level install deferred"' ] || return 1
+  run python3 "$CFG" enable vim --note "$(printf 'two\nlines')" --repo "$REPO"
+  [ "$status" -eq 2 ] && [[ "$output" == *"one line of 1-200 characters"* ]] || return 1
+  printf '{"addons": {"vim": {"enabled": true, "note": ""}}}\n' > "$REPO/.dwp/config.json"
+  run python3 "$CFG" enabled --repo "$REPO"
+  [[ "$output" == *'"note" is not a one-line string'* ]] && [[ "$output" != *$'\nvim'* ]]
+}
+
+@test "an enabled, undetected addon with a note is deferred, not warned (F-05)" {
+  python3 "$CFG" enable agentkit --note "install deferred: \$HOME excluded" --repo "$REPO" >/dev/null
+  python3 "$CFG" enable herdr --repo "$REPO" >/dev/null
+  plan="$REPO/.dwp/plans/PLAN_x"
+  run python3 - "$SK/shared" "$REPO/.dwp" <<'PY'
+import json, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+import resources
+eff = resources.effective_abilities({}, sys.argv[2], timeout=2)
+print(json.dumps({'deferred': eff['deferred'], 'warnings': eff['warnings']}))
+PY
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  python3 -c '
+import json, sys
+d = json.loads(sys.argv[1])
+assert d["deferred"] == {"agentkit": "install deferred: $HOME excluded"}, d
+assert not any("agentkit" in w for w in d["warnings"]), d
+assert any("herdr" in w for w in d["warnings"]), d' "$output"
+}
+
+@test "backfill records present addons with observed versions, never re-deciding (F-15)" {
+  mkdir -p "$REPO/.agents/skills/ai-diff-reviewer" "$REPO/docs" "$WORK/bin"
+  printf -- '---\nname: ai-diff-reviewer\nversion: "3.3.0"\n---\n' > "$REPO/.agents/skills/ai-diff-reviewer/SKILL.md"
+  printf '# Design\n' > "$REPO/docs/DESIGN.md"
+  printf '#!/bin/sh\necho "{\\"interface\\": 1, \\"version\\": \\"0.1.1\\"}"\n' > "$WORK/bin/ak"
+  chmod +x "$WORK/bin/ak"
+  python3 "$CFG" disable design-system --repo "$REPO" >/dev/null
+  before="$(cat "$REPO/.dwp/config.json")"
+  run env PATH="$WORK/bin:$PATH" python3 "$CFG" backfill --repo "$REPO"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"WOULD addons.ai-diff-reviewer = enabled v3.3.0"* ]] || return 1
+  [[ "$output" == *"WOULD addons.agentkit = enabled v0.1.1"* ]] || return 1
+  [[ "$output" != *"design-system"* ]] || return 1
+  [ "$before" = "$(cat "$REPO/.dwp/config.json")" ] || return 1
+  run env PATH="$WORK/bin:$PATH" python3 "$CFG" backfill --repo "$REPO" --write
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run _show
+  [ "$(_field ai-diff-reviewer version)" = '"v3.3.0"' ] || return 1
+  [[ "$(_field ai-diff-reviewer note)" == *"back-filled on upgrade"* ]] || return 1
+  [ "$(_field design-system enabled)" = "false" ] || return 1
+  run env PATH="$WORK/bin:$PATH" python3 "$CFG" backfill --repo "$REPO"
+  [[ "$output" == *"nothing to back-fill"* ]]
+}
+
+@test "the registry is trackable while plans stay ignored; both rules are conformant (F-04)" {
+  cd "$REPO"
+  git init -q .
+  printf '.dwp/*\n!.dwp/config.json\n' > .gitignore
+  python3 "$CFG" enable vim --repo "$REPO" >/dev/null
+  ! git check-ignore -q .dwp/config.json || return 1
+  git check-ignore -q .dwp/plans/PLAN_x/README.md || return 1
+  run bash "$SK/verify/conformance.sh" --repo-only "$REPO"
+  [[ "$output" == *"[x] .dwp/ plans gitignored"* ]] || { echo "$output"; return 1; }
+  printf '.dwp/\n' > .gitignore
+  run bash "$SK/verify/conformance.sh" --repo-only "$REPO"
+  [[ "$output" == *"[x] .dwp/ plans gitignored"* ]] || return 1
+  printf 'node_modules/\n' > .gitignore
+  run bash "$SK/verify/conformance.sh" --repo-only "$REPO"
+  [[ "$output" == *"[ ] .dwp/ plans gitignored"* ]] || return 1
+  grep -qF '`.dwp/*` and `!.dwp/config.json`' "$SK/onboard/SKILL.md" || return 1
+  grep -qF '!.dwp/config.json' "$SK/shared/dwp-paths.md" "$SK/spec/CONFIG.md"
+}

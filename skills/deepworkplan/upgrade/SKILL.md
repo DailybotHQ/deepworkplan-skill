@@ -14,8 +14,9 @@ current. Three phases, strictly ordered: **check** (read-only, safe to run
 anytime), **consent** (nothing downloads without an explicit yes), **upgrade**
 (same install command a fresh consumer runs, then onboarding re-executed as if
 https://deepworkplan.com/init.md were executed fresh). An upgrade never touches
-`.dwp/` — plans and their recorded evidence are history, not state to migrate
-(`../spec/DWP_SPECIFICATION.md` §6.5).
+`.dwp/` plans — plans and their recorded evidence are history, not state to
+migrate (`../spec/DWP_SPECIFICATION.md` §6.5); its one `.dwp/` write is the
+addon registry back-fill (Phase 3 step 4).
 
 ---
 
@@ -89,7 +90,9 @@ versions relative to that directory.
 1. **Name what the upgrade overwrites:** the vendored skill files under the
    installed pack directory (and only those). Name what it does **not** touch:
    `.dwp/` (plans, state, evidence), `AGENTS.md`, `docs/`, `.agents/` outside
-   the vendored pack, and every addon the repository configured.
+   the vendored pack, and every addon the repository configured. Name the
+   one registry write: already-installed addons the registry does not name
+   are recorded in `.dwp/config.json` (Phase 3 step 4).
 2. **Surface local adaptations before overwriting anything.** Repositories
    deliberately adapt their vendored copy (a repo may pin and maintain its own
    edition — a blind reinstall would erase that work). Stage the incoming tag
@@ -142,11 +145,17 @@ versions relative to that directory.
    YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)` — the upgrade variant of
    `../spec/DOCUMENTATION_STANDARD.md` §3.5. Never edit the skill's own
    `version:` fields or `CHANGELOG.md`; the release process owns them.
-4. **Leave `.dwp/` untouched.** Plans keep their recorded lifecycle and their
+4. **Back-fill the addon registry** (F-15). Addons installed before the
+   registry existed are recorded, never re-decided: run `python3
+   <pack>/shared/config.py backfill --repo .` (dry run), show the list,
+   then `--write`. A key the registry already names is never changed.
+   Then propose the `.gitignore` exception that shares the registry
+   (`.dwp/*` + `!.dwp/config.json`, `../spec/CONFIG.md` §1).
+5. **Leave `.dwp/` plans untouched.** Plans keep their recorded lifecycle and their
    authored standard — an old plan declaring 2.x stays valid as historical and
    is never migrated by an upgrade; migrating one is a separate, explicit
    `refine migrate` decision (`../spec/DWP_SPECIFICATION.md` §6.5).
-5. **Close the loop.** Re-apply the accepted adaptation decisions on the new
+6. **Close the loop.** Re-apply the accepted adaptation decisions on the new
    files, run `../verify/SKILL.md` conformance, and report: old → new skill
    version, old → new standard stamp, what the re-onboarding reconciled, the
    adaptations applied or dropped, and the conformance verdict.
