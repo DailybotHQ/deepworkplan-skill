@@ -19,6 +19,18 @@ https://deepworkplan.com/init.md were executed fresh). An upgrade never touches
 
 ---
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write` and `Bash`. Phase 1
+(check) and Phase 2 (consent) are **read-only**. Only after the developer's
+explicit acceptance does Phase 3 write: the vendored skill tree at the exact
+accepted **stable** tag (pre-release tags only on an explicit request for that
+channel), through the documented installer, then the onboarding
+reconciliation. It **MUST NOT** download anything before acceptance, install
+a moving ref (`@main`, `@latest`) or an unpinned source, overwrite local
+adaptations without showing their diff first, touch any plan under `.dwp/`,
+or read, print or write a secret.
+
 ## When to use
 
 - "upgrade DWP", "update the deepworkplan skill", "is there a newer version?",
@@ -57,12 +69,14 @@ versions relative to that directory.
    ```bash
    git ls-remote --tags https://github.com/DailybotHQ/deepworkplan-skill.git
    ```
-   Sort the `vX.Y.Z` tags numerically and take the highest. (`gh release view
-   --repo DailybotHQ/deepworkplan-skill` is an equivalent alternative when the
-   GitHub CLI is present.)
+   Sort the stable `vX.Y.Z` tags numerically and take the highest; ignore
+   pre-release tags (`vX.Y.Z-beta.N`, `-rc.N`, `-alpha.N`) unless the
+   developer explicitly asks for the pre-release channel. (`gh release view
+   --repo DailybotHQ/deepworkplan-skill` — which never returns a
+   pre-release — is an equivalent alternative when the GitHub CLI is present.)
 3. **Report, then stop.** State, in a few lines: installed skill version,
    latest published version, the standard each implements (the series are
-   2.x, 4.x and 5.x historical and 6.x current — `../spec/README.md`),
+   2.x, 4.x, 5.x and 6.x historical and 7.x current — `../spec/README.md`),
    and where the changelog lives
    (`https://github.com/DailybotHQ/deepworkplan-skill/blob/main/CHANGELOG.md`).
    If installed == latest, say the repository is current and **end here**.

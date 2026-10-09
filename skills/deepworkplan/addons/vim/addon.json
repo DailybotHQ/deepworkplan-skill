@@ -1,0 +1,8 @@
+{
+  "schema": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
+  "key": "vim",
+  "product": { "repo": "DailybotHQ/deepworkplan-vim", "tag": "v0.4.0", "interface": 1 },
+  "detect": { "paths": ["~/.config/nvim/addon/surface.json"], "interface_from": "file-json:~/.config/nvim/addon/surface.json#interface" },
+  "provides_abilities": [],
+  "requires_grants": []
+}

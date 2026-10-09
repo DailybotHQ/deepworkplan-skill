@@ -55,6 +55,11 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/plan-manifest/v6.json": json.load(open(os.path.join(d, "plan-manifest-v6.schema.json"))),
         "https://deepworkplan.com/schema/benchmark-record/v1.json": json.load(open(os.path.join(d, "benchmark-record.schema.json"))),
         "https://deepworkplan.com/schema/learnings-record/v1.json": json.load(open(os.path.join(d, "learnings-record.schema.json"))),
+        "https://deepworkplan.com/schema/dwp-config/v1.json": json.load(open(os.path.join(d, "dwp-config-v1.schema.json"))),
+        "https://deepworkplan.com/schema/plan-contract/v7.json": json.load(open(os.path.join(d, "plan-contract-v7.schema.json"))),
+        "https://deepworkplan.com/schema/journal-event/v7.json": json.load(open(os.path.join(d, "journal-event-v7.schema.json"))),
+        "https://deepworkplan.com/schema/plan-manifest/v7.json": json.load(open(os.path.join(d, "plan-manifest-v7.schema.json"))),
+        "https://deepworkplan.com/schema/addon-descriptor/v1.json": json.load(open(os.path.join(d, "addon-descriptor-v1.schema.json"))),
     }
 
 
@@ -431,6 +436,196 @@ def learnings_cases(schemas, problems, notes, pack):
                          "closed object / anchor grammar / required finding+proposal)")
 
 
+def v7_cases(schemas, problems, notes, pack):
+    """v7 generation (spec/V7_CONTRACT.md): the ledger-generated fixtures
+    under tests/fixtures/v7/ are valid under BOTH halves - jsonschema over
+    plan-contract/v7, journal-event/v7 and plan-manifest/v7, and the shipped
+    contract_v6 validator - and the halves agree on every mutant: the v7
+    additions (parallel_safe, delegation) are refused under the v6 URLs, and
+    a delegation that claims evidence or skips its digest is refused."""
+    cs = schemas["https://deepworkplan.com/schema/plan-contract/v7.json"]
+    js = schemas["https://deepworkplan.com/schema/journal-event/v7.json"]
+    ms = schemas["https://deepworkplan.com/schema/plan-manifest/v7.json"]
+    cs6 = schemas["https://deepworkplan.com/schema/plan-contract/v6.json"]
+    js6 = schemas["https://deepworkplan.com/schema/journal-event/v6.json"]
+    fdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "tests", "fixtures", "v7")
+    cv6 = load_pack_module(pack, "contract_v6")
+    before = len(problems)
+    try:
+        contract = json.load(open(os.path.join(fdir, "contract-minimal-v7.json")))
+        manifest = json.load(open(os.path.join(fdir, "manifest-v7.json")))
+        events = [json.loads(l) for l in open(os.path.join(fdir, "journal-delegation-v7.ndjson")) if l.strip()]
+    except (OSError, ValueError) as exc:
+        problems.append(f"v7: fixtures unreadable ({exc})")
+        return
+    if errors(cs, contract) or cv6.contract_errors(contract):
+        problems.append(f"v7 contract fixture rejected (jsonschema={errors(cs, contract)[:1]} runtime={cv6.contract_errors(contract)[:1]})")
+    if errors(ms, manifest):
+        problems.append(f"v7 manifest fixture rejected ({errors(ms, manifest)[:1]})")
+    for ev in events:
+        if errors(js, ev) or cv6.journal_event_errors(ev, contract):
+            problems.append(f"v7 journal fixture seq {ev.get('seq')} rejected")
+    if cv6.journal_errors(events, contract):
+        problems.append("v7 journal fixture fails the sequence rules")
+    if not any(e.get("type") == "delegation" for e in events):
+        problems.append("v7 journal fixture carries no delegation event")
+
+    def contract_both_reject(label, mutate, schema=cs):
+        doc = copy.deepcopy(contract)
+        doc.pop("contract_id", None)
+        mutate(doc)
+        if not errors(schema, doc) or not cv6.contract_errors(doc):
+            problems.append(f"v7 contract mutant {label}: a half accepted it")
+
+    contract_both_reject("parallel_safe not boolean",
+                         lambda d: d["tasks"][0].update(parallel_safe="yes"))
+    contract_both_reject("parallel_safe under the v6 URL",
+                         lambda d: d.update(schema="https://deepworkplan.com/schema/plan-contract/v6.json"),
+                         schema=cs6)
+
+    launch = next(e for e in events if e.get("type") == "delegation" and e.get("state") == "launched")
+    done = next(e for e in events if e.get("type") == "delegation" and e.get("state") == "completed")
+
+    def event_both_reject(label, base, mutate, schema=js, runtime_contract=contract):
+        ev = copy.deepcopy(base)
+        mutate(ev)
+        if not errors(schema, ev) or not cv6.journal_event_errors(ev, runtime_contract):
+            problems.append(f"v7 event mutant {label}: a half accepted it "
+                            f"(jsonschema={bool(errors(schema, ev))} runtime={bool(cv6.journal_event_errors(ev, runtime_contract))})")
+
+    v6_contract = dict(contract, schema="https://deepworkplan.com/schema/plan-contract/v6.json")
+    event_both_reject("delegation under the v6 journal URL", launch,
+                      lambda e: e.update(schema="https://deepworkplan.com/schema/journal-event/v6.json"),
+                      schema=js6, runtime_contract=None)
+    event_both_reject("launch without prompt_digest", launch, lambda e: e.pop("prompt_digest"))
+    event_both_reject("delegation claims trust", launch, lambda e: e.update(trust="observed"))
+    event_both_reject("unknown transport", launch, lambda e: e.update(transport="email"))
+    event_both_reject("unknown state", launch, lambda e: e.update(state="paused"))
+    event_both_reject("result on a launch", launch, lambda e: e.update(result_path="a.txt"))
+    event_both_reject("absolute result path", done, lambda e: e.update(result_path="/etc/passwd"))
+    event_both_reject("traversing result path", done, lambda e: e.update(result_path="../../x"))
+    event_both_reject("bad prompt digest", launch, lambda e: e.update(prompt_digest="md5:abc"))
+    event_both_reject("unknown field", launch, lambda e: e.update(secret="x"))
+    # runtime-only: the generation binding is a cross-record rule
+    if not cv6.journal_event_errors(launch, v6_contract):
+        problems.append("v7 event under a v6 contract: runtime accepted a mixed generation")
+    if len(problems) == before:
+        notes.append("v7: contract/manifest/journal fixtures (ledger-generated) valid under both "
+                     "halves; 2 contract + 10 delegation mutants rejected by both; mixed "
+                     "generation refused at runtime")
+
+
+def config_cases(schemas, problems, notes, pack):
+    """Configuration file (spec/CONFIG.md): the committed fixtures validate
+    under BOTH halves - jsonschema over the published dwp-config v1 schema,
+    and the shipped shared/config.py (no warning for a known key) - and the
+    halves agree entry by entry on the mutants: a registry entry is
+    schema-valid exactly when the runtime reader accepts it."""
+    cs = schemas["https://deepworkplan.com/schema/dwp-config/v1.json"]
+    cdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "tests", "fixtures", "v7", "config")
+    names = ("config-full.json", "config-benchmark-only.json",
+             "config-prerelease-version.json")
+    config = load_pack_module(pack, "config")
+    keys = config.addon_keys(os.path.join(pack, "addons"))
+    before = len(problems)
+    for name in names:
+        path = os.path.join(cdir, name)
+        if not os.path.isfile(path):
+            problems.append(f"config: fixture {name} missing")
+            continue
+        doc = json.load(open(path))
+        jerrs = errors(cs, doc)
+        if jerrs:
+            problems.append(f"config fixture {name}: jsonschema rejects it ({jerrs[:1]})")
+        files = [(".dwp/config.json", path, doc, None)]
+        _view, warns = config.resolve_addons(files, keys)
+        _b = config.resolve_benchmark(files)
+        if warns or _b[2]:
+            problems.append(f"config fixture {name}: runtime warned ({(warns + _b[2])[:1]})")
+    entries = [
+        ("enabled only", {"enabled": True}, True),
+        ("enabled + version", {"enabled": False, "version": "v1.2.3"}, True),
+        ("prerelease version", {"enabled": True, "version": "v7.0.0-beta.1"}, True),
+        ("missing enabled", {"version": "v1.2.3"}, False),
+        ("string enabled", {"enabled": "yes"}, False),
+        ("floating version", {"enabled": True, "version": "latest"}, False),
+        ("unprefixed version", {"enabled": True, "version": "1.2.3"}, False),
+        ("extra field", {"enabled": True, "pin": "main"}, False),
+        ("not an object", True, False),
+    ]
+    for label, entry, expect in entries:
+        doc = {"addons": {"vim": entry}}
+        j_ok = not errors(cs, doc)
+        r_ok = config._entry_error(entry) is None
+        if j_ok != expect or r_ok != expect:
+            problems.append(f"config entry {label}: expected valid={expect}, "
+                            f"jsonschema={j_ok} runtime={r_ok}")
+    for label, doc in (("addons not an object", {"addons": ["vim"]}),
+                       ("benchmark not an object", {"benchmark": "on"}),
+                       ("wrong-typed learnings", {"benchmark": {"enabled": True, "learnings": "y"}})):
+        if not errors(cs, doc):
+            problems.append(f"config mutant {label}: jsonschema accepted it")
+    if len(problems) == before:
+        notes.append("config: three fixtures valid under both halves; nine registry "
+                     "entries agree (jsonschema == shipped reader); three top-level "
+                     "mutants rejected")
+
+
+def descriptor_cases(schemas, problems, notes, pack):
+    """Addon descriptors (spec/ADDONS.md section 7): every shipped addon.json
+    is valid under BOTH halves - jsonschema over the published descriptor
+    schema and the shipped config.descriptor_errors - its key equals its
+    directory, and the halves agree on the mutants."""
+    ds = schemas["https://deepworkplan.com/schema/addon-descriptor/v1.json"]
+    config = load_pack_module(pack, "config")
+    addons = os.path.join(pack, "addons")
+    keys = config.addon_keys(addons)
+    before = len(problems)
+    shipped = []
+    for key in keys:
+        path = os.path.join(addons, key, "addon.json")
+        if not os.path.isfile(path):
+            problems.append(f"descriptor: addons/{key}/addon.json missing")
+            continue
+        doc = json.load(open(path))
+        shipped.append(doc)
+        jerrs, rerrs = errors(ds, doc), config.descriptor_errors(doc, key)
+        if jerrs:
+            problems.append(f"descriptor {key}: jsonschema rejects it ({jerrs[:1]})")
+        if rerrs:
+            problems.append(f"descriptor {key}: shipped validator rejects it ({rerrs[:1]})")
+    base = next((d for d in shipped if d.get("transport")), None)
+    if base is None:
+        problems.append("descriptor: no transport descriptor to mutate")
+        return
+    mutants = (
+        ("unknown field", lambda d: d.update(extra=1)),
+        ("missing detect", lambda d: d.pop("detect")),
+        ("shell metacharacter", lambda d: d["detect"].update(command="x; rm -rf /")),
+        ("command and paths", lambda d: d["detect"].update(paths=["a"])),
+        ("unknown ability", lambda d: d.update(provides_abilities=["root_shell"])),
+        ("repeated grant", lambda d: d.update(requires_grants=["agent_delegation", "agent_delegation"])),
+        ("unknown transport", lambda d: d.update(transport="carrier-pigeon")),
+        ("transport without subagents", lambda d: d.update(provides_abilities=["cancel_children"])),
+        ("floating product tag", lambda d: d["product"].update(tag="main")),
+        ("interface zero", lambda d: d["product"].update(interface=0)),
+        ("bad interface_from", lambda d: d["detect"].update(interface_from="eval:x")),
+        ("wrong schema const", lambda d: d.update(schema="https://deepworkplan.com/schema/addon-descriptor/v2.json")),
+    )
+    for label, mutate in mutants:
+        doc = copy.deepcopy(base)
+        mutate(doc)
+        jerrs, rerrs = errors(ds, doc), config.descriptor_errors(doc)
+        if not jerrs or not rerrs:
+            problems.append(f"descriptor mutant {label}: a half accepted it "
+                            f"(jsonschema={bool(jerrs)} runtime={bool(rerrs)})")
+    if len(problems) == before:
+        notes.append(f"descriptor: {len(shipped)} shipped addon.json valid under both "
+                     f"halves with key == directory; {len(mutants)} mutants rejected by both")
+
+
 def errors(schema, doc):
     v = jsonschema.Draft202012Validator(schema)
     return [f"{list(e.path)}: {e.message[:90]}" for e in sorted(v.iter_errors(doc), key=lambda e: list(e.path))]
@@ -577,6 +772,9 @@ def main():
     v6_cases(schemas, problems, notes, a.pack, a.fixtures)
     benchmark_cases(schemas, problems, notes, a.pack)
     learnings_cases(schemas, problems, notes, a.pack)
+    v7_cases(schemas, problems, notes, a.pack)
+    config_cases(schemas, problems, notes, a.pack)
+    descriptor_cases(schemas, problems, notes, a.pack)
     for n in notes:
         print("ok  ", n)
     for p in problems:

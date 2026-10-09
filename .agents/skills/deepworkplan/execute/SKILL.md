@@ -31,8 +31,9 @@ when their moment arrives. (This ordering is deliberate: reading companions
   t0 set — the operative rules the loop needs are inline below.
 - **Conditional — read only when the trigger fires:**
   - [`v6.md`](v6.md) (this directory) — read only when Step 2.0 detects a
-    v6 plan (manifest contract pointer / `contract.json` / `contracts/`
-    chain); it carries the whole v6 task loop.
+    v6 or v7 plan; it carries the whole task loop.
+  - [`delegation.md`](delegation.md) — read only when a v7 plan granting
+    `agent_delegation` delegates a task.
   - [`../spec/LITE_PLANS.md`](../spec/LITE_PLANS.md) — read only when the
     plan README declares `Plan Format: Lite` or a v2 state line (anchored
     task records, approval axis, promotion recovery).

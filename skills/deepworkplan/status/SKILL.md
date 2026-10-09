@@ -86,7 +86,10 @@ it changes when the records change). Do **not** run `project` or
 `state.json` already on disk is a v6 projection and may be quoted with its
 `generated_at` stamp, marked as derived. Status findings (torn tail, no
 approval event, projection disagreement) are reported with their suggested
-repair, never repaired. Then continue with the README index and
+repair, never repaired. For a v7 plan, also run `python3 ../shared/ledger.py
+--plan <dir> delegate observe` (read-only) and report each delegation's
+task, transport, addon and state — a completed delegate is still
+`asserted` until a gate observes it. Then continue with the README index and
 consistency reading below (items 2–5 apply unchanged; item 1's
 `state.json` is a v6 projection).
 
@@ -110,13 +113,22 @@ For each (non-v6) plan:
    task file or every gate record.
 5. Compute totals and progress %.
 
+**Enabled addons (any generation, read-only).** Run `python3
+../shared/config.py enabled --plan <dir>` once per repository: it prints the
+addon keys the repository's `.dwp/config.json` (over `~/.dwp/config.json`)
+enables, one per line, and any fail-closed warning on stderr
+(`../spec/CONFIG.md`). Report them as one line — `addons enabled: none` is
+an ordinary answer, never a finding; the methodology works alone. Never
+write the file from this flow.
+
 ### Step 3 — Generate Status Report
 
 **Single plan:** header with the resolved plan basename and its actual location;
 standard (and whether pre-approved for unattended
 execution); goal; progress (total / completed / pending / %); completed tasks;
 pending tasks; current status (last completed, next task, checkpoint note,
-uncommitted work, recent commits); **blocked** (reason, since, needs) if set;
+uncommitted work, recent commits); enabled addons (one line);
+**blocked** (reason, since, needs) if set;
 **consistency findings** if any, with the suggested action (`resume` to
 reconcile, `refine` to fix structure); notes from the README; last task log
 summary; whether an Executive Report was requested/produced.

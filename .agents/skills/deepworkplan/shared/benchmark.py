@@ -54,6 +54,8 @@ except ImportError:  # pragma: no cover - direct execution from another cwd
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import ledger  # noqa: E402
 
+import config as dwp_config  # noqa: E402  (sibling: the one .dwp/config.json parser)
+
 try:
     import context_manifest  # noqa: E402  (sibling module, same directory)
 except ImportError:  # pragma: no cover - executed from another cwd
@@ -65,6 +67,7 @@ except ImportError:  # pragma: no cover - executed from another cwd
 SCHEMA_URL = 'https://deepworkplan.com/schema/benchmark-record/v1.json'
 LEARNINGS_URL = 'https://deepworkplan.com/schema/learnings-record/v1.json'
 MANIFEST_V6_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
+MANIFEST_V7_URL = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
 
 RECORD_FIELDS = ('schema', 'plan', 'title', 'generation', 'contract_id',
                  'status', 'versions', 'timing', 'shape', 'friction',
@@ -96,78 +99,20 @@ AGGREGATE_NOTE = ('aggregates describe recorded executions; workloads differ '
 # configuration (spec section 1)
 
 
-def _read_config(path: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-    """Return (parsed-object-or-None, warning-or-None) for one config file."""
-    if not os.path.isfile(path):
-        return None, None
-    try:
-        with open(path, 'r', encoding='utf-8') as handle:
-            data = json.load(handle)
-    except (OSError, ValueError) as exc:
-        return None, 'benchmark config %s unreadable (%s); treating as absent' % (path, exc)
-    if not isinstance(data, dict):
-        return None, 'benchmark config %s is not a JSON object; treating as absent' % path
-    return data, None
-
-
-def _benchmark_section(plan_dir: str, warnings: List[str]
-                       ) -> Optional[Dict[str, Any]]:
-    """Resolve the winning ``benchmark`` object (repo over global), or None.
-
-    A repository file that carries the object overrides the global file
-    wholesale (both flags come from that one file); a repository file that
-    omits it defers to the global file (spec section 1, per-key resolution).
-    """
-    dwp_root = find_dwp_root(plan_dir)
-    if dwp_root is None:
-        warnings.append('benchmark: plan directory has no .dwp ancestor; '
-                        'benchmark disabled')
-        return None
-    for label, path in (
-            ('.dwp/config.json', os.path.join(dwp_root, 'config.json')),
-            ('~/.dwp/config.json', os.path.join(os.path.expanduser('~'),
-                                                '.dwp', 'config.json'))):
-        cfg, warn = _read_config(path)
-        if warn:
-            warnings.append('benchmark: ' + warn)
-        if cfg is None or 'benchmark' not in cfg:
-            continue
-        section = cfg['benchmark']
-        if not isinstance(section, dict):
-            warnings.append('benchmark: %s "benchmark" is not an object; '
-                            'benchmark disabled' % label)
-            return None
-        return section
-    return None
-
-
 def resolve_config(plan_dir: str) -> Tuple[bool, bool, List[str]]:
     """Resolve (benchmark enabled, learnings enabled, warnings).
 
     Fail-closed per key (spec section 1): ``enabled`` must be an explicit
     boolean in the winning section; ``learnings`` defaults false, rides on
     ``enabled``, and a wrong-typed value disables learnings only — one
-    warning — while metrics resolution is unaffected.
+    warning — while metrics resolution is unaffected. Discovery and parsing
+    are the shared reader's (``shared/config.py``): one parser, two keys.
     """
-    warnings: List[str] = []
-    section = _benchmark_section(plan_dir, warnings)
-    if section is None:
-        return False, False, warnings
-    enabled = section.get('enabled')
-    if not isinstance(enabled, bool):
-        warnings.append('benchmark: "benchmark.enabled" is not a boolean; '
-                        'benchmark disabled')
-        return False, False, warnings
-    if not enabled:
-        return False, False, warnings
-    learnings = section.get('learnings')
-    if learnings is None:
-        return True, False, warnings
-    if not isinstance(learnings, bool):
-        warnings.append('benchmark: "benchmark.learnings" is not a boolean; '
-                        'learnings disabled (metrics unaffected)')
-        return True, False, warnings
-    return True, learnings, warnings
+    dwp_root = find_dwp_root(plan_dir)
+    if dwp_root is None:
+        return False, False, ['benchmark: plan directory has no .dwp '
+                              'ancestor; benchmark disabled']
+    return dwp_config.resolve_benchmark(dwp_config.load_files(dwp_root))
 
 
 def resolve_enabled(plan_dir: str) -> Tuple[bool, List[str]]:
@@ -178,14 +123,7 @@ def resolve_enabled(plan_dir: str) -> Tuple[bool, List[str]]:
 
 def find_dwp_root(plan_dir: str) -> Optional[str]:
     """Walk up from ``plan_dir`` to the owning ``.dwp`` directory."""
-    current = os.path.abspath(plan_dir)
-    while True:
-        parent = os.path.dirname(current)
-        if current == parent:
-            return None
-        if os.path.basename(parent) == 'plans' and os.path.basename(os.path.dirname(parent)) == '.dwp':
-            return os.path.dirname(parent)
-        current = parent
+    return dwp_config.find_dwp_root(plan_dir)
 
 
 # ---------------------------------------------------------------------------
@@ -274,7 +212,8 @@ def pack_version() -> str:
         if os.path.isfile(skill):
             try:
                 with open(skill, 'r', encoding='utf-8') as handle:
-                    match = re.search(r'^version:\s*"?([0-9]+\.[0-9]+\.[0-9]+)"?',
+                    match = re.search(r'^version:\s*"?([0-9]+\.[0-9]+\.[0-9]+'
+                                  r'(?:-[0-9A-Za-z.]+)?)"?',
                                       handle.read(4096), re.MULTILINE)
                 if match:
                     return match.group(1)
@@ -1157,6 +1096,19 @@ def cmd_report(plan_dir: str) -> int:
         print('benchmark: disabled for this repository; nothing emitted')
         return 0
     manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
+    if '-' in pack_version():
+        # benchmark-record v1 pins versions.dwp_skill to X.Y.Z: a pre-release
+        # pack (7.0.0-beta.1) is never truncated into a release label.
+        print('benchmark: this pack is a pre-release (%s); benchmark-record v1 '
+              'carries release versions only - not measured' % pack_version())
+        return 0
+    if isinstance(manifest, dict) and manifest.get('schema') == MANIFEST_V7_URL:
+        # benchmark-record v1 pins generation "v6" (published, frozen bytes):
+        # a v7 plan is not mislabelled — it is not measured yet.
+        print('benchmark: plan is v7-generation; benchmark-record v1 measures '
+              'v6 plans only - not measured (a v7 record shape is a later '
+              'release)')
+        return 0
     if not isinstance(manifest, dict) or manifest.get('schema') != MANIFEST_V6_URL:
         print('benchmark: plan is not v6-generation (no v6 manifest contract '
               'pointer); not measured — the v5 line is frozen')
@@ -1247,7 +1199,9 @@ def _iter_plan_records(root: str) -> Tuple[List[Dict[str, Any]],
                           'treated as not_collected' % name)
             continue
         manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
-        if isinstance(manifest, dict) and manifest.get('schema') != MANIFEST_V6_URL:
+        if isinstance(manifest, dict) and manifest.get('schema') == MANIFEST_V7_URL:
+            skipped.append(name)  # v7: not measured by record v1, never "v5"
+        elif isinstance(manifest, dict) and manifest.get('schema') != MANIFEST_V6_URL:
             v5.append(name)
     return records, learnings, v5, skipped
 

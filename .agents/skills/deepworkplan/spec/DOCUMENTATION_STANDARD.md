@@ -13,8 +13,8 @@ OpenAI Codex, Google Gemini, GitHub Copilot, Antigravity, or any future agent �
 enough structured context to work reliably without per-session human guidance.
 
 The standard is grounded in an audit of **6 Dailybot repositories**
-(`api-services`, `web-app`, `chatbot-functions`, `discord-gateway`,
-`dailybot.com`, and the Core Hub). Roughly **90% of the structure is identical
+(an API, a web app, serverless functions, a chat gateway, a marketing site,
+and the orchestrator hub). Roughly **90% of the structure is identical
 across all six**; roughly **10% is repo-specific** (validation commands, file
 paths, stack-specific skills, example plans). This document specifies the common
 90% as the normative standard and explicitly flags the 10% as values an
@@ -118,12 +118,12 @@ The budget above is enforced on what the harness produces:
 `docs/` category file that exists, with one-line descriptions. It **MUST NOT**
 link files that do not exist. For the **orchestrator hub** archetype it **MUST**
 additionally link the sub-project navigation index (e.g. `repositories/README.md`)
-and each sub-project's `AGENTS.md`. (Observed live: `api-services/AGENTS.md`
+and each sub-project's `AGENTS.md`. (Observed live: `api/AGENTS.md`
 "Detailed Documentation" table; Core Hub `CLAUDE.md` "Documentation Navigation"
 and "Project-Specific Documentation" tables.)
 
 `AGENTS.md` **MUST** include an annotated repository-structure tree showing at
-least two levels of depth (observed live in both `api-services/AGENTS.md` and the
+least two levels of depth (observed live in both `api/AGENTS.md` and the
 Core Hub).
 
 ### 2.3. Role 2 — Mandatory Rules
@@ -232,7 +232,7 @@ standard:
 - The **MUST** categories (`PRODUCT_SPEC`, `ARCHITECTURE`, `STANDARDS`, `TESTING_GUIDE`, `DEVELOPMENT_COMMANDS`, `SECURITY`) plus `AI_AGENT_ONBOARDING` and `AI_AGENT_COLLAB` constitute the conformance floor for an AI-first repo.
 - `PRODUCT_SPEC.md` is **non-technical by design** and **MUST NOT** be skipped on the grounds that "this repo is just a library/tool." If the repo genuinely has no end users, frame the product as its API/consumers: what it offers, to whom, and why they would choose it. Reason the content from the real repo (README, package description, public API, issues/roadmap) — never a generic stub.
 - `SECURITY.md` **MUST NOT** be skipped on the grounds that "this repo has no secrets." Every repository has a security posture: how credentials and config are handled (even when the answer is "none — and none may be added"), what agents MUST NOT write into code or docs, input-handling expectations, and the sensitive-data boundaries of its domain. Reason it from the real repo (env handling, CI secrets, auth code, data models) — never a generic stub. The Final Review (`DWP_SPECIFICATION.md` §6.1) keeps this file current: every completed plan verifies it still reflects reality.
-- A repository **MAY** add domain-specific guides beyond these 11 (e.g. `API_REFERENCE.md`, `DATABASE_SCHEMA.md`, `LOGGING_BEST_PRACTICES.md`, `REDIS_CACHING_BEST_PRACTICES.md`) when the stack warrants. Whether a given domain guide is warranted is part of the **repo-specific 10%** (§7). (All four examples observed live in `api-services/docs/`.)
+- A repository **MAY** add domain-specific guides beyond these 11 (e.g. `API_REFERENCE.md`, `DATABASE_SCHEMA.md`, `LOGGING_BEST_PRACTICES.md`, `REDIS_CACHING_BEST_PRACTICES.md`) when the stack warrants. Whether a given domain guide is warranted is part of the **repo-specific 10%** (§7). (All four examples observed live in `api/docs/`.)
 - A guide that would fall below ~30 lines **SHOULD** be merged into a sibling; a guide above ~700 lines **SHOULD** be split into a subfolder.
 
 > **Divergence from v1.** v1 required only 5 `docs/` files at "Silver"
@@ -390,16 +390,17 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 6.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 7.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
 
   The version in that line is the **umbrella DWP standard** implemented by the
   installed pack, not the version of this retained v5 base document. The v6
-  extension documents in this directory define the current plan lifecycle.
+  extension documents and their v7 additions in this directory define the
+  current plan lifecycle.
   A conformance checker reads the declaration against the standard it
   implements and rejects a newer one. The standard's series are 2.x, 4.x,
-  and 5.x (historical) and 6.x (current — there is no 3.x); the skill package
+  5.x and 6.x (historical) and 7.x (current — there is no 3.x); the skill package
   `version:` and the `/v2.json` and `/v5.json`
   schema URLs are two further, separate series, never compared against this
   line.
@@ -425,7 +426,7 @@ the onboarding flow **MUST** keep them distinct:
 ## 4. Per-Module Nested Docs
 
 This section formalizes the per-module documentation tier observed across the
-audited repos (e.g. `api-services/app/integrations/docs/` with `README.md`,
+audited repos (e.g. `api/app/integrations/docs/` with `README.md`,
 `MODELS.md`, `API.md`, `SIGNALS.md`, `STRUCTURE.md`, `TASKS.md`, plus
 `app/{module}/README.md` in every major module).
 
@@ -441,7 +442,7 @@ audited repos (e.g. `api-services/app/integrations/docs/` with `README.md`,
   `README.md` is sufficient.
 - Per-module docs **MUST** be linked from the module's own `README.md`, and the
   most significant ones **SHOULD** be surfaced in the root `AGENTS.md` index
-  (observed: `api-services/AGENTS.md` links
+  (observed: `api/AGENTS.md` links
   `app/integrations/docs/features/AI_SERVICES.md`).
 
 Which modules qualify as "major" or "complex" is part of the **repo-specific 10%**
@@ -472,7 +473,7 @@ decisions, contracts, and runbooks.
   module inside a feature area still carries its own `README.md` (§4).
 
 > **Observed input, adapted by reasoning.** This tier generalizes the audited
-> `api-services` shape — a flat root `docs/` hub plus nested per-area `docs/`
+> `api` shape — a flat root `docs/` hub plus nested per-area `docs/`
 > (e.g. `app/domain/docs/`, `app/mcp/docs/`, and the sub-app `mailtron/docs/`,
 > each entered via a `README.md`). Reason the structure from the target
 > repo's real feature areas (§7); never copy another repo's folder layout
@@ -617,7 +618,7 @@ for all complex modules (§4).
 - [agents.md](https://agents.md) — the cross-tool AGENTS.md convention
 - `DWP_SPECIFICATION.md`, `AGENT_PROTOCOL.md`, `ARCHETYPES.md`, `ADDONS.md` — companion specs
 - `../RECONCILIATION.md`, `../ARTIFACT_INVENTORY.md` — Task 1 carry-forward decisions
-- Audited live references: `repositories/api-services/AGENTS.md`, `repositories/agent-skill/` (`.agents/` + skill-pack + `CLAUDE.md`/`.claude` symlinks), the Core Hub `CLAUDE.md`/`.claude → .agents`
+- Audited live references: `repositories/api/AGENTS.md`, `repositories/agent-skill/` (`.agents/` + skill-pack + `CLAUDE.md`/`.claude` symlinks), the Core Hub `CLAUDE.md`/`.claude → .agents`
 
 ---
 

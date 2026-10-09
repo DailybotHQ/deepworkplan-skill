@@ -8,6 +8,9 @@ REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 SK="$REPO_ROOT/skills/deepworkplan"
 LEDGER="$SK/shared/ledger.py"
 SCHED="$SK/shared/scheduler.py"
+# Actor identity: the helper's own stable name, never the checkout path
+# (a deep checkout would exceed the 100-char identity bound).
+SCHED_ID="dwp-scheduler/6.0"
 
 export PYTHONDONTWRITEBYTECODE=1
 
@@ -120,14 +123,14 @@ _inv() {  # invariant evaluation with the closed grammar (A1: an
           # never observed; the core reads pass/fail from the statement)
   python3 "$LEDGER" --plan "$PLAN" append --type observation \
     --json '{"statement": "INV-closed-objects: pass"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/inv.log
 }
 
 _start() {  # task_start followed by the D3-6 invariant re-evaluation
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json "{\"task\": \"$1\"}" --actor-kind helper \
-    --actor-identity "$SCHED" --idempotent
+    --actor-identity "$SCHED_ID" --idempotent
   _inv
 }
 
@@ -172,7 +175,7 @@ _select() {
   # a bare task_start (no _start helper: that would re-evaluate after)
   python3 "$LEDGER" --plan "$PLAN" append --type task_start \
     --json '{"task": "T-docs"}' --actor-kind helper \
-    --actor-identity "$SCHED" --idempotent
+    --actor-identity "$SCHED_ID" --idempotent
   run _select T-docs
   [ "$status" -eq 10 ]
   grep -q '"rule": "invariant-stale"' <<<"$output"
@@ -222,7 +225,7 @@ _select() {
   run python3 "$LEDGER" --plan "$PLAN" append --type gate_run \
     --json '{"command": "true", "cwd": ".", "timeout_seconds": 30,
              "exit_code": 0, "criterion": "AC-prepare", "task": "T-prepare"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust observed \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust observed \
     --evidence-path gates/pre-start.log
   [ "$status" -eq 1 ]
   grep -q 'produced only by the gate executor' <<<"$output"
@@ -324,7 +327,7 @@ PY
     python3 -c 'import json,sys;d=json.load(sys.stdin);e=d["event"];body={k:v for k,v in e.items() if k not in ("schema","type","seq","ts","plan","contract_id","actor")};print(json.dumps(body))' > "$TEST_REPO/event.json"
   run python3 "$LEDGER" --plan "$PLAN" append --type adaptation \
     --json "$(cat "$TEST_REPO/event.json")" \
-    --actor-kind agent --actor-identity "$SCHED"
+    --actor-kind agent --actor-identity "$SCHED_ID"
   [ "$status" -eq 0 ]
   # a SECOND distinct adaptation on the same task: the cap (2) still allows
   SECOND='{"type": "adapt", "kind": "change_strategy",
@@ -339,7 +342,7 @@ PY
     python3 -c 'import json,sys;d=json.load(sys.stdin);e=d["event"];body={k:v for k,v in e.items() if k not in ("schema","type","seq","ts","plan","contract_id","actor")};print(json.dumps(body))' > "$TEST_REPO/event2.json"
   run python3 "$LEDGER" --plan "$PLAN" append --type adaptation \
     --json "$(cat "$TEST_REPO/event2.json")" \
-    --actor-kind agent --actor-identity "$SCHED"
+    --actor-kind agent --actor-identity "$SCHED_ID"
   [ "$status" -eq 0 ]
   # the third adaptation on the task: the contract-declared cap (2) refuses
   run python3 "$SCHED" authorize "$PLAN" --json "$PROPOSAL"
@@ -368,7 +371,7 @@ PY
     > "$PLAN/analysis_results/gate-forensics.log"
   python3 "$LEDGER" --plan "$PLAN" append --type observation \
     --json '{"statement": "the gate log shows a poisoned cache, not a defect"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/gate-forensics.log
   TRIGGER=$(_last_seq)
   FRESH="${BLIND/\"trigger_observation\": 1/\"trigger_observation\": $TRIGGER}"
@@ -379,12 +382,12 @@ PY
     python3 -c 'import json,sys;d=json.load(sys.stdin);e=d["event"];body={k:v for k,v in e.items() if k not in ("schema","type","seq","ts","plan","contract_id","actor")};print(json.dumps(body))' > "$TEST_REPO/retry.json"
   python3 "$LEDGER" --plan "$PLAN" append --type adaptation \
     --json "$(cat "$TEST_REPO/retry.json")" \
-    --actor-kind agent --actor-identity "$SCHED"
+    --actor-kind agent --actor-identity "$SCHED_ID"
   echo 'second forensics pass confirms the cache' \
     > "$PLAN/analysis_results/gate-forensics-2.log"
   python3 "$LEDGER" --plan "$PLAN" append --type observation \
     --json '{"statement": "second forensics pass confirms the cache"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/gate-forensics-2.log
   TRIGGER2=$(_last_seq)
   SECOND="${BLIND/\"trigger_observation\": 1/\"trigger_observation\": $TRIGGER2}"
@@ -423,10 +426,10 @@ PY
   # T-build became eligible; grow the journal past the threshold (2)
   python3 "$LEDGER" --plan "$PLAN" append --type observation \
     --json '{"statement": "aging filler 1"}' --actor-kind helper \
-    --actor-identity "$SCHED" --trust asserted
+    --actor-identity "$SCHED_ID" --trust asserted
   python3 "$LEDGER" --plan "$PLAN" append --type observation \
     --json '{"statement": "aging filler 2"}' --actor-kind helper \
-    --actor-identity "$SCHED" --trust asserted
+    --actor-identity "$SCHED_ID" --trust asserted
   run python3 "$SCHED" ready "$PLAN"
   [ "$status" -eq 0 ]
   grep -q '"priority_boost": true' <<<"$output"
@@ -435,7 +438,7 @@ PY
   python3 "$SCHED" boosts "$PLAN" | python3 -c 'import json,sys;print(json.dumps(json.load(sys.stdin)[0]))' > "$TEST_REPO/boost.json"
   run python3 "$LEDGER" --plan "$PLAN" append --type selection \
     --json "$(cat "$TEST_REPO/boost.json")" \
-    --actor-kind helper --actor-identity "$SCHED"
+    --actor-kind helper --actor-identity "$SCHED_ID"
   [ "$status" -eq 0 ]
 }
 
@@ -475,13 +478,13 @@ PY
     --actor-kind human --actor-identity bats --idempotent
   _b_append --type observation \
     --json '{"statement": "INV-closed-objects: pass"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/inv.log
   _b_append --type task_start --json '{"task": "T-prepare"}' \
-    --actor-kind helper --actor-identity "$SCHED" --idempotent
+    --actor-kind helper --actor-identity "$SCHED_ID" --idempotent
   _b_append --type observation \
     --json '{"statement": "INV-closed-objects: pass"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/inv.log
   _b gate --task T-prepare --json '"true"' --criterion AC-prepare --no-reuse
 
@@ -500,7 +503,7 @@ PY
     > "$B/analysis_results/discovery.log"
   _b_append --type observation \
     --json '{"statement": "the doc generator must ship before the build freeze"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/discovery.log
   TRIGGER=$(python3 -c 'import json,sys;print(json.loads(open(sys.argv[1]).readlines()[-1])["seq"])' "$B/journal.ndjson")
   REORDER="{\"type\": \"adapt\", \"kind\": \"reorder\",
@@ -515,38 +518,38 @@ PY
   python3 "$SCHED" authorize "$B" --json "$REORDER" | \
     python3 -c 'import json,sys;d=json.load(sys.stdin);e=d["event"];body={k:v for k,v in e.items() if k not in ("schema","type","seq","ts","plan","contract_id","actor")};print(json.dumps(body))' > "$TEST_REPO/reorder.json"
   _b_append --type adaptation --json "$(cat "$TEST_REPO/reorder.json")" \
-    --actor-kind agent --actor-identity "$SCHED"
+    --actor-kind agent --actor-identity "$SCHED_ID"
 
   # B's reordered walk: docs, then docs2, then build — the SAME authorize
   # decides every select, and every gate is the real observed executor.
   run python3 "$SCHED" authorize "$B" --json '{"type": "select", "task": "T-docs"}'
   [ "$status" -eq 0 ]
   _b_append --type task_start --json '{"task": "T-docs"}' \
-    --actor-kind helper --actor-identity "$SCHED" --idempotent
+    --actor-kind helper --actor-identity "$SCHED_ID" --idempotent
   run python3 "$SCHED" authorize "$B" --json '{"type": "select", "task": "T-docs2"}'
   [ "$status" -eq 10 ]   # docs is in progress: serialization still binds
   _b_append --type observation \
     --json '{"statement": "INV-closed-objects: pass"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/inv.log
   _b gate --task T-docs --json '"true"' --criterion AC-docs --no-reuse
   # docs complete by its criteria: the sibling surface becomes selectable
   run python3 "$SCHED" authorize "$B" --json '{"type": "select", "task": "T-docs2"}'
   [ "$status" -eq 0 ]
   _b_append --type task_start --json '{"task": "T-docs2"}' \
-    --actor-kind helper --actor-identity "$SCHED" --idempotent
+    --actor-kind helper --actor-identity "$SCHED_ID" --idempotent
   _b_append --type observation \
     --json '{"statement": "INV-closed-objects: pass"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/inv.log
   _b gate --task T-docs2 --json '"true"' --criterion AC-docs2 --no-reuse
   run python3 "$SCHED" authorize "$B" --json '{"type": "select", "task": "T-build"}'
   [ "$status" -eq 0 ]
   _b_append --type task_start --json '{"task": "T-build"}' \
-    --actor-kind helper --actor-identity "$SCHED" --idempotent
+    --actor-kind helper --actor-identity "$SCHED_ID" --idempotent
   _b_append --type observation \
     --json '{"statement": "INV-closed-objects: pass"}' \
-    --actor-kind helper --actor-identity "$SCHED" --trust asserted \
+    --actor-kind helper --actor-identity "$SCHED_ID" --trust asserted \
     --evidence-path analysis_results/inv.log
   _b gate --task T-build --json '"true"' --criterion AC-build --no-reuse
 

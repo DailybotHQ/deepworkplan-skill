@@ -191,3 +191,44 @@ assert d["verdict"] in ("PASS", "FAIL"), d["verdict"]
 PY
     done
 }
+
+@test "ecosystem pins: one tag per product across descriptors and every shipped doc" {
+    run python3 - "$REPO_ROOT/skills/deepworkplan" <<'PY'
+import json, os, re, sys
+pack = sys.argv[1]
+text = []
+for root, _, files in os.walk(pack):
+    for f in files:
+        if f.endswith(('.md', '.json')):
+            text.append(open(os.path.join(root, f), encoding='utf-8').read())
+blob = '\n'.join(text)
+problems = []
+for key in sorted(os.listdir(os.path.join(pack, 'addons'))):
+    path = os.path.join(pack, 'addons', key, 'addon.json')
+    if not os.path.isfile(path):
+        continue
+    prod = json.load(open(path)).get('product')
+    if not prod:
+        continue
+    repo, tag = prod['repo'], prod['tag']
+    name = repo.split('/')[1]
+    seen = set(re.findall(re.escape(name) + r'@(v\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)', blob))
+    seen |= set(re.findall(r'--branch (v\d+\.\d+\.\d+)\s+https://github\.com/' + re.escape(repo), blob))
+    seen |= set(re.findall('`' + re.escape(repo) + r'` `(v\d+\.\d+\.\d+)`', blob))
+    stale = sorted(seen - {tag})
+    if stale:
+        problems.append('%s pinned %s but the pack also names %s' % (repo, tag, stale))
+print('\n'.join(problems) or 'ok')
+sys.exit(1 if problems else 0)
+PY
+    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+}
+
+@test "the pin smoke reads every tag from the descriptors and runs before release" {
+    # No second copy of a pin: the script names no product version.
+    ! grep -nE 'v[0-9]+\.[0-9]+\.[0-9]+' "$REPO_ROOT/scripts/smoke-ecosystem-pins.sh"
+    grep -q 'HOME="$WORK/home"' "$REPO_ROOT/scripts/smoke-ecosystem-pins.sh"
+    for wf in auto-release prerelease; do
+        grep -q 'run: bash scripts/smoke-ecosystem-pins.sh' "$REPO_ROOT/.github/workflows/$wf.yml"
+    done
+}

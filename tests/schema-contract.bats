@@ -64,7 +64,7 @@ PY
 
 @test "a README still saying 'Plan Status: materializing' is a partial materialization that names the intended shape" {
     m="$(mutant)"
-    sed -i 's/Plan Status: *[0-9]*\/[0-9]* completed/Plan Status: materializing/' "$m/README.md"
+    sed -i.bak 's/Plan Status: *[0-9]*\/[0-9]* completed/Plan Status: materializing/' "$m/README.md" && rm -f "$m/README.md.bak"
     run python3 "$CHECK" --pack "$REPO_ROOT/skills/deepworkplan" --fixtures "$TMPDIR_TEST/none" "$m"
     [ "$status" -eq 1 ]
     echo "$output" | grep -q "partial materialization"

@@ -46,8 +46,10 @@ Benchmark mode is opt-in through a JSON configuration file:
   fails closed independently: a wrong-typed `"learnings"` value disables
   learnings only, with its own single warning, while `"enabled"` resolution
   proceeds on its own merits.
-- Config resolution happens only at the emission point (§2) and in the
-  aggregator. No other flow reads these files.
+- The `benchmark` key is resolved only at the emission point (§2) and in
+  the aggregator; no other flow reads it. The file itself is shared with
+  the addon registry: its locations, fail-closed reading and the one
+  parser (`shared/config.py`) are defined in [`CONFIG.md`](CONFIG.md).
 
 ## 2. Emission point and artifacts
 

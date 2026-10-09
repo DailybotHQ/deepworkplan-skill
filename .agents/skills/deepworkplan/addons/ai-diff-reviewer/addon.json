@@ -1,0 +1,8 @@
+{
+  "schema": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
+  "key": "ai-diff-reviewer",
+  "product": { "repo": "DailybotHQ/ai-diff-reviewer", "tag": "v3.2.3" },
+  "detect": { "paths": [".agents/skills/ai-diff-reviewer/SKILL.md"] },
+  "provides_abilities": [],
+  "requires_grants": []
+}

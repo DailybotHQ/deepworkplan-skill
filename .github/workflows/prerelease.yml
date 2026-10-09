@@ -1,0 +1,190 @@
+name: Pre-release (manual)
+
+# Cut a DeepWorkPlan PRE-RELEASE (for example 7.0.0-beta.1) on demand.
+#
+# Stable releases stay fully automatic (auto-release.yml, every merge to
+# main). A pre-release is a deliberate, manual act: a maintainer dispatches
+# this workflow with the exact version. It never becomes the repository's
+# `latest` release, and the stable pipeline ignores pre-release tags when it
+# looks for the last release (auto-release.yml filters `-` suffixes).
+#
+# What it does:
+#   1. Validates the version (X.Y.Z-(alpha|beta|rc).N) and that its tag does
+#      not exist yet.
+#   2. Stamps the version into ALL SKILL.md files and prepends a CHANGELOG
+#      section listing the commits since the last STABLE tag.
+#   3. Commits as "Dailybot Automations" with [skip ci], pushes the branch
+#      first, then tags vX.Y.Z-pre.N on that exact commit and pushes the tag.
+#   4. Smoke-installs the just-pushed tag into a TEMP directory and asserts
+#      the installed version equals the requested one.
+#   5. Generates SHA256SUMS over skills/deepworkplan and publishes a GitHub
+#      Release marked --prerelease, never latest, with SHA256SUMS attached.
+#
+# The next merge to main graduates the stamped pre-release: auto-release.yml
+# turns X.Y.Z-pre.N into X.Y.Z instead of bumping past it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Pre-release version without the leading v (e.g. 7.0.0-beta.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release-main
+  cancel-in-progress: false
+
+jobs:
+  prerelease:
+    name: Stamp, tag and publish a pre-release
+    runs-on: ubuntu-latest
+    # Pre-releases are cut from reviewed code only: dispatching on any other
+    # branch does nothing.
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.AUTOMATION_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Set up git identity
+        run: |
+          git config user.name "Dailybot Automations"
+          git config user.email "ops@dailybot.com"
+
+      - name: Validate the requested version
+        id: version
+        env:
+          # Passed via env, never inlined, so the input cannot inject shell.
+          REQUESTED: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$REQUESTED" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta|rc)\.[0-9]+$'; then
+            echo "::error::version '$REQUESTED' is not X.Y.Z-(alpha|beta|rc).N — stable versions are cut by auto-release.yml"
+            exit 1
+          fi
+          TAG="v${REQUESTED}"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null || \
+             git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "::error::tag ${TAG} already exists — pre-release tags are never moved"
+            exit 1
+          fi
+          # Last STABLE tag only (pre-release tags carry a '-').
+          LAST_STABLE=$(git tag --list 'v*.*.*' --sort=-v:refname | grep -vE -- '-' | head -n1 || true)
+          COMMITS=$(git log "${LAST_STABLE:+${LAST_STABLE}..HEAD}" --pretty=format:"%s" --invert-grep --grep='^chore(release):')
+          echo "version=${REQUESTED}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "last_stable=${LAST_STABLE}" >> "$GITHUB_OUTPUT"
+          # Random heredoc delimiter: a commit subject that equals a fixed
+          # delimiter could otherwise inject further step outputs.
+          DELIM="EOF_$(openssl rand -hex 12)"
+          {
+            echo "commits<<${DELIM}"
+            echo "$COMMITS"
+            echo "${DELIM}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Smoke — the ecosystem products install at the pinned tags
+        # Before anything is committed or tagged (scripts/smoke-ecosystem-pins.sh
+        # reads the pins from the addon descriptors; throwaway HOME).
+        run: bash scripts/smoke-ecosystem-pins.sh
+
+      - name: Stamp the version in ALL SKILL.md files
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Re-validate where the value is used (defense in depth for sed).
+          printf '%s' "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta|rc)\.[0-9]+$'
+          while IFS= read -r f; do
+            sed -i "s/^version: \".*\"/version: \"${NEW_VERSION}\"/" "$f"
+          done < <(find skills/deepworkplan -name 'SKILL.md')
+
+      - name: Update CHANGELOG.md
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+          COMMITS: ${{ steps.version.outputs.commits }}
+        run: |
+          set -euo pipefail
+          DATE=$(date -u +%Y-%m-%d)
+          {
+            echo "## [${NEW_VERSION}] — ${DATE} (pre-release)"
+            echo ""
+            echo "### Changes"
+            echo ""
+            while IFS= read -r line; do
+              [ -n "$line" ] && echo "- ${line}"
+            done <<< "$COMMITS"
+            echo ""
+          } > /tmp/new_section.md
+          awk -v section_file=/tmp/new_section.md '
+            BEGIN {
+              while ((getline line < section_file) > 0) section = section line "\n"
+              close(section_file)
+              inserted = 0
+            }
+            /^## \[/ && !inserted { print section; inserted = 1 }
+            { print }
+            END { if (!inserted) print section }
+          ' CHANGELOG.md > CHANGELOG.md.new
+          mv CHANGELOG.md.new CHANGELOG.md
+          cp /tmp/new_section.md RELEASE_NOTES.md
+
+      - name: Commit, push, tag
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git add -A -- skills CHANGELOG.md
+          git commit -m "chore(release): ${NEW_VERSION} (pre-release) [skip ci]"
+          # Branch first: a rejected push leaves no dangling tag.
+          git push origin "HEAD:${BRANCH}"
+          git tag -a "$TAG" -m "Pre-release ${NEW_VERSION}"
+          git push origin "refs/tags/${TAG}"
+
+      - name: Smoke — the just-published pre-release installs (temp dir only)
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          sleep 5
+          SMOKE_DIR=$(mktemp -d)
+          cleanup() { rm -rf "$SMOKE_DIR"; }
+          trap cleanup EXIT
+          git -C "$SMOKE_DIR" init -q
+          printf '%s\n' '{"name":"dwp-smoke","private":true}' > "$SMOKE_DIR/package.json"
+          (
+            cd "$SMOKE_DIR"
+            npx --yes skills add "DailybotHQ/deepworkplan-skill@${TAG}" \
+              --skill deepworkplan --force -y
+          )
+          INSTALLED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
+            "$SMOKE_DIR/.agents/skills/deepworkplan/SKILL.md" | head -n1)
+          if [ "${INSTALLED}" != "${NEW_VERSION}" ]; then
+            echo "::error::installed '${INSTALLED}' != pre-release '${NEW_VERSION}'"
+            exit 1
+          fi
+          echo "OK: pre-release ${TAG} installs cleanly (temp smoke)"
+
+      - name: Generate provenance checksums
+        run: bash scripts/generate-checksums.sh
+
+      - name: Publish the GitHub pre-release (never latest)
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMATION_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          NEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" SHA256SUMS \
+            --prerelease --latest=false \
+            --title "${NEW_VERSION}" \
+            --notes-file RELEASE_NOTES.md
+          gh release view "$TAG" --json isPrerelease -q .isPrerelease | grep -qx true

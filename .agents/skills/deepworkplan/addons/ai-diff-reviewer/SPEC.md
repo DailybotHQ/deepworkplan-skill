@@ -6,7 +6,7 @@ This document is the **normative specification** of the DeepWorkPlan **AI Diff
 Reviewer addon**: a capability — **required in its local form since standard
 2.3.0, optional in its CI form** — that connects an AI-first repository to
 the **AI Diff Reviewer** (`DailybotHQ/ai-diff-reviewer`, marketplace listing
-"AI Diff Reviewer", pinned **v3.2.2**, moving `@v3` for workflows) so DWP work — the mandatory
+"AI Diff Reviewer", pinned **v3.2.3**, moving `@v3` for workflows) so DWP work — the mandatory
 security pass of the mandatory **Final Review** — is augmented with a structured local review
 (verdict + findings table + severity), and (in **Flow B — dual-surface**,
 optionally) every pull request to the target repo is gated by a CI-side
@@ -33,7 +33,7 @@ CI surface is never required.
 | **Status** | Stable |
 | **Companions** | `SKILL.md`, `templates/INTEGRATION.md`, `../README.md`, `spec/ADDONS.md`, `../../create/SKILL.md`, `../../guide/authoring.md` §5.4 |
 | **License** | MIT |
-| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v3.2.2 (marketplace: "AI Diff Reviewer"); workflows pin the moving `@v3` |
+| **Upstream reference** | `DailybotHQ/ai-diff-reviewer` v3.2.3 (marketplace: "AI Diff Reviewer"); workflows pin the moving `@v3` |
 
 ## 1. Conventions
 
@@ -102,7 +102,7 @@ upstream CI's `Skills — prompt-sync invariant` job).
 
 ## 3. Two Supported Adoption Flows
 
-The upstream skill (pinned v3.2.2; the moving `@v3` for workflows) defines two flows explicitly. This addon applies
+The upstream skill (pinned v3.2.3; the moving `@v3` for workflows) defines two flows explicitly. This addon applies
 Flow A as the baseline and **MUST** offer Flow B as an explicit opt-in.
 
 ### 3.1 Flow A — local-only
@@ -159,12 +159,12 @@ acceptance — each reconciled if already present (§8):
 - The addon **MUST** install the vendored skill (the only supported install
   path) unless the developer recorded a declared exception (§2).
   Supported install method:
-  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.2 --skill ai-diff-reviewer -y`
+  - `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.3 --skill ai-diff-reviewer -y`
     (**tag-pinned**; both flags are required — `--yes` covers npm's own "Ok to
     proceed?" prompt; the subcommand `-y` covers the `skills` CLI's own "Which
     agents do you want to install to?" picker, which hangs in non-TTY without
     it — upstream fixed this bug in v1.7.0. Pin the current published tag at
-    install time (here `@v3.2.2`); the moving `@v3` is the documented default
+    install time (here `@v3.2.3`); the moving `@v3` is the documented default
     pin for CI workflows. The pin is what makes the install verifiable and
     the local↔CI parity guarantee exact.)
   - Bump to the latest published tag: `npx --yes skills update ai-diff-reviewer -y`.
@@ -565,7 +565,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Upstream skill: [`DailybotHQ/ai-diff-reviewer`](https://github.com/DailybotHQ/ai-diff-reviewer)
-  — `skills/ai-diff-reviewer/SKILL.md` (documented pin **v3.2.2**; workflows
+  — `skills/ai-diff-reviewer/SKILL.md` (documented pin **v3.2.3**; workflows
   use the moving `@v3`), sub-skills: `generate-extension/SKILL.md`,
   `setup/SKILL.md` +
   [`setup/reference.md`](https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/setup/reference.md),

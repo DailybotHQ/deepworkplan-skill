@@ -1,10 +1,16 @@
-# DeepWorkPlan Methodology Specification — v6
+# DeepWorkPlan Methodology Specification — v7
 
 > The canonical normative standard for an **AI-first autopilot repository** and the
-> The current **Deep Work Plan (DWP)** standard is v6. The v5 base documents
-> below remain versioned 5.0.0 so existing plans keep their recorded rules;
-> the four `V6_*.md` documents define the current lifecycle on top of that
-> base. New plans created by the 6.x pack use v6. Existing v1/v2/v5 plans
+> The current **Deep Work Plan (DWP)** standard is **7.0.0** (decided for the
+> 7.0.0-beta.1 release: it adds normative surface — the configuration file and
+> addon registry `CONFIG.md`, addon descriptors `ADDONS.md` §7,
+> addon-provided abilities `V7_ABILITIES.md`, the v7 contract generation
+> `V7_CONTRACT.md` and four schemas; 6.0.0 declarations stay valid). The v5
+> base documents below remain versioned 5.0.0 so existing plans keep their
+> recorded rules; the four `V6_*.md` documents define the lifecycle on top of
+> that base and the `V7_*.md` documents extend it. New plans created by the 7.x pack use the v7 contract generation of
+> the same record layer (`V7_CONTRACT.md`: v6 plus the `parallel_safe` marker
+> and delegation records); v6 plans keep v6. Existing v1/v2/v5 plans
 > retain their recorded generation and are never silently migrated. Schema
 > URLs are published at `https://deepworkplan.com/schema/`.
 
@@ -29,7 +35,10 @@ orchestrator hub, and agent workspace — are addressed throughout.
 | [`V6_RESOURCES.md`](V6_RESOURCES.md) | **v6 line** resource contract: host capability negotiation (closed ability set, minimal-host floor), the counter-source split (journal vs host meter, unknown unit = advisory), limit reserves with a runtime dispatch ceiling, the `LIMIT:` exhaustion grammar with derived dispatch holds, exactly-once cancellation settlement (`RESERVATION:` grammar, double-charge refused), and fixed-model-default routing posture (grant AND host ability). Binds v6 new plans only. |
 | [`V6_LIFECYCLE.md`](V6_LIFECYCLE.md) | **Current v6** flow wiring: plan-generation detection by artifacts (manifest contract pointer / `contract.json` / `contracts/` chain — never by skill version alone), the v6 activation rule (default for pack line 6+), the guarded materialization order (manifest → contract → approval, resumable, refusals that hold), the execution boundary (scheduler dispatch, runner-only observed evidence, derived completion), the amendment path (revision chain + fresh approval + evidence invalidation), read-only status/verify surfaces, v5/v6 coexistence, the explicit one-directional v5 migration (preview → backup → contract → manifest swap → journal import → projection, rollback guarded by real history), cross-agent/cold resume (journal-is-truth ladder, export handoff), and the v6 onboarding guidance (capability declaration, authority boundaries, outcome/test mapping, concise context). Binds v6 new plans only. |
 | [`BENCHMARK.md`](BENCHMARK.md) | **v6 line, opt-in** field-metrics subsystem: the `.dwp/config.json` / `~/.dwp/config.json` discovery and precedence (fail-closed to disabled), the completion-time emission point and its atomic/deterministic/idempotent artifacts, the five metric-provenance classes (journal/identity/environment/metered-only/context-manifest), the closed record field set (published as `schema/benchmark-record`, with optional per-task spans and context accounting from the pre-release v1 amendment), the counts-vector complexity profile with composites deferred, the aggregation contract with its non-causality note plus the learnings digest, the privacy boundary, the version-over-version use limits, and the learnings section (§10 — nested `learnings` flag, two halves derived/curated, closed category vocabulary, anchor grammar, written-once; published as `schema/learnings-record`, rendered into the unified `DWP_REPORT.md`). Never a conformance gate; disabled repositories behave byte-identically. |
-| [`V7_ROADMAP.md`](V7_ROADMAP.md) | **Non-normative** planning record for the next version: the two optional super addons (Herdr mesh wiring, DeepWorkPlan Vim), the `[herdr-mesh]` grant/stop protocol core, and the never-a-conformance-gate posture. Nothing here gates the current standard. |
+| [`CONFIG.md`](CONFIG.md) | **7.0.0-beta line** configuration file: `.dwp/config.json` / `~/.dwp/config.json` — one shape, one stdlib parser (`shared/config.py`), two keys: `benchmark` (wholesale, `BENCHMARK.md` §1) and the `addons` registry (per-key precedence, keys = in-pack addon directory names, closed `{enabled, version}` entries, fail-closed with one warning, unknown keys ignored, absent = not enabled, informative `version`); the reconciling consent-gated writer used by `onboard`; published as `schema/dwp-config-v1`. The registry can only offer or amplify — never gate conformance or a plan. |
+| [`V7_CONTRACT.md`](V7_CONTRACT.md) | **7.0.0-beta line** contract generation v7 of the v6 record layer: `plan-contract/v7` = v6 + optional `tasks[].parallel_safe` (the create-time delegation marker); `journal-event/v7` = v6 + the `delegation` event (launched/completed/failed/cancelled; never evidence — a delegate's result stays `asserted` until this plan's runner observes it); `plan-manifest/v7`; generation by schema URL, never mixed; the record-layer delegation gate and `ledger.py delegate launch|observe|collect|cancel`. v6 schema bytes unchanged. |
+| [`V7_ABILITIES.md`](V7_ABILITIES.md) | **7.0.0-beta line** addon-provided abilities: effective abilities = host-declared ∪ `provides_abilities` of addons that are enabled in the registry, carry a valid `addon.json`, are detected (argv detect with no shell and a timeout, or paths) and report a compatible interface major; one warning and no contribution otherwise; never persisted into a plan; an ability is never authority (grants still apply) and never consent (telemetry). Extends `V6_RESOURCES.md` §1 without changing it. |
+| [`V7_ROADMAP.md`](V7_ROADMAP.md) | **Non-normative** planning record for v7: the optional addons (Herdr, DeepWorkPlan Vim), a pointer to the peer protocol that now lives in herdr-peers, and the never-a-conformance-gate posture. Nothing here gates the current standard. |
 | [`ADDONS.md`](ADDONS.md) | The addon mechanism + contract (reconcile-don't-clobber); four opt-in addons plus the AI Diff Reviewer local review, required in the baseline since 2.3.0 (§6.5). |
 
 ## Key v2 Divergences from v1 (see `../RECONCILIATION.md`)

@@ -15,7 +15,7 @@ setup() {
 
 @test "repository provenance accepts v6 while the v5 plan checker stays generation-bound" {
     grep -q "SUPPORTED_SPEC = '5.0.0'" "$SK/verify/plan_contract.py"
-    grep -q 'SUPPORTED_SPEC="6.0.0"' "$SK/verify/conformance.sh"
+    grep -q 'SUPPORTED_SPEC="7.0.0"' "$SK/verify/conformance.sh"
     grep -q 'SPEC_SERIES = (2, 4, 5)' "$SK/verify/plan_contract.py"
     grep -q 'standard_series_ok' "$SK/verify/conformance.sh"
     # Both eras reject a non-series version with the same teaching.
@@ -23,14 +23,14 @@ setup() {
     [ "$(grep -c 'which is not a DWP standard' "$SK/verify/plan_contract.py")" -ge 2 ]
 }
 
-@test "new provenance says 6.0.0 while retained v5 documents keep their version" {
-    grep -q 'DWP standard: 6.0.0 (onboarded' "$SK/onboard/SKILL.md"
+@test "new provenance says 7.0.0 while retained v5 documents keep their version" {
+    grep -q 'DWP standard: 7.0.0 (onboarded' "$SK/onboard/SKILL.md"
     grep -q '"5.0.0"' "$SK/create/SKILL.md"
     grep -q '| Standard | DWP spec 5.0.0 |' "$SK/create/SKILL.md"
     grep -q '| \*\*Version\*\* | 5.0.0 |' "$SK/spec/DWP_SPECIFICATION.md"
     grep -q '| \*\*Version\*\* | 5.0.0 |' "$SK/spec/PLAN_STATE.md"
     grep -q '| Version | 5.0.0 |' "$SK/spec/LITE_PLANS.md"
-    grep -q 'DWP standard: 6.0.0 (onboarded' "$SK/spec/DOCUMENTATION_STANDARD.md"
+    grep -q 'DWP standard: 7.0.0 (onboarded' "$SK/spec/DOCUMENTATION_STANDARD.md"
     # No stale 4.0.0/2.4.0-as-current stamp survives in the shipped pack;
     # only historical prose ("plans created under 4.0.0", "removed in 2.4.0")
     # remains.
@@ -101,7 +101,7 @@ PY
     rm -rf "$WORK"
 }
 
-@test "schema URLs are the v1/v2/v5 line plus the deliberate v6 candidate line" {
+@test "schema URLs are the v1/v2/v5 line plus the deliberate v6 line and its v7 contract generation" {
     # No v3/v4 schema URL may ever appear. plan-state stays on the published
     # v1/v2/v5 line forever — the v6 projection schema is plan-snapshot/v6,
     # never a plan-state/v6. Every other family adds exactly the deliberate
@@ -109,7 +109,11 @@ PY
     # pointer, snapshot = the projection, contract, journal-event,
     # context-manifest), each pinned below and mapped to a shipped file by
     # tests/schema-publication.bats.
-    run bash -c "grep -rn 'schema/plan-state/v[3-46-9]\|schema/plan-\(manifest\|snapshot\|contract\)/v[3-47-9]\|schema/\(journal-event\|context-manifest\)/v[3-47-9]' '$SK'"
+    # The 7.0.0 line adds exactly the v7 contract generation
+    # (spec/V7_CONTRACT.md): plan-contract/v7, journal-event/v7 and
+    # plan-manifest/v7. There is no snapshot or context-manifest v7 — v7
+    # plans project into plan-snapshot/v6.
+    run bash -c "grep -rn 'schema/plan-state/v[3-46-9]\|schema/plan-\(manifest\|contract\)/v[3-48-9]\|schema/plan-snapshot/v[3-47-9]\|schema/journal-event/v[3-48-9]\|schema/context-manifest/v[3-47-9]' '$SK'"
     [ "$status" -ne 0 ]
     grep -q 'plan-manifest/v5.json' "$SK/create/SKILL.md"
     grep -q 'plan-state/v5.json' "$SK/create/SKILL.md"
@@ -121,7 +125,10 @@ PY
         'plan-snapshot/v6.json plan-snapshot-v6.schema.json' \
         'plan-contract/v6.json plan-contract-v6.schema.json' \
         'journal-event/v6.json journal-event-v6.schema.json' \
-        'context-manifest/v6.json context-manifest-v6.schema.json'; do
+        'context-manifest/v6.json context-manifest-v6.schema.json' \
+        'plan-manifest/v7.json plan-manifest-v7.schema.json' \
+        'plan-contract/v7.json plan-contract-v7.schema.json' \
+        'journal-event/v7.json journal-event-v7.schema.json'; do
         set -- $pair
         [ -s "$SK/spec/schema/$2" ]
         grep -q "https://deepworkplan.com/schema/$1" "$SK/spec/schema/$2"
@@ -140,4 +147,20 @@ PY
     tr '\n' ' ' < "$SK/spec/DWP_SPECIFICATION.md" | tr -s ' ' | grep -qF 'without changing any requirement from 2.4.0'
     # The anti-lockstep rule: the standard never chases the skill's version.
     tr '\n' ' ' < "$SK/spec/DWP_SPECIFICATION.md" | tr -s ' ' | grep -qF 'Anti-lockstep rule'
+}
+
+@test "behavioral: 6.0.0 and 7.0.0 repository declarations pass; 8.0.0 is newer than the checker" {
+    WORK="$(cd "$(mktemp -d)" && pwd -P)"
+    ( cd "$WORK" && git init -q . && mkdir -p .dwp/plans docs && printf '.dwp/\n' > .gitignore )
+    printf 'scoped mapping fallback\n' > "$WORK/docs/TESTING_GUIDE.md"
+    for spec in 6.0.0 7.0.0 8.0.0; do
+        printf '# AGENTS\n\nDWP standard: %s (onboarded 2026-10-09; skill 7.0.0-beta.1)\n' "$spec" > "$WORK/AGENTS.md"
+        run bash "$SK/verify/conformance.sh" --repo-only "$WORK"
+        case "$spec" in
+            8.0.0) [[ "$output" == *"newer than this checker supports (7.0.0)"* ]] || return 1 ;;
+            *) [[ "$output" == *"AGENTS.md declares DWP standard $spec"* ]] || return 1
+               [[ "$output" != *"not a DWP standard"* ]] || return 1 ;;
+        esac
+    done
+    rm -rf "$WORK"
 }

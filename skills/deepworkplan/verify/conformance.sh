@@ -87,14 +87,14 @@ warn() {
 
 # The newest repository provenance this checker accepts. Plan artifacts use
 # their own generation-specific validators; plan_contract.py remains v5-only.
-SUPPORTED_SPEC="6.0.0"
+SUPPORTED_SPEC="7.0.0"
 
 # The standard's released series: 2.x and 4.x are historical (repositories and
 # plans onboarded before each jump stay valid, DWP_SPECIFICATION.md §6.5), 5.x
-# and 6.x is current. There is no 3.x standard — the v3 launch was a product release,
+# and 6.x are retained, and 7.x is current. There is no 3.x standard — the v3 launch was a product release,
 # not a standard bump (the series are mapped in DWP_SPECIFICATION.md "Status").
 standard_series_ok() {  # $1 = declared version; bash 3.2 safe
-  case "${1%%.*}" in 2|4|5|6) return 0 ;; *) return 1 ;; esac
+  case "${1%%.*}" in 2|4|5|6|7) return 0 ;; *) return 1 ;; esac
 }
 
 version_le() {
@@ -213,7 +213,7 @@ check_repo_standard() {
       return 0
     fi
     if ! standard_series_ok "$declared"; then
-      fail "AGENTS.md declares DWP standard $declared, which is not a DWP standard (the series are 2.x, 4.x, and 5.x historical and 6.x current; there is no 3.x) — correct the provenance line"
+      fail "AGENTS.md declares DWP standard $declared, which is not a DWP standard (the series are 2.x, 4.x, 5.x and 6.x historical and 7.x current; there is no 3.x) — correct the provenance line"
       return 0
     fi
     pass "AGENTS.md declares DWP standard $declared"

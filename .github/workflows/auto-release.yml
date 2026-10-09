@@ -12,9 +12,12 @@ name: Auto-release on merge to main
 # What it does:
 #   1. Reads the current version from skills/deepworkplan/SKILL.md frontmatter
 #      (the ROUTER SKILL.md is the single source of truth for the version)
-#   2. Looks at commits since the last `vX.Y.Z` git tag and decides MAJOR/MINOR/PATCH
+#   2. Looks at commits since the last STABLE `vX.Y.Z` git tag (pre-release
+#      tags such as v7.0.0-beta.1 are ignored) and decides MAJOR/MINOR/PATCH;
+#      when the current version is a stamped pre-release (X.Y.Z-beta.N, cut
+#      by prerelease.yml), the release GRADUATES it to X.Y.Z instead
 #   3. Writes the new version into ALL SKILL.md files (router + every sub-skill
-#      + the devcontainer addon) so they stay in sync
+#      + every addon) so they stay in sync
 #   4. Prepends a new section to CHANGELOG.md with the merged commits as bullets
 #   5. Commits as "Dailybot Automations" with `[skip ci]` to break the loop
 #   6. Tags `vX.Y.Z` and pushes
@@ -68,6 +71,9 @@ jobs:
 
       - name: Determine bump level + new version
         id: version
+        env:
+          # Via env, never inlined: a commit message cannot inject shell.
+          HEAD_MSG: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
           # Read current version from the ROUTER SKILL.md (single source of truth).
@@ -77,8 +83,11 @@ jobs:
             exit 1
           fi
 
-          # Find last release tag (vX.Y.Z). Empty if no tag yet.
-          LAST_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1)
+          # Find the last STABLE release tag (vX.Y.Z). Pre-release tags carry a
+          # '-' (v7.0.0-beta.1) and never count as the last release — they are
+          # cut by prerelease.yml and must not move the stable bump base.
+          # Empty if no tag yet.
+          LAST_TAG=$(git tag --list 'v*.*.*' --sort=-v:refname | grep -vE -- '-' | head -n1 || true)
           if [ -z "$LAST_TAG" ]; then
             COMMITS=$(git log --pretty=format:"%s" --invert-grep --grep='^chore(release):')
           else
@@ -100,13 +109,28 @@ jobs:
             BUMP="minor"
           fi
 
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          case "$BUMP" in
-            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
-            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
-            patch) PATCH=$((PATCH+1)) ;;
-          esac
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          if printf '%s' "$CURRENT" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-'; then
+            # A pre-release (prerelease.yml) is in flight. Graduation is a
+            # deliberate act: only a merge whose commit message carries
+            # [graduate] turns 7.0.0-beta.1 into 7.0.0 (never bumping past
+            # it). Any other merge waits, so a field test is never cut short
+            # by an unrelated fix; its commits ship with the graduation.
+            if ! printf '%s' "$HEAD_MSG" | grep -qF '[graduate]'; then
+              echo "Pre-release ${CURRENT} in flight; no stable release without [graduate] (or dispatch prerelease.yml for the next pre-release)."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            NEW_VERSION="${CURRENT%%-*}"
+            BUMP="graduate"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            case "$BUMP" in
+              major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+              minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+              patch) PATCH=$((PATCH+1)) ;;
+            esac
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
           NEW_TAG="v${NEW_VERSION}"
 
           echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
@@ -115,19 +139,33 @@ jobs:
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
           echo "last_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
 
+          # Random heredoc delimiter: a commit subject that equals a fixed
+          # delimiter could otherwise inject further step outputs.
+          DELIM="EOF_$(openssl rand -hex 12)"
           {
-            echo 'commits<<EOF'
+            echo "commits<<${DELIM}"
             echo "$COMMITS"
-            echo 'EOF'
+            echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Smoke — the ecosystem products install at the pinned tags
+        # Before anything is committed or tagged: every product an addon
+        # descriptor pins (herdr-peers, coding-agents-kit, devcontainer-kit,
+        # deepworkplan-vim) installs at that exact tag into a throwaway HOME
+        # and reports the interface the descriptor expects.
+        if: steps.version.outputs.skip != 'true'
+        run: bash scripts/smoke-ecosystem-pins.sh
 
       - name: Bump version in ALL SKILL.md files
         if: steps.version.outputs.skip != 'true'
         env:
           NEW_VERSION: ${{ steps.version.outputs.new_version }}
         run: |
+          set -euo pipefail
+          # Re-validate where the value is used (defense in depth for sed).
+          printf '%s' "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'
           # Sync the new version across every SKILL.md under skills/deepworkplan
           # (router + create/execute/refine/resume/status/onboard + addons).
           while IFS= read -r f; do

@@ -33,7 +33,12 @@ each step atomic and resumable, never rewriting a different contract or
 another generation's manifest; it also captures
 each task's starting fingerprint at `task_start` and executes both legs of
 a declared control pair, materializing the old leg as a detached worktree
-at that recorded revision), `shared/views.py`
+at that recorded revision; for v7 plans its `delegate` command records
+delegation launches and results behind a gate — v7 contract,
+`agent_delegation` grant, `parallel_safe` task or read-only delegate, an
+enabled and detected transport addon — and **never runs a delegate
+itself**: the transport addon does, and a delegate's result stays
+`asserted` until this ledger's own gate observes it), `shared/views.py`
 rendering the deterministic generated views under the human-edit rule,
 `shared/scheduler.py` — the read-only authorization core that turns journal
 records into dispatch/refusal decisions (it never writes and never executes
@@ -51,7 +56,14 @@ no lock and writes nothing unless you pass `--out`); and
 scheduler's envelope accounting and the ledger's record discipline to
 negotiate host abilities, apply reserves, record exhaustion and settle
 cancellations — the only events it writes are journal observations
-through the ledger writer, and it never mints observed trust; and
+through the ledger writer, and it never mints observed trust. From 7.0.0
+it also computes addon-provided abilities (`spec/V7_ABILITIES.md`): for an
+addon **you enabled** in `.dwp/config.json` it runs that addon's declared
+detect command — a plain argv line from the addon's `addon.json` (no shell
+metacharacters allowed by schema), executed without a shell, stdin closed,
+10-second timeout, output only parsed for an interface number — or checks
+the declared file paths; a disabled addon is never consulted and nothing
+it learns is written to a plan; and
 `shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,
 guarded resumable migrate, verified rollback. It never executes anything:
 a v5 gate record is imported through the ledger writer as `imported`
@@ -73,6 +85,13 @@ recorded, verbatim, and its curated half — agent judgment, written once —
 carries a closed-vocabulary category, an anchor naming only a journal event
 seq and/or a short section id, and the finding/proposal text; never file
 contents, paths or secrets. Reruns preserve curated entries byte-for-byte.
+`shared/config.py` is the one reader of `.dwp/config.json` /
+`~/.dwp/config.json` (benchmark switch and addon registry): reading is
+fail-closed and never aborts a flow, it lists the `addons/` directory names
+without opening any addon file, and its only writer (`enable` / `disable`,
+run by onboarding after you accept an addon) reconciles the repository file
+atomically and refuses rather than overwrites a file it cannot parse. It
+makes no network call and stores no secret.
 They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
@@ -84,14 +103,23 @@ of our own files, contains nothing of yours, and is safe to delete. The **core
 methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
 network calls**, and emits **no telemetry** of any kind.
 
-> **One honest caveat — addons.** The shipped tree includes five addons
+> **One honest caveat — addons.** The shipped tree includes eight addons
 > (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,
-> `addons/ai-diff-reviewer`, `addons/design-system`). Four are opt-in: if you
-> explicitly choose to install them, they may install third-party artifacts —
-> **always behind your consent, always pinned** (a published tag or a
-> package-manager version), and always through a verifiable path: a package
-> manager, the checksummed `skills` CLI, or a documented download → verify
-> SHA-256 → execute flow. The fifth, the **AI Diff Reviewer local review**, is
+> `addons/ai-diff-reviewer`, `addons/design-system`, `addons/agentkit`,
+> `addons/herdr`, `addons/vim`). Seven are opt-in: if you explicitly choose to
+> install them, they may install third-party artifacts — **always behind
+> your consent, always pinned** (a published tag or a package-manager
+> version), and always through a verifiable path: a package manager, the
+> checksummed `skills` CLI, a clone of an exact tag followed by that
+> product's own `install.sh`, or a documented download → verify SHA-256 →
+> execute flow. Three of them (`agentkit`, `herdr`, `vim`) and `devcontainer`
+> are thin integrators of separate products (coding-agents-kit, herdr-peers,
+> deepworkplan-vim, devcontainer-kit); each has its own repository and
+> license, and the pack carries only detection, the offer, the pinned install
+> and — for the two delegation transports — the mapping onto the plan's
+> recorded `delegate` operations. Enabling an addon is recorded in
+> `.dwp/config.json` and authorizes nothing by itself. The eighth, the
+> **AI Diff Reviewer local review**, is
 > part of the baseline since standard 2.3.0: `onboard` installs one MIT-licensed, tag-pinned
 > skill (`DailybotHQ/ai-diff-reviewer`) through the checksummed `skills` CLI,
 > and the Final Review's security pass runs it through your own coding agent —
@@ -184,11 +212,13 @@ grep -RInE --exclude=TRUST.md -- '--dangerous[l]y|--full-permissio[n]|c[u]rl[^|]
   skills/deepworkplan \
   || echo 'OK: no installer pipes, no bypass flags'
 
-# 5. No unpinned installs of any kind: no clone-and-run (installing by
-#    cloning whatever a remote default branch currently holds), no un-tagged
-#    `skills add`, and no moving refs — a pin is an immutable version tag
-#    (@vX.Y.Z), never @main/@master/@latest/@head:
+# 5. No unpinned installs of any kind: no clone-and-run of whatever a remote
+#    default branch currently holds (a clone must name an exact tag,
+#    `git clone --branch vX.Y.Z`), no un-tagged `skills add`, and no moving
+#    refs — a pin is an immutable version tag (@vX.Y.Z), never
+#    @main/@master/@latest/@head:
 grep -RInE --exclude=TRUST.md 'git clone |skills add [A-Za-z0-9_./-]+([[:space:]]|$)|skills add [^`]*@(main|master|latest|head)([[:space:]\`]|$)' skills/deepworkplan \
+  | grep -vE 'git clone --branch v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?([[:space:]`]|$)' \
   || echo 'OK: every install path is tag-pinned or package-managed'
 ```
 

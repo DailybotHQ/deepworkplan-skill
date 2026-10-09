@@ -163,7 +163,7 @@ Team agents can be used WITHIN orchestrator plans at two levels:
 
 These are independent — orchestrator parallelism and child DWP parallelism don't interfere with each other.
 
-**Example:** An orchestrator plan creates child DWPs for api-services and web-app. The `create_child_dwp` tasks can run in parallel (team agents). Then each child DWP, when executed, may use team agents internally for its own parallel task groups.
+**Example:** An orchestrator plan creates child DWPs for api and web-app. The `create_child_dwp` tasks can run in parallel (team agents). Then each child DWP, when executed, may use team agents internally for its own parallel task groups.
 
 ### 14.7. Quality Gate Hooks for Team Agents
 

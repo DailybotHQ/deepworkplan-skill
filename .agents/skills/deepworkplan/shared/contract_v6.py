@@ -30,6 +30,39 @@ sys.dont_write_bytecode = True  # never leave caches inside an installed pack
 CONTRACT_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-contract/v6.json'
 JOURNAL_SCHEMA_URL = 'https://deepworkplan.com/schema/journal-event/v6.json'
 
+# The v7 generation (spec/V7_CONTRACT.md) is a strict superset recorded under
+# its own URLs: plan-contract/v7 = v6 + optional tasks[].parallel_safe;
+# journal-event/v7 = v6 + the `delegation` event. Generation is detected by
+# the contract's schema URL - never by pack version - and a plan's events
+# carry exactly its generation's journal URL (mixed generations refused).
+CONTRACT_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/plan-contract/v7.json'
+JOURNAL_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/journal-event/v7.json'
+CONTRACT_GENERATIONS = {CONTRACT_SCHEMA_URL: 'v6', CONTRACT_SCHEMA_URL_V7: 'v7'}
+JOURNAL_GENERATIONS = {JOURNAL_SCHEMA_URL: 'v6', JOURNAL_SCHEMA_URL_V7: 'v7'}
+JOURNAL_URL_BY_GENERATION = {'v6': JOURNAL_SCHEMA_URL, 'v7': JOURNAL_SCHEMA_URL_V7}
+CONTRACT_URL_BY_GENERATION = {'v6': CONTRACT_SCHEMA_URL,
+                              'v7': CONTRACT_SCHEMA_URL_V7}
+
+# v7 delegation (spec/V7_CONTRACT.md section 3; ecosystem contract 2.5).
+DELEGATION_TRANSPORTS = ('headless', 'interactive')
+DELEGATION_STATES = ('launched', 'completed', 'failed', 'cancelled')
+ID_DELEGATION = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
+ID_ADDON = re.compile(r'^[a-z][a-z0-9-]{0,63}$')
+DIGEST = re.compile(r'^sha256:[0-9a-f]{64}$')
+
+
+def contract_generation(doc):
+    """'v6' or 'v7' from the contract's schema URL, else None."""
+    if not isinstance(doc, dict):
+        return None
+    return CONTRACT_GENERATIONS.get(doc.get('schema'))
+
+
+def journal_url_for(contract):
+    """The journal-event URL every event of this contract's plan carries."""
+    return JOURNAL_URL_BY_GENERATION.get(contract_generation(contract),
+                                         JOURNAL_SCHEMA_URL)
+
 # Section 3.3: the closed adaptation enumeration. Anything outside it is
 # refused by the authorization core; this module refuses it at the record.
 ADAPTATION_KINDS = ('split', 'reorder', 'insert', 'change_strategy', 'retry')
@@ -69,6 +102,9 @@ JOURNAL_EVENT_TYPES = ('task_start', 'approval', 'gate_run', 'observation',
                        'resource_sample', 'control_pair', 'selection',
                        'refusal', 'view_render', 'reconciliation',
                        'journal_repair')
+
+# v7 catalog: the v6 catalog plus `delegation` (V7_CONTRACT.md section 3).
+JOURNAL_EVENT_TYPES_V7 = JOURNAL_EVENT_TYPES + ('delegation',)
 
 # Types whose payload carries evidence and therefore a trust label.
 EVIDENCE_TYPES = ('gate_run', 'observation', 'resource_sample',
@@ -187,13 +223,15 @@ def contract_errors(doc, parents=None):
                   'resource_envelope', 'scheduling', 'tasks'}, 'contract',
             errors)
     declared = doc.get('schema')
-    if declared != CONTRACT_SCHEMA_URL:
+    if declared not in CONTRACT_GENERATIONS:
         # Mixed-era refusal (section 9.1): v5 and older documents keep their
         # own recorded tooling; the v6 reader never guesses a legacy parse.
+        # The v7 generation (V7_CONTRACT.md) is read by the same reader.
         errors.append("contract.schema: expected %r, found %r - the v6 "
-                      "contract reader validates v6 contracts only; older "
-                      "plans keep their recorded lifecycle (section 9.1)" %
-                      (CONTRACT_SCHEMA_URL, declared))
+                      "contract reader validates v6 contracts only (and "
+                      "their v7 superset %r); older plans keep their "
+                      "recorded lifecycle (section 9.1)" %
+                      (CONTRACT_SCHEMA_URL, declared, CONTRACT_SCHEMA_URL_V7))
         return errors
     for key in ('spec_version', 'plan', 'revision', 'created_at', 'outcome',
                 'acceptance', 'invariants', 'scope', 'authorization',
@@ -262,7 +300,8 @@ def contract_errors(doc, parents=None):
     _dependencies_errors(doc, errors)
     _envelope_errors(doc, errors)
     _scheduling_errors(doc, errors)
-    _tasks_errors(doc, criteria, errors)
+    _tasks_errors(doc, criteria, errors,
+                  v7=CONTRACT_GENERATIONS[declared] == 'v7')
     return errors
 
 
@@ -582,7 +621,7 @@ def _scheduling_errors(doc, errors):
                                   'string' % (hpath, key))
 
 
-def _tasks_errors(doc, criteria_ids, errors):
+def _tasks_errors(doc, criteria_ids, errors, v7=False):
     tasks = doc.get('tasks')
     if not isinstance(tasks, list) or not tasks:
         errors.append('contract.tasks: expected a non-empty list')
@@ -593,8 +632,16 @@ def _tasks_errors(doc, criteria_ids, errors):
         if not isinstance(task, dict):
             errors.append('%s: expected an object' % path)
             continue
-        _closed(task, {'id', 'title', 'prerequisites', 'touched_surface',
-                       'gate_intent'}, path, errors)
+        known = {'id', 'title', 'prerequisites', 'touched_surface',
+                 'gate_intent'}
+        if v7:
+            # V7_CONTRACT.md section 2: the create-time marker that makes a
+            # task eligible for delegation (never inferred at execution).
+            known = known | {'parallel_safe'}
+            if 'parallel_safe' in task and \
+                    not isinstance(task['parallel_safe'], bool):
+                errors.append('%s.parallel_safe: expected a boolean' % path)
+        _closed(task, known, path, errors)
         tid = _field(task, 'id', 'str?', path, errors)
         if tid is not None:
             if not ID_TASK.match(tid):
@@ -694,16 +741,21 @@ def journal_event_errors(event, contract=None):
     errors = []
     if not isinstance(event, dict):
         return ['journal event: expected a JSON object']
-    if event.get('schema') != JOURNAL_SCHEMA_URL:
+    event_url = event.get('schema')
+    expected = journal_url_for(contract) if contract is not None else None
+    if event_url not in JOURNAL_GENERATIONS or \
+            (expected is not None and event_url != expected):
         errors.append("event.schema: expected %r, found %r - mixed-era "
                       'records are refused; older plans keep their own '
                       'tooling (section 9.1)' %
-                      (JOURNAL_SCHEMA_URL, event.get('schema')))
+                      (expected or JOURNAL_SCHEMA_URL, event_url))
         return errors
     etype = event.get('type')
-    if etype not in JOURNAL_EVENT_TYPES:
+    catalog = JOURNAL_EVENT_TYPES_V7 if \
+        JOURNAL_GENERATIONS[event_url] == 'v7' else JOURNAL_EVENT_TYPES
+    if etype not in catalog:
         errors.append('event.type: unknown event type %r (closed catalog: '
-                      '%s)' % (etype, ', '.join(JOURNAL_EVENT_TYPES)))
+                      '%s)' % (etype, ', '.join(catalog)))
         return errors
     seq = event.get('seq')
     if not _is_int(seq) or seq < 1:
@@ -1130,7 +1182,69 @@ def _v_journal_repair(event, errors):
     _field(event, 'cause', 'str', 'event', errors)
 
 
+def _v_delegation(event, errors):
+    """V7_CONTRACT.md section 3: one delegation state transition.
+
+    Not an evidence type: it records what a delegate was asked and what it
+    claims, never a check that ran. A delegate's result is `asserted` until
+    the parent's runner observes it with a gate (the event carries no trust
+    label and no closure ever reads it).
+    """
+    _closed(event, {'schema', 'type', 'seq', 'ts', 'plan', 'contract_id',
+                    'actor', 'note', 'task', 'delegation_id', 'transport',
+                    'via', 'kind', 'profile', 'target', 'worktree',
+                    'prompt_digest', 'state', 'result_path',
+                    'result_digest'}, 'event', errors)
+    tid = _field(event, 'task', 'str?', 'event', errors)
+    if tid is not None and not ID_TASK.match(tid):
+        errors.append('event.task: expected a T-* id')
+    did = _field(event, 'delegation_id', 'str?', 'event', errors)
+    if did is not None and not ID_DELEGATION.match(did):
+        errors.append('event.delegation_id: expected 1-64 of [A-Za-z0-9._-]')
+    if event.get('transport') not in DELEGATION_TRANSPORTS:
+        errors.append('event.transport: expected headless/interactive')
+    via = _field(event, 'via', 'str?', 'event', errors)
+    if via is not None and not ID_ADDON.match(via):
+        errors.append('event.via: expected an addon key')
+    state = event.get('state')
+    if state not in DELEGATION_STATES:
+        errors.append('event.state: expected one of %s' %
+                      '/'.join(DELEGATION_STATES))
+    for key in ('kind', 'profile', 'target'):
+        if key in event:
+            if not isinstance(event[key], str) or not event[key] or \
+                    len(event[key]) > 200:
+                errors.append('event.%s: expected a non-empty string '
+                              '(<= 200 chars)' % key)
+    if 'worktree' in event and event['worktree'] is not None and \
+            (not isinstance(event['worktree'], str) or
+             not event['worktree'] or len(event['worktree']) > 300):
+        errors.append('event.worktree: expected a path string or null '
+                      '(read-only delegate)')
+    if state == 'launched' and 'prompt_digest' not in event:
+        errors.append('event.prompt_digest: required on launch (the prompt '
+                      'is recorded by digest before it is relied on)')
+    for key in ('prompt_digest', 'result_digest'):
+        if key in event and (not isinstance(event[key], str) or
+                             not DIGEST.match(event[key])):
+            errors.append('event.%s: expected sha256:<64 hex>' % key)
+    if 'result_path' in event:
+        rp = event['result_path']
+        if not isinstance(rp, str) or not rp or rp.startswith('/') or \
+                '..' in rp.split('/'):
+            errors.append('event.result_path: expected a relative path '
+                          'inside the plan or repository')
+        if state not in ('completed', 'failed'):
+            errors.append('event.result_path: only a completed or failed '
+                          'delegation carries a result')
+    if 'trust' in event or 'evidence_path' in event:
+        errors.append('event: a delegation is not evidence - it carries no '
+                      'trust label and no evidence_path (its result stays '
+                      'asserted until the parent runner observes it)')
+
+
 _EVENT_VALIDATORS = {
+    'delegation': _v_delegation,
     'task_start': _v_task_start,
     'approval': _v_approval,
     'gate_run': _v_gate_run,
@@ -1422,6 +1536,45 @@ def self_test():
           None, lambda es: es[4].update(revised_criterion='AC-one: easier'))
     probe('journal: seq regression',
           None, lambda es: es[5].update(seq=2))
+    # v7 generation (V7_CONTRACT.md): the superset validates; its additions
+    # are refused under the v6 URLs; generations never mix.
+    v7 = json.loads(json.dumps(contract))
+    v7['schema'] = CONTRACT_SCHEMA_URL_V7
+    v7['tasks'][0]['parallel_safe'] = True
+    probes[0] += 1
+    if contract_errors(v7):
+        failures.append('a v7 contract with parallel_safe should be valid: %s'
+                        % contract_errors(v7)[:1])
+    probes[0] += 1
+    v6_marked = json.loads(json.dumps(contract))
+    v6_marked['tasks'][0]['parallel_safe'] = True
+    if not contract_errors(v6_marked):
+        failures.append('parallel_safe under the v6 URL must fail')
+    v7_stamped = dict(v7, contract_id=compute_contract_id(v7))
+    delegation = {'schema': JOURNAL_SCHEMA_URL_V7, 'type': 'delegation',
+                  'seq': 1, 'ts': '2026-10-09T00:00:00Z',
+                  'plan': v7['plan'], 'contract_id': v7_stamped['contract_id'],
+                  'actor': {'kind': 'agent', 'identity': 'selftest'},
+                  'task': v7['tasks'][0]['id'], 'delegation_id': 'd1',
+                  'transport': 'headless', 'via': 'agentkit',
+                  'state': 'launched', 'prompt_digest': 'sha256:' + 'a' * 64}
+    probes[0] += 1
+    if journal_event_errors(delegation, v7_stamped):
+        failures.append('a v7 delegation event should be valid: %s'
+                        % journal_event_errors(delegation, v7_stamped)[:1])
+    for label, mutate, against in (
+            ('delegation under the v6 journal URL',
+             lambda e: e.update(schema=JOURNAL_SCHEMA_URL), None),
+            ('v7 event under a v6 contract', lambda e: None, stamped),
+            ('delegation claims trust', lambda e: e.update(trust='observed'),
+             v7_stamped),
+            ('launch without prompt digest',
+             lambda e: e.pop('prompt_digest'), v7_stamped)):
+        probes[0] += 1
+        ev = dict(delegation)
+        mutate(ev)
+        if not journal_event_errors(ev, against):
+            failures.append('mutant %r should fail' % label)
     return (not failures, failures, probes[0])
 
 

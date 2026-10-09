@@ -28,6 +28,10 @@ never claimed.
   switching, no subagents, no telemetry, no stop) is a supported degraded
   posture, never an error; every limit that needs the missing ability
   degrades to advisory with the missing ability named.
+* From the 7.0.0 line, enabled and detected addons MAY contribute
+  abilities at runtime on top of this declaration — never persisted, never
+  invented — per [`V7_ABILITIES.md`](V7_ABILITIES.md); this section is
+  otherwise unchanged.
 
 ## 2. Counter sources
 

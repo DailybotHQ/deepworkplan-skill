@@ -142,7 +142,7 @@ setup() {
         | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
     [ -n "$spec" ]
     [ "$spec" = "5.0.0" ]
-    [ "$supported" = "6.0.0" ]
+    [ "$supported" = "7.0.0" ]
 
     # Every documented `DWP standard: X` example names that same version.
     written="$(grep -rhoE 'DWP standard: [0-9]+\.[0-9]+\.[0-9]+' "$pack" \

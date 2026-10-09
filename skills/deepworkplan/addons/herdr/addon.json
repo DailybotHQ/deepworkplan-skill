@@ -1,0 +1,9 @@
+{
+  "schema": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
+  "key": "herdr",
+  "product": { "repo": "DailybotHQ/herdr-peers", "tag": "v0.1.0", "interface": 1 },
+  "detect": { "command": "herdr-peers --version", "interface_from": "regex:\\(protocol (\\d+)\\)" },
+  "provides_abilities": ["subagents", "cancel_children"],
+  "requires_grants": ["agent_delegation"],
+  "transport": "interactive"
+}

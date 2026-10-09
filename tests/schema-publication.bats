@@ -39,12 +39,17 @@ teardown() { rm -rf "$TMPDIR_TEST"; }
     # v1/v2/v5 for manifest+state, plus the v6 candidate line for manifest,
     # snapshot, contract, journal-event and context-manifest (DWP v6
     # campaign), plus benchmark-record v1 and learnings-record v1 (opt-in
-    # field metrics + learnings) = thirteen URLs, all shipped files.
-    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 13 ]
+    # field metrics + learnings), plus dwp-config v1 (the configuration file,
+    # spec/CONFIG.md), addon-descriptor v1 (spec/ADDONS.md §7) and the v7
+    # contract generation (plan-contract, journal-event, plan-manifest v7;
+    # spec/V7_CONTRACT.md) = eighteen URLs, all shipped files.
+    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 18 ]
     while IFS= read -r url; do
         label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"
         if [ "$v" = "1" ]; then file="$label.schema.json"; else file="$label-v$v.schema.json"; fi
+        # a v1 schema may also carry its version in the name (dwp-config-v1)
+        [ -s "$PACK/spec/schema/$file" ] || file="$label-v$v.schema.json"
         [ -s "$PACK/spec/schema/$file" ] || { echo "URL $url has no shipped file spec/schema/$file"; exit 1; }
     done <<< "$urls"
 }
@@ -147,17 +152,17 @@ PY
     echo "$output" | grep -q 'unknown state schema URL'
 }
 
-@test "retained v5 plan documents and checker stay at 5.0.0 while repository provenance is v6" {
+@test "retained v5 plan documents and checker stay at 5.0.0 while repository provenance is v7" {
     for doc in DWP_SPECIFICATION PLAN_STATE DOCUMENTATION_STANDARD; do
         grep -q '^| \*\*Version\*\* | 5\.0\.0 |$' "$PACK/spec/$doc.md" || { echo "$doc.md Version != 5.0.0"; exit 1; }
     done
     grep -q '^| Version | 5\.0\.0 |$' "$PACK/spec/LITE_PLANS.md" || { echo "LITE_PLANS.md Version != 5.0.0"; exit 1; }
     grep -q "^SUPPORTED_SPEC = '5.0.0'$" "$PACK/verify/plan_contract.py"
-    grep -q '^SUPPORTED_SPEC="6.0.0"$' "$PACK/verify/conformance.sh"
+    grep -q '^SUPPORTED_SPEC="7.0.0"$' "$PACK/verify/conformance.sh"
     # The retained v5 writer declares v5 URLs and spec_version 5.0.0.
     grep -q 'plan-manifest/v5\.json' "$PACK/create/SKILL.md"
     grep -q 'plan-state/v5\.json' "$PACK/create/SKILL.md"
     grep -q '\*\*"5\.0\.0"\*\*' "$PACK/create/SKILL.md"
     grep -q 'DWP spec 5\.0\.0' "$PACK/create/SKILL.md"
-    grep -q 'DWP standard: 6\.0\.0' "$PACK/onboard/SKILL.md"
+    grep -q 'DWP standard: 7\.0\.0' "$PACK/onboard/SKILL.md"
 }

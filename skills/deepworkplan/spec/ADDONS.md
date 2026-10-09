@@ -35,9 +35,11 @@ implementations. It does **not** contain any addon's implementation.
 | **License** | MIT |
 
 > **Divergence from v1.** v1 had **no addon concept** anywhere in the framework.
-> The addon mechanism is **net-new in v2** (`RECONCILIATION.md` divergence #7,
-> idea #7), introduced to keep the core baseline lean while allowing optional
-> capabilities (devcontainer support, then Dailybot integration) to be layered in.
+> The addon mechanism is **net-new in v2**, introduced to keep the core
+> baseline lean while allowing optional capabilities (devcontainer support,
+> then Dailybot integration) to be layered in. In 7.0.0 it gained the addon
+> registry ([`CONFIG.md`](CONFIG.md)), descriptors (§7) and addon-provided
+> abilities ([`V7_ABILITIES.md`](V7_ABILITIES.md)).
 
 ---
 
@@ -115,10 +117,10 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Six addon folders ship: four active addons are **optional** and **never
-required**, one is the local-review baseline, and Herdr is a staged v7
-candidate with no v6 flow hook. A repository is fully conformant with
-**zero optional addons** installed. Of the four active optional addons, the
+Eight addon folders ship: seven are **optional** and **never
+required**, and one is the local-review baseline. A repository is fully
+conformant with **zero optional addons** installed. Of the seven optional
+addons, the
 **dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
 with declared dependencies, with its **inert** `/lib-upgrade` delegator
 installed under the onboarding consent **unless explicitly declined** (an
@@ -126,30 +128,27 @@ install runs no upgrade). The fifth, the
 **AI Diff Reviewer** (§6.5), is a **required baseline component in its local
 form**; only its CI surface is optional.
 
-### 6.1 Devcontainer Support (first addon)
+### 6.1 Devcontainer Support (first addon — thin integrator of devcontainer-kit)
 
-- **Devcontainer support** is the **first** addon. Its full normative content
-  (spec, reasoning templates, onboarding hook, validation step, per-stack presets,
-  and the public-OSS variant) **MUST** live at:
-
-  ```
-  skills/deepworkplan/addons/devcontainer/
-  ```
-
-- Scope (per `ORCHESTRATOR_MANIFEST.md`): a compose-based `.devcontainer/` + `docker/`
-  setup that preserves **AI-CLI persistence**, the **`dailybot-project-network`**,
-  the **`DOCKER_DEV_ENV=vscode`** flag, and **project-identity precedence** —
-  reconciled, not clobbered, against any existing devcontainer setup.
-- The full implementation lives at
-  `skills/deepworkplan/addons/devcontainer/` — see its
-  [`SKILL.md`](../addons/devcontainer/SKILL.md)
-  (onboarding hook), [`SPEC.md`](../addons/devcontainer/SPEC.md)
-  (RFC-2119 common skeleton, reasoning checklist, project-identity precedence,
-  public-OSS variant, validation), and `templates/` (reasoning templates + the 7
-  presets).
-- Each child-DWP **MAY** include one optional task to reconcile its repo's
-  devcontainer to this addon, and **MUST** skip it if declined
-  (`ORCHESTRATOR_MANIFEST.md` key decision).
+- An optional addon at `skills/deepworkplan/addons/devcontainer/` that gives a
+  repository a reproducible dev container through **devcontainer-kit**
+  (`dck`; `https://github.com/DailybotHQ/devcontainer-kit`, MIT, its own
+  release cycle) pinned at `v0.1.2` (interface `1`). The kit owns the Dev
+  Containers layout (`dck init`, which reconciles and never clobbers), the
+  pinned base images, the entrypoint library, the launcher, SSH agent
+  forwarding and Herdr registration; the addon owns detection, the offer, the
+  stack → options reasoning, the registry record and validation.
+- **Vendor-neutral (7.0.0):** the 1.x in-pack templates and their
+  company-specific requirements are retired; no network, volume, CLI or
+  profile file of any one organization is required. The Dailybot CLI layer
+  appears only when the `dailybot` addon asks for it.
+- Security defaults are the kit's and are never weakened by the addon:
+  loopback-only ports, no privileged options or Docker socket, agent
+  forwarding instead of key copies, `0600` gitignored `.env` files.
+- Full contract: [`SKILL.md`](../addons/devcontainer/SKILL.md),
+  [`SPEC.md`](../addons/devcontainer/SPEC.md), `templates/INTEGRATION.md`.
+- It is **never required**; each child DWP **MAY** include one optional task
+  to adopt it and **MUST** skip it if declined.
 
 ### 6.2 Dailybot Integration (second addon)
 
@@ -162,8 +161,8 @@ form**; only its CI surface is optional.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx --yes skills add DailybotHQ/agent-skill@v3.23.2 --skill dailybot -y`,
-  currently **3.23.2**; or OpenClaw `openclaw skills install dailybot`) and/or
+  (`npx --yes skills add DailybotHQ/agent-skill@v3.23.3 --skill dailybot -y`,
+  currently **3.23.3**; or OpenClaw `openclaw skills install dailybot`) and/or
   the **Dailybot CLI** (`dailybot-cli >= 3.9.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
   never a one-line remote-installer pipe); **defers all authentication** to the
@@ -277,7 +276,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.2 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.3 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
@@ -331,49 +330,126 @@ form**; only its CI surface is optional.
 ---
 
 
-### 6.6 Herdr Mesh (sixth addon — optional environment capability)
+### 6.6 Herdr (sixth addon — interactive delegation transport, thin integrator)
 
-An optional addon teaching an executing agent to discover, launch and
-orchestrate a **Herdr agent mesh** (`skills/deepworkplan/addons/herdr/`):
-`SKILL.md` (router, detection, launch), `SPEC.md` (normative),
-`protocol.md` (address, discovery, send, grant/reply stamps, stop rules,
-escalation), `orchestration.md` (delegation discipline, one writer per
-path, join on the plan), `movement.md` (inside-Herdr detection and the
-safe command subset), `templates.md` (grant/reply stamps, launch brief).
+An optional addon integrating **herdr-peers** (`DailybotHQ/herdr-peers`,
+MIT, its own release cycle) pinned at `v0.1.0` (protocol/interface `1`), as
+the **interactive** transport of v7 delegation
+([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `herdr-peers ask` to a peer agent
+in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
+the plan journal before the reply is relied on, the reply asserted until
+the plan's own gates observe the work. `onboard` Phase 7b offers it as an
+**explicit opt-in**; installs are the pinned skills
+(`herdr-peers@v0.1.0`, Herdr's official `herdr@v0.9.3`).
 
-Placement decision (recorded per the addon contract): INSIDE DeepWorkPlan,
-not a separate repository — its only consumer is an agent executing or
-coordinating a plan, and it must stay in lockstep with the plan autonomy
-rules; it has no second surface (no CI Action, no marketplace) to justify
-a split. Generic by contract: it names `herdr` on PATH (or a detected
-wrapper taking the same address) and never a product or vendor.
+Placement decision (revised for 7.0.0): the peer protocol — stamp, grant,
+reply, loop guard, depth limit 1, fan-out cap, scope — moved out of the
+pack into herdr-peers, which works without DWP; this folder is the
+DWP-side integration only and carries **no copy** of it. It is **never
+required**: a repository without Herdr runs every task in the current
+session and stays fully conformant. Full contract:
+[`SKILL.md`](../addons/herdr/SKILL.md), [`SPEC.md`](../addons/herdr/SPEC.md),
+`install.md`, `templates/INTEGRATION.md`.
 
-Identity is `(machine_id, pane_id)`; labels and row numbers are never
-addresses. Every delegation body carries the reply grant
-(`[herdr-mesh]` stamp); return hops are marked and never answered. The
-addon is an optional environment capability: never part of the AI-first
-baseline, never a conformance gate, never blocking — a repository with no
-Herdr runs single-agent and stays fully conformant, and a launch failure
-is recorded and continued with available peers.
+### 6.7 DeepWorkPlan Vim (seventh addon — optional terminal editor, thin integrator)
 
-The addon ships **unwired** in the current line: no flow references it.
-Its `SKILL.md` is not user-invocable in v6, and Phase 7b excludes this
-staged candidate from the active addon offer. The template and validation
-checklist are present for review but do not activate the addon.
-The v7 wiring plan (onboard offer, optional execute delegation,
-`parallel-safe` marks, presence-gated verify) is recorded in
-[`V7_ROADMAP.md`](V7_ROADMAP.md) — non-normative.
+An optional addon offering **DeepWorkPlan Vim** — the terminal editor for
+Deep Work Plan (Neovim 0.12+) — as a machine-level install for the person
+behind the repo, never a repo requirement. The addon detects Neovim,
+presents the editor strictly as an offer, guides the documented install
+paths, and validates the installed surface; an existing Neovim config is
+**never** overwritten without explicit consent (non-interactive installs
+onto an existing config abort with instructions; backups go to
+`~/.config/previous-deepworkplan-vim`). The editor is **never required**
+and never a conformance gate: a repository without it stays fully
+conformant.
 
-## 7. References
+Placement decision (recorded per the addon contract): the **editor itself**
+lives in its own public repository
+(`https://github.com/DailybotHQ/deepworkplan-vim`, GPL-3.0, versioned
+independently of the pack); this folder is the DWP-side integration
+contract only, a **thin integrator** pinned to the product tag
+`deepworkplan-vim@v0.4.0`: detection, feature claims and the install steps
+are read from the product's machine-readable surface (`addon/surface.json`,
+interface `1`); an unknown interface major is one warning and "not
+available", never an error. `onboard` Phase 7b offers it as an **explicit
+opt-in**; no other flow invokes it. Two routes: the full editor (available
+now) and the `deepworkplan.nvim` plugin (v7.1, not shipped — never offered
+for install before it exists). The full
+implementation lives at `skills/deepworkplan/addons/vim/` — see its
+[`SKILL.md`](../addons/vim/SKILL.md) (detection + offer hook),
+[`SPEC.md`](../addons/vim/SPEC.md) (RFC-2119 contract: consent gate,
+install paths, validation), and `templates/INTEGRATION.md` (reasoning
+template).
+
+### 6.8 agentkit (eighth addon — headless delegation transport, thin integrator)
+
+An optional addon integrating **coding-agents-kit** (`ak`;
+`https://github.com/DailybotHQ/coding-agents-kit`, MIT, its own release
+cycle) pinned at `v0.1.1` (interface `1`), as the **headless** transport of
+v7 delegation ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `ak run` per
+delegate, in a dedicated git worktree, recorded through `ledger.py
+delegate`, its result asserted until the plan's own gates observe it.
+`onboard` Phase 7b offers it as an **explicit opt-in**; the install is the
+pinned tagged clone plus the kit's `install.sh`. The pack never adds a
+permission-bypass flag — autonomy stays the kit's explicit per-run opt-in.
+It is **never required**: without it every task runs in the current
+session. Full contract: [`SKILL.md`](../addons/agentkit/SKILL.md),
+[`SPEC.md`](../addons/agentkit/SPEC.md), `templates/INTEGRATION.md`.
+
+## 7. Addon Descriptors (`addon.json`)
+
+Every in-pack addon **MUST** ship `addons/<key>/addon.json`, a closed JSON
+object published as
+[`schema/addon-descriptor-v1.schema.json`](schema/addon-descriptor-v1.schema.json)
+(`https://deepworkplan.com/schema/addon-descriptor/v1.json`) and validated
+at runtime by `shared/config.py` (`descriptor_errors`; `config.py
+descriptors` audits the whole set). Its `key` **MUST** equal the directory
+name, which is also the addon's registry key in `.dwp/config.json`
+([`CONFIG.md`](CONFIG.md) §3).
+
+| Field | Meaning |
+|---|---|
+| `schema` | the descriptor schema URL (const) |
+| `key` | the directory name |
+| `product` | optional — the separate product a thin integrator pins: `repo` (`owner/name`), `tag` (exact `vX.Y.Z[-pre]`, never a branch or floating version), `interface` (integer major, when the product publishes one) |
+| `detect` | read-only presence check: exactly one of `command` (an argv line with no shell metacharacters, run **without a shell**, bounded by a timeout; exit 0 = present) or `paths` (present when at least one listed file exists; repo-relative or `~/`-prefixed); optional `interface_from` (`json:<field>`, `regex:<pattern>`, `file-json:<path>#<field>`) |
+| `provides_abilities` | host abilities (the closed v6 set) the addon contributes at runtime **only** when enabled and detected with a compatible interface (`V7_ABILITIES.md`) |
+| `requires_grants` | contract permissions its use requires (the closed v6 capability set) |
+| `transport` | delegation addons only: `headless` or `interactive`; a transport addon **MUST** provide `subagents` and require `agent_delegation` |
+
+The shipped set:
+
+| key | product (pinned) | provides_abilities | requires_grants | transport |
+|---|---|---|---|---|
+| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.1.1`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
+| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.2.3` | — | — | — |
+| `dailybot` | `DailybotHQ/agent-skill` `v3.23.3` | `telemetry` (reporting only, consent-gated) | — | — |
+| `dependency-upgrade` | in-pack only | — | — | — |
+| `design-system` | in-pack only | — | — | — |
+| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.1.2`, interface 1 | — | — | — |
+| `herdr` | `DailybotHQ/herdr-peers` `v0.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
+| `vim` | `DailybotHQ/deepworkplan-vim` `v0.4.0`, interface 1 | — | — | — |
+
+A descriptor is **data**: the pack executes nothing it names except its
+`detect.command`, and only for an addon the registry enables. A product
+reporting an interface major other than the descriptor's is treated as
+**not available** with one warning — never an error of the plan or the
+repository. Descriptors never gate conformance: an addon whose descriptor
+is absent or invalid contributes nothing, and the methodology runs
+unchanged (`tests/standalone-methodology.bats`).
+
+## 8. References
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `DOCUMENTATION_STANDARD.md` (§7 reason-per-repo), `AGENT_PROTOCOL.md` (approval gates), `ARCHETYPES.md`, `DWP_SPECIFICATION.md`
-- `../RECONCILIATION.md` (divergence #7), `../../ORCHESTRATOR_MANIFEST.md` (devcontainer-addon decision)
+- `CONFIG.md` (the addon registry), `V7_ABILITIES.md` (addon-provided abilities), `V7_CONTRACT.md` (delegation), `V7_ROADMAP.md` (non-normative)
 - Devcontainer addon implementation (`skills/deepworkplan/addons/devcontainer/`)
 - Dailybot addon implementation (`skills/deepworkplan/addons/dailybot/`)
 - Dependency-upgrade addon implementation (`skills/deepworkplan/addons/dependency-upgrade/`)
 - Design-system addon implementation (`skills/deepworkplan/addons/design-system/`)
 - AI Diff Reviewer addon implementation (`skills/deepworkplan/addons/ai-diff-reviewer/`)
+- Herdr, agentkit and Vim integrators (`skills/deepworkplan/addons/{herdr,agentkit,vim}/`)
 
 ---
 

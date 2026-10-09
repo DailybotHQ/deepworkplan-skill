@@ -1,0 +1,7 @@
+{
+  "schema": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
+  "key": "dependency-upgrade",
+  "detect": { "paths": [".agents/commands/lib-upgrade.md"] },
+  "provides_abilities": [],
+  "requires_grants": []
+}
