@@ -86,7 +86,10 @@ it changes when the records change). Do **not** run `project` or
 `state.json` already on disk is a v6 projection and may be quoted with its
 `generated_at` stamp, marked as derived. Status findings (torn tail, no
 approval event, projection disagreement) are reported with their suggested
-repair, never repaired. Then continue with the README index and
+repair, never repaired. For a v7 plan, also run `python3 ../shared/ledger.py
+--plan <dir> delegate observe` (read-only) and report each delegation's
+task, transport, addon and state — a completed delegate is still
+`asserted` until a gate observes it. Then continue with the README index and
 consistency reading below (items 2–5 apply unchanged; item 1's
 `state.json` is a v6 projection).
 

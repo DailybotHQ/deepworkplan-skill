@@ -99,6 +99,15 @@ execute-v6	final-review	the Final Review task begins	guide/execution.md
 execute-v6	final-review	the Final Review task begins	create/addon-augmentations.md
 execute-v6	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
 
+# --- execute: a v7 plan that delegates one parallel_safe task -----------------
+execute-v7-delegate	entry	t0 — router + execute contract	SKILL.md
+execute-v7-delegate	entry	t0 — router + execute contract	execute/SKILL.md
+execute-v7-delegate	v6-loop	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	execute/v6.md
+execute-v7-delegate	delegation	a v7 plan granting agent_delegation delegates a task	execute/delegation.md
+execute-v7-delegate	final-review	the Final Review task begins	guide/execution.md
+execute-v7-delegate	final-review	the Final Review task begins	create/addon-augmentations.md
+execute-v7-delegate	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
 # --- resume: a v6 plan recovery ----------------------------------------------
 resume-v6	entry	t0 — router + resume contract; assessment loads no companion	SKILL.md
 resume-v6	entry	t0 — router + resume contract; assessment loads no companion	resume/SKILL.md

@@ -120,6 +120,16 @@ test -f .agents/skills/ai-diff-reviewer/SKILL.md && echo "ai-diff-reviewer skill
 { test -f .review/extension.md || test -f .github/ai-diff-reviewer/extension.md || test -f .github/ai-pr-reviewer/extension.md; } && echo "review extension: ok" || echo "review extension: MISSING"
 ```
 
+**Enabled addons only (7.0.0+).** `python3 {skill_dir}/shared/config.py
+enabled` lists what the repository's `.dwp/config.json` enables; with
+nothing enabled there is nothing to check — an addon is never a conformance
+requirement (`../spec/CONFIG.md`). For each enabled key, `config.py
+descriptors` must report its descriptor `OK`, and `python3
+{skill_dir}/shared/resources.py --plan <any plan> abilities` shows whether
+it is detected; an enabled-but-absent addon or a `version` that differs
+from the installed product is a **warning** (informative in 7.0.0), never a
+failure. Fail-closed config warnings are reported verbatim.
+
 Then, by reading rather than grepping:
 
 - **Working principles.** Review `AGENTS.md` against

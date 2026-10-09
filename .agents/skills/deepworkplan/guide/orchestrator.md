@@ -39,6 +39,17 @@
 
 > **Exception (very narrow).** The `create_child_dwp` tasks DO require the orchestrator to navigate into the target repo to author the plan files. This is read-AGENTS.md-and-write-plan-files only — NOT executing the child plan's own tasks. Once the plan files are in place, the orchestrator returns to the saved absolute hub root and never re-enters the target repo except to *verify* that the child completed and its declared artifacts exist. Integration checkpoint tasks (read-only cross-references across plan READMEs) are also fine from Core Hub.
 
+> **Not the same thing: delegating the plan's own tasks (v7).** The rule
+> above forbids proxying a **child plan's** tasks; it is unchanged. A v7
+> plan — orchestrator or individual — MAY delegate one of **its own**
+> `parallel_safe` tasks to a delegate (`../execute/delegation.md`,
+> `../spec/V7_CONTRACT.md`) when its contract grants `agent_delegation`
+> and a transport addon is enabled and detected. That delegate works in
+> this plan's repository and worktree, is recorded in this plan's journal,
+> and its result is asserted until this plan's own gate observes it. It is
+> never a way to execute a child DWP: an orchestrator's
+> `execute_child_dwp` tasks remain hand-offs.
+
 See also the hand-off task template: `example_prompts/ORCHESTRATOR_TASK_TEMPLATE_execute_child_dwp.md`.
 
 ### 13.1. What Are Orchestrator Plans?
