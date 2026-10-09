@@ -44,7 +44,7 @@
     "mechanism": "plan_authorship",
     "timestamp": "2026-09-26T20:00:00Z"
   },
-  "contract_id": "f9195efa11fabe898eb056db2ec80dc1199480c4b5026deb80b6fb846a7726b4",
+  "contract_id": "c7969f00e7422e0567ed492442f90f1909c14e40d2d354fb2aa099f801304e9f",
   "created_at": "2026-10-09T00:00:00Z",
   "dependencies": [
     {
@@ -124,8 +124,8 @@
   "schema": "https://deepworkplan.com/schema/plan-contract/v7.json",
   "scope": {
     "allowed_command_classes": [
-      "declared-gate-python",
-      "declared-gate-bats"
+      "python3",
+      "bats"
     ],
     "allowed_paths": [
       "skills/deepworkplan/spec/schema/",
@@ -142,7 +142,7 @@
     {
       "gate_intent": [
         {
-          "check": "jsonschema Draft 2020-12 accepts the fixture document",
+          "check": "python3 scripts/check-schema-contract.py",
           "criterion": "AC-valid-contract-shape"
         }
       ],
@@ -157,7 +157,7 @@
     {
       "gate_intent": [
         {
-          "check": "contract_v6 self-test mutant: unknown event type",
+          "check": "python3 skills/deepworkplan/shared/contract_v6.py self-test",
           "criterion": "AC-journal-catalog-closed"
         }
       ],

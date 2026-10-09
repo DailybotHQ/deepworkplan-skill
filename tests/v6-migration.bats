@@ -173,8 +173,12 @@ PY
   run python3 "$MIG" --plan "$plan" migrate --authority tester
   [ "$status" -eq 0 ]
   printf '%s' "$output" | grep -qF 'phases backup+contract+manifest+journal+project'
-  # the synthesized contract validates under the shipped validator
-  python3 "$CV6" validate-contract "$plan/contract.json" >/dev/null
+  # the synthesized contract validates under the shipped validator; it is
+  # records-only until amended, so its gate checks are advisories (F-02)
+  python3 "$CV6" validate-contract "$plan/contract.json" --recorded >/dev/null
+  run python3 "$CV6" validate-contract "$plan/contract.json"
+  [ "$status" -eq 1 ]
+  printf '%s' "$output" | grep -qF 'the gate runner would refuse it'
   # the v5 manifest became the v6 pointer, and only after a backup exists
   python3 - "$plan" <<'PY'
 import json, os, sys

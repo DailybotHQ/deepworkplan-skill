@@ -153,21 +153,16 @@ legacy: resolve an optional selector with `../shared/plan_paths.py --plans-dir
 <dwp_dir>/plans resolve <selector>` before passing the full basename to
 `conformance.sh --plan`. Use `list` for all plans; never rename an old folder.
 
-- **v6 generation check (run first).** A folder carrying `manifest.json`
-  with a contract pointer, `contract.json`, or a `contracts/` chain is a
-  **v6 plan** and is verified against its own records, all read-only:
-  `python3 ../shared/contract_v6.py validate-contract <dir>/contract.json`
-  (or the highest revision under `contracts/`), `python3
-  ../shared/contract_v6.py validate-journal <dir>/journal.ndjson
-  --contract <dir>/contract.json`, and `python3 ../shared/ledger.py --plan
-  <dir> inspect` (an `approval` citing the live contract id must exist;
-  a torn tail is a finding). Verify the projection agrees with the
-  journal (`state.json` is generated for v6; a disagreement is a
-  finding — regenerate via `project`, never hand-edit). The v5 lifecycle
-  checks below (final-task shape, checkbox correspondence) apply to the
-  plan's human markdown as written; a v6 plan does not fail for not
-  having a v5 `state.json` hand-shape. Both generations can coexist;
-  neither is migrated by this flow.
+- **v6/v7 generation check (automated).** A folder with a v6/v7
+  `manifest.json` (or a contract without one) is judged by
+  `conformance.sh --plan <name|path>` against its own records, read-only:
+  every contract revision validates, the manifest pairs with the contract's
+  generation and points into its chain, the journal is untorn and valid, an
+  `approval` cites the live contract id, and `state.json` agrees with the
+  projection (stale = advisory; regenerate via `ledger.py project`, never
+  hand-edit). Completion is derived from gate evidence. The v5 lifecycle
+  checks below apply to v5-and-older plans only; the v5 finalization
+  refuses a v6/v7 plan (D2-10). Generations coexist; none is migrated here.
 
 - Every task file declares an explicit scope, **acceptance criteria**, and at least one **validation gate** (a runnable command or check).
 - **Test discipline.** Tasks that add new core functionality or change product behavior require automated test coverage in their Acceptance Criteria and run the repo's tests + lint/type-check in their Validation (`DWP_SPECIFICATION.md` §5.1.1). A behavior-changing plan with zero test work is a finding, not a pass.

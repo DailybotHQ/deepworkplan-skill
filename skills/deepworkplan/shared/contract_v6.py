@@ -277,7 +277,8 @@ def contract_errors(doc, parents=None):
                           'hex digest')
         elif parent not in parents:
             errors.append('contract.parent_contract_id: parent %s was not '
-                          'supplied for chain checking' % parent[:12])
+                          'supplied for chain checking - pass the earlier '
+                          'revision as --parent FILE' % parent[:12])
         else:
             pdoc = parents[parent]
             if pdoc.get('revision') != revision - 1:
@@ -353,6 +354,47 @@ def closure_errors(doc, warnings=None):
                 'ever close it: imported evidence comes only from a '
                 'migration - accept observed (a gate) or asserted (ledger.py '
                 'signoff)' % (crit.get('id'), '/'.join(sorted(accepted))))
+    return errors
+
+
+def gate_command_errors(doc):
+    """Gate checks the runner would refuse (field report F-02).
+
+    ``ledger.py gate`` runs a check only when its first token (basename) is
+    one of ``scope.allowed_command_classes``; checked at validate and
+    materialize so a draft fails before approval, not at its first gate.
+    A check whose criterion accepts no ``observed`` evidence is never
+    executed (it describes the human check a sign-off records) and is
+    skipped. Recorded contracts keep loading.
+    """
+    errors = []
+    if not isinstance(doc, dict):
+        return errors
+    declared = (doc.get('scope') or {}).get('allowed_command_classes') or []
+    if not isinstance(declared, list) or not declared:
+        return errors
+    accepted = {c.get('id'): c.get('accepted_evidence') or []
+                for c in (doc.get('acceptance') or {}).get('criteria') or []
+                if isinstance(c, dict)}
+    for task in doc.get('tasks') or []:
+        if not isinstance(task, dict):
+            continue
+        for intent in task.get('gate_intent') or []:
+            if not isinstance(intent, dict) or \
+                    'observed' not in accepted.get(intent.get('criterion'), []):
+                continue
+            check = intent.get('check')
+            words = check.split() if isinstance(check, str) else []
+            head = words[0].rsplit('/', 1)[-1] if words else ''
+            if head not in declared:
+                errors.append(
+                    'contract.tasks: %s %s check %r starts with %r, outside '
+                    'scope.allowed_command_classes %s - the gate runner '
+                    'would refuse it. Declare the command, or wrap shell '
+                    'builtins, VAR=value prefixes and compound commands as '
+                    "bash -c '...' with bash declared"
+                    % (task.get('id'), intent.get('criterion'),
+                       (check or '')[:60], head, sorted(declared)))
     return errors
 
 
@@ -1390,7 +1432,7 @@ def _selftest_contract():
             'prerequisites': [],
             'touched_surface': ['skills/deepworkplan/shared/'],
             'gate_intent': [{'criterion': 'AC-one',
-                             'check': 'contract_v6 self-test'}],
+                             'check': 'true'}],
         }],
     }
 
@@ -1653,11 +1695,20 @@ def _read_ndjson(path):
 
 def main(argv):
     usage = ('usage: contract_v6.py validate-contract FILE [--parent FILE] '
+             '[--recorded] '
              '| validate-journal FILE [--contract FILE] | compute-id FILE | '
              'self-test')
-    if not argv or argv[0] in ('-h', '--help'):
+    if any(arg in ('-h', '--help') for arg in argv):
         print(usage)
-        return 0 if argv and argv[0] in ('-h', '--help') else 2
+        print('  validate-contract: a revision > 1 needs every earlier revision '
+              'as --parent FILE (e.g. contracts/contract.r1.json); WARN lines '
+              'are advisories; --recorded reports the draft-only checks '
+              '(closability, gate command classes) as WARN for a contract '
+              'already materialized')
+        return 0
+    if not argv:
+        print(usage)
+        return 2
     cmd, rest = argv[0], argv[1:]
     if cmd == 'compute-id':
         if len(rest) != 1:
@@ -1678,28 +1729,39 @@ def main(argv):
             return 2
         doc = _read_json(rest[0])
         parents = {}
+        recorded = False
         i = 1
         while i < len(rest):
             if rest[i] == '--parent' and i + 1 < len(rest):
                 parent = _read_json(rest[i + 1])
                 parents[compute_contract_id(parent)] = parent
                 i += 2
+            elif rest[i] == '--recorded':
+                recorded = True
+                i += 1
             else:
                 print(usage)
                 return 2
         errors = contract_errors(doc, parents=parents)
         warnings = []
         if not errors:
-            errors = closure_errors(doc, warnings)
+            draft = closure_errors(doc, warnings) + gate_command_errors(doc)
+            if recorded:
+                # an already-materialized contract (e.g. a migration's
+                # records-only synthesis): draft checks are advisories
+                warnings += draft
+            else:
+                errors = draft
         for warning in warnings:
             print('WARN', warning)
         for err in errors:
             print('FAIL', err)
         if errors:
             return 1
-        print('OK: v6 contract valid (plan %s, revision %d, %d criteria, '
+        print('OK: %s contract valid (plan %s, revision %d, %d criteria, '
               '%d tasks, contract_id %s)' %
-              (doc.get('plan'), doc.get('revision'),
+              (contract_generation(doc) or 'v6', doc.get('plan'),
+               doc.get('revision'),
                len(doc.get('acceptance', {}).get('criteria', [])),
                len(doc.get('tasks', [])),
                doc.get('contract_id') or compute_contract_id(doc)))

@@ -9,10 +9,12 @@
 # Usage:
 #   conformance.sh [TARGET_DIR]            # repo checks + every plan
 #   conformance.sh --repo-only [TARGET_DIR]
-#   conformance.sh --plan PLAN_NAME [TARGET_DIR]
+#   conformance.sh --plan PLAN_NAME|PLAN_DIR [TARGET_DIR]
 #
-# Accepts both plan eras: current v2-state plans (Lite or Full) and plans
-# authored before them. The plan contract itself lives in plan_contract.py.
+# Accepts every plan generation: v6/v7 plans are checked against their own
+# records (contract, journal, approval, derived snapshot); v2/v5-state plans
+# (Lite or Full) and plans authored before them against their shape. The plan
+# contract itself lives in plan_contract.py.
 #
 # Bash 3.2 compatible (macOS default). Requires only git + coreutils; uses
 # Python 3.9+ to validate plans; exits 2 (UNVERIFIED) when unavailable.
@@ -34,7 +36,7 @@ while [ $# -gt 0 ]; do
       shift
       PLAN_FILTER="${1:-}"
       if [ -z "$PLAN_FILTER" ]; then
-        echo "error: --plan requires a plan name" >&2
+        echo "error: --plan requires a plan name or a plan directory" >&2
         exit 2
       fi
       ;;
@@ -49,6 +51,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+CALLER_PWD="$PWD"
 cd "$TARGET"
 
 # Match shared/context.sh: resolve from the git root (or cwd outside git),
@@ -85,8 +88,8 @@ warn() {
   printf '  [~] %s (SHOULD)\n' "$1"
 }
 
-# The newest repository provenance this checker accepts. Plan artifacts use
-# their own generation-specific validators; plan_contract.py remains v5-only.
+# The newest repository provenance this checker accepts. Plans are judged by
+# generation inside plan_contract.py (v6/v7 records, v5 and older shapes).
 SUPPORTED_SPEC="7.0.0"
 
 # The standard's released series: 2.x and 4.x are historical (repositories and
@@ -336,8 +339,8 @@ check_local_reviewer() {
 }
 
 # ---------------------------------------------------------------- plan checks
-# The structural contract for both plan eras lives in plan_contract.py, so Lite,
-# Full and legacy plans are judged by one implementation. It prints one finding
+# The structural contract for every plan generation lives in plan_contract.py,
+# so v6/v7, Lite, Full and legacy plans are judged by one implementation. It prints one finding
 # per line; a leading "~ " marks an advisory (SHOULD), anything else is a
 # failure (MUST).
 check_plan() {
@@ -380,11 +383,22 @@ if [ "$MODE" = "repo" ] || [ "$MODE" = "all" ]; then
 fi
 
 if [ "$MODE" = "plan" ]; then
-  if [ -d "$PLAN_ROOT/plans/$PLAN_FILTER" ]; then
-    check_plan "$PLAN_ROOT/plans/$PLAN_FILTER"
+  # A name resolves under the plan root; a path (anything with a slash, as
+  # ledger.py --plan takes) is used as given — relative paths resolve from the
+  # directory the caller ran in, before TARGET_DIR was entered.
+  case "$PLAN_FILTER" in
+    */*)
+      case "$PLAN_FILTER" in
+        /*) PLAN_PATH="$PLAN_FILTER" ;;
+        *) PLAN_PATH="$CALLER_PWD/$PLAN_FILTER" ;;
+      esac ;;
+    *) PLAN_PATH="$PLAN_ROOT/plans/$PLAN_FILTER" ;;
+  esac
+  if [ -d "$PLAN_PATH" ]; then
+    check_plan "$(cd "$PLAN_PATH" && pwd -P)"
   else
     echo "Plan: $PLAN_FILTER"
-    fail "plan directory $PLAN_ROOT/plans/$PLAN_FILTER exists"
+    fail "plan directory $PLAN_PATH exists"
   fi
 elif [ "$MODE" = "all" ] && [ -d "$PLAN_ROOT/plans" ]; then
   for plan_dir in "$PLAN_ROOT"/plans/PLAN_*; do

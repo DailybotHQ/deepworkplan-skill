@@ -54,6 +54,8 @@ doc = json.load(open(sys.argv[1]))
 doc['plan'] = os.environ['PLAN_NAME']
 for task in doc['tasks']:
     task['touched_surface'] = ['src/check.txt']
+    for intent in task['gate_intent']:
+        intent['check'] = 'true'
 doc['scope']['allowed_command_classes'] = ['cat', 'true']
 doc['scope']['allowed_paths'] = ['src/']
 doc.pop('contract_id', None)

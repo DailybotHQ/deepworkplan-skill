@@ -79,6 +79,14 @@ cannot express are enforced by the runtime validator and are binding:
 - Each criterion declares `accepted_evidence` — which trust classes
   (§3) may close it. A criterion that does not accept `asserted` never
   inherits completion from migration or reconciliation.
+- Every criterion MUST be closable. For a criterion a task's
+  `gate_intent` declares, `observed` is minted by its gate and `asserted`
+  by a human sign-off (§3); `imported` only by a migration.
+  `validate-contract` and `materialize` refuse a draft criterion that
+  accepts neither `observed` nor `asserted` (an already-recorded contract
+  keeps loading). A regression/discrimination control closes through its
+  pair. A criterion no task declares has no evidence path and closes only
+  by reconciliation with amendment authority — `validate-contract` warns.
 
 **Allowed adaptations (closed enumeration).** The contract's scheduler may
 propose exactly: `split`, `reorder`, `insert`, `change_strategy`,
@@ -133,6 +141,23 @@ Evidence-carrying types only (`gate_run`, `observation`,
 2. **imported** — from a matched external source, with provenance
    (`evidence_path` required).
 3. **asserted** — stated without independent establishment.
+
+**Human sign-off and the authority marker.** `ledger.py --plan <dir>
+signoff --criterion <AC> --evidence-path <artifact> --authority <who>
+[--task <T>]` records a human sign-off: a `gate_run` with `trust:
+asserted`, actor kind `human` and the command `signoff (asserted, not
+executed)`, citing the artifact it rests on (path + digest). It closes a
+criterion only when that criterion accepts `asserted`; an observed-only
+criterion refuses it. It is bound to the task whose `gate_intent` declares
+the criterion and counts only inside that task's evidence window (its
+`task_start`); the intent's `check` then describes the human check and is
+not executed. Any other human-actor record (`append --actor-kind
+human`, e.g. an amendment approval) MUST carry an explicit marker:
+`--human-note <file>` (the note the human wrote, recorded by path and
+digest) or an interactive confirmation on a terminal. **Trust limit:** the
+ledger cannot authenticate a person. The marker makes the claim explicit
+and auditable; it does not make it observed — a sign-off stays `asserted`
+in every receipt (mechanism `signoff`).
 
 Checksums establish byte identity, not semantic truth; the validator
 checks structure and provenance and cannot prove arbitrary product

@@ -295,7 +295,8 @@ def records(plan, documents, report):
                          f'{rec.contract.get("revision", 1)}; {len(chain)} revision(s) checked)'):
         return None
     warnings = []
-    for finding in contract_v6.closure_errors(rec.contract, warnings) + warnings:
+    for finding in (contract_v6.closure_errors(rec.contract, warnings) + warnings
+                    + contract_v6.gate_command_errors(rec.contract)):
         report.note(finding)
     pointer = (manifest.get('contract') or {}).get('id')
     report.verdict(pointer in parents,

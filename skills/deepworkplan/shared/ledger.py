@@ -63,6 +63,14 @@ sys.dont_write_bytecode = True  # never leave caches inside an installed pack
 import contract_v6  # noqa: E402  (sibling module, same directory)
 
 LEDGER_IDENTITY = 'dwp-ledger/6.0'
+# F-24: a v7 plan's records name the v7 ledger (same code, v7 generation).
+LEDGER_IDENTITY_BY_GENERATION = {'v6': LEDGER_IDENTITY, 'v7': 'dwp-ledger/7.0'}
+
+
+def ledger_identity(contract):
+    """The helper identity a plan's records carry, by contract generation."""
+    return LEDGER_IDENTITY_BY_GENERATION.get(
+        contract_v6.contract_generation(contract), LEDGER_IDENTITY)
 LOCK_DIRNAME = '.ledger.lock'
 LOCK_STALE_SECONDS = 900
 # RFC 9.1: the v6 snapshot is a NEW schema-URL generation, never a mutation
@@ -202,7 +210,8 @@ def materialize_plan(plan_dir, contract_file, authority='developer',
         contract = json.load(fh)
     contract.pop('contract_id', None)
     errors = contract_v6.contract_errors(contract) or \
-        contract_v6.closure_errors(contract)
+        contract_v6.closure_errors(contract) or \
+        contract_v6.gate_command_errors(contract)
     if errors:
         raise LedgerError('contract invalid: %s' % errors[0])
     folder = os.path.basename(os.path.normpath(plan_dir))
@@ -699,6 +708,8 @@ class Writer:
     def _append_raw(self, etype, payload, actor, ts, note=None,
                     extra=None, trust=None, evidence_path=None):
         event = dict(payload)
+        if actor.get('identity') == LEDGER_IDENTITY:
+            actor = dict(actor, identity=ledger_identity(self.r.contract))
         event.update({
             'schema': contract_v6.journal_url_for(self.r.contract),
             'type': etype,
@@ -1346,7 +1357,7 @@ class Writer:
             'plan': self.r.contract['plan'],
             'contract_id': self.r.contract_id,
             'contract_revision': self.r.contract.get('revision', 1),
-            'generated_by': LEDGER_IDENTITY,
+            'generated_by': ledger_identity(self.r.contract),
             'updated_at': max([e.get('ts') for e in self.events] or ['']),
             'tasks': [],
             'positions': positions,
@@ -2393,6 +2404,9 @@ def main(argv):
              '| delegate '
              'launch|observe|collect|cancel --task T [--json OBJ] '
              '[--caps JSON]} [options]')
+    if any(arg in ('-h', '--help') for arg in argv):
+        print(usage)
+        return 0
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--plan')
     parser.add_argument('command')

@@ -151,6 +151,12 @@ def _reconciliation_for(events, criterion):
     return found
 
 
+def _is_signoff(events, seq):
+    """True when the closing record is a human sign-off (never executed)."""
+    return any(e.get('seq') == seq and e.get('type') == 'gate_run' and
+               e.get('command') == ledger.SIGNOFF_COMMAND for e in events)
+
+
 def closure(contract, events):
     """Per-criterion closure decisions + the plan-level review state.
 
@@ -208,7 +214,10 @@ def closure(contract, events):
             state = next((s for s in states
                           if s.get('criterion') == crit_id), None)
             if state and state.get('satisfied'):
-                entry.update(satisfied=True, mechanism='evidence',
+                entry.update(satisfied=True,
+                             mechanism='signoff' if _is_signoff(
+                                 events, state.get('via_seq'))
+                             else 'evidence',
                              via_seq=state.get('via_seq'),
                              trust=state.get('trust'),
                              evidence_path=state.get('evidence_path'))
@@ -503,6 +512,9 @@ def main(argv):
              '[--finding F] | control --task T --criterion AC --command '
              'CMD --artifact P [--artifact P ...] [--timeout N] | '
              'self-test}')
+    if any(arg in ('-h', '--help') for arg in argv):
+        print(usage)
+        return 0
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--plan')
     parser.add_argument('command')
@@ -547,10 +559,15 @@ def main(argv):
             return 0
         if args.command == 'receipt':
             doc = receipt(plan, evaluator=args.evaluator, out=args.out)
+            if not args.out:
+                # F-08: without --out the body IS the output (stdout stays
+                # pure JSON; the summary line goes to stderr)
+                print(json.dumps(doc, sort_keys=True, indent=2))
             print('OK: receipt %s (%d/%d satisfied, %d blocked) sha256 %s'
                   % (args.out or 'stdout', doc['totals']['satisfied'],
                      doc['totals']['criteria'], doc['totals']['blocked'],
-                     doc['receipt_sha256'][:16]))
+                     doc['receipt_sha256'][:16]),
+                  file=sys.stdout if args.out else sys.stderr)
             return 0
         if args.command == 'review':
             event = record_review(plan, args.state, args.finding)

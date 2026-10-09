@@ -61,8 +61,8 @@
       "skills/deepworkplan/shared/"
     ],
     "allowed_command_classes": [
-      "declared-gate-python",
-      "declared-gate-bats"
+      "python3",
+      "bats"
     ],
     "forbidden_operations": [
       "publish",
@@ -140,7 +140,7 @@
       "gate_intent": [
         {
           "criterion": "AC-valid-contract-shape",
-          "check": "jsonschema Draft 2020-12 accepts the fixture document"
+          "check": "python3 scripts/check-schema-contract.py"
         }
       ]
     },
@@ -156,12 +156,11 @@
       "gate_intent": [
         {
           "criterion": "AC-journal-catalog-closed",
-          "check": "contract_v6 self-test mutant: unknown event type"
+          "check": "python3 skills/deepworkplan/shared/contract_v6.py self-test"
         }
       ]
     }
   ],
-  "contract_id": "36353a47e1cf5fcc86f2c445519ba3a1f5ddb5c863b153c2946e1c09e3607a35",
   "scheduling": {
     "starvation_threshold_events": 24,
     "max_adaptations_per_task": 2,
@@ -170,5 +169,6 @@
       "fresh_context": "context pressure at 60%",
       "cross_host_resume": "custodian seal broken"
     }
-  }
+  },
+  "contract_id": "663574be33f80a48c354a9c7e7ff4129a75da45906e7d2fb32a92c131b174eaf"
 }

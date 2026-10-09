@@ -361,14 +361,14 @@ JSON
     --artifact tests/check_seeded.py
   [ "$status" -eq 0 ]
   local first second
-  first="$(python3 "$OUTCOMES" --plan "$PLAN" receipt | grep -o 'sha256 [0-9a-f]*')"
-  second="$(python3 "$OUTCOMES" --plan "$PLAN" receipt | grep -o 'sha256 [0-9a-f]*')"
+  first="$(python3 "$OUTCOMES" --plan "$PLAN" receipt 2>&1 >/dev/null | grep -o 'sha256 [0-9a-f]*')"
+  second="$(python3 "$OUTCOMES" --plan "$PLAN" receipt 2>&1 >/dev/null | grep -o 'sha256 [0-9a-f]*')"
   [ "$first" = "$second" ]
   run python3 "$LEDGER" --plan "$PLAN" append --type observation \
     --actor-identity tester --json '{"statement": "receipt probe", "trust": "asserted"}'
   [ "$status" -eq 0 ]
   local third
-  third="$(python3 "$OUTCOMES" --plan "$PLAN" receipt | grep -o 'sha256 [0-9a-f]*')"
+  third="$(python3 "$OUTCOMES" --plan "$PLAN" receipt 2>&1 >/dev/null | grep -o 'sha256 [0-9a-f]*')"
   [ "$first" != "$third" ]
 }
 
