@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/dwp-config/v1.json",
+  "description": "DeepWorkPlan configuration file, v1 (spec/CONFIG.md): <repo>/.dwp/config.json and ~/.dwp/config.json share this shape. Two keys today - benchmark (spec/BENCHMARK.md section 1) and addons (the addon registry, spec/CONFIG.md section 3). Read by one stdlib parser, shared/config.py. Fail-closed at runtime: a malformed or wrong-typed value disables what it affects with one warning; it never aborts a flow. Unknown top-level keys and unknown addon keys are tolerated for forward compatibility (the reader ignores an unknown addon key with one warning). The registry is informative: no addon entry gates conformance or any plan.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schema": {
+      "const": "https://deepworkplan.com/schema/dwp-config/v1.json",
+      "description": "Optional self-identification; the reader does not require it."
+    },
+    "benchmark": {
+      "type": "object",
+      "description": "Opt-in field metrics (spec/BENCHMARK.md). Resolved wholesale: a repository file that carries this object overrides the user file.",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "learnings": { "type": "boolean" }
+      }
+    },
+    "addons": {
+      "type": "object",
+      "description": "The addon registry. Keys are in-pack addon directory names (contract amendment A1); resolved per key, repository entry over user entry. Absent means not enabled.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+      "additionalProperties": { "$ref": "#/$defs/addonEntry" }
+    }
+  },
+  "$defs": {
+    "addonEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Required to enable; only true enables."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^v\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.]+)?$",
+          "description": "Informative product tag the repository expects (verify warns on a mismatch, never fails)."
+        }
+      }
+    }
+  }
+}

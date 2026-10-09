@@ -39,12 +39,15 @@ teardown() { rm -rf "$TMPDIR_TEST"; }
     # v1/v2/v5 for manifest+state, plus the v6 candidate line for manifest,
     # snapshot, contract, journal-event and context-manifest (DWP v6
     # campaign), plus benchmark-record v1 and learnings-record v1 (opt-in
-    # field metrics + learnings) = thirteen URLs, all shipped files.
-    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 13 ]
+    # field metrics + learnings), plus dwp-config v1 (the configuration file,
+    # spec/CONFIG.md) = fourteen URLs, all shipped files.
+    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 14 ]
     while IFS= read -r url; do
         label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"
         if [ "$v" = "1" ]; then file="$label.schema.json"; else file="$label-v$v.schema.json"; fi
+        # a v1 schema may also carry its version in the name (dwp-config-v1)
+        [ -s "$PACK/spec/schema/$file" ] || file="$label-v$v.schema.json"
         [ -s "$PACK/spec/schema/$file" ] || { echo "URL $url has no shipped file spec/schema/$file"; exit 1; }
     done <<< "$urls"
 }

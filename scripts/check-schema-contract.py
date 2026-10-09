@@ -55,6 +55,7 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/plan-manifest/v6.json": json.load(open(os.path.join(d, "plan-manifest-v6.schema.json"))),
         "https://deepworkplan.com/schema/benchmark-record/v1.json": json.load(open(os.path.join(d, "benchmark-record.schema.json"))),
         "https://deepworkplan.com/schema/learnings-record/v1.json": json.load(open(os.path.join(d, "learnings-record.schema.json"))),
+        "https://deepworkplan.com/schema/dwp-config/v1.json": json.load(open(os.path.join(d, "dwp-config-v1.schema.json"))),
     }
 
 
@@ -431,6 +432,63 @@ def learnings_cases(schemas, problems, notes, pack):
                          "closed object / anchor grammar / required finding+proposal)")
 
 
+def config_cases(schemas, problems, notes, pack):
+    """Configuration file (spec/CONFIG.md): the committed fixtures validate
+    under BOTH halves - jsonschema over the published dwp-config v1 schema,
+    and the shipped shared/config.py (no warning for a known key) - and the
+    halves agree entry by entry on the mutants: a registry entry is
+    schema-valid exactly when the runtime reader accepts it."""
+    cs = schemas["https://deepworkplan.com/schema/dwp-config/v1.json"]
+    cdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "tests", "fixtures", "v7", "config")
+    names = ("config-full.json", "config-benchmark-only.json",
+             "config-prerelease-version.json")
+    config = load_pack_module(pack, "config")
+    keys = config.addon_keys(os.path.join(pack, "addons"))
+    before = len(problems)
+    for name in names:
+        path = os.path.join(cdir, name)
+        if not os.path.isfile(path):
+            problems.append(f"config: fixture {name} missing")
+            continue
+        doc = json.load(open(path))
+        jerrs = errors(cs, doc)
+        if jerrs:
+            problems.append(f"config fixture {name}: jsonschema rejects it ({jerrs[:1]})")
+        files = [(".dwp/config.json", path, doc, None)]
+        _view, warns = config.resolve_addons(files, keys)
+        _b = config.resolve_benchmark(files)
+        if warns or _b[2]:
+            problems.append(f"config fixture {name}: runtime warned ({(warns + _b[2])[:1]})")
+    entries = [
+        ("enabled only", {"enabled": True}, True),
+        ("enabled + version", {"enabled": False, "version": "v1.2.3"}, True),
+        ("prerelease version", {"enabled": True, "version": "v7.0.0-beta.1"}, True),
+        ("missing enabled", {"version": "v1.2.3"}, False),
+        ("string enabled", {"enabled": "yes"}, False),
+        ("floating version", {"enabled": True, "version": "latest"}, False),
+        ("unprefixed version", {"enabled": True, "version": "1.2.3"}, False),
+        ("extra field", {"enabled": True, "pin": "main"}, False),
+        ("not an object", True, False),
+    ]
+    for label, entry, expect in entries:
+        doc = {"addons": {"vim": entry}}
+        j_ok = not errors(cs, doc)
+        r_ok = config._entry_error(entry) is None
+        if j_ok != expect or r_ok != expect:
+            problems.append(f"config entry {label}: expected valid={expect}, "
+                            f"jsonschema={j_ok} runtime={r_ok}")
+    for label, doc in (("addons not an object", {"addons": ["vim"]}),
+                       ("benchmark not an object", {"benchmark": "on"}),
+                       ("wrong-typed learnings", {"benchmark": {"enabled": True, "learnings": "y"}})):
+        if not errors(cs, doc):
+            problems.append(f"config mutant {label}: jsonschema accepted it")
+    if len(problems) == before:
+        notes.append("config: three fixtures valid under both halves; nine registry "
+                     "entries agree (jsonschema == shipped reader); three top-level "
+                     "mutants rejected")
+
+
 def errors(schema, doc):
     v = jsonschema.Draft202012Validator(schema)
     return [f"{list(e.path)}: {e.message[:90]}" for e in sorted(v.iter_errors(doc), key=lambda e: list(e.path))]
@@ -577,6 +635,7 @@ def main():
     v6_cases(schemas, problems, notes, a.pack, a.fixtures)
     benchmark_cases(schemas, problems, notes, a.pack)
     learnings_cases(schemas, problems, notes, a.pack)
+    config_cases(schemas, problems, notes, a.pack)
     for n in notes:
         print("ok  ", n)
     for p in problems:

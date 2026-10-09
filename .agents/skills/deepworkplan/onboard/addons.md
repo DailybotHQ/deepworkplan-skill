@@ -57,6 +57,16 @@ are **never required** — a
 repo is fully conformant with zero optional addons. In **trust mode**, you MAY
 recommend the obviously-applicable ones, but still surface them.
 
+**Record each acceptance in the addon registry** (`../spec/CONFIG.md`):
+after the developer accepts an addon's offer and its flow ran, run
+`python3 ../shared/config.py enable <key> [--version <pinned-tag>] --repo <repo>`
+— `<key>` is the addon's directory name. The writer reconciles an existing
+`.dwp/config.json` (other keys untouched) and refuses rather than clobbers a
+file it cannot parse. A **decline writes nothing** (absent = not enabled);
+an explicit "turn it off" is `config.py disable <key>`. The registry only
+records what the repository opted into — no flow requires an entry, and a
+repository with no file stays fully conformant.
+
 Six active addons ship today; the table lists all of them (the AI Diff Reviewer row
 records its Phase 7a status). Offer the five optional ones independently:
 

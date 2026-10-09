@@ -56,7 +56,7 @@ work reliably without per-session human hand-holding.
 - **Bounded autonomy (conditional — read only when the trigger fires):** [`v6.md`](v6.md) when the repository will run v6 plans — the pack line is 6+ or the developer explicitly requested v6. It adds the four v6 records (capability declaration, authority boundaries, outcome/test mapping, concise working context) and the upgrade scenarios. A v5-only repository never reads it.
 - **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2, §10 when Phase 7 scaffolds `.dwp/` beyond the paths `../shared/dwp-paths.md` names or Phase 3b authors the first plan; [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
-- [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the four optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins). No optional addon is required for a repository to use DWP.
+- [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the five optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins) and records each acceptance in the `.dwp/config.json` addon registry. No optional addon is required for a repository to use DWP.
 - **Working principles (conditional):** read
   [`../shared/working-principles.md`](../shared/working-principles.md) when
   Phase 0 assesses an existing harness or Phase 3 writes its agent rules;
@@ -784,12 +784,14 @@ fallback.
 
 The remaining addons are optional; **no optional addon is required for a
 repository to use DWP**. After Phase 7a, read [`addons.md`](addons.md) (this
-directory) Phase 7b and make the offer it describes: three addons are
-signal-gated opt-ins that install only on explicit acceptance; the fourth —
+directory) Phase 7b and make the offer it describes: four addons are
+signal-gated opt-ins that install only on explicit acceptance; the fifth —
 dependency upgrade — is **near-default** for every repo with declared
 dependencies: its **inert** `/lib-upgrade` delegator installs under the
 Phase 0 onboarding consent **unless explicitly declined**, and no upgrade ever
-runs from an install. On a **harness
+runs from an install. Each acceptance is recorded with `python3
+../shared/config.py enable <key> --repo <repo>` (`../spec/CONFIG.md`); a
+decline writes nothing. On a **harness
 upgrade** (Phase 0) do not re-offer addons the repository already declined or
 already has; mention only new ones, briefly.
 

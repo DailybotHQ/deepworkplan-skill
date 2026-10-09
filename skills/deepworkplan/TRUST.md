@@ -73,6 +73,13 @@ recorded, verbatim, and its curated half — agent judgment, written once —
 carries a closed-vocabulary category, an anchor naming only a journal event
 seq and/or a short section id, and the finding/proposal text; never file
 contents, paths or secrets. Reruns preserve curated entries byte-for-byte.
+`shared/config.py` is the one reader of `.dwp/config.json` /
+`~/.dwp/config.json` (benchmark switch and addon registry): reading is
+fail-closed and never aborts a flow, it lists the `addons/` directory names
+without opening any addon file, and its only writer (`enable` / `disable`,
+run by onboarding after you accept an addon) reconciles the repository file
+atomically and refuses rather than overwrites a file it cannot parse. It
+makes no network call and stores no secret.
 They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than

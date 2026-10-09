@@ -1,0 +1,11 @@
+{
+  "schema": "https://deepworkplan.com/schema/dwp-config/v1.json",
+  "benchmark": { "enabled": true, "learnings": true },
+  "addons": {
+    "ai-diff-reviewer": { "enabled": true, "version": "v3.2.3" },
+    "herdr":            { "enabled": true, "version": "v0.1.0" },
+    "devcontainer":     { "enabled": true, "version": "v0.1.0" },
+    "vim":              { "enabled": true, "version": "v0.4.0" },
+    "dailybot":         { "enabled": true, "version": "v3.23.3" }
+  }
+}

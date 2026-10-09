@@ -54,6 +54,8 @@ except ImportError:  # pragma: no cover - direct execution from another cwd
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import ledger  # noqa: E402
 
+import config as dwp_config  # noqa: E402  (sibling: the one .dwp/config.json parser)
+
 try:
     import context_manifest  # noqa: E402  (sibling module, same directory)
 except ImportError:  # pragma: no cover - executed from another cwd
@@ -96,78 +98,20 @@ AGGREGATE_NOTE = ('aggregates describe recorded executions; workloads differ '
 # configuration (spec section 1)
 
 
-def _read_config(path: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-    """Return (parsed-object-or-None, warning-or-None) for one config file."""
-    if not os.path.isfile(path):
-        return None, None
-    try:
-        with open(path, 'r', encoding='utf-8') as handle:
-            data = json.load(handle)
-    except (OSError, ValueError) as exc:
-        return None, 'benchmark config %s unreadable (%s); treating as absent' % (path, exc)
-    if not isinstance(data, dict):
-        return None, 'benchmark config %s is not a JSON object; treating as absent' % path
-    return data, None
-
-
-def _benchmark_section(plan_dir: str, warnings: List[str]
-                       ) -> Optional[Dict[str, Any]]:
-    """Resolve the winning ``benchmark`` object (repo over global), or None.
-
-    A repository file that carries the object overrides the global file
-    wholesale (both flags come from that one file); a repository file that
-    omits it defers to the global file (spec section 1, per-key resolution).
-    """
-    dwp_root = find_dwp_root(plan_dir)
-    if dwp_root is None:
-        warnings.append('benchmark: plan directory has no .dwp ancestor; '
-                        'benchmark disabled')
-        return None
-    for label, path in (
-            ('.dwp/config.json', os.path.join(dwp_root, 'config.json')),
-            ('~/.dwp/config.json', os.path.join(os.path.expanduser('~'),
-                                                '.dwp', 'config.json'))):
-        cfg, warn = _read_config(path)
-        if warn:
-            warnings.append('benchmark: ' + warn)
-        if cfg is None or 'benchmark' not in cfg:
-            continue
-        section = cfg['benchmark']
-        if not isinstance(section, dict):
-            warnings.append('benchmark: %s "benchmark" is not an object; '
-                            'benchmark disabled' % label)
-            return None
-        return section
-    return None
-
-
 def resolve_config(plan_dir: str) -> Tuple[bool, bool, List[str]]:
     """Resolve (benchmark enabled, learnings enabled, warnings).
 
     Fail-closed per key (spec section 1): ``enabled`` must be an explicit
     boolean in the winning section; ``learnings`` defaults false, rides on
     ``enabled``, and a wrong-typed value disables learnings only — one
-    warning — while metrics resolution is unaffected.
+    warning — while metrics resolution is unaffected. Discovery and parsing
+    are the shared reader's (``shared/config.py``): one parser, two keys.
     """
-    warnings: List[str] = []
-    section = _benchmark_section(plan_dir, warnings)
-    if section is None:
-        return False, False, warnings
-    enabled = section.get('enabled')
-    if not isinstance(enabled, bool):
-        warnings.append('benchmark: "benchmark.enabled" is not a boolean; '
-                        'benchmark disabled')
-        return False, False, warnings
-    if not enabled:
-        return False, False, warnings
-    learnings = section.get('learnings')
-    if learnings is None:
-        return True, False, warnings
-    if not isinstance(learnings, bool):
-        warnings.append('benchmark: "benchmark.learnings" is not a boolean; '
-                        'learnings disabled (metrics unaffected)')
-        return True, False, warnings
-    return True, learnings, warnings
+    dwp_root = find_dwp_root(plan_dir)
+    if dwp_root is None:
+        return False, False, ['benchmark: plan directory has no .dwp '
+                              'ancestor; benchmark disabled']
+    return dwp_config.resolve_benchmark(dwp_config.load_files(dwp_root))
 
 
 def resolve_enabled(plan_dir: str) -> Tuple[bool, List[str]]:
@@ -178,14 +122,7 @@ def resolve_enabled(plan_dir: str) -> Tuple[bool, List[str]]:
 
 def find_dwp_root(plan_dir: str) -> Optional[str]:
     """Walk up from ``plan_dir`` to the owning ``.dwp`` directory."""
-    current = os.path.abspath(plan_dir)
-    while True:
-        parent = os.path.dirname(current)
-        if current == parent:
-            return None
-        if os.path.basename(parent) == 'plans' and os.path.basename(os.path.dirname(parent)) == '.dwp':
-            return os.path.dirname(parent)
-        current = parent
+    return dwp_config.find_dwp_root(plan_dir)
 
 
 # ---------------------------------------------------------------------------
