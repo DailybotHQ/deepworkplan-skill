@@ -19,7 +19,7 @@ baseline AI-first conformance. Since 7.0.0 it is a **wired, thin
 integrator**: `onboard` Phase 7b offers it as an explicit opt-in, and every
 claim it makes about the editor is read from the product's machine-readable
 surface (`addon/surface.json`, interface `1`) at the pinned tag
-`deepworkplan-vim@v0.4.0`.
+`deepworkplan-vim@v0.4.2`.
 
 ## Status of This Document
 
@@ -115,7 +115,7 @@ the consent gate, and validation.
   read as "editor absent".
 - The addon MUST present the editor **only as an offer**, stating what it is
   — **only** the features the pinned surface lists in `features[]` (at
-  `v0.4.0`: the command index, VS Code gestures, the read-only plan browser,
+  `v0.4.2`: the command index, VS Code gestures, the read-only plan browser,
   the markdown viewer, the consent-first installer) — and what it costs (a
   machine-level Neovim config, not a repo file). Declining MUST leave the
   repository fully conformant.
@@ -150,14 +150,14 @@ The addon points at the editor's **versioned, documented** paths at the
 pinned tag. It MUST NOT vendor, mirror, re-implement, or "improve" the
 installer; the source of truth is `install.sh` at the editor repository
 root at the tag, with the website serving a byte-identical mirror. The
-pinned surface (`install` block of `addon/surface.json` at `v0.4.0`) names
+pinned surface (`install` block of `addon/surface.json` at `v0.4.2`) names
 the script location, its SHA-256 and the steps.
 
 - **macOS / Linux (canonical documented path):** the product's install
   page (`https://deepworkplan.com/vim`) — download the tag's `install.sh`
   to a local file, verify its SHA-256 against the pinned surface (stop on a
   mismatch — a mismatch MUST NOT be run), then run it with the ref pinned
-  (`DWP_VIM_REF=v0.4.0 bash install.sh`): **three separate steps**. A one-line
+  (`DWP_VIM_REF=v0.4.2 bash install.sh`): **three separate steps**. A one-line
   fetch-and-execute pipeline MUST NOT appear anywhere in this pack's
   text, even as an illustration of what not to do: lexical security
   scanners (Snyk E005 / Socket W012) flag the pipe shape wherever it
@@ -165,9 +165,9 @@ the script location, its SHA-256 and the steps.
   `6a05ed9`). The product's own documentation owns its one-liner; pack
   copy describes the flow, it never spells the pipeline.
 - **Windows (documented path — never piped PowerShell):**
-  `winget install Neovim.Neovim`, then a `git clone --branch v0.4.0` of the
+  `winget install Neovim.Neovim`, then a `git clone --branch v0.4.2` of the
   repository into `%LOCALAPPDATA%\nvim`, then `lua install.lua`.
-- **Manual (any OS):** `git clone --branch v0.4.0` into the config dir, then
+- **Manual (any OS):** `git clone --branch v0.4.2` into the config dir, then
   `lua install.lua`.
 
 - **Who runs it.** The addon's default posture is to **point at the
@@ -186,7 +186,7 @@ the script location, its SHA-256 and the steps.
 On acceptance (installed now, or deferred with the person's agreement), the
 addon records itself in the repository's addon registry —
 `.dwp/config.json` → `addons.vim` = `{"enabled": true, "version":
-"v0.4.0"}` (`../../spec/CONFIG.md`). The write reconciles an existing file
+"v0.4.2"}` (`../../spec/CONFIG.md`). The write reconciles an existing file
 (other keys untouched) and never happens on a decline. The registry entry
 is informative: the methodology reads nothing from it that could gate a
 plan.
@@ -282,7 +282,7 @@ This SPEC versions independently of the DeepWorkPlan pack (`0.2.0` here).
 The editor product versions independently of both, through its own
 repository's release flow; compatibility is decided by the product's
 integer interface (`1`), the installed release by the tag the pack pins
-(`v0.4.0`, bumped only with a parity-tested pack change). The pack records
+(`v0.4.2`, bumped only with a parity-tested pack change). The pack records
 the editor's observed version from the installed surface and `nvim
 --version` at detection/validation time.
 

@@ -26,7 +26,7 @@ setup() {
     SPEC="$SK/spec/ADDONS.md"
     README="$SK/addons/README.md"
     ONBOARD="$SK/onboard/addons.md"
-    PIN_TAG="v0.4.0"
+    PIN_TAG="v0.4.2"
 }
 
 vim_doc_has() {

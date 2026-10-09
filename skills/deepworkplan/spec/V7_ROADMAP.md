@@ -27,7 +27,7 @@ number), and the pack carries a **thin integrator** for it — never a copy.
 | **Addon-provided abilities** | effective abilities = host ∪ abilities of enabled, valid, detected, interface-compatible addons; computed per call, never persisted; an ability is never authority or consent ([`V7_ABILITIES.md`](V7_ABILITIES.md)). |
 | **v7 contract generation** | `plan-contract/v7` (v6 + `parallel_safe`), `journal-event/v7` (v6 + `delegation`), `plan-manifest/v7`; default for new plans; v6 plans unchanged ([`V7_CONTRACT.md`](V7_CONTRACT.md)). |
 | **Delegation** | `ledger.py delegate launch|observe|collect|cancel` behind a recorded gate (grant, marker, ability); `execute/delegation.md`; a delegate's result stays `asserted` until the plan's own gates observe it. |
-| **Thin integrators** | `agentkit` → `coding-agents-kit@v0.1.1` (headless transport, `ak run`); `herdr` → `herdr-peers@v0.1.0` (interactive transport; stamp `[herdr-peers]`, protocol owned by herdr-peers); `devcontainer` → `devcontainer-kit@v0.1.2` (`dck init`, vendor-neutral); `vim` → `deepworkplan-vim@v0.4.0` (surface-driven editor offer). |
+| **Thin integrators** | `agentkit` → `coding-agents-kit@v0.1.1` (headless transport, `ak run`); `herdr` → `herdr-peers@v0.1.0` (interactive transport; stamp `[herdr-peers]`, protocol owned by herdr-peers); `devcontainer` → `devcontainer-kit@v0.1.4` (`dck init`, vendor-neutral); `vim` → `deepworkplan-vim@v0.4.2` (surface-driven editor offer). |
 | **Pre-release channel** | `prerelease.yml` cuts `X.Y.Z-beta.N` on dispatch (never `latest`, with `SHA256SUMS`); stable releases ignore pre-release tags and graduate only on `[graduate]`. |
 | **Standard** | DWP standard **7.0.0** (normative additions above); `6.0.0` declarations stay valid. |
 
@@ -38,9 +38,9 @@ tags pin what is installed. An unknown interface major is one warning and
 ## Release order
 
 1. Product tags: `herdr-peers` `v0.1.0`, `coding-agents-kit` `v0.1.1`
-   (supersedes `v0.1.0`, a security patch), `devcontainer-kit` `v0.1.2`
+   (supersedes `v0.1.0`, a security patch), `devcontainer-kit` `v0.1.4`
    (after the `v0.1.1` security release and an agents-layer fix),
-   `deepworkplan-vim` `v0.4.0`.
+   `deepworkplan-vim` `v0.4.2`.
 2. `deepworkplan-skill` `v7.0.0-beta.1` — a GitHub **pre-release**.
 3. A field test in real repositories.
 4. `v7.0.0` — graduated from the beta by a `[graduate]` merge.

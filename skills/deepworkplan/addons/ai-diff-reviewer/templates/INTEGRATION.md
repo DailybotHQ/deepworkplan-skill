@@ -88,7 +88,7 @@ signalling ("Flow A / Flow B" phrases every subsequent request).
 # Tag-pinned install: pin the current published tag at install time (this is
 # the reproducible form; the moving @v3 is the documented default pin for
 # CI workflows).
-npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.3 --skill ai-diff-reviewer -y
+npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y
 
 # Verify the vendored version matches the requested tag
 VENDORED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \
