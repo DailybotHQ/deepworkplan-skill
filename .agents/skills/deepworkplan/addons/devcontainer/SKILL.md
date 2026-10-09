@@ -99,6 +99,15 @@ then `dck doctor --json` (runtime, repo config, layers, ssh, drift) and
 `dck exec -- <the repo's real test command>` — every result recorded, none
 blocking.
 
+**Plan gates in the container (F-21).** When the repository's real gates
+run inside the container, a plan declares `dck` in
+`scope.allowed_command_classes` and writes each gate check as
+`dck exec -- <command>` (a compound command: `dck exec -- bash -c '…'`).
+`ledger.py gate` executes the wrapper itself, so the evidence stays
+`observed`; `validate-contract` refuses a check whose wrapper is not
+declared. Without the container the methodology is unchanged — the same
+plan simply declares the host command instead.
+
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** No Docker, no kit, an unknown

@@ -926,10 +926,51 @@ class Writer:
                           'platform': sys.platform},
             'selection': selection or '',
             'files': files,
+            'tree': self._tree_state(gate_cwd),
         }
         return hashlib.sha256(
             json.dumps(payload, sort_keys=True,
                        separators=(',', ':')).encode('utf-8')).hexdigest()
+
+    def _tree_state(self, root):
+        """F-25: the whole working tree, not only the planned surface.
+
+        In a git work tree: HEAD plus every changed or untracked
+        (non-ignored) path with the digest of its content, so a fix made
+        outside the task's touched surface changes the fingerprint and is
+        never answered by a replay of the run before it. Outside git there
+        is no tree identity to read: reuse then keys on the touched
+        surface alone (``--no-reuse`` always runs fresh).
+        """
+        head, ok = self._git(['rev-parse', 'HEAD'], root)
+        if not ok:
+            return None
+        try:
+            proc = subprocess.run(
+                ['git', 'status', '--porcelain', '-z',
+                 '--untracked-files=all'], cwd=root, capture_output=True,
+                timeout=30)
+        except (subprocess.TimeoutExpired, OSError):
+            return None
+        if proc.returncode != 0:
+            return None
+        changed = []
+        entries = proc.stdout.decode('utf-8', 'replace').split('\0')
+        i = 0
+        while i < len(entries):
+            entry = entries[i]
+            i += 1
+            if len(entry) < 4:
+                continue
+            code, rel = entry[:2], entry[3:]
+            if code[0] in 'RC':
+                i += 1  # the rename's source path follows; the target counts
+            full = os.path.join(root, rel)
+            changed.append([code, rel, _hash_file(full)
+                            if os.path.isfile(full) and
+                            not os.path.islink(full) else None])
+        changed.sort()
+        return {'head': head, 'changed': changed}
 
     def _task(self, task_id):
         for task in self.r.contract.get('tasks', []):
@@ -965,8 +1006,22 @@ class Writer:
                 if criterion is not None and \
                         rec.get('criterion') != criterion:
                     continue
+                if not self._evidence_in_record(rec, task_id):
+                    continue
                 return rec
         return None
+
+    def _evidence_in_record(self, rec, task_id):
+        """Reuse only evidence that still counts: the gate_run it cites is
+        in this plan's record and inside the task's current evidence window
+        (a restart or a lost journal never yields a replay that cannot
+        satisfy the criterion)."""
+        start = self.task_start_seq(task_id) if task_id else None
+        for event in self.events:
+            if event.get('seq') == rec.get('seq') and \
+                    event.get('type') == 'gate_run':
+                return start is None or event['seq'] >= start
+        return False
 
     def _evidence_put(self, rec):
         line = json.dumps(rec, sort_keys=True, separators=(',', ':')) + '\n'
@@ -1398,7 +1453,11 @@ class Writer:
             'contract_id': self.r.contract_id,
             'contract_revision': self.r.contract.get('revision', 1),
             'generated_by': ledger_identity(self.r.contract),
-            'updated_at': max([e.get('ts') for e in self.events] or ['']),
+            # F-19: provenance (view_render) never moves the snapshot, so
+            # project -> render -> project yields the same bytes
+            'updated_at': max([e.get('ts') for e in self.events
+                               if e.get('type') not in PROVENANCE_TYPES]
+                              or ['']),
             'tasks': [],
             'positions': positions,
             'resources': self._resource_totals(),
@@ -2775,11 +2834,15 @@ def main(argv):
                     actor={'kind': args.actor_kind,
                            'identity': args.actor_identity})
                 fp = event.get('fingerprint') or {}
+                dirty = [line for line in (fp.get('dirty') or '').splitlines()
+                         if line.strip()]
                 print('OK: task_start %s at seq %s (starting fingerprint '
-                      '%s, dirty %r)'
+                      '%s, %s)'
                       % (args.task, event.get('seq'),
                          (fp.get('revision') or 'none')[:12],
-                         fp.get('dirty', '')))
+                         'clean' if not dirty else 'dirty: %d path(s) - '
+                         'the full list is in the task_start event'
+                         % len(dirty)))
                 return 0
             finally:
                 lock.release()
