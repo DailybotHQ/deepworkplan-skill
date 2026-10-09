@@ -39,7 +39,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  pin-smoke:
+    # Third-party installers run in a job with no write token (read-only
+    # permissions, no persisted credentials); publishing waits for it.
+    name: Ecosystem pins install at their tags
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: bash scripts/smoke-ecosystem-pins.sh
+
   prerelease:
+    needs: pin-smoke
     name: Stamp, tag and publish a pre-release
     runs-on: ubuntu-latest
     # Pre-releases are cut from reviewed code only: dispatching on any other
@@ -75,6 +90,14 @@ jobs:
           fi
           # Last STABLE tag only (pre-release tags carry a '-').
           LAST_STABLE=$(git tag --list 'v*.*.*' --sort=-v:refname | grep -vE -- '-' | head -n1 || true)
+          # A pre-release must preview a release ABOVE the last stable one;
+          # anything else would graduate into an existing tag.
+          BASE="${REQUESTED%%-*}"
+          if [ -n "$LAST_STABLE" ] && { [ "$BASE" = "${LAST_STABLE#v}" ] || \
+               [ "$(printf '%s\n%s\n' "${LAST_STABLE#v}" "$BASE" | sort -V | tail -n1)" != "$BASE" ]; }; then
+            echo "::error::pre-release base $BASE is not above the last stable release ${LAST_STABLE}"
+            exit 1
+          fi
           COMMITS=$(git log "${LAST_STABLE:+${LAST_STABLE}..HEAD}" --pretty=format:"%s" --invert-grep --grep='^chore(release):')
           echo "version=${REQUESTED}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
@@ -87,11 +110,6 @@ jobs:
             echo "$COMMITS"
             echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
-
-      - name: Smoke — the ecosystem products install at the pinned tags
-        # Before anything is committed or tagged (scripts/smoke-ecosystem-pins.sh
-        # reads the pins from the addon descriptors; throwaway HOME).
-        run: bash scripts/smoke-ecosystem-pins.sh
 
       - name: Stamp the version in ALL SKILL.md files
         env:

@@ -16,10 +16,12 @@ the pinned official skill).
 ## 2. The two skills (host)
 
 ```
-npx --yes skills add herdrdev/herdr@v0.9.3 --skill herdr -g
-npx --yes skills add DailybotHQ/herdr-peers@v0.1.0 --skill herdr-peers -g
+npx --yes skills add herdrdev/herdr@v0.9.3 --skill herdr -g -y
+npx --yes skills add DailybotHQ/herdr-peers@v0.1.0 --skill herdr-peers -g -y
 ```
 
+Both `-y` flags are required in an agent's non-interactive shell (`npx
+--yes` skips the download prompt; `skills add … -y` skips the target picker).
 The first is Herdr's official skill (the authority for every `herdr`
 command; `herdr --skill` prints the copy matching the installed binary).
 The second installs the herdr-peers skill and its helper script. Verify:

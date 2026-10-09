@@ -141,8 +141,8 @@ Not wired as a required merge check. Design source: `DailybotHQ/ai-diff-reviewer
 |----------|-------|
 | **Trigger** | `workflow_dispatch` only, input `version` (e.g. `7.0.0-beta.1`) — never on push; the job runs only when dispatched on `main` |
 | **Concurrency** | shares `auto-release-main` with auto-release (one release at a time) |
-| **Validation** | version must match `^X.Y.Z-(alpha|beta|rc).N$` (passed via env, never inlined; re-validated in the stamping step); an existing tag is refused — pre-release tags are never moved; multi-line step outputs use a random delimiter (also in auto-release) |
-| **Steps** | ecosystem pin smoke (`scripts/smoke-ecosystem-pins.sh`, also run by auto-release before it commits) → stamp every SKILL.md → CHANGELOG section (commits since the last stable tag) → commit `chore(release): X (pre-release) [skip ci]` → push branch, then tag → temp-dir smoke install asserting the version → `SHA256SUMS` → `gh release create --prerelease --latest=false` with `SHA256SUMS`, verified `isPrerelease` |
+| **Validation** | the base `X.Y.Z` must be above the last stable tag; version must match `^X.Y.Z-(alpha|beta|rc).N$` (passed via env, never inlined; re-validated in the stamping step); an existing tag is refused — pre-release tags are never moved; multi-line step outputs use a random delimiter (also in auto-release) |
+| **Steps** | ecosystem pin smoke in a separate read-only job (`pin-smoke`: no write token, no persisted credentials; auto-release has the same job before `release`) → stamp every SKILL.md → CHANGELOG section (commits since the last stable tag) → commit `chore(release): X (pre-release) [skip ci]` → push branch, then tag → temp-dir smoke install asserting the version → `SHA256SUMS` → `gh release create --prerelease --latest=false` with `SHA256SUMS`, verified `isPrerelease` |
 | **Token** | `AUTOMATION_GITHUB_TOKEN`, falling back to `GITHUB_TOKEN` |
 
 ### Failure semantics

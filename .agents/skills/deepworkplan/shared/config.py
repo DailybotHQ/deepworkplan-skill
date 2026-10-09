@@ -327,6 +327,7 @@ def descriptor_errors(doc: Any, dirname: Optional[str] = None) -> List[str]:
                 if (not isinstance(paths, list) or not paths
                         or len(set(map(str, paths))) != len(paths)
                         or not all(isinstance(x, str) and _PATH_RE.match(x)
+                                   and '..' not in x.split('/')
                                    for x in paths)):
                     errs.append('detect.paths is not a non-empty list of plain paths')
             if 'interface_from' in det and (not isinstance(det['interface_from'], str)
@@ -409,8 +410,10 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
     reg[key] = entry
     data['addons'] = reg
     os.makedirs(dwp_root, exist_ok=True)
+    mode = (os.stat(path).st_mode & 0o777) if os.path.exists(path) else 0o644
     handle, temp = tempfile.mkstemp(dir=dwp_root, prefix='.config-')
     try:
+        os.chmod(temp, mode)  # mkstemp creates 0600; keep the file's mode
         with os.fdopen(handle, 'w', encoding='utf-8') as out:
             json.dump(data, out, indent=2, sort_keys=True)
             out.write('\n')

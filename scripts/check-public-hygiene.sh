@@ -106,7 +106,7 @@ EOF_RULES
         fi
         [ -n "$real" ] || real="$hits"
         printf '%s\n' "$real" | head -3 | while IFS= read -r line; do
-            echo "FAIL [$label] $rel:$(printf '%s' "$line" | cut -c1-12)… (value not printed)"
+            echo "FAIL [$label] $rel:${line%%:*} (line content not printed)"
         done
         findings=$((findings + 1))
     done <<EOF_SECRETS

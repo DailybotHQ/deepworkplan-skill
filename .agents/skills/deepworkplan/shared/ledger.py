@@ -839,7 +839,7 @@ class Writer:
                                    root_real]) != root_real:
                 files[rel] = 'outside-repository'  # never read
                 continue
-            files[rel] = _hash_surface(path)
+            files[rel] = _hash_surface(path, root_real)
         payload = {
             'command': command,
             'cwd': os.path.basename(os.path.abspath(gate_cwd)),
@@ -1366,6 +1366,22 @@ class Writer:
         """Refuse completion unless every gate_intent criterion has
         in-window accepted evidence (zero-test control)."""
         self._check_position()
+        open_delegations = sorted(
+            did for did, ev in self.delegations(task_id).items()
+            if ev.get('state') == 'launched')
+        if open_delegations:
+            self._append_raw('refusal',
+                             {'subject': task_id, 'stage': 'gate',
+                              'reason': 'delegation(s) still open: %s — '
+                                        'collect or cancel them first' %
+                                        ', '.join(open_delegations)},
+                             actor={'kind': 'helper',
+                                    'identity': LEDGER_IDENTITY},
+                             ts=_utc_now())
+            raise CompletionRefused(
+                'completion of %s refused: delegation(s) %s still open — '
+                'collect or cancel them first' %
+                (task_id, ', '.join(open_delegations)))
         states = self.criterion_state(task_id)
         missing = [s for s in states if not s.get('satisfied')]
         if missing:
@@ -1459,6 +1475,12 @@ class Writer:
                                         'parallel_safe by create and the '
                                         'delegate is not read-only '
                                         '(worktree null)')
+            if not task.get('parallel_safe') and read_only and \
+                    self._tree_fingerprint() == 'none':
+                self._refuse_delegation(task_id, 'a read-only delegate on a '
+                                        'task not marked parallel_safe needs '
+                                        'a git work tree so its read-only '
+                                        'claim can be verified')
             via = payload.get('via')
             transport = payload.get('transport')
             import config as dwp_config  # sibling; lazy (no import cycle)
@@ -1518,14 +1540,26 @@ class Writer:
             body = {k: prior[k] for k in ('task', 'delegation_id', 'transport',
                                           'via', 'kind', 'profile', 'target',
                                           'worktree') if k in prior}
+            mark = (prior.get('note') or '')
             if op == 'cancel':
                 body['state'] = 'cancelled'
+                if mark.startswith(READ_ONLY_MARK) and \
+                        mark[len(READ_ONLY_MARK):].split(' ', 1)[0] != \
+                        self._tree_fingerprint():
+                    body['state'] = 'failed'
+                    self._append_raw(
+                        'delegation', body, actor=actor, ts=_utc_now(),
+                        note='read-only delegate: the working tree changed '
+                             'between launch and cancel')
+                    self._refuse_delegation(
+                        task_id, 'delegation %s was launched read-only but the '
+                        'working tree changed — recorded failed, not '
+                        'cancelled' % did)
             else:
                 state = payload.get('state')
                 if state not in ('completed', 'failed'):
                     raise LedgerError('collect needs state completed|failed')
                 body['state'] = state
-                mark = (prior.get('note') or '')
                 if mark.startswith(READ_ONLY_MARK):
                     launched = mark[len(READ_ONLY_MARK):].split(' ', 1)[0]
                     if launched != self._tree_fingerprint():
@@ -1690,7 +1724,7 @@ def _hash_file(path):
 _SURFACE_SKIP = ('.git', '__pycache__', '.ledger.lock')
 
 
-def _hash_surface(path):
+def _hash_surface(path, root=None):
     """Content digest of one touched-surface entry: a file, a directory
     (every file below it, by relative path) or a glob. A directory or glob
     used to hash to None, so an edit inside it left the fingerprint
@@ -1711,8 +1745,12 @@ def _hash_surface(path):
     elif any(ch in path for ch in '*?['):
         import glob as _glob
         for full in sorted(_glob.glob(path)):
-            if os.path.isfile(full) and not os.path.islink(full):
-                members.append((full, full))
+            if not os.path.isfile(full) or os.path.islink(full):
+                continue
+            if root is not None and os.path.commonpath(
+                    [os.path.realpath(full), root]) != root:
+                continue  # a match resolving outside the repository: unread
+            members.append((full, full))
     if not members:
         return None
     digest = hashlib.sha256()

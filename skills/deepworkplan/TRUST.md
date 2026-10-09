@@ -100,8 +100,11 @@ beside it inside the installed pack. The shipped flows set
 `sys.dont_write_bytecode` to avoid it, but a direct `python3 -c 'import …'`
 against a helper (a diagnosis step, say) will still create one. It is a cache
 of our own files, contains nothing of yours, and is safe to delete. The **core
-methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
-network calls**, and emits **no telemetry** of any kind.
+methodology makes no HTTP API calls, no authentication flow, and no network
+calls**, and emits **no telemetry** of any kind. Its only external process
+calls are `git` and — from 7.0.0, and only for an addon **you enabled** — that
+addon's declared read-only detect command (for example `ak doctor --json`),
+run without a shell under a timeout (see `shared/resources.py` above).
 
 > **One honest caveat — addons.** The shipped tree includes eight addons
 > (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,

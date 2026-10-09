@@ -260,3 +260,13 @@ PY
     grep -q "if: github.ref == 'refs/heads/main'" "$REPO_ROOT/.github/workflows/prerelease.yml"
     rm -rf "$R"
 }
+
+@test "a pre-release must preview a version above the last stable release" {
+    _repo 6.1.0 v6.1.0
+    _step "$REPO_ROOT/.github/workflows/prerelease.yml" "Validate the requested version" > "$R/validate.sh"
+    for bad in 6.1.0-beta.1 6.0.9-rc.1; do
+        ( cd "$R" && GITHUB_OUTPUT="$R/vout" REQUESTED="$bad" bash "$R/validate.sh" >/dev/null 2>&1 ) && { echo "accepted $bad"; return 1; }
+    done
+    ( cd "$R" && GITHUB_OUTPUT="$R/vout" REQUESTED=6.2.0-rc.1 bash "$R/validate.sh" >/dev/null )
+    rm -rf "$R"
+}

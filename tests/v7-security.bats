@@ -152,3 +152,104 @@ print("ok")' "$SHARED"
     [[ "$output" == *"$ok"* ]] || { echo "self-audit did not print: $ok"; echo "$output"; return 1; }
   done
 }
+
+# --- Final Review local-review fixes ---------------------------------------
+
+@test "a read-only delegate cancelled after the tree changed is recorded failed, not cancelled" {
+  _plan
+  python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator >/dev/null
+  PATH="$WORK/bin:$PATH" python3 "$LEDGER" --plan "$PLAN" delegate launch --task T-ship-validator \
+    --json "{\"delegation_id\": \"c1\", \"transport\": \"headless\", \"via\": \"agentkit\", \"worktree\": null, \"prompt_digest\": \"$DIGEST\"}" >/dev/null
+  printf 'x = 3\n' > "$REPO/src/product.py"
+  run python3 "$LEDGER" --plan "$PLAN" delegate cancel --task T-ship-validator --json '{"delegation_id": "c1"}'
+  [ "$status" -eq 5 ]
+  run python3 "$LEDGER" --plan "$PLAN" delegate observe
+  [[ "$output" == *'"state": "failed"'* ]] || return 1
+}
+
+@test "completion is refused while a delegation of the task is still open" {
+  _plan
+  python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
+  PATH="$WORK/bin:$PATH" python3 "$LEDGER" --plan "$PLAN" delegate launch --task T-publish-schemas \
+    --json "{\"delegation_id\": \"o1\", \"transport\": \"headless\", \"via\": \"agentkit\", \"prompt_digest\": \"$DIGEST\"}" >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"python3 --version"' >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 4 ]
+  [[ "$output" == *"still open"* ]] || return 1
+  python3 "$LEDGER" --plan "$PLAN" delegate cancel --task T-publish-schemas --json '{"delegation_id": "o1"}' >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 0 ]
+}
+
+@test "outside a git work tree a read-only delegate on an unmarked task is refused (unverifiable)" {
+  _plan
+  rm -rf "$REPO/.git"
+  python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator >/dev/null
+  run env PATH="$WORK/bin:$PATH" python3 "$LEDGER" --plan "$PLAN" delegate launch --task T-ship-validator \
+    --json "{\"transport\": \"headless\", \"via\": \"agentkit\", \"worktree\": null, \"prompt_digest\": \"$DIGEST\"}"
+  [ "$status" -eq 5 ]
+  [[ "$output" == *"needs a git work tree"* ]] || return 1
+}
+
+@test "a glob surface never hashes a match that resolves outside the repository" {
+  run python3 -c '
+import os, sys, tempfile
+sys.path.insert(0, sys.argv[1])
+import ledger
+root = os.path.realpath(tempfile.mkdtemp())
+outside = os.path.realpath(tempfile.mkdtemp())
+os.makedirs(os.path.join(root, "src"))
+open(os.path.join(outside, "secret.txt"), "w").write("A")
+os.symlink(outside, os.path.join(root, "src", "linkdir"))   # a directory link inside the repo
+pattern = os.path.join(root, "src", "*", "*.txt")
+h1 = ledger._hash_surface(pattern, root)
+open(os.path.join(outside, "secret.txt"), "w").write("B")
+h2 = ledger._hash_surface(pattern, root)
+assert h1 == h2, "a glob read a file outside the repository"
+print("ok")' "$SHARED"
+  [ "$output" = "ok" ]
+}
+
+@test "the config writer keeps the file readable (0644 new, existing mode preserved)" {
+  python3 "$CFG" enable vim --repo "$REPO" >/dev/null
+  [ "$(python3 -c 'import os,sys; print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$REPO/.dwp/config.json")" = "0o644" ]
+  chmod 640 "$REPO/.dwp/config.json"
+  python3 "$CFG" disable vim --repo "$REPO" >/dev/null
+  [ "$(python3 -c 'import os,sys; print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$REPO/.dwp/config.json")" = "0o640" ]
+}
+
+@test "descriptor detect paths may not traverse with .." {
+  run python3 -c '
+import sys; sys.path.insert(0, sys.argv[1])
+import config
+d = {"schema": config.DESCRIPTOR_SCHEMA_URL, "key": "x", "provides_abilities": [], "requires_grants": [],
+     "detect": {"paths": ["docs/../../etc/hosts"]}}
+assert config.descriptor_errors(d, "x"), "a traversing detect path was accepted"
+print("ok")' "$SHARED"
+  [ "$output" = "ok" ]
+}
+
+@test "the herdr install lines are non-interactive (-y) for agent shells" {
+  for f in "$SK/addons/herdr/install.md" "$SK/addons/herdr/SPEC.md"; do
+    run grep -E 'skills add [^`]*-g' "$f"
+    [ "$status" -eq 0 ]
+    ! printf '%s\n' "$output" | grep -vE -- '-g -y'
+  done
+}
+
+@test "third-party installers run only in a job without a write token" {
+  python3 - "$REPO_ROOT/.github/workflows" <<'PY'
+import sys, yaml, os
+for name, publisher in (('auto-release.yml', 'release'), ('prerelease.yml', 'prerelease')):
+    wf = yaml.safe_load(open(os.path.join(sys.argv[1], name)))
+    jobs = wf['jobs']
+    smoke = jobs['pin-smoke']
+    assert smoke['permissions'] == {'contents': 'read'}, (name, smoke.get('permissions'))
+    co = smoke['steps'][0]
+    assert co['uses'].startswith('actions/checkout') and co['with']['persist-credentials'] is False, (name, co)
+    assert any('smoke-ecosystem-pins.sh' in (s.get('run') or '') for s in smoke['steps']), name
+    assert jobs[publisher]['needs'] == 'pin-smoke', (name, jobs[publisher].get('needs'))
+    assert not any('smoke-ecosystem-pins.sh' in (s.get('run') or '') for s in jobs[publisher]['steps']), name
+print('ok')
+PY
+}
