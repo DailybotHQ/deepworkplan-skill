@@ -44,6 +44,7 @@ _draft() {
 import json, sys
 doc = json.load(open(sys.argv[1]))
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 if sys.argv[3] == 'v6':
     doc['schema'] = 'https://deepworkplan.com/schema/plan-contract/v6.json'
     for t in doc['tasks']:
@@ -260,4 +261,65 @@ PY
   [[ "$output" == *"this pack is a pre-release (7.0.0-beta.1)"*"not measured"* ]] || return 1
   [ ! -f "$PLAN/analysis_results/benchmark.json" ]
   find "$PACK" -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
+}
+
+# ---------------------------------------- draft checks + CLI (F-02/F-08/F-14/F-24)
+
+@test "validate-contract and materialize refuse gate checks the runner would refuse (F-02)" {
+  _draft v7 "doc['tasks'][0]['gate_intent'][0]['check'] = 'cd src && python3 -V'" || return 1
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 1 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"check 'cd src && python3 -V' starts with 'cd', outside scope.allowed_command_classes ['python3']"* ]] || return 1
+  [[ "$output" == *"bash -c '...' with bash declared"* ]] || return 1
+  run _materialize
+  [ "$status" -ne 0 ] && [[ "$output" == *"the gate runner would refuse it"* ]] || { echo "$output"; return 1; }
+  [ ! -e "$PLAN/contract.json" ] || return 1
+  # the documented wrapper passes; an absolute path is judged by its basename
+  _draft v7 "doc['scope']['allowed_command_classes'] = ['python3', 'bash']; doc['tasks'][0]['gate_intent'][0]['check'] = \"bash -c 'cd src && python3 -V'\"; doc['tasks'][1]['gate_intent'][0]['check'] = '/usr/bin/python3 -V'"
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  # a recorded contract keeps loading: --recorded reports draft checks as WARN
+  _draft v7 "doc['tasks'][0]['gate_intent'][0]['check'] = 'pytest -q'"
+  run python3 "$CV6" validate-contract "$PLAN/draft.json" --recorded
+  [ "$status" -eq 0 ] && [[ "$output" == *"WARN contract.tasks: T-publish-schemas"* ]] || { echo "$output"; return 1; }
+}
+
+@test "--help works in any position and --parent is named for revisions (F-14)" {
+  run python3 "$CV6" validate-contract --help
+  [ "$status" -eq 0 ] && [[ "$output" == *"--parent FILE"*"--recorded"* ]] || { echo "$output"; return 1; }
+  run python3 "$LEDGER" --plan "$PLAN" gate --help
+  [ "$status" -eq 0 ] && [[ "$output" == *"signoff --criterion AC"* ]] || { echo "$output"; return 1; }
+  run python3 "$SHARED/outcomes.py" --plan "$PLAN" receipt --help
+  [ "$status" -eq 0 ] && [[ "$output" == *"receipt [--evaluator"* ]] || { echo "$output"; return 1; }
+  _draft v7 "doc['revision'] = 2; doc['parent_contract_id'] = 'a' * 64"
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 1 ] && [[ "$output" == *"pass the earlier revision as --parent FILE"* ]] || { echo "$output"; return 1; }
+}
+
+@test "v7 is labelled v7: validator line, ledger identity and snapshot (F-08, F-24)" {
+  _draft v7 && _materialize >/dev/null || return 1
+  run python3 "$CV6" validate-contract "$PLAN/contract.json"
+  [[ "$output" == *"OK: v7 contract valid"* ]] || { echo "$output"; return 1; }
+  cd "$REPO"
+  python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"python3 -V"' >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" project >/dev/null
+  grep -qF '"identity":"dwp-ledger/7.0"' "$PLAN/journal.ndjson" || return 1
+  ! grep -qF 'dwp-ledger/6.0' "$PLAN/journal.ndjson" || return 1
+  grep -qF '"generated_by": "dwp-ledger/7.0"' "$PLAN/state.json" || return 1
+  # a v6 plan keeps its v6 labels
+  rm -rf "$PLAN/journal.ndjson" "$PLAN/contract.json" "$PLAN/manifest.json" "$PLAN/state.json" "$PLAN/evidence.jsonl" "$PLAN/gates"
+  _draft v6 && _materialize >/dev/null || return 1
+  run python3 "$CV6" validate-contract "$PLAN/contract.json"
+  [[ "$output" == *"OK: v6 contract valid"* ]] || return 1
+  python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"python3 -V"' >/dev/null
+  grep -qF '"identity":"dwp-ledger/6.0"' "$PLAN/journal.ndjson"
+}
+
+@test "receipt without --out prints the body on stdout and the summary on stderr (F-08)" {
+  _draft v7 && _materialize >/dev/null || return 1
+  python3 "$SHARED/outcomes.py" --plan "$PLAN" receipt > "$WORK/body.json" 2> "$WORK/summary.txt" || return 1
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["totals"]["criteria"] == 3' "$WORK/body.json" || return 1
+  grep -qF 'OK: receipt stdout' "$WORK/summary.txt"
 }

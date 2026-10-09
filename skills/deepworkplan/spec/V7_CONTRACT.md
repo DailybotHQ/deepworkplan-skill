@@ -1,6 +1,6 @@
 # V7_CONTRACT.md — Contract generation v7: delegation records (Normative)
 
-> Status: **7.0.0-beta.1 line**. A new **contract generation** of the v6
+> Status: **7.0.0**. A new **contract generation** of the v6
 > record layer, not a new lifecycle: everything in
 > [`V6_CONTRACT.md`](V6_CONTRACT.md), [`V6_LIFECYCLE.md`](V6_LIFECYCLE.md),
 > [`V6_CONTEXT.md`](V6_CONTEXT.md) and [`V6_RESOURCES.md`](V6_RESOURCES.md)
@@ -112,6 +112,11 @@ of a plan's **own** tasks (§4) is a different thing and is allowed under
 the conditions above, in orchestrator and individual plans alike.
 
 ## 6. Conformance
+
+- Human sign-off (`ledger.py signoff`) and the human-authority marker are
+  generation-neutral: they use the v6 record shapes unchanged
+  (`V6_CONTRACT.md` §3), so v6 and v7 plans close asserted criteria the
+  same way.
 
 - v6 schema bytes, v6 plans and their lifecycle are unchanged
   (`tests/v6-contract.bats` pins the schema hashes).

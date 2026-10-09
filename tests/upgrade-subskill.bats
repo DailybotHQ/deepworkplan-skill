@@ -96,7 +96,8 @@ up_has() {
 }
 
 @test ".dwp/ is never migrated and plans keep their authored standard" {
-    up_has "$UP" "An upgrade never touches \`.dwp/\`"
+    up_has "$UP" "An upgrade never touches"
+    up_has "$UP" "\`.dwp/\` plans — plans and their recorded evidence are history"
     up_has "$UP" "No plan, state file, gate record or evidence file is migrated, rewritten or invalidated by an upgrade"
     up_has "$UP" "an old plan declaring 2.x stays valid as historical"
     up_has "$UP" "separate, explicit \`refine migrate\` decision"
@@ -119,4 +120,51 @@ up_has() {
     [ "$status" -eq 0 ]
     run bash -c "grep -rln 'upgrade/SKILL' '$SK/create' '$SK/execute' '$SK/resume' '$SK/refine' '$SK/status' 2>/dev/null"
     [ "$status" -ne 0 ]
+}
+
+@test "upgrade back-fills the addon registry without re-deciding (F-15)" {
+  grep -qF 'shared/config.py backfill --repo .` (dry run)' "$SK/upgrade/SKILL.md"
+  up_has "$UP" "A key the registry already names is never changed"
+  up_has "$UP" "a machine-level install is only reported"
+  grep -qF 'recorded in `.dwp/config.json` (Phase 3 step 4)' "$SK/upgrade/SKILL.md"
+}
+
+@test "delegators.py reports OK, DRIFT and MISSING and never writes (F-23)" {
+  work="$(mktemp -d)"
+  mkdir -p "$work/.agents/commands"
+  tpl="$SK/onboard/command-templates"
+  sed 's#<skill-path>#.agents/skills#g' "$tpl/dwp-create.md" > "$work/.agents/commands/dwp-create.md"
+  { sed 's#<skill-path>#.agents/skills#g' "$tpl/dwp-execute.md"; echo "local note"; } > "$work/.agents/commands/dwp-execute.md"
+  before="$(cd "$work" && find . -type f -exec shasum {} + | sort)"
+  run python3 "$SK/shared/delegators.py" check --repo "$work"
+  [ "$status" -eq 0 ] || { rm -rf "$work"; return 1; }
+  [[ "$output" == *"OK      dwp-create.md"* ]] || { rm -rf "$work"; return 1; }
+  [[ "$output" == *"DRIFT   dwp-execute.md"* ]] || { rm -rf "$work"; return 1; }
+  [[ "$output" == *"MISSING dwp-verify.md"* ]] || { rm -rf "$work"; return 1; }
+  run python3 "$SK/shared/delegators.py" check --repo "$work" --strict
+  [ "$status" -eq 1 ] || { rm -rf "$work"; return 1; }
+  after="$(cd "$work" && find . -type f -exec shasum {} + | sort)"
+  rm -rf "$work"
+  [ "$before" = "$after" ]
+}
+
+@test "an onboarded repository has a short v7 upgrade path; versions are discoverable (F-09, F-07, F-26)" {
+  up_has "$UP" "Short path for an onboarded repository (F-09)."
+  up_has "$UP" "shared/delegators.py check --repo ."
+  up_has "$UP" "Run the full onboarding when conformance failed"
+  up_has "$UP" "records only a content hash"
+  up_has "$UP" "never the frontmatter of a vendored pre-release"
+  grep -qF 'never the frontmatter' "$REPO_ROOT/docs/INSTALLATION.md"
+}
+
+@test "herdr-peers can be trialled repo-locally; the rest stay machine-level (F-10)" {
+  grep -qF 'skills add DailybotHQ/herdr-peers@v0.1.0 --skill herdr-peers -y' "$SK/addons/herdr/install.md"
+  grep -qF 'stay machine-level' "$SK/addons/herdr/install.md"
+}
+
+@test "TRUST.md counts every shipped Python helper" {
+  n="$(find "$SK" -name '*.py' -not -path '*/__pycache__/*' | wc -l | tr -d ' ')"
+  words=(zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty)
+  grep -qiE "${words[$n]} Python \(stdlib" "$SK/TRUST.md"
+  grep -qF 'shared/delegators.py' "$SK/TRUST.md"
 }

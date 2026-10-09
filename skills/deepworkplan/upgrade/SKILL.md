@@ -14,8 +14,9 @@ current. Three phases, strictly ordered: **check** (read-only, safe to run
 anytime), **consent** (nothing downloads without an explicit yes), **upgrade**
 (same install command a fresh consumer runs, then onboarding re-executed as if
 https://deepworkplan.com/init.md were executed fresh). An upgrade never touches
-`.dwp/` — plans and their recorded evidence are history, not state to migrate
-(`../spec/DWP_SPECIFICATION.md` §6.5).
+`.dwp/` plans — plans and their recorded evidence are history, not state to
+migrate (`../spec/DWP_SPECIFICATION.md` §6.5); its one `.dwp/` write is the
+addon registry back-fill (Phase 3 step 4).
 
 ---
 
@@ -89,7 +90,9 @@ versions relative to that directory.
 1. **Name what the upgrade overwrites:** the vendored skill files under the
    installed pack directory (and only those). Name what it does **not** touch:
    `.dwp/` (plans, state, evidence), `AGENTS.md`, `docs/`, `.agents/` outside
-   the vendored pack, and every addon the repository configured.
+   the vendored pack, and every addon the repository configured. Name the
+   one registry write: already-installed addons the registry does not name
+   are recorded in `.dwp/config.json` (Phase 3 step 4).
 2. **Surface local adaptations before overwriting anything.** Repositories
    deliberately adapt their vendored copy (a repo may pin and maintain its own
    edition — a blind reinstall would erase that work). Stage the incoming tag
@@ -137,21 +140,51 @@ versions relative to that directory.
    re-offers addons under their standing policies (AI Diff Reviewer local
    install rides onboarding authorization; every optional addon still needs
    explicit acceptance).
+   **Short path for an onboarded repository (F-09).** When the repository
+   already declares `DWP standard: 6.x` and was conformant before the
+   upgrade, the re-onboarding is this checklist instead of a full run: (a)
+   `python3 <pack>/shared/delegators.py check --repo .` — present each
+   `DRIFT` as keep (a deliberate adaptation) or refresh (from
+   `../onboard/command-templates/`), and offer each `MISSING` (F-23); (b)
+   step 4's registry back-fill and `.gitignore` exception; (c) the host
+   capability record from the existing `AGENTS.md` declaration
+   (`config.py host <capability> true`, `../onboard/v6.md` §1); (d) Phase
+   7b's offer of addons the registry does not name yet; then step 3 and
+   step 6. Run the full onboarding when conformance failed, the
+   declaration predates 6.0, or the developer asks for it.
 3. **Re-stamp the standard.** The provenance line in `AGENTS.md` becomes
    `DWP standard: <the standard the new pack implements> (onboarded
    YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)` — the upgrade variant of
    `../spec/DOCUMENTATION_STANDARD.md` §3.5. Never edit the skill's own
    `version:` fields or `CHANGELOG.md`; the release process owns them.
-4. **Leave `.dwp/` untouched.** Plans keep their recorded lifecycle and their
+4. **Back-fill the addon registry** (F-15). Addons installed before the
+   registry existed are recorded, never re-decided: run `python3
+   <pack>/shared/config.py backfill --repo .` (dry run), show the list,
+   then `--write`. A key the registry already names is never changed, and
+   a machine-level install is only reported (offer it; never back-filled).
+   Then propose the `.gitignore` exception that shares the registry
+   (`.dwp/*` + `!.dwp/config.json`, `../spec/CONFIG.md` §1).
+5. **Leave `.dwp/` plans untouched.** Plans keep their recorded lifecycle and their
    authored standard — an old plan declaring 2.x stays valid as historical and
    is never migrated by an upgrade; migrating one is a separate, explicit
    `refine migrate` decision (`../spec/DWP_SPECIFICATION.md` §6.5).
-5. **Close the loop.** Re-apply the accepted adaptation decisions on the new
+6. **Close the loop.** Re-apply the accepted adaptation decisions on the new
    files, run `../verify/SKILL.md` conformance, and report: old → new skill
    version, old → new standard stamp, what the re-onboarding reconciled, the
    adaptations applied or dropped, and the conformance verdict.
 
 ---
+
+## Version discovery (consumers)
+
+- The installed version is the `version:` of the installed
+  `deepworkplan/SKILL.md` frontmatter. `skills-lock.json` records only a
+  content hash (`computedHash`), never the tag — record the ref beside it by
+  hand when you need it (F-07).
+- A pre-release carries its identifier (`7.0.0-beta.1`). A page or manifest
+  that shows the **stable** line reads the latest non-pre-release (GitHub
+  `releases/latest`), never the frontmatter of a vendored pre-release
+  (F-26).
 
 ## Guarantees
 

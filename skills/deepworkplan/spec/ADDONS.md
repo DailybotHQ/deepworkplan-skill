@@ -133,7 +133,7 @@ form**; only its CI surface is optional.
 - An optional addon at `skills/deepworkplan/addons/devcontainer/` that gives a
   repository a reproducible dev container through **devcontainer-kit**
   (`dck`; `https://github.com/DailybotHQ/devcontainer-kit`, MIT, its own
-  release cycle) pinned at `v0.1.2` (interface `1`). The kit owns the Dev
+  release cycle) pinned at `v0.1.4` (interface `1`). The kit owns the Dev
   Containers layout (`dck init`, which reconciles and never clobbers), the
   pinned base images, the entrypoint library, the launcher, SSH agent
   forwarding and Herdr registration; the addon owns detection, the offer, the
@@ -276,7 +276,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.3 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
@@ -369,7 +369,7 @@ lives in its own public repository
 (`https://github.com/DailybotHQ/deepworkplan-vim`, GPL-3.0, versioned
 independently of the pack); this folder is the DWP-side integration
 contract only, a **thin integrator** pinned to the product tag
-`deepworkplan-vim@v0.4.0`: detection, feature claims and the install steps
+`deepworkplan-vim@v0.4.2`: detection, feature claims and the install steps
 are read from the product's machine-readable surface (`addon/surface.json`,
 interface `1`); an unknown interface major is one warning and "not
 available", never an error. `onboard` Phase 7b offers it as an **explicit
@@ -413,7 +413,7 @@ name, which is also the addon's registry key in `.dwp/config.json`
 | `schema` | the descriptor schema URL (const) |
 | `key` | the directory name |
 | `product` | optional — the separate product a thin integrator pins: `repo` (`owner/name`), `tag` (exact `vX.Y.Z[-pre]`, never a branch or floating version), `interface` (integer major, when the product publishes one) |
-| `detect` | read-only presence check: exactly one of `command` (an argv line with no shell metacharacters, run **without a shell**, bounded by a timeout; exit 0 = present) or `paths` (present when at least one listed file exists; repo-relative or `~/`-prefixed); optional `interface_from` (`json:<field>`, `regex:<pattern>`, `file-json:<path>#<field>`) |
+| `detect` | read-only presence check: exactly one of `command` (an argv line with no shell metacharacters, run **without a shell**, bounded by a timeout; exit 0 = present) or `paths` (present when at least one listed file exists; repo-relative or `~/`-prefixed); optional `interface_from` (`json:<field>`, `regex:<pattern>`, `file-json:<path>#<field>`); optional `legacy_paths` beside `paths` — files that all exist when an older release is installed **without** its interface surface: that state is reported as "installed without surface" with one warning, never as absent (F-16) |
 | `provides_abilities` | host abilities (the closed v6 set) the addon contributes at runtime **only** when enabled and detected with a compatible interface (`V7_ABILITIES.md`) |
 | `requires_grants` | contract permissions its use requires (the closed v6 capability set) |
 | `transport` | delegation addons only: `headless` or `interactive`; a transport addon **MUST** provide `subagents` and require `agent_delegation` |
@@ -423,13 +423,13 @@ The shipped set:
 | key | product (pinned) | provides_abilities | requires_grants | transport |
 |---|---|---|---|---|
 | `agentkit` | `DailybotHQ/coding-agents-kit` `v0.1.1`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
-| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.2.3` | — | — | — |
+| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.0` | — | — | — |
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.3` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
-| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.1.2`, interface 1 | — | — | — |
+| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.1.4`, interface 1 | — | — | — |
 | `herdr` | `DailybotHQ/herdr-peers` `v0.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
-| `vim` | `DailybotHQ/deepworkplan-vim` `v0.4.0`, interface 1 | — | — | — |
+| `vim` | `DailybotHQ/deepworkplan-vim` `v0.4.2`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
 `detect.command`, and only for an addon the registry enables. A product

@@ -147,7 +147,7 @@ mutates the target repository — non-destructively and by explicit design:
 - On the plan-driven path, plan artifacts under `.dwp/` as `create` defines.
 
 **Writes include:** with Phase 0 consent, Phase 7a may run the tag-pinned
-`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.3 --skill ai-diff-reviewer -y`
+`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
 install into `.agents/skills/ai-diff-reviewer/` and bootstrap the repo-tailored
 `.review/extension.md`; decline or offline failure is recorded as a declared
 exception.
@@ -747,9 +747,11 @@ and **stack-appropriate**, not generic boilerplate.
    fall back to the byte-exact `git archive` install — never proceed
    silently on a mismatched or empty install.
 2. **Scaffold the gitignored output area** (per `../shared/dwp-paths.md`):
-   create `.dwp/plans/` with a `README.md` placeholder,
-   and add `.dwp/` to the repo's `.gitignore` (append the rule
-   non-destructively — do not rewrite the file). `.dwp/` is the only DWP output
+   create `.dwp/plans/` with a `README.md` placeholder, and append to the
+   repo's `.gitignore` (non-destructively — do not rewrite the file) the
+   two lines `.dwp/*` and `!.dwp/config.json`: plans stay ignored, the
+   addon registry is shared with teammates and CI (`../spec/CONFIG.md` §1).
+   An existing `.dwp/` rule stays conformant; propose the exception. `.dwp/` is the only DWP output
    location; it **replaces** any pre-v2 DWP output tree (see
    `../shared/dwp-paths.md` for the contrast). If an older DWP output tree
    exists, note it for migration (do not delete without asking).

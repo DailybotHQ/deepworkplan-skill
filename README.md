@@ -25,8 +25,7 @@
 
 > The official DeepWorkPlan agent skill pack, maintained by [Dailybot](https://www.dailybot.com).
 
-The current major line is **v7** (DWP standard 7.0.0; `7.0.0-beta.1` is a
-pre-release). The methodology works alone — every addon is optional and only
+The current major line is **v7** (`v7.0.0`, DWP standard 7.0.0). The methodology works alone — every addon is optional and only
 amplifies it. New plans use the v7 contract generation of the v6 record layer
 (contract, journal, scheduler, live snapshot) with recorded, gated delegation;
 existing v6 and v5 plans retain their recorded lifecycle. v7 adds an addon
@@ -108,9 +107,7 @@ skill in the right place:
 
 ```bash
 # pinned to a release tag (recommended — reproducible):
-npx --yes skills add DailybotHQ/deepworkplan-skill@v6.1.0 --skill deepworkplan -y
-# the v7 pre-release (field test):
-npx --yes skills add DailybotHQ/deepworkplan-skill@v7.0.0-beta.1 --skill deepworkplan -y
+npx --yes skills add DailybotHQ/deepworkplan-skill@v7.0.0 --skill deepworkplan -y
 # or the latest published release:
 npx skills add DailybotHQ/deepworkplan-skill
 ```

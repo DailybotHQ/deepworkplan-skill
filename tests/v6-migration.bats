@@ -173,8 +173,12 @@ PY
   run python3 "$MIG" --plan "$plan" migrate --authority tester
   [ "$status" -eq 0 ]
   printf '%s' "$output" | grep -qF 'phases backup+contract+manifest+journal+project'
-  # the synthesized contract validates under the shipped validator
-  python3 "$CV6" validate-contract "$plan/contract.json" >/dev/null
+  # the synthesized contract validates under the shipped validator; it is
+  # records-only until amended, so its gate checks are advisories (F-02)
+  python3 "$CV6" validate-contract "$plan/contract.json" --recorded >/dev/null
+  run python3 "$CV6" validate-contract "$plan/contract.json"
+  [ "$status" -eq 1 ]
+  printf '%s' "$output" | grep -qF 'the gate runner would refuse it'
   # the v5 manifest became the v6 pointer, and only after a backup exists
   python3 - "$plan" <<'PY'
 import json, os, sys
@@ -338,7 +342,19 @@ PY2
 
 @test "the v5 runner refuses a migrated plan naming the contract (D2-10)" {
   plan="$(_migrated)"
+  # the read-only verifier judges it by its v6 records, never by v5 rules
   run python3 "$V5CHECK" "$plan"
+  printf '%s' "$output" | grep -qF 'v6 manifest pairs with a v6 contract'
+  ! printf '%s' "$output" | grep -qF 'task ids are contiguous'
+  # the v5 finalization (a v5 state candidate) refuses it by name
+  run python3 -c '
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+from pathlib import Path
+from plan_contract import check
+r = check(Path(sys.argv[2]), state_override={})
+print("\n".join(r.lines)); sys.exit(1 if r.failed else 0)' "$(dirname "$V5CHECK")" "$plan"
   [ "$status" -ne 0 ]
   printf '%s' "$output" | grep -qF 'this plan is v6'
   printf '%s' "$output" | grep -qF 'the v5 runner does not execute v6 plans'

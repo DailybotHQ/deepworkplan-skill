@@ -49,8 +49,11 @@ All plans live under a single gitignored repo-root directory, `.dwp/`:
 
 ## `.dwp/` is gitignored
 
-`.dwp/` **MUST** be added to the repository's `.gitignore`. Plans are
-working artifacts, not tracked source. (Orchestrator hubs follow the same rule:
+`.dwp/` **MUST** be ignored by the repository's `.gitignore`. Plans are
+working artifacts, not tracked source. The one tracked file it may hold is
+the addon registry `.dwp/config.json` (`../spec/CONFIG.md` §1): the rule
+`.dwp/*` + `!.dwp/config.json` keeps everything else ignored (a plain
+`.dwp/` rule keeps the registry local). (Orchestrator hubs follow the same rule:
 child plans live at `repositories/{repo}/.dwp/plans/<plan>/`, also
 gitignored; numbering is local to each managed repository.)
 

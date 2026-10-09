@@ -25,7 +25,7 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
    > `.github/ai-pr-reviewer/extension.md`), a `.review/.skip-bootstrap`
    marker, and any existing `pr-review.yml`. Fill gaps only.
 2. **Install the vendored skill, pinned:**
-   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.2.3 --skill ai-diff-reviewer -y`
+   `npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
    (both `--yes` and `-y` are required in non-TTY; never an unpinned ref, never
    a remote installer piped to a shell). Assert the vendored `SKILL.md` version
    equals the requested tag.
@@ -76,13 +76,13 @@ records its Phase 7a status). Offer the seven optional ones independently:
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: when any surface is detected — even an ambiguous one — the evaluation and offer are **mandatory, not skippable**, with the detection rationale recorded. **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **strongly recommended**; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended**. Every profile **requires explicit acceptance even in trust mode — none is auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
 | **agentkit** | [`../addons/agentkit/`](../addons/agentkit/SKILL.md) | the developer wants plans to hand bounded `parallel_safe` tasks to other coding agents (claude, codex, cursor, …) — a machine-level install (`git clone --branch v0.1.1` + `install.sh`), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. |
 | **Herdr** | [`../addons/herdr/`](../addons/herdr/SKILL.md) | the developer runs coding agents in [Herdr](https://herdr.dev) panes (one machine or several) and wants plans to ask a peer agent to take a task — a machine-level install of `herdr-peers@v0.1.0` (+ Herdr's official skill, pinned), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. |
-| **DeepWorkPlan Vim** | [`../addons/vim/`](../addons/vim/SKILL.md) | a person on this machine uses Neovim ≥ 0.12 or asks for a terminal editor for plans — a **machine-level** install, never a repo requirement; the editor is never imposed and an existing Neovim config is **never** overwritten without explicit consent (non-interactive runs onto an existing config stop at instructions). Pinned `deepworkplan-vim@v0.4.0`, detected through the product's `addon/surface.json`. |
+| **DeepWorkPlan Vim** | [`../addons/vim/`](../addons/vim/SKILL.md) | a person on this machine uses Neovim ≥ 0.12 or asks for a terminal editor for plans — a **machine-level** install, never a repo requirement; the editor is never imposed and an existing Neovim config is **never** overwritten without explicit consent (non-interactive runs onto an existing config stop at instructions). Pinned `deepworkplan-vim@v0.4.2`, detected through the product's `addon/surface.json`. |
 | **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | **not offered here — installed in Phase 7a** (required local review, baseline since 2.3.0). In Phase 7b only confirm the Flow B (CI Action) opt-in decision if it was left open; never install the CI surface unrequested. |
 
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
 [`SPEC.md`](../addons/devcontainer/SPEC.md)), a thin integrator of
-devcontainer-kit (`dck`, pinned `v0.1.2`). If the developer accepts: read
+devcontainer-kit (`dck`, pinned `v0.1.4`). If the developer accepts: read
 that addon's `SKILL.md` and run its flow — detect the kit (`dck doctor
 --json`), reason the flavour, service, ports and layers from the stack you
 detected in Phase 1, show `dck init --dry-run`, and let `dck init` reconcile
@@ -179,7 +179,7 @@ The **DeepWorkPlan Vim** addon
 ([`../addons/vim/SKILL.md`](../addons/vim/SKILL.md) +
 [`SPEC.md`](../addons/vim/SPEC.md)) is a machine-level offer, not a repo
 change: detect Neovim and the editor read-only through the product's
-`addon/surface.json` (pinned `deepworkplan-vim@v0.4.0`, interface `1`; an
+`addon/surface.json` (pinned `deepworkplan-vim@v0.4.2`, interface `1`; an
 unknown interface is one warning and "not available"), then offer — never
 impose — the editor. On acceptance run that addon's flow: the product's
 documented, checksum-verified install under its absolute consent gate (an

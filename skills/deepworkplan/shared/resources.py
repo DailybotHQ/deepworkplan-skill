@@ -439,6 +439,32 @@ def _read_interface(spec, stdout):
         return None
 
 
+VERSION_IN_TEXT = re.compile(r'\bv?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)\b')
+
+
+def _observed_version(det, stdout, repo_root=None):
+    """The installed product's version as a tag (vX.Y.Z), or None.
+
+    From a detect command's output, or from the ``version:`` frontmatter of
+    a detected SKILL.md path (a vendored skill). Informative only: it feeds
+    the registry back-fill and verify's mismatch warning, never a gate.
+    """
+    text = stdout or ''
+    if 'paths' in det:
+        base = repo_root or os.getcwd()
+        for path in det['paths']:
+            full = os.path.expanduser(path) if path.startswith('~/') \
+                else os.path.join(base, path)
+            if path.endswith('SKILL.md') and os.path.isfile(full):
+                with open(full, encoding='utf-8', errors='replace') as fh:
+                    head = fh.read(4096)
+                match = re.search(r'(?m)^version:\s*["\']?([^"\'\s]+)', head)
+                text = match.group(1) if match else ''
+                break
+    found = VERSION_IN_TEXT.search(text)
+    return 'v' + found.group(1) if found else None
+
+
 def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S):
     """Detection verdict for ONE enabled addon (opens its descriptor).
 
@@ -451,7 +477,7 @@ def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S)
         key, addons_dir or dwp_config.ADDONS_DIR)
     verdict = {'descriptor_ok': not errs, 'detected': False,
                'interface': None, 'compatible': False, 'provides': [],
-               'reason': None}
+               'reason': None, 'version': None}
     if errs:
         verdict['reason'] = 'invalid descriptor (%s)' % errs[0]
         return verdict
@@ -466,10 +492,22 @@ def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S)
                                      else os.path.join(base, p))
                       for p in det['paths'])
         reason = None if present else 'none of %s present' % ', '.join(det['paths'])
+        legacy = det.get('legacy_paths')
+        if not present and legacy and all(
+                os.path.isfile(os.path.expanduser(p) if p.startswith('~/')
+                               else os.path.join(base, p)) for p in legacy):
+            # F-16: an older release without the interface surface
+            verdict['state'] = 'installed-without-surface'
+            verdict['reason'] = ('installed without its interface surface (%s '
+                                 'missing): an older release, interface '
+                                 'unknown - not compatible; upgrade to the '
+                                 'pinned tag' % ', '.join(det['paths']))
+            return verdict
     verdict['detected'] = present
     if not present:
         verdict['reason'] = reason
         return verdict
+    verdict['version'] = _observed_version(det, stdout, repo_root)
     pinned = (doc.get('product') or {}).get('interface')
     if pinned is None:
         verdict['compatible'] = True
@@ -488,7 +526,8 @@ def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S)
 
 
 def effective_abilities(host_caps=None, dwp_root=None, home=None,
-                        addons_dir=None, timeout=DETECT_TIMEOUT_S):
+                        addons_dir=None, timeout=DETECT_TIMEOUT_S,
+                        host_only=False):
     """Host abilities united with what enabled-and-healthy addons provide.
 
     Computed per call from the host declaration, the registry
@@ -498,15 +537,38 @@ def effective_abilities(host_caps=None, dwp_root=None, home=None,
     other outcome is exactly one warning and no contribution. No addon file
     is opened for a key the registry does not enable.
     """
-    caps = host_capabilities(host_caps)  # closed set; unknown keys refused
+    files = dwp_config.load_files(dwp_root, home)
+    # F-17: the host capability record (config key "host"), then the
+    # explicit declaration (--caps) over it, per capability
+    record, warnings = dwp_config.resolve_host(files)
+    declared = {name: item['value'] for name, item in record.items()}
+    host_sources = {name: 'record:' + item['source']
+                    for name, item in record.items()}
+    for name, value in (host_caps or {}).items():
+        declared[name] = value
+        host_sources[name] = 'declared'
+    caps = host_capabilities(declared)  # closed set; unknown keys refused
     sources = {name: (['host'] if caps.get(name) else []) for name in caps}
     keys = dwp_config.addon_keys(addons_dir or dwp_config.ADDONS_DIR)
-    enabled, warnings = dwp_config.enabled_addons(dwp_root, home, keys)
+    if host_only:
+        # --host-only: the host record and declaration, no addon consulted
+        return {'abilities': caps, 'sources': sources, 'addons': {},
+                'deferred': {}, 'host_declared': host_sources,
+                'warnings': warnings, 'persisted': False}
+    view, addon_warnings = dwp_config.resolve_addons(files, keys)
+    warnings += addon_warnings
+    enabled = sorted(k for k, v in view.items() if v['enabled'])
     repo_root = os.path.dirname(dwp_root) if dwp_root else None
     addons = {}
+    deferred = {}
     for key in enabled:
         verdict = addon_status(key, repo_root, addons_dir, timeout)
         addons[key] = verdict
+        if not verdict['detected'] and verdict['descriptor_ok'] and \
+                view[key].get('note'):
+            # F-05: accepted with a recorded deferral - reported, not warned
+            deferred[key] = view[key]['note']
+            continue
         if verdict['compatible']:
             for name in verdict['provides']:
                 if name not in HOST_CAPABILITIES:  # never invented
@@ -518,9 +580,12 @@ def effective_abilities(host_caps=None, dwp_root=None, home=None,
         elif verdict['provides']:
             warnings.append('addon %s: enabled but contributes nothing — %s'
                             % (key, verdict['reason']))
-        elif verdict['reason'] and not verdict['descriptor_ok']:
+        elif verdict['reason'] and (not verdict['descriptor_ok'] or
+                                    verdict.get('state') ==
+                                    'installed-without-surface'):
             warnings.append('addon %s: %s' % (key, verdict['reason']))
     return {'abilities': caps, 'sources': sources, 'addons': addons,
+            'deferred': deferred, 'host_declared': host_sources,
             'warnings': warnings, 'persisted': False}
 
 
@@ -918,9 +983,11 @@ def main(argv):
             print(usage)
             return 2
         plan = ledger.find_plan_dir(args.plan)
-        host = host_capabilities(json.loads(args.caps))
+        declared = json.loads(args.caps)
+        host_capabilities(declared)  # refuse an unknown key before reading
         effective = effective_abilities(
-            host, None if args.host_only else dwp_config.find_dwp_root(plan))
+            declared, dwp_config.find_dwp_root(plan),
+            host_only=args.host_only)
         for line in effective['warnings']:
             print('WARNING: %s' % line, file=sys.stderr)
         caps = effective['abilities']

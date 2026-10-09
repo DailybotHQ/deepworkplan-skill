@@ -53,6 +53,7 @@ for task in doc['tasks']:
 doc['scope']['allowed_command_classes'] = ['python3']
 doc['scope']['allowed_paths'] = ['src/']
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 json.dump(doc, open(os.path.join(os.environ['PLAN_DIR'], 'draft.json'), 'w'),
           indent=2, sort_keys=True)
 PY
@@ -214,6 +215,7 @@ for task in doc['tasks']:
     task['touched_surface'] = ['src/product.py']
 doc['scope']['allowed_command_classes'] = ['python3']
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 cid = contract_v6.compute_contract_id(doc)
 json.dump(dict(doc, contract_id=cid),
           open(os.path.join(sys.argv[2], 'contract.json'), 'w'))
@@ -346,7 +348,8 @@ PY
   grep -qF 'Both generations can coexist' "$SK/SKILL.md"
   grep -qF 'v6 plans first' "$SK/status/SKILL.md"
   grep -qF 'stays read-only' "$SK/status/SKILL.md"
-  grep -qF 'v6 generation check' "$SK/verify/SKILL.md"
+  grep -qF 'v6/v7 generation check (automated)' "$SK/verify/SKILL.md"
+  grep -qF 'conformance.sh --plan <name|path>' "$SK/verify/SKILL.md"
   grep -qF 'contract amendments' "$SK/refine/SKILL.md"
   grep -qF 'V6_LIFECYCLE.md' "$SK/refine/SKILL.md"
 }

@@ -43,7 +43,8 @@ PY
 @test "SECURITY.md: supported versions, private reporting, email, response targets, no public issues" {
   f="$REPO_ROOT/SECURITY.md"
   grep -q '^## Supported Versions' "$f"
-  grep -qF '| `7.0.0` pre-releases' "$f"
+  # the table names the supported stable line (not a pinned literal release)
+  grep -qE '^\| Latest `[0-9]+\.x` stable release' "$f"
   grep -qF 'https://github.com/DailybotHQ/deepworkplan-skill/security' "$f"
   grep -qF 'security@dailybot.com' "$f"
   grep -qF '**Response targets:**' "$f"

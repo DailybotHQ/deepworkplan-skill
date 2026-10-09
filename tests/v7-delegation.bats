@@ -52,6 +52,7 @@ _plan() { # _plan [python mutation]
 import json, sys
 doc = json.load(open(sys.argv[1]))
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 doc['scope']['allowed_command_classes'] = ['python3', 'test']
 doc['scope']['allowed_paths'] = ['src/']
 for t in doc['tasks']:

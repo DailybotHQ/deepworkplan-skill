@@ -86,11 +86,13 @@ and — when present — `manifest.json` and `state.json`. Establish:
 - **The plan's generation.** A folder carrying `manifest.json` with a
   contract pointer, `contract.json`, or a `contracts/` chain is a **v6
   plan**: scope, acceptance, permissions or envelope changes are
-  **contract amendments** — author the revised contract, then follow the
-  v6 amendment sequence in [`../execute/v6.md`](../execute/v6.md) and
-  [`../spec/V6_LIFECYCLE.md`](../spec/V6_LIFECYCLE.md) §5 (revision
-  chain under `contracts/`, fresh approval citing the new contract id,
-  evidence invalidation for affected criteria). The markdown task edits
+  **contract amendments** — author the revised contract (a copy of the
+  live one, edited), then run `python3 ../shared/ledger.py --plan <dir>
+  amend --contract <draft> --authority <who> --note <reason>
+  --human-note <file>` ([`../spec/V6_LIFECYCLE.md`](../spec/V6_LIFECYCLE.md)
+  §5: revision under `contracts/`, amendment event, fresh approval citing
+  the new contract id, re-evidence of the revised criteria — one
+  resumable verb, never by hand). The markdown task edits
   below still apply to the plan's human layer; the contract never moves
   through them. A v5 plan is never migrated to v6 *implicitly*; the one
   explicit path is the migration surface below (3.2a).

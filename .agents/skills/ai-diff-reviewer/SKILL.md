@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer
 description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for six capabilities — (1) review the current branch diff locally (same methodology as CI); (2) generate repo-tailored .review/extension.md overrides (generate-extension); (3) install and configure the Action, and answer action.yml input questions (setup); (4) author a documented pull request from the branch diff (open-pr); (5) read the CI review and walk findings to apply, defer or skip — read-only (apply-review); (6) close the loop in one invocation — resolve the CI review's findings (commits and pushes), repair the PR's other failing workflows (codecheck, tests, branch not up to date), and re-arm the reviewer per the repo label configuration (address-review). Auto-detects .review/extension.md. Use when the developer asks to review changes, customize the reviewer, set up the Action, open a PR, read the CI review, close the review loop (resolve, re-trigger, arm an unreviewed PR), or fix failing PR workflows.
-version: "3.2.3"
+version: "3.3.0"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔍","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -168,6 +168,8 @@ here and is authoritative for routing.
 - "Do a pre-flight review before I push"
 - "Code review the diff against `main`"
 - "What would CI say about my current commits?"
+- "Review against `<rev>`", "review the range since `<rev>`",
+  `/ai-diff-reviewer --base <rev>` (explicit base — Step 1)
 
 **Generate-extension flow — triggers:**
 
@@ -315,25 +317,58 @@ arbitrary bash), those come from the harness, not this skill.
 Run these to establish the review's inputs. Emit the JSON to your working
 context; do not print it to the user unless they ask.
 
+**Explicit base (`--base <rev>`).** When the request names a base revision —
+`--base <rev>`, "review against `<rev>`", "review the range since `<rev>`" —
+set `REVIEW_BASE` to that revision before running the block. Any revision git
+resolves to a commit works: a SHA, a tag, a branch, `HEAD~5`. A bare branch
+name means the **local** branch; pass `origin/<branch>` for the remote one.
+Requires git ≥ 2.24 (`--end-of-options`). It wins over the
+tracked upstream, so a Deep Work Plan Final Review can review exactly the
+plan's range (its starting commit) instead of whatever the branch tracks.
+Leave `REVIEW_BASE` empty for the default detection.
+
 ```bash
-# Base branch: prefer the tracked upstream's short name, fall back to `main`.
-BASE=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null | sed 's|.*/||')
-BASE="${BASE:-main}"
+REVIEW_BASE="${REVIEW_BASE:-}"   # from --base <rev>; empty = detect from the upstream
+
+if [ -n "$REVIEW_BASE" ]; then
+  # Explicit base: must resolve to a commit — never fall back silently.
+  # `--end-of-options` keeps a value starting with `-` from becoming an option;
+  # DIFF_BASE is the resolved SHA, so the commands below never see raw input.
+  if DIFF_BASE=$(git rev-parse --verify --quiet --end-of-options "${REVIEW_BASE}^{commit}"); then
+    BASE_LABEL="$REVIEW_BASE"
+  else
+    echo "ERROR: --base '${REVIEW_BASE}' does not resolve to a commit in this repository" >&2
+    DIFF_BASE=""
+  fi
+else
+  # Base branch: prefer the tracked upstream's short name, fall back to `main`.
+  BASE=$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null | sed 's|.*/||')
+  BASE="${BASE:-main}"
+  DIFF_BASE="origin/${BASE}"
+  BASE_LABEL="$BASE"
+fi
 
 # Current branch + head SHA
 HEAD_BRANCH=$(git branch --show-current)
 HEAD_SHA=$(git rev-parse --short HEAD)
 
 # The three artifacts the review needs
-git diff --stat "origin/${BASE}...HEAD"    # summary of what changed
-git diff "origin/${BASE}...HEAD"           # the actual diff
-git log "origin/${BASE}..HEAD" --oneline   # the commit trail
+if [ -n "$DIFF_BASE" ]; then
+  git diff --stat "${DIFF_BASE}...HEAD"    # summary of what changed
+  git diff "${DIFF_BASE}...HEAD"           # the actual diff
+  git log "${DIFF_BASE}..HEAD" --oneline   # the commit trail
+fi
+[ -n "$DIFF_BASE" ]   # block exit status: non-zero when --base did not resolve
 ```
 
-If the diff is empty, tell the developer "no changes vs `<BASE>` — nothing
-to review" and stop. If `origin/${BASE}` doesn't exist (fresh clone,
-missing remote), fall back to `git merge-base main HEAD` and diff against
-that; note the fallback in the summary.
+If `--base` was given and did not resolve, report the error to the
+developer and stop — do not substitute the upstream. If the diff is empty,
+tell the developer "no changes vs `<BASE_LABEL>` — nothing to review" and
+stop. In the default mode only: if `origin/${BASE}` doesn't exist (fresh
+clone, missing remote), fall back to `git merge-base main HEAD` and diff
+against that; note the fallback in the summary. The three-dot diff compares
+against the merge base, so an explicit base that is an ancestor of `HEAD`
+(a plan's starting commit) yields exactly the commits made since it.
 
 ---
 
@@ -363,6 +398,7 @@ verbatim, and skip to Step 3.
 
 Announce the composed configuration in one line, e.g.
 `Reviewing feat/foo (a1b2c3d) against main. Base prompt + .review/extension.md.`
+(with `--base`, name the revision: `… against 5c1eef0 (--base) …`).
 
 The final composed prompt is what governs the review — the severity
 definitions, the "what NOT to comment on" rules, the output shape.

@@ -17,7 +17,7 @@ rule.
 | Field | Value |
 |-------|-------|
 | **Version** | 0.2.0 |
-| **Status** | Beta (DeepWorkPlan 7.0.0-beta.1) |
+| **Status** | Stable (DeepWorkPlan 7.0.0) |
 | **Product pin** | `DailybotHQ/herdr-peers` `v0.1.0`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
 | **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
 

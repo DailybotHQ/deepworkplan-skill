@@ -1,6 +1,6 @@
 # V7_ABILITIES.md — Addon-provided abilities (Normative)
 
-> Status: **7.0.0-beta.1 line**. Extends [`V6_RESOURCES.md`](V6_RESOURCES.md)
+> Status: **7.0.0**. Extends [`V6_RESOURCES.md`](V6_RESOURCES.md)
 > §1 (host capability negotiation) without changing it: the closed ability
 > set, the all-False minimal host and the refusal of unknown keys stand.
 > What v7 adds is a second, **runtime-only** source of abilities — the
@@ -19,7 +19,9 @@ effective = host-declared abilities
 ```
 
 - The host side is exactly v6: declared abilities over the all-False floor
-  (`resources.py --caps`, the repository's capability record). An unknown
+  — the machine-readable record (`.dwp/config.json` / `~/.dwp/config.json`
+  key `host`, [`CONFIG.md`](CONFIG.md) §3a) overlaid by an explicit
+  `resources.py --caps`, per capability (F-17). An unknown
   ability key — from the host **or** from a descriptor — MUST be refused;
   a capability is never invented.
 - An addon that fails (a)–(d) contributes **nothing**. Failing (b)–(d) for an
