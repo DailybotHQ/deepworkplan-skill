@@ -42,6 +42,9 @@ jobs:
   prerelease:
     name: Stamp, tag and publish a pre-release
     runs-on: ubuntu-latest
+    # Pre-releases are cut from reviewed code only: dispatching on any other
+    # branch does nothing.
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -76,10 +79,13 @@ jobs:
           echo "version=${REQUESTED}" >> "$GITHUB_OUTPUT"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "last_stable=${LAST_STABLE}" >> "$GITHUB_OUTPUT"
+          # Random heredoc delimiter: a commit subject that equals a fixed
+          # delimiter could otherwise inject further step outputs.
+          DELIM="EOF_$(openssl rand -hex 12)"
           {
-            echo 'commits<<EOF'
+            echo "commits<<${DELIM}"
             echo "$COMMITS"
-            echo 'EOF'
+            echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Stamp the version in ALL SKILL.md files
@@ -87,6 +93,8 @@ jobs:
           NEW_VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
+          # Re-validate where the value is used (defense in depth for sed).
+          printf '%s' "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+-(alpha|beta|rc)\.[0-9]+$'
           while IFS= read -r f; do
             sed -i "s/^version: \".*\"/version: \"${NEW_VERSION}\"/" "$f"
           done < <(find skills/deepworkplan -name 'SKILL.md')

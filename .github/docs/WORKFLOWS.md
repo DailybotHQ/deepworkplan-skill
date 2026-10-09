@@ -139,9 +139,9 @@ Not wired as a required merge check. Design source: `DailybotHQ/ai-diff-reviewer
 
 | Property | Value |
 |----------|-------|
-| **Trigger** | `workflow_dispatch` only, input `version` (e.g. `7.0.0-beta.1`) — never on push |
+| **Trigger** | `workflow_dispatch` only, input `version` (e.g. `7.0.0-beta.1`) — never on push; the job runs only when dispatched on `main` |
 | **Concurrency** | shares `auto-release-main` with auto-release (one release at a time) |
-| **Validation** | version must match `^X.Y.Z-(alpha|beta|rc).N$` (passed via env, never inlined); an existing tag is refused — pre-release tags are never moved |
+| **Validation** | version must match `^X.Y.Z-(alpha|beta|rc).N$` (passed via env, never inlined; re-validated in the stamping step); an existing tag is refused — pre-release tags are never moved; multi-line step outputs use a random delimiter (also in auto-release) |
 | **Steps** | stamp every SKILL.md → CHANGELOG section (commits since the last stable tag) → commit `chore(release): X (pre-release) [skip ci]` → push branch, then tag → temp-dir smoke install asserting the version → `SHA256SUMS` → `gh release create --prerelease --latest=false` with `SHA256SUMS`, verified `isPrerelease` |
 | **Token** | `AUTOMATION_GITHUB_TOKEN`, falling back to `GITHUB_TOKEN` |
 

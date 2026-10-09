@@ -393,6 +393,15 @@ def _run_detect(command, timeout=DETECT_TIMEOUT_S):
         argv = shlex.split(command)
     except ValueError as exc:
         return False, '', 'detect command unparsable (%s)' % exc
+    import shutil
+    resolved = shutil.which(argv[0])
+    if resolved is None:
+        return False, '', '%s not installed' % argv[0]
+    if not os.path.isabs(resolved):
+        # a relative PATH entry (".") would let a repository plant the tool
+        return False, '', ('%s resolved through a relative PATH entry; '
+                           'refused' % argv[0])
+    argv[0] = resolved
     try:
         proc = subprocess.run(argv, stdin=subprocess.DEVNULL,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE,

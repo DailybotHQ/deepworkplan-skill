@@ -19,6 +19,18 @@ https://deepworkplan.com/init.md were executed fresh). An upgrade never touches
 
 ---
 
+## Trust boundary (write scope)
+
+`allowed-tools` includes write-capable `Edit`, `Write` and `Bash`. Phase 1
+(check) and Phase 2 (consent) are **read-only**. Only after the developer's
+explicit acceptance does Phase 3 write: the vendored skill tree at the exact
+accepted **stable** tag (pre-release tags only on an explicit request for that
+channel), through the documented installer, then the onboarding
+reconciliation. It **MUST NOT** download anything before acceptance, install
+a moving ref (`@main`, `@latest`) or an unpinned source, overwrite local
+adaptations without showing their diff first, touch any plan under `.dwp/`,
+or read, print or write a secret.
+
 ## When to use
 
 - "upgrade DWP", "update the deepworkplan skill", "is there a newer version?",

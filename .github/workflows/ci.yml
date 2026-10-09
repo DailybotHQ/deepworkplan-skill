@@ -30,6 +30,16 @@ jobs:
       - run: pip install pyyaml
       - run: python3 scripts/validate-frontmatter.py
 
+  public-hygiene:
+    # Ecosystem public repository standard (amendment A3, S3): no personal
+    # paths, private org/repository/tooling names, non-public @dailybot.com
+    # addresses or secret-shaped strings in tracked files. Bash + grep only.
+    name: Public hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/check-public-hygiene.sh
+
   shellcheck:
     name: shellcheck
     runs-on: ubuntu-latest

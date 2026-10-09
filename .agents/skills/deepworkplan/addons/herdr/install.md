@@ -6,11 +6,12 @@ after explicit acceptance. Every skill install names an exact tag (W012).
 ## 1. Herdr itself (the multiplexer)
 
 Install Herdr through its own documented paths — the install page
-`https://herdr.dev/docs/install/`, Homebrew (`brew install herdr`), mise
-(`mise use -g herdr`) or a release archive from
-`https://github.com/herdrdev/herdr/releases`. Pick one; never pipe a
-downloaded installer into a shell. Re-detect afterwards with
-`herdr --version`.
+`https://herdr.dev/docs/install/`, mise pinned (`mise use -g herdr@0.9.3`),
+Homebrew (`brew install herdr`, then confirm the version) or the release
+archive of the tag `https://github.com/herdrdev/herdr/releases/tag/v0.9.3`.
+Pick one; never pipe a downloaded installer into a shell. Re-detect
+afterwards with `herdr --version` (0.9.3 or later in the 0.9 line matches
+the pinned official skill).
 
 ## 2. The two skills (host)
 

@@ -65,8 +65,8 @@
         },
         "interface_from": {
           "type": "string",
-          "description": "Where the integer interface is read: json:<field> (command stdout is one JSON object), regex:<pattern> (first group of the first match on stdout), or file-json:<path>#<field>.",
-          "pattern": "^(json:[A-Za-z_][A-Za-z0-9_]*|regex:.+|file-json:(~/)?[A-Za-z0-9._/-]+#[A-Za-z_][A-Za-z0-9_]*)$"
+          "description": "Where the integer interface is read: json:<field> (command stdout is one JSON object), regex:<pattern> (first group of the first match on stdout), or file-json:~/<path>#<field> (machine-level files only; never a repository file).",
+          "pattern": "^(json:[A-Za-z_][A-Za-z0-9_]*|regex:.+|file-json:~/[A-Za-z0-9._/-]+#[A-Za-z_][A-Za-z0-9_]*)$"
         }
       },
       "oneOf": [

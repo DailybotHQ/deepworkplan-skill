@@ -58,7 +58,7 @@ Orchestrator plans are a special type of Core Hub DWP plan whose tasks **create 
 
 Instead of a single Core Hub plan that tries to implement everything across repos, an orchestrator plan:
 
-1. **Creates independent DWP plans** inside each affected sub-repository (e.g., `repositories/api-services/`, `repositories/web-app/`)
+1. **Creates independent DWP plans** inside each affected sub-repository (e.g., `repositories/api/`, `repositories/web-app/`)
 2. **Reads each repo's AGENTS.md and DWP guide** to generate contextually-correct child plans that follow that repo's own rules, validation commands, and conventions
 3. **Tracks child plan creation and execution status** from the orchestrator README
 4. **Supports independent execution** — each repo's agent can execute its child DWP autonomously
@@ -97,9 +97,9 @@ An orchestrator plan's README includes a **Child DWP Plans** section that tracks
 
 | # | Repository | Child Plan | Status | Depends On |
 |---|-----------|-----------|--------|-----------|
-| 1 | api-services | pending: {feature}_api | [ ] Created / [ ] Executed | — |
+| 1 | api | pending: {feature}_api | [ ] Created / [ ] Executed | — |
 | 2 | web-app | pending: {feature}_web | [ ] Created / [ ] Executed | Child #1 |
-| 3 | chatbot-functions | pending: {feature}_chatbot | [ ] Created / [ ] Executed | Child #1 |
+| 3 | functions | pending: {feature}_chatbot | [ ] Created / [ ] Executed | Child #1 |
 
 ### Execution Mode (pick one — see §13.6 for the selection algorithm)
 - [ ] **Contract-Parallel** (recommended default): children share a frozen design contract (from orchestrator design tasks) but don't need each other's runtime code; hand off concurrently, register `DONE`s as they arrive.
@@ -107,8 +107,8 @@ An orchestrator plan's README includes a **Child DWP Plans** section that tracks
 - [ ] **Sequential Runtime-Dependent**: one child's runtime code is required at BUILD time by another; hand off one at a time in dependency order (formerly labeled "Sequential with Output Handoff" — keep this label only for plans that truly need the predecessor's produced artifacts during implementation).
 
 ### Dependency Rules
-- Child #2 (web-app) depends on Child #1 (api-services) — API endpoints must exist before web views
-- Child #3 (chatbot-functions) depends on Child #1 (api-services) — API must be ready
+- Child #2 (web-app) depends on Child #1 (api) — API endpoints must exist before web views
+- Child #3 (functions) depends on Child #1 (api) — API must be ready
 ```
 
 Replace each `pending` slug with the child plan's allocated full basename
@@ -366,9 +366,9 @@ Typical dependency order:
   Data Layer (API/DB) → Service Layer (Chatbot/Gateway) → Presentation (Web App)
 
 Example:
-  api-services (models, endpoints) → web-app (views consuming endpoints)
-  api-services (models, endpoints) → chatbot-functions (handlers calling API)
-  api-services (models, endpoints) → discord-gateway (commands using API)
+  api (models, endpoints) → web-app (views consuming endpoints)
+  api (models, endpoints) → functions (handlers calling API)
+  api (models, endpoints) → gateway (commands using API)
 ```
 
 **Declaring dependencies:**
@@ -528,8 +528,8 @@ After a child DWP completes execution, its outputs are registered in the manifes
 
 ### Completed Output References
 
-#### Child #1: PLAN_001_feature_api (api-services)
-- **Declared outputs:** `repositories/api-services/.dwp/plans/PLAN_001_feature_api/analysis_results/API_CONTRACT.md`
+#### Child #1: PLAN_001_feature_api (api)
+- **Declared outputs:** `repositories/api/.dwp/plans/PLAN_001_feature_api/analysis_results/API_CONTRACT.md`
 - **Completion evidence:** that plan's `state.json` (`status: completed`) and its
   Final Review task log.
 - **Key outputs:**
@@ -628,10 +628,10 @@ This is the recommended mode when child DWPs have data dependencies. **Remember 
 ```markdown
 ## Task List
 - [ ] Task 1: Design API contract (direct task)
-- [ ] Task 2: Create child DWP for api-services (create_child_dwp)
+- [ ] Task 2: Create child DWP for api (create_child_dwp)
 - [ ] Task 3: Create child DWP for web-app (create_child_dwp)
 - [ ] Task 4: Integration checkpoint
-- [ ] Task 5: Execute child DWP for api-services (execute_child_dwp)
+- [ ] Task 5: Execute child DWP for api (execute_child_dwp)
 - [ ] Task 6: Execute child DWP for web-app (execute_child_dwp)
 - [ ] Task 7: Final Review
 ```
@@ -642,14 +642,14 @@ For complex dependency graphs where some children can run in parallel:
 
 ```text
 Dependency graph:
-  api-services ──→ web-app
-  api-services ──→ chatbot-functions
-  (web-app and chatbot-functions are independent of each other)
+  api ──→ web-app
+  api ──→ functions
+  (web-app and functions are independent of each other)
 
 Execution:
 1. Create ALL child DWPs
-2. Execute api-services child DWP → register outputs
-3. Execute web-app AND chatbot-functions (both depend only on api-services)
+2. Execute api child DWP → register outputs
+3. Execute web-app AND functions (both depend only on api)
 4. Register all outputs
 ```
 

@@ -273,7 +273,7 @@ _REPO_RE = re.compile(r'^[A-Za-z0-9-]+/[A-Za-z0-9._-]+$')
 _COMMAND_RE = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._/ -]*$')
 _PATH_RE = re.compile(r'^(~/)?[A-Za-z0-9._][A-Za-z0-9._/-]*$')
 _IFACE_RE = re.compile(r'^(json:[A-Za-z_][A-Za-z0-9_]*|regex:.+|'
-                       r'file-json:(~/)?[A-Za-z0-9._/-]+#[A-Za-z_][A-Za-z0-9_]*)$')
+                       r'file-json:~/[A-Za-z0-9._/-]+#[A-Za-z_][A-Za-z0-9_]*)$')
 
 
 def descriptor_errors(doc: Any, dirname: Optional[str] = None) -> List[str]:
@@ -386,6 +386,9 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
     if version is not None and not VERSION_RE.match(version):
         raise ConfigError('version %r is not a tag like v1.2.3' % version)
     path = os.path.join(dwp_root, 'config.json')
+    if os.path.islink(dwp_root) or os.path.islink(path):
+        raise ConfigError('%s or its .dwp directory is a symbolic link — the '
+                          'writer refuses to write through a link' % path)
     data: Dict[str, Any] = {}
     if os.path.exists(path):
         parsed, reason = read_config(path)

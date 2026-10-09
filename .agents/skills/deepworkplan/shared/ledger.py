@@ -103,6 +103,9 @@ class CollisionError(LedgerError):
     """The journal grew behind this writer's back (D2-9c). Exit 2."""
 
 
+READ_ONLY_MARK = 'read-only tree '
+
+
 class DelegationRefused(LedgerError):
     """A delegation the record layer does not authorize (recorded). Exit 5."""
 
@@ -828,8 +831,14 @@ class Writer:
         gate_cwd = self.repo_root()
         files = {}
         for rel in task.get('touched_surface', []):
-            path = rel if os.path.isabs(rel) else \
-                os.path.join(gate_cwd, rel)
+            path = rel if os.path.isabs(rel) else os.path.join(gate_cwd, rel)
+            root_real = os.path.realpath(gate_cwd)
+            # A glob is contained when its literal prefix is.
+            literal = path.split('*')[0].split('?')[0].split('[')[0] or path
+            if os.path.commonpath([os.path.realpath(literal),
+                                   root_real]) != root_real:
+                files[rel] = 'outside-repository'  # never read
+                continue
             files[rel] = _hash_surface(path)
         payload = {
             'command': command,
@@ -1388,6 +1397,16 @@ class Writer:
             latest[event.get('delegation_id')] = event
         return latest
 
+    def _tree_fingerprint(self):
+        """HEAD plus porcelain status of the repository (or 'none')."""
+        root = self.repo_root()
+        head, ok1 = self._git(['rev-parse', 'HEAD'], root)
+        status, ok2 = self._git(['status', '--porcelain=v1', '-uall'], root)
+        if not (ok1 and ok2):
+            return 'none'
+        return hashlib.sha256(('%s\n%s' % (head, status)).encode(
+            'utf-8')).hexdigest()[:32]
+
     def _refuse_delegation(self, task_id, reason):
         self._append_raw('refusal', {'subject': 'delegate %s' % task_id,
                                      'stage': 'dispatch', 'reason': reason},
@@ -1478,8 +1497,15 @@ class Writer:
                              'worktree', 'prompt_digest')}
             body.update({'task': task_id, 'delegation_id': did,
                          'state': 'launched'})
+            note = payload.get('note')
+            if read_only:
+                # A read-only delegate is allowed on an unmarked task only
+                # because it must not change the tree: record the tree's
+                # fingerprint now; collect refuses if it moved.
+                note = ('%s%s%s' % (READ_ONLY_MARK, self._tree_fingerprint(),
+                                    (' | ' + note) if note else ''))[:500]
             return self._append_raw('delegation', body, actor=actor,
-                                    ts=_utc_now(), note=payload.get('note'))
+                                    ts=_utc_now(), note=note)
         if op in ('collect', 'cancel'):
             did = payload.get('delegation_id')
             prior = self.delegations().get(did)
@@ -1499,14 +1525,35 @@ class Writer:
                 if state not in ('completed', 'failed'):
                     raise LedgerError('collect needs state completed|failed')
                 body['state'] = state
+                mark = (prior.get('note') or '')
+                if mark.startswith(READ_ONLY_MARK):
+                    launched = mark[len(READ_ONLY_MARK):].split(' ', 1)[0]
+                    if launched != self._tree_fingerprint():
+                        body['state'] = 'failed'
+                        self._append_raw(
+                            'delegation', body, actor=actor, ts=_utc_now(),
+                            note='read-only delegate: the working tree '
+                                 'changed between launch and collect')
+                        self._refuse_delegation(
+                            task_id, 'delegation %s was launched read-only but '
+                            'the working tree changed — recorded failed; run '
+                            'the task here or mark it parallel_safe' % did)
                 rp = payload.get('result_path')
                 if rp is not None:
+                    if not isinstance(rp, str) or not rp or \
+                            os.path.isabs(rp) or '..' in rp.split('/'):
+                        raise LedgerError('result_path must be a relative path '
+                                          'inside the plan or repository')
                     body['result_path'] = rp
                     for base in (self.r.dir, self.repo_root()):
                         full = os.path.join(base, rp)
-                        if os.path.isfile(full):
+                        real_base = os.path.realpath(base)
+                        real = os.path.realpath(full)
+                        if os.path.isfile(full) and \
+                                os.path.commonpath([real, real_base]) == \
+                                real_base:
                             body['result_digest'] = 'sha256:' + \
-                                _hash_file(full)
+                                _hash_file(real)
                             break
             return self._append_raw('delegation', body, actor=actor,
                                     ts=_utc_now(), note=payload.get('note'))
@@ -1656,18 +1703,24 @@ def _hash_surface(path):
             dirs[:] = sorted(d for d in dirs if d not in _SURFACE_SKIP)
             for name in sorted(files):
                 full = os.path.join(root, name)
+                if os.path.islink(full):
+                    members.append((os.path.relpath(full, path),
+                                    None))  # a link is named, never followed
+                    continue
                 members.append((os.path.relpath(full, path), full))
     elif any(ch in path for ch in '*?['):
         import glob as _glob
         for full in sorted(_glob.glob(path)):
-            if os.path.isfile(full):
+            if os.path.isfile(full) and not os.path.islink(full):
                 members.append((full, full))
     if not members:
         return None
     digest = hashlib.sha256()
     for rel, full in members:
         digest.update(rel.encode('utf-8') + b'\0')
-        digest.update((_hash_file(full) or '').encode('ascii') + b'\n')
+        value = ('link:' + os.readlink(os.path.join(path, rel))) if full is None \
+            else (_hash_file(full) or '')
+        digest.update(value.encode('utf-8') + b'\n')
     return digest.hexdigest()
 
 

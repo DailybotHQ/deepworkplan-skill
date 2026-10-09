@@ -218,3 +218,45 @@ _decide() { # _decide <head message> — run auto-release's decision step in $R
     grep -qF 'Merge the work to `main` with `[skip release]`' "$REPO_ROOT/.github/docs/WORKFLOWS.md"
     grep -q '^## 4.0.1 Pre-releases (manual)' "$REPO_ROOT/PUBLISHING.md"
 }
+
+# _gh_outputs <file> — parse a GITHUB_OUTPUT file with GitHub's semantics
+# (key=value lines and key<<DELIM … DELIM blocks) into key=value lines.
+_gh_outputs() {
+    python3 - "$1" <<'PY'
+import sys
+lines = open(sys.argv[1]).read().split('\n')
+i, out = 0, {}
+while i < len(lines):
+    line = lines[i]
+    if '<<' in line and '=' not in line.split('<<')[0]:
+        key, delim = line.split('<<', 1)
+        i += 1
+        buf = []
+        while i < len(lines) and lines[i] != delim:
+            buf.append(lines[i]); i += 1
+        out[key] = '\n'.join(buf)
+    elif '=' in line:
+        k, v = line.split('=', 1)
+        out[k] = v
+    i += 1
+for k, v in out.items():
+    if '\n' not in v:
+        print('%s=%s' % (k, v))
+PY
+}
+
+@test "a commit subject cannot inject step outputs through the multi-line delimiter" {
+    _repo 6.1.0 v6.1.0
+    git -C "$R" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "EOF"
+    git -C "$R" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "new_version=6.6.6"
+    _decide 'feat(skill)!: something new' >/dev/null
+    parsed="$(_gh_outputs "$R/out")"
+    printf '%s\n' "$parsed" | grep -qx 'new_version=7.0.0'
+    ! printf '%s\n' "$parsed" | grep -qx 'new_version=6.6.6'
+    for wf in auto-release prerelease; do
+        ! grep -q "echo 'commits<<EOF'" "$REPO_ROOT/.github/workflows/$wf.yml"
+        grep -q 'DELIM="EOF_$(openssl rand -hex 12)"' "$REPO_ROOT/.github/workflows/$wf.yml"
+    done
+    grep -q "if: github.ref == 'refs/heads/main'" "$REPO_ROOT/.github/workflows/prerelease.yml"
+    rm -rf "$R"
+}

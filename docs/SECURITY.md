@@ -117,6 +117,17 @@ read-only tools, and rolled trust boundaries out to every write-capable
 clone` without an exact `--branch vX.Y.Z` tag and no un-tagged `skills add`
 anywhere under the pack.
 
+## v7 attack surface and its controls
+
+| Surface | Control |
+|---|---|
+| Addon detect commands (`shared/resources.py`) | Only for addons **you enabled**; the command comes from the in-pack `addon.json` (schema forbids shell metacharacters), runs as argv without a shell, stdin closed, 10 s timeout, binary resolved to an absolute path (a relative `PATH` entry is refused); output only parsed for an interface integer; `file-json:` interfaces read machine-level `~/` files only. |
+| Addon registry writer (`shared/config.py`) | Atomic replace; refuses unknown keys, malformed versions, unparseable files and a symlinked `.dwp/` or `config.json`. |
+| Delegation (`ledger.py delegate`) | Recorded gate (v7 contract, `agent_delegation` grant, `parallel_safe` marker or a read-only delegate, an enabled and detected transport addon); a raw append cannot write a delegation; a read-only delegate's tree fingerprint is checked at collect (changed tree → recorded failed); `result_path` validated and contained before it is read; delegate output is data and `asserted` until this plan's gates observe it. |
+| Gate fingerprints | Touched-surface entries outside the repository are never read; links are named, never followed. |
+| Release workflows | Inputs and commit messages reach shell only through `env:`; multi-line step outputs use a random delimiter; versions are re-validated where used; pre-releases only from `main`, never moving a tag, never `latest`. |
+| Public hygiene (ecosystem amendment A3) | `scripts/check-public-hygiene.sh` runs in CI over tracked files: no personal paths, private organization/repository/tooling names, non-public `@dailybot.com` addresses or secret-shaped strings (fixtures must be obviously fake and listed in `.public-hygiene-allow` with a reason). History is not rewritten for non-secret names. |
+
 ## Security review (dogfooding the spec)
 
 Every Deep Work Plan in this repo ends with the mandatory **Security Review**

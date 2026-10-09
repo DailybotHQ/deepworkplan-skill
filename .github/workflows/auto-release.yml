@@ -139,10 +139,13 @@ jobs:
           echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
           echo "last_tag=$LAST_TAG" >> "$GITHUB_OUTPUT"
 
+          # Random heredoc delimiter: a commit subject that equals a fixed
+          # delimiter could otherwise inject further step outputs.
+          DELIM="EOF_$(openssl rand -hex 12)"
           {
-            echo 'commits<<EOF'
+            echo "commits<<${DELIM}"
             echo "$COMMITS"
-            echo 'EOF'
+            echo "${DELIM}"
           } >> "$GITHUB_OUTPUT"
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -152,6 +155,9 @@ jobs:
         env:
           NEW_VERSION: ${{ steps.version.outputs.new_version }}
         run: |
+          set -euo pipefail
+          # Re-validate where the value is used (defense in depth for sed).
+          printf '%s' "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'
           # Sync the new version across every SKILL.md under skills/deepworkplan
           # (router + create/execute/refine/resume/status/onboard + addons).
           while IFS= read -r f; do

@@ -59,9 +59,9 @@ interpreted as in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
   symlinks.
 - Its DWP usage **MUST** stay within the single repository; orchestrator capability
   (`DWP_SPECIFICATION.md` §8) is typically unused.
-- Live examples: all five Dailybot product repos — `api-services`, `web-app`,
-  `chatbot-functions`, `discord-gateway`, `dailybot.com`
-  (`ORCHESTRATOR_MANIFEST.md` registry: "All 5 repos are the individual archetype").
+- Live examples: every product repository of the audited organization — an
+  API, a web app, serverless functions, a chat gateway and a marketing site —
+  is the individual archetype.
 
 ---
 

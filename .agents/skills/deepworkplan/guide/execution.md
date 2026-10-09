@@ -124,7 +124,7 @@ The report adapts its emphasis based on plan type (code, docs, research, refacto
 
 ## 🔄 Multi-Project Commit Workflow
 
-> **CRITICAL for plans that span multiple repositories (repositories/api-services, repositories/chatbot-functions, repositories/web-app, repositories/discord-gateway, etc.)**
+> **CRITICAL for plans that span multiple repositories (repositories/api, repositories/functions, repositories/web-app, repositories/gateway, etc.)**
 >
 > **For complex multi-repo features**, consider using an **Orchestrator Plan** instead of a direct multi-project plan. Orchestrator plans create child DWP plans in each sub-repository, leveraging each repo's own AGENTS.md and validation commands. See **section 13**.
 
@@ -139,25 +139,25 @@ This workflow applies when a Deep Work Plan involves changes to **multiple sub-p
 1. **Identify affected repositories:**
    ```bash
    # Check which repos have changes (from workspace root)
-   cd repositories/api-services && git status
-   cd ../chatbot-functions && git status
+   cd repositories/api && git status
+   cd ../functions && git status
    cd ../web-app && git status
-   cd ../discord-gateway && git status
+   cd ../gateway && git status
    ```
 
 2. **Run validations in each affected repository:**
    ```bash
    # API Services (from workspace root)
-   cd repositories/api-services && codecheck
+   cd repositories/api && codecheck
 
    # Chatbot Functions
-   cd ../chatbot-functions && npm run test && npm run eslint:check
+   cd ../functions && npm run test && npm run eslint:check
 
    # Web App
    cd ../web-app && npm run test && npm run lint
 
    # Discord Gateway
-   cd ../discord-gateway && npm run test && npm run eslint:check
+   cd ../gateway && npm run test && npm run eslint:check
    ```
 
 3. **Commit and push in each repository:**
@@ -224,21 +224,21 @@ When executing multi-project plans, the agent **MUST**:
 
 ### Example: Complete Task Workflow
 
-**Scenario:** Task 3 of PLAN_006_user_preferences modifies `repositories/api-services` and `repositories/web-app`
+**Scenario:** Task 3 of PLAN_006_user_preferences modifies `repositories/api` and `repositories/web-app`
 
 ```bash
 # 1. Work on the task (implementation)
 # ... agent makes changes ...
 
 # 2. Run validations (from workspace root)
-cd repositories/api-services && codecheck
+cd repositories/api && codecheck
 cd ../web-app && npm run test && npm run lint
 
 # 3. Fill each task's Completion & Log and update the plan projections
 #    (task log → README checkbox/status → PROGRESS.md)
 #
-# 4. Commit in api-services
-cd ../api-services
+# 4. Commit in api
+cd ../api
 git add -A
 git commit -m "feat(api): add user preferences model and endpoints - Task 3 of PLAN_006_user_preferences"
 git push
@@ -256,7 +256,7 @@ cd ..
 
 # 7. Report to user
 # "Task 3 complete. Committed and pushed:
-#  - api-services: feat(api): add user preferences model and endpoints
+#  - api: feat(api): add user preferences model and endpoints
 #  - web-app: feat(ui): add user preferences settings page"
 ```
 
