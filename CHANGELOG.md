@@ -9,6 +9,52 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.0.0] — 2026-10-09
+
+### Changes
+
+- feat(skill)!: DeepWorkPlan v7.0.0 — fixes from the beta field report (#63) [graduate]
+- fix(shared): resolve the pre-merge local review findings - Task 12 of PLAN_005_v7_final_release
+- docs(skill): label the v7 surface stable for the 7.0.0 release - Task 12 of PLAN_005_v7_final_release
+- test(skill): verify a repository holding v5, v6 and v7 plans in one run - Task 11 of PLAN_005_v7_final_release
+- chore(skill): pin the final ecosystem tags and review the plan range - Task 10 of PLAN_005_v7_final_release
+- feat(skill): a short v7 upgrade path for onboarded repos, a delegator drift report, version discovery - Task 9 of PLAN_005_v7_final_release
+- fix(shared): gates in containers, honest reuse, a quiet start and a deterministic projection - Task 8 of PLAN_005_v7_final_release
+- feat(shared): a machine-readable host capability record; vim without its surface is reported - Task 7 of PLAN_005_v7_final_release
+- feat(shared): a shared addon registry, notes for deferred installs, back-filled on upgrade - Task 6 of PLAN_005_v7_final_release
+- feat(shared): plan-scoped invariants gate completion; ledger.py amend is one resumable amendment - Task 5 of PLAN_005_v7_final_release
+- fix(shared): contract validation catches what the gate runner refuses - Task 4 of PLAN_005_v7_final_release
+- feat(skill): human sign-off closes asserted criteria, with an explicit authority marker - Task 3 of PLAN_005_v7_final_release
+- fix(verify): judge v6/v7 plans by their own records - Task 2 of PLAN_005_v7_final_release
+- chore(repo): apply the public repository standard (ecosystem A3) (#61) [skip release]
+- fix(repo): resolve the Final Review local-review findings - Task 4 of PLAN_004_public_repository_standard
+- chore(repo): verify the GitHub settings of the public repository standard - Task 3 of PLAN_004_public_repository_standard
+- ci(release): publish the CHANGELOG section as the release notes - Task 2 of PLAN_004_public_repository_standard
+- docs(repo): add the public repository standard community files - Task 1 of PLAN_004_public_repository_standard
+- fix(skill): resolve the v7 Final Review findings (#60) [skip release]
+- fix(skill): resolve the Final Review local-review findings - Task 18 of PLAN_003_v7_beta_ecosystem_addons
+- docs(skill): index the v7 surface in the contributor guide - Task 18 of PLAN_003_v7_beta_ecosystem_addons
+- chore(skill): refresh the dogfood mirror to 7.0.0-beta.1 - Task 18 of PLAN_003_v7_beta_ecosystem_addons
+- feat(skill)!: DeepWorkPlan v7 — addon registry, descriptors, abilities, v7 delegation records and ecosystem integrators (#59) [skip release]
+- fix(shared): never label a pre-release pack as a release in benchmark records - Task 16 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): pin the ecosystem products to their released tags and smoke them - Task 15 of PLAN_003_v7_beta_ecosystem_addons
+- fix(skill): harden the v7 surface and add the public-hygiene check - Task 14 of PLAN_003_v7_beta_ecosystem_addons
+- docs(skill): document the v7 surface and set the DWP standard to 7.0.0 - Task 13 of PLAN_003_v7_beta_ecosystem_addons
+- ci(release): add a manual pre-release channel that never moves the stable line - Task 12 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons)!: rewrite the devcontainer addon as a vendor-neutral devcontainer-kit integrator - Task 11 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons)!: rewrite the herdr addon as a thin integrator of herdr-peers - Task 10 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): add the agentkit addon as the headless delegation transport - Task 9 of PLAN_003_v7_beta_ecosystem_addons
+- feat(skill): wire delegation into create, execute, status and verify - Task 8 of PLAN_003_v7_beta_ecosystem_addons
+- feat(skill)!: add the v7 contract generation with delegation records - Task 7 of PLAN_003_v7_beta_ecosystem_addons
+- feat(shared): compute addon-provided abilities at runtime, never persisted - Task 6 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): ship an addon.json descriptor for every in-pack addon - Task 5 of PLAN_003_v7_beta_ecosystem_addons
+- feat(skill): add the addon registry to .dwp/config.json with one shared reader - Task 4 of PLAN_003_v7_beta_ecosystem_addons
+- test(skill): guard the standalone methodology across addon configurations - Task 3 of PLAN_003_v7_beta_ecosystem_addons
+- feat(addons): integrate the vim editor addon as a pinned thin integrator - Task 2 of PLAN_003_v7_beta_ecosystem_addons
+- fix(skill): refresh dogfood pins and make the suite portable - Task 1 of PLAN_003_v7_beta_ecosystem_addons
+- fix(shared): keep benchmark self-test version fixtures distinct (#58)
+
+
 ## [7.0.0-beta.1] — 2026-10-09 (pre-release)
 
 ### Changes
