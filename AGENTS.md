@@ -83,7 +83,7 @@ correctness, clarity, simplicity, and verified completion.
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
 | Launch / publishing playbook | [PUBLISHING.md](PUBLISHING.md) |
 | Router meta-skill (version source of truth) | [skills/deepworkplan/SKILL.md](skills/deepworkplan/SKILL.md) |
-| Normative specification (v5 base plus v6 extensions) | [skills/deepworkplan/spec/](skills/deepworkplan/spec/README.md) |
+| Normative specification (v5 base, v6 extensions, v7 additions) | [skills/deepworkplan/spec/](skills/deepworkplan/spec/README.md) |
 | `create` sub-skill | [skills/deepworkplan/create/SKILL.md](skills/deepworkplan/create/SKILL.md) |
 | `execute` sub-skill | [skills/deepworkplan/execute/SKILL.md](skills/deepworkplan/execute/SKILL.md) |
 | `refine` sub-skill | [skills/deepworkplan/refine/SKILL.md](skills/deepworkplan/refine/SKILL.md) |
@@ -98,12 +98,9 @@ correctness, clarity, simplicity, and verified completion.
 | Reasoning-over-copy-paste principle | [skills/deepworkplan/shared/adaptation.md](skills/deepworkplan/shared/adaptation.md) |
 | Runtime troubleshooting decision path (read only when something is wrong) | [skills/deepworkplan/shared/troubleshooting.md](skills/deepworkplan/shared/troubleshooting.md) |
 | Onboarding presets (per-stack) | [skills/deepworkplan/onboard/presets/](skills/deepworkplan/onboard/presets/README.md) |
-| Devcontainer addon (opt-in) | [skills/deepworkplan/addons/devcontainer/SKILL.md](skills/deepworkplan/addons/devcontainer/SKILL.md) |
-| Dailybot addon (opt-in) | [skills/deepworkplan/addons/dailybot/SKILL.md](skills/deepworkplan/addons/dailybot/SKILL.md) |
+| Opt-in addons (devcontainer, dailybot, dependency-upgrade, design-system, agentkit, herdr, vim) — mechanism, registry, descriptors | [skills/deepworkplan/addons/README.md](skills/deepworkplan/addons/README.md) · [spec/CONFIG.md](skills/deepworkplan/spec/CONFIG.md) · [spec/ADDONS.md](skills/deepworkplan/spec/ADDONS.md) |
 | AI Diff Reviewer addon (required local review, optional CI surface) | [skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md](skills/deepworkplan/addons/ai-diff-reviewer/SKILL.md) |
-| Dependency Upgrade addon (opt-in) | [skills/deepworkplan/addons/dependency-upgrade/SKILL.md](skills/deepworkplan/addons/dependency-upgrade/SKILL.md) |
-| Design System addon (opt-in) | [skills/deepworkplan/addons/design-system/SKILL.md](skills/deepworkplan/addons/design-system/SKILL.md) |
-| Workflows reference (`auto-release`, `ci`, `self-review`) | [.github/docs/WORKFLOWS.md](.github/docs/WORKFLOWS.md) |
+| Workflows reference (`auto-release`, `prerelease`, `ci`, `self-review`) | [.github/docs/WORKFLOWS.md](.github/docs/WORKFLOWS.md) |
 
 ## Project Overview
 
@@ -140,7 +137,8 @@ deepworkplan-skill/
 ├── .vscode_example/                            ← shared editor settings template (NOT installed)
 ├── .github/
 │   ├── workflows/auto-release.yml              ← conventional-commit auto-release + addon dogfood (NOT installed)
-│   ├── workflows/ci.yml                        ← frontmatter + shellcheck + bats + smoke (NOT installed)
+│   ├── workflows/prerelease.yml                ← manual X.Y.Z-beta.N pre-release, never latest (NOT installed)
+│   ├── workflows/ci.yml                        ← frontmatter + shellcheck + bats + smoke + public hygiene (NOT installed)
 │   ├── docs/WORKFLOWS.md                       ← per-workflow reference (Trigger / Jobs / Gate / Failures) (NOT installed)
 │   ├── PULL_REQUEST_TEMPLATE.md                ← PR checklist (NOT installed)
 │   ├── ISSUE_TEMPLATE/                         ← bug_report + feature_request + config.yml (NOT installed)
@@ -152,14 +150,16 @@ deepworkplan-skill/
 ├── skills-lock.json                            ← pinned versions/hashes for the vendored skills (NOT installed)
 ├── .review/extension.md                        ← repo-tailored severity overrides read by both local skill + CI Action
 ├── scripts/
-│   └── validate-frontmatter.py                 ← schema check on every SKILL.md (NOT installed)
+│   ├── validate-frontmatter.py                 ← schema check on every SKILL.md (NOT installed)
+│   ├── check-public-hygiene.sh                 ← CI: no private names, personal paths or secrets (NOT installed)
+│   └── smoke-ecosystem-pins.sh                 ← release: installs each pinned product, checks its interface (NOT installed)
 ├── tests/                                      ← bats-core tests: context-sh.bats, setup-sh.bats (NOT installed)
 ├── docs/                                       ← contributor docs: DESIGN, INSTALLATION, OPENCLAW, SUB_SKILL_GUIDE (NOT installed)
 ├── tmp/                                        ← gitignored scratch space (only .gitkeep tracked; NOT installed)
 └── skills/deepworkplan/                        ← THE INSTALLED ARTIFACT — only this ships
     ├── SKILL.md                                ← router (version source of truth)
-    ├── spec/                                   ← retained v5 base and current v6 extensions (ships)
-    ├── shared/                                 ← context.sh, plan_paths.py (numbered plan allocation), dwp-paths.md, adaptation.md, troubleshooting.md, install-verification.md, update-state.py, state_contract.py, finalize_plan.py
+    ├── spec/                                   ← retained v5 base, v6 extensions, v7 additions (ships)
+    ├── shared/                                 ← context.sh, plan_paths.py (numbered plan allocation), dwp-paths.md, adaptation.md, troubleshooting.md, install-verification.md, update-state.py, state_contract.py, finalize_plan.py, config.py (.dwp/config.json + addon registry)
     ├── create/SKILL.md                         ← create a Deep Work Plan
     ├── execute/SKILL.md                        ← execute a plan task-by-task
     ├── refine/SKILL.md                         ← modify a plan / promote Lite to Full
@@ -171,7 +171,8 @@ deepworkplan-skill/
     ├── guide/GUIDE.md                          ← methodology guide
     ├── examples/                               ← plan + orchestrator templates
     └── addons/                                 ← opt-in addons (each with its own SKILL.md + INTEGRATION.md)
-        ├── devcontainer/                       ← compose-based devcontainer scaffolding
+        ├── devcontainer/                       ← thin integrator of devcontainer-kit (dck)
+        ├── agentkit/ · herdr/ · vim/           ← thin integrators of coding-agents-kit, herdr-peers, deepworkplan-vim
         ├── dailybot/                           ← Dailybot standup reporting for plan lifecycle events
         ├── ai-diff-reviewer/                   ← AI Diff Reviewer for PR reviews (defers to upstream skill + Action)
         ├── dependency-upgrade/                 ← safe, batched, revertible dependency upgrades
@@ -253,7 +254,7 @@ The `auto-release.yml` workflow runs on every merge to `main` and:
 
 1. Reads the current version from the **router** `skills/deepworkplan/SKILL.md`
  frontmatter (single source of truth).
-2. Looks at commits merged since the last `vX.Y.Z` tag.
+2. Looks at commits merged since the last stable `vX.Y.Z` tag (pre-releases ignored).
 3. Decides the bump level:
  - `feat(scope)!:` or `BREAKING CHANGE:` in body → **MAJOR**
  - `feat(scope):` → **MINOR**
