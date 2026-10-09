@@ -36,6 +36,7 @@ human-facing version of the same rules.
 - [ ] CHANGELOG.md NOT hand-edited and `version:` fields NOT hand-bumped (the auto-release bot owns them)
 - [ ] Public surface preserved (the six `/deepworkplan-*` slash commands, the `.dwp/` convention, `setup.sh` flags, skill `name` fields) — or major version bumped (`feat(...)!:`) with a migration note
 - [ ] Commit messages follow `<type>(<scope>): description` format
+- [ ] No secrets and no private context (personal paths, private repository or tooling names, internal hostnames, customer data) — `bash scripts/check-public-hygiene.sh` passes
 
 ## Test plan
 

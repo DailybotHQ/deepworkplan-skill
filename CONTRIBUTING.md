@@ -300,6 +300,11 @@ jobs (the latest commit's status is authoritative).
 - [ ] Run the local checks (shellcheck, bats, frontmatter, setup smoke).
 - [ ] Confirm your commit messages follow the format and reflect the intended bump level.
 - [ ] If you touched the public surface (slash commands, `.dwp/` convention, `setup.sh` flags, skill names), call it out in the PR body.
+- [ ] Run `bash scripts/check-public-hygiene.sh` — no secrets, personal paths or private names in tracked files.
+
+No DCO sign-off is required; by opening a PR you agree to license your
+contribution under the repository's MIT license. One review is required before
+merge (maintainers may bypass for release automation).
 
 ### CI gates
 
@@ -372,7 +377,7 @@ reject something whose rationale we don't see yet.
 ### Bugs
 
 Open an issue using the bug report template
-(`.github/ISSUE_TEMPLATE/bug_report.md`). Include the agent and version, your OS,
+(`.github/ISSUE_TEMPLATE/bug_report.yml`). Include the agent and version, your OS,
 the skill version (from `skills/deepworkplan/SKILL.md`), the install method, and
 the exact behavior.
 

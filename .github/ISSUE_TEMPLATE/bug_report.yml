@@ -1,0 +1,84 @@
+name: Bug report
+description: Something isn't working in the skill
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Do not include secrets, private repository names,
+        internal hostnames or plan contents from `.dwp/`** — redact them, or report
+        privately per [SECURITY.md](https://github.com/DailybotHQ/deepworkplan-skill/blob/main/SECURITY.md).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: 1-2 sentences describing the unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: 1-2 sentences describing what should have happened.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: AI agent and version
+      placeholder: Claude Code 2.x, Cursor, Codex, Gemini, Copilot, Cline, OpenClaw, other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: macOS / Linux distro / Windows native / WSL2 / Docker
+  - type: input
+    id: skill-version
+    attributes:
+      label: Skill version
+      description: The `version:` field in `skills/deepworkplan/SKILL.md` (or `npx skills list`).
+    validations:
+      required: true
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: Install method
+      options:
+        - npx skills add
+        - git clone + setup.sh
+        - openclaw skills install
+        - other
+  - type: input
+    id: sub-skill
+    attributes:
+      label: Which sub-skill or addon (if applicable)
+      placeholder: onboard / create / execute / refine / resume / status / verify / upgrade / an addon
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or output
+      render: shell
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Workaround you found, if any
+  - type: checkboxes
+    id: confidentiality
+    attributes:
+      label: Confidentiality
+      options:
+        - label: This report contains no secrets, credentials, private names or internal hostnames.
+          required: true

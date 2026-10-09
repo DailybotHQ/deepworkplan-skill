@@ -141,7 +141,7 @@ deepworkplan-skill/
 │   ├── workflows/ci.yml                        ← frontmatter + shellcheck + bats + smoke + public hygiene (NOT installed)
 │   ├── docs/WORKFLOWS.md                       ← per-workflow reference (Trigger / Jobs / Gate / Failures) (NOT installed)
 │   ├── PULL_REQUEST_TEMPLATE.md                ← PR checklist (NOT installed)
-│   ├── ISSUE_TEMPLATE/                         ← bug_report + feature_request + config.yml (NOT installed)
+│   ├── ISSUE_TEMPLATE/ · CODEOWNERS · dependabot.yml ← issue forms + config.yml, owners, Actions updates (NOT installed)
 │   └── markdown-link-check.json                ← link-check config (NOT installed)
 ├── .agents/skills/                             ← THREE vendored dogfood copies (NOT installed on end-user machines)
 │   ├── deepworkplan/                           ← byte-identical dogfood copy of this skill (sync via scripts/refresh-dogfood-skill.sh; NOT auto-overwritten on release)
