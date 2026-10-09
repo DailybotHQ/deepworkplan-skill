@@ -9,7 +9,7 @@
 
 setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-    WORK="$(mktemp -d)"
+    WORK="$(cd "$(mktemp -d)" && pwd -P)"  # physical path: macOS /var -> /private/var
 }
 
 teardown() { rm -rf "$WORK"; }

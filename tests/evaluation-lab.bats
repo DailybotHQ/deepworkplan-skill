@@ -21,6 +21,13 @@ setup() {
   printf "print('hello')\n" > "$SEED_ABS/src/app.py"
 }
 
+# lab run freezes pack directories read-only; restore write permission so
+# bats can remove the per-test temp tree (otherwise the run exits non-zero
+# on cleanup even when every test passed).
+teardown() {
+  chmod -R u+w "$WORK" 2>/dev/null || true
+}
+
 # Build a pack with a REAL export-form manifest under
 # $WORK/labroot/packs/vtest/<tag>-<digest16> and echo the directory name.
 _make_pack() {

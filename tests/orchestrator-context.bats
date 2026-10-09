@@ -24,7 +24,7 @@ setup() {
     REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
     SKILL="$REPO_ROOT/skills/deepworkplan"
     CONTEXT_SH="$SKILL/shared/context.sh"
-    TMPDIR_TEST="$(mktemp -d)"
+    TMPDIR_TEST="$(cd "$(mktemp -d)" && pwd -P)"  # physical path: macOS /var -> /private/var
     HUB="$TMPDIR_TEST/hub"
     CHILD="$HUB/repositories/childrepo"
     OTHER_CHILD="$HUB/workareas/child-x"

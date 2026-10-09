@@ -242,7 +242,7 @@ EOF
 @test "a README still saying 'Plan Status: materializing' fails as a partial materialization" {
     make_conformant_repo
     make_new_plan
-    sed -i 's/Plan Status: *[0-9]*\/[0-9]* completed/Plan Status: materializing/' .dwp/plans/PLAN_new_fixture/README.md
+    sed -i.bak 's/Plan Status: *[0-9]*\/[0-9]* completed/Plan Status: materializing/' .dwp/plans/PLAN_new_fixture/README.md && rm -f .dwp/plans/PLAN_new_fixture/README.md.bak
     run bash "$CONFORMANCE_SH" --plan PLAN_new_fixture
     [ "$status" -eq 1 ]
     [[ "$output" =~ "partial materialization" ]]

@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-dailybot
-description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill (DailybotHQ/agent-skill, currently 3.23.2) and/or the Dailybot CLI (DailybotHQ/cli, >= 3.9.0), wiring the plan lifecycle into best-effort agent updates - kickoff when a plan starts, significant task completions, a blocked report when an unattended run halts, and a milestone on plan completion - with payloads derived from the plan's state layer, and optionally committing the Dailybot skill's deterministic hook enforcement (dailybot hook lifecycle hooks) so the agent harness itself reminds agents about unreported work. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
+description: Optional DeepWorkPlan addon that connects an AI-first repo to the developer's Dailybot team — installing (with consent) the Dailybot agent skill (DailybotHQ/agent-skill, currently 3.23.3) and/or the Dailybot CLI (DailybotHQ/cli, >= 3.9.0), wiring the plan lifecycle into best-effort agent updates - kickoff when a plan starts, significant task completions, a blocked report when an unattended run halts, and a milestone on plan completion - with payloads derived from the plan's state layer, and optionally committing the Dailybot skill's deterministic hook enforcement (dailybot hook lifecycle hooks) so the agent harness itself reminds agents about unreported work. Opt-in, never required, never blocks the work, reconciles existing setups instead of clobbering them, and defers all auth to the Dailybot skill's own consent flow. Use when the developer or team already uses Dailybot and wants DWP progress visible to humans.
 version: "6.1.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
@@ -17,7 +17,7 @@ be AI-first, and it **never blocks** the actual work.
 
 > ## The rule that overrides everything: this addon DEFERS, it does not reinvent
 >
-> The official **Dailybot agent skill** (currently **3.23.2**) already owns
+> The official **Dailybot agent skill** (currently **3.23.3**) already owns
 > install, consent, auth, context detection, the writing style, and the
 > non-blocking guarantee. It exposes **17 coordinated capabilities** (report,
 > ask, messages, email, chat, conversations, health, check-ins, kudos, teams,
@@ -102,8 +102,8 @@ without their explicit acceptance** — and where the Dailybot skill's own conse
 flow applies, defer to it rather than prompting yourself.
 
 - **Dailybot agent skill** (the recommended path — it brings the consent/auth
-  flow and the full 17-capability pack; currently **3.23.2**):
-  - `npx --yes skills add DailybotHQ/agent-skill@v3.23.2 --skill dailybot -y`
+  flow and the full 17-capability pack; currently **3.23.3**):
+  - `npx --yes skills add DailybotHQ/agent-skill@v3.23.3 --skill dailybot -y`
     (cross-agent, recommended — **pinned to a published tag** so the exact
     content is reproducible; both `--yes` and `-y` are required in non-TTY
     contexts), or
@@ -192,7 +192,7 @@ This is the integration value. Reasoning guidance is in
 
 ### Step 3b — Offer deterministic hook enforcement (OPT-IN, defer to the Dailybot skill)
 The lifecycle wiring above is prompt-layer: it relies on the model remembering
-to report. With `dailybot-cli` **>= 3.9.0** (included in the current **3.23.2**
+to report. With `dailybot-cli` **>= 3.9.0** (included in the current **3.23.3**
 skill pack), the Dailybot skill ships **deterministic hook enforcement**
 (`report/hooks.md`): harness lifecycle hooks (`dailybot hook session-start |
 activity | post-commit | stop | dismiss`) backed by a local per-repo report
@@ -227,7 +227,7 @@ This is the strongest version of the visibility this addon exists for.
 
 ### Step 4 — Validate (SPEC §Validation)
 Run the validation checklist and report: whether the skill/CLI is present (skill
-**>= 3.23.2** recommended, CLI **>= 3.9.0**), that auth was deferred (not
+**>= 3.23.3** recommended, CLI **>= 3.9.0**), that auth was deferred (not
 reinvented), that the report step is wired as **optional + non-blocking**,
 whether hook enforcement was offered/installed, the identity source if any, and
 any deferred items.
