@@ -564,6 +564,14 @@ def criterion_states(contract, events, task_id):
     start = task_start_seq_of(events, task_id)
     accepted_by = {c['id']: c.get('accepted_evidence', [])
                    for c in contract['acceptance']['criteria']}
+    # F-12: an amendment that revised a criterion lists it in
+    # evidence_invalidated; its earlier gate runs never satisfy it again
+    invalid_before = {}
+    for event in events:
+        if isinstance(event, dict) and event.get('type') == 'amendment':
+            for ref in event.get('evidence_invalidated') or []:
+                invalid_before[ref] = max(invalid_before.get(ref, 0),
+                                          event.get('seq', 0))
     states = []
     for intent in task.get('gate_intent', []):
         cid = intent.get('criterion')
@@ -577,7 +585,8 @@ def criterion_states(contract, events, task_id):
                     event.get('task') != task_id:
                 continue
             trust = event.get('trust')
-            if start is None or event.get('seq', 0) < start:
+            if start is None or event.get('seq', 0) < start or \
+                    event.get('seq', 0) < invalid_before.get(cid, 0):
                 stale.append(event.get('seq'))
                 continue
             if trust in wanted and event.get('exit_code') == 0 and \
@@ -589,6 +598,37 @@ def criterion_states(contract, events, task_id):
             'criterion': cid, 'satisfied': False,
             'started_seq': start, 'stale_seqs': stale})
     return states
+
+
+def invariant_findings(contract, events, start_seq):
+    """F-03: declared invariants not verified for the attempt at start_seq.
+
+    Every declared invariant is plan-scoped: completion needs its latest
+    evaluation (the scheduler's closed grammar, an observation
+    ``INV-<id>: pass`` / ``INV-<id>: fail: <reason>``) to be a pass
+    recorded at or after the task's start. A task-specific property is an
+    acceptance criterion of that task, not an invariant.
+    """
+    findings = []
+    for inv in contract.get('invariants') or []:
+        iid = inv.get('id')
+        latest = None
+        for event in events:
+            statement = event.get('statement') if isinstance(event, dict) \
+                and event.get('type') == 'observation' else None
+            if isinstance(statement, str) and (
+                    statement == iid + ': pass' or
+                    statement == iid + ': fail' or
+                    statement.startswith(iid + ': fail:')):
+                latest = event
+        if latest is None:
+            findings.append('%s never evaluated' % iid)
+        elif start_seq is not None and latest.get('seq', 0) < start_seq:
+            findings.append('%s last evaluated at seq %s, before the task '
+                            'start %s' % (iid, latest.get('seq'), start_seq))
+        elif latest['statement'] != iid + ': pass':
+            findings.append('%s failed (seq %s)' % (iid, latest.get('seq')))
+    return findings
 
 
 def task_complete(contract, events, task_id):
@@ -1470,6 +1510,139 @@ class Writer:
                                             evidence_path),
             trust='asserted', evidence_path=evidence_path)
 
+    def amend(self, draft_file, authority, reason, marker,
+              mechanism=None):
+        """F-12: one guarded, resumable contract amendment.
+
+        Order (spec/V6_LIFECYCLE.md section 5): the validated revision is
+        staged as ``contracts/.contract.rN.json.pending`` (invisible to the
+        live-contract loader), then the ``amendment`` event (the affected
+        criteria in ``evidence_invalidated``: their earlier gate runs stop
+        counting), then a fresh ``approval`` citing the NEW contract id,
+        and only then the atomic rename into ``contracts/`` switches the
+        live contract. Re-running the same amendment after a crash resumes
+        at the first missing step; a different draft is refused while one
+        is pending.
+        """
+        self._check_position()
+        live, live_id = self.r.contract, self.r.contract_id
+        with open(draft_file, encoding='utf-8') as fh:
+            draft = json.load(fh)
+        if not isinstance(draft, dict):
+            raise LedgerError('amend: the draft is not a JSON object')
+        draft.pop('contract_id', None)
+        revision = live.get('revision', 1) + 1
+        if draft.get('revision') == live.get('revision', 1) and \
+                draft.get('parent_contract_id') == \
+                live.get('parent_contract_id'):
+            # a draft edited from a copy of the live contract: its chain
+            # fields are the live ones - derive the next link from them
+            draft.pop('revision', None)
+            draft.pop('parent_contract_id', None)
+        draft.setdefault('revision', revision)
+        draft.setdefault('parent_contract_id', live_id)
+        if draft.get('revision') != revision or \
+                draft.get('parent_contract_id') != live_id:
+            raise LedgerError(
+                'amend refused: the draft must be revision %d with parent '
+                '%s (the live contract) - amendments chain from the live '
+                'revision, never from an older one' % (revision, live_id[:12]))
+        if contract_v6.contract_generation(draft) != \
+                contract_v6.contract_generation(live) or \
+                draft.get('plan') != live.get('plan'):
+            raise LedgerError('amend refused: an amendment keeps the plan '
+                              'and its generation (%s)' %
+                              contract_v6.contract_generation(live))
+        chain_dir = os.path.join(self.r.dir, 'contracts')
+        parents = {}
+        sources = ([os.path.join(chain_dir, n)
+                    for n in sorted(os.listdir(chain_dir))
+                    if n.endswith('.json')]
+                   if os.path.isdir(chain_dir) else
+                   [os.path.join(self.r.dir, 'contract.json')])
+        for path in sources:
+            doc = PlanRecords._read_json(path)
+            parents[contract_v6.compute_contract_id(doc)] = doc
+        errors = contract_v6.contract_errors(draft, parents=parents) or \
+            contract_v6.closure_errors(draft) or \
+            contract_v6.gate_command_errors(draft)
+        if errors:
+            raise LedgerError('amend refused: %s' % errors[0])
+        new_id = contract_v6.compute_contract_id(draft)
+        final = os.path.join(chain_dir, 'contract.r%d.json' % revision)
+        pending = os.path.join(chain_dir,
+                               '.contract.r%d.json.pending' % revision)
+        tag = 'amendment to revision %d contract %s' % (revision, new_id)
+        if not os.path.isdir(chain_dir):
+            os.makedirs(chain_dir)
+            with open(os.path.join(self.r.dir, 'contract.json'), 'rb') as fh:
+                first = fh.read()
+            _atomic_write(os.path.join(chain_dir, 'contract.r1.json'),
+                          first.decode('utf-8'))
+        if os.path.exists(pending):
+            staged = PlanRecords._read_json(pending)
+            if staged.get('contract_id') != new_id:
+                raise LedgerError(
+                    'amend refused: a different revision %d is pending (%s) '
+                    '- resume it with its own draft first'
+                    % (revision, str(staged.get('contract_id'))[:12]))
+        else:
+            _atomic_write(pending, json.dumps(
+                dict(draft, contract_id=new_id), sort_keys=True,
+                indent=2) + '\n')
+        old_crit = {c['id']: c for c in live['acceptance']['criteria']}
+        new_crit = {c['id']: c for c in draft['acceptance']['criteria']}
+        intents = {}
+        for doc, side in ((live, 0), (draft, 1)):
+            for task in doc.get('tasks', []):
+                for intent in task.get('gate_intent', []):
+                    intents.setdefault(intent.get('criterion'),
+                                       [None, None])[side] = \
+                        (task['id'], intent.get('check'))
+        changed = sorted(cid for cid in set(old_crit) | set(new_crit)
+                         if old_crit.get(cid) != new_crit.get(cid) or
+                         (intents.get(cid) or [None, None])[0] !=
+                         (intents.get(cid) or [None, None])[1])
+        affected = sorted({side[0] for cid in changed
+                           for side in (intents.get(cid) or [])
+                           if side is not None})
+        actor = {'kind': 'human', 'identity': authority}
+        if not any(e.get('type') == 'amendment' and
+                   tag in (e.get('note') or '') for e in self.events):
+            self._append_raw(
+                'amendment',
+                {'original_criterion': '; '.join(
+                    '%s: %s' % (c, (old_crit.get(c) or {}).get(
+                        'observable_check', 'absent'))
+                    for c in changed)[:2000] or 'no criterion changed',
+                 'revised_criterion': '; '.join(
+                     '%s: %s' % (c, (new_crit.get(c) or {}).get(
+                         'observable_check', 'removed'))
+                     for c in changed)[:2000] or 'no criterion changed',
+                 'observed_finding': reason, 'reason': reason,
+                 'disposition': 'revised', 'authority': authority,
+                 'affected_tasks': affected,
+                 'evidence_invalidated': changed,
+                 'evidence_preserved': []},
+                actor=actor, ts=_utc_now(),
+                note=('%s | %s' % (tag, marker))[:500])
+        if not any(e.get('type') == 'approval' and
+                   e.get('contract_id') == new_id for e in self.events):
+            self._append_raw(
+                'approval',
+                {'authority': authority,
+                 'mechanism': mechanism or
+                 live.get('authorization', {}).get('mechanism',
+                                                   'plan_authorship'),
+                 'plan_digest': plan_markdown_digest(self.r.dir)},
+                actor=actor, ts=_utc_now(),
+                note=('approves revision %d (%s) | %s'
+                      % (revision, reason, marker))[:500],
+                extra={'contract_id': new_id})
+        os.replace(pending, final)
+        return {'revision': revision, 'contract_id': new_id,
+                'invalidated': changed, 'affected_tasks': affected}
+
     def complete_task(self, task_id, actor=None):
         """Refuse completion unless every gate_intent criterion has
         in-window accepted evidence (zero-test control)."""
@@ -1490,6 +1663,24 @@ class Writer:
                 'completion of %s refused: delegation(s) %s still open — '
                 'collect or cancel them first' %
                 (task_id, ', '.join(open_delegations)))
+        unverified = invariant_findings(self.r.contract, self.events,
+                                        self.task_start_seq(task_id))
+        if unverified:
+            self._append_raw('refusal',
+                             {'subject': task_id, 'stage': 'gate',
+                              'reason': 'invariant(s) not verified for '
+                                        'this attempt: %s' %
+                                        '; '.join(unverified)},
+                             actor={'kind': 'helper',
+                                    'identity': LEDGER_IDENTITY},
+                             ts=_utc_now())
+            raise CompletionRefused(
+                'completion of %s refused: %s — every declared invariant '
+                'is plan-scoped and is evaluated at or after the task\'s '
+                'start before it closes: record an observation '
+                '"INV-<id>: pass" (or "INV-<id>: fail: <reason>") '
+                '(spec/V6_LIFECYCLE.md section 4, F-03)'
+                % (task_id, '; '.join(unverified)))
         states = self.criterion_state(task_id)
         missing = [s for s in states if not s.get('satisfied')]
         if missing:
@@ -2401,6 +2592,8 @@ def main(argv):
              '--human-note FILE] | start|gate|reuse|'
              'project|complete|export|roll|inspect|self-test | signoff '
              '--criterion AC --evidence-path P --authority WHO [--task T] '
+             '| amend --contract DRAFT --authority WHO --note REASON '
+             '--human-note FILE '
              '| delegate '
              'launch|observe|collect|cancel --task T [--json OBJ] '
              '[--caps JSON]} [options]')
@@ -2533,6 +2726,25 @@ def main(argv):
                     trust=args.trust, evidence_path=args.evidence_path)
                 print('OK: appended %s seq %d' % (event['type'],
                                                   event['seq']))
+                return 0
+            finally:
+                lock.release()
+        if args.command == 'amend':
+            if not (args.contract and args.authority and args.note):
+                print('amend requires --contract DRAFT, --authority WHO and '
+                      '--note REASON (plus --human-note FILE or a terminal '
+                      'confirmation)')
+                return 2
+            marker = human_marker(args.human_note)
+            rec, lock, writer = _writer_for(args, args.force)
+            try:
+                result = writer.amend(args.contract, args.authority,
+                                      args.note, marker,
+                                      mechanism=args.mechanism)
+                print('OK: amended to revision %d contract %s (approval '
+                      'recorded; criteria re-evidenced: %s)' % (
+                          result['revision'], result['contract_id'][:12],
+                          ', '.join(result['invalidated']) or 'none'))
                 return 0
             finally:
                 lock.release()

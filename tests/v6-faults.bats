@@ -59,6 +59,7 @@ for task in doc['tasks']:
 doc['scope']['allowed_command_classes'] = ['cat', 'true']
 doc['scope']['allowed_paths'] = ['src/']
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 json.dump(doc, open(os.path.join(os.environ['PLAN_DIR'], 'draft.json'), 'w'),
           indent=2, sort_keys=True)
 PY
@@ -287,6 +288,7 @@ import json, os, sys
 doc = json.load(open(sys.argv[1]))
 doc['plan'] = os.environ['PLAN_NAME']
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 json.dump(doc, open(os.path.join(os.environ['PLAN_DIR'], 'draft.json'), 'w'),
           indent=2, sort_keys=True)
 PY

@@ -44,6 +44,7 @@ _draft() {
 import json, sys
 doc = json.load(open(sys.argv[1]))
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 if sys.argv[3] == 'v6':
     doc['schema'] = 'https://deepworkplan.com/schema/plan-contract/v6.json'
     for t in doc['tasks']:

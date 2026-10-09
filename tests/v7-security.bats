@@ -36,7 +36,7 @@ teardown() { rm -rf "$WORK"; }
 _plan() {
   python3 - "$FIX" "$PLAN/draft.json" <<'PY'
 import json, sys
-doc = json.load(open(sys.argv[1])); doc.pop('contract_id', None)
+doc = json.load(open(sys.argv[1])); doc.pop('contract_id', None); doc['invariants'] = []
 doc['scope']['allowed_command_classes'] = ['python3']
 for t in doc['tasks']:
     t['touched_surface'] = ['src/']

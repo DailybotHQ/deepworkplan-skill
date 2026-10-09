@@ -133,10 +133,14 @@ PY
     _py ledger.py --plan "$plan" start --task T-publish-schemas
     _py ledger.py --plan "$plan" gate --task T-publish-schemas \
         --criterion AC-valid-contract-shape --json '"python3 --version"'
+    _py ledger.py --plan "$plan" append --type observation \
+        --json '{"statement": "INV-historical-bytes: pass"}' --trust asserted
     _py ledger.py --plan "$plan" complete --task T-publish-schemas
     _py ledger.py --plan "$plan" start --task T-ship-validator
     _py ledger.py --plan "$plan" gate --task T-ship-validator \
         --criterion AC-journal-catalog-closed --json '"python3 --version"'
+    _py ledger.py --plan "$plan" append --type observation \
+        --json '{"statement": "INV-historical-bytes: pass"}' --trust asserted
     _py ledger.py --plan "$plan" complete --task T-ship-validator
     _py ledger.py --plan "$plan" project
     _py views.py --plan "$plan" render --all
@@ -148,7 +152,11 @@ PY
     _py resources.py --plan "$plan" report
     _py resources.py --plan "$plan" routing
     _py benchmark.py report --plan "$plan"
-  ) > "$WORK/$label.out" 2>&1 || { cat "$WORK/$label.out"; return 1; }
+  ) > "$WORK/$label.out" 2>&1
+  # a subshell on the left of || runs with set -e disabled: test its status
+  # separately so any failing step fails the helper
+  local rc=$?
+  [ "$rc" -eq 0 ] || { cat "$WORK/$label.out"; return 1; }
   python3 - "$plan" "$WORK/$label.receipt.json" > "$WORK/$label.summary" <<'PY'
 import json, os, sys
 plan, receipt_path = sys.argv[1], sys.argv[2]

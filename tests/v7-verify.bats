@@ -37,6 +37,7 @@ _plan() {
 import json, sys
 doc = json.load(open(sys.argv[1]))
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 doc['plan'] = sys.argv[3]
 if sys.argv[4] == 'v6':
     doc['schema'] = 'https://deepworkplan.com/schema/plan-contract/v6.json'
@@ -59,7 +60,11 @@ PY
     python3 "$LEDGER" --plan "$plan" gate --task T-ship-validator --criterion AC-journal-catalog-closed --json '"python3 --version"'
     python3 "$LEDGER" --plan "$plan" complete --task T-ship-validator
     python3 "$LEDGER" --plan "$plan" project
-  ) > "$WORK/$name.out" 2>&1 || { cat "$WORK/$name.out"; return 1; }
+  ) > "$WORK/$name.out" 2>&1
+  # a subshell on the left of || runs with set -e disabled: test its status
+  # separately so any failing step fails the helper
+  local rc=$?
+  [ "$rc" -eq 0 ] || { cat "$WORK/$name.out"; return 1; }
   printf 'No unresolved critical findings.\n' > "$plan/analysis_results/SECURITY_REVIEW.md"
 }
 

@@ -40,6 +40,7 @@ _draft() {
 import json, sys
 doc = json.load(open(sys.argv[1]))
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 doc['plan'] = sys.argv[3]
 doc['scope']['allowed_command_classes'] = ['python3']
 doc['scope']['allowed_paths'] = ['src/']
@@ -72,7 +73,11 @@ _plan() {
     python3 "$LEDGER" --plan "$plan" start --task T-publish-schemas
     python3 "$LEDGER" --plan "$plan" gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"python3 --version"'
     python3 "$LEDGER" --plan "$plan" complete --task T-publish-schemas
-  ) > "$WORK/$2.out" 2>&1 || { cat "$WORK/$2.out"; return 1; }
+  ) > "$WORK/$2.out" 2>&1
+  # a subshell on the left of || runs with set -e disabled: test its status
+  # separately so any failing step fails the helper
+  local rc=$?
+  [ "$rc" -eq 0 ] || { cat "$WORK/$2.out"; return 1; }
   PLAN="$plan"
 }
 
@@ -133,11 +138,13 @@ PY2
   python3 "$LEDGER" --plan "$plan" materialize --contract "$WORK/example.json" --authority sergio >/dev/null || return 1
   python3 "$LEDGER" --plan "$plan" start --task T-implement >/dev/null || return 1
   python3 "$LEDGER" --plan "$plan" gate --task T-implement --criterion AC-tests-pass --json '"python3 --version"' >/dev/null || return 1
+  python3 "$LEDGER" --plan "$plan" append --type observation --json '{"statement": "INV-no-publication: pass"}' --trust asserted >/dev/null || return 1
   python3 "$LEDGER" --plan "$plan" complete --task T-implement >/dev/null || return 1
   python3 "$LEDGER" --plan "$plan" start --task T-final-review >/dev/null || return 1
   run python3 "$LEDGER" --plan "$plan" complete --task T-final-review
   [ "$status" -eq 4 ] || { echo "$output"; return 1; }
   python3 "$LEDGER" --plan "$plan" signoff --criterion AC-human-review --evidence-path analysis_results/REVIEW_NOTE.md --authority sergio >/dev/null || return 1
+  python3 "$LEDGER" --plan "$plan" append --type observation --json '{"statement": "INV-no-publication: pass"}' --trust asserted >/dev/null || return 1
   python3 "$LEDGER" --plan "$plan" complete --task T-final-review >/dev/null || return 1
   [ "$(_receipt_mechanism AC-human-review)" = "True signoff" ] || return 1
   [ "$(_receipt_mechanism AC-tests-pass)" = "True evidence" ]

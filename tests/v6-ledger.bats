@@ -48,6 +48,7 @@ for task in doc['tasks']:
 doc['scope']['allowed_command_classes'] = [
     'cat', 'echo', 'true', 'definitely-not-a-command-xyz']
 doc.pop('contract_id', None)
+doc['invariants'] = []  # invariant enforcement is covered by tests/v7-amend.bats
 cid = c6.compute_contract_id(doc)
 json.dump(dict(doc, contract_id=cid), open(os.path.join(
     os.environ['PLAN'], 'contract.json'), 'w'), indent=2, sort_keys=True)
