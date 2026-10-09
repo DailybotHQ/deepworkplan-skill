@@ -241,3 +241,19 @@ PY
   c "$SK/SKILL.md" '(contract generation v6 or v7, `spec/V7_CONTRACT.md`)'
   c "$SK/spec/V6_LIFECYCLE.md" 'A plan never changes generation'
 }
+
+@test "benchmark never labels a pre-release pack as a release: not measured, one line" {
+  PACK="$WORK/pack"
+  cp -R "$SK" "$PACK"
+  sed -i.bak 's/^version: ".*"/version: "7.0.0-beta.1"/' "$PACK/SKILL.md" && rm -f "$PACK/SKILL.md.bak"
+  run python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import benchmark; print(benchmark.pack_version())' "$PACK/shared"
+  [ "$output" = "7.0.0-beta.1" ]
+  _draft v6; _materialize >/dev/null
+  mkdir -p "$REPO/.dwp"
+  printf '%s\n' '{"benchmark": {"enabled": true}}' > "$REPO/.dwp/config.json"
+  run python3 "$PACK/shared/benchmark.py" report --plan "$PLAN"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"this pack is a pre-release (7.0.0-beta.1)"*"not measured"* ]] || return 1
+  [ ! -f "$PLAN/analysis_results/benchmark.json" ]
+  find "$PACK" -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
+}

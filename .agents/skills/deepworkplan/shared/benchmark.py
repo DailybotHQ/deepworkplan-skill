@@ -212,7 +212,8 @@ def pack_version() -> str:
         if os.path.isfile(skill):
             try:
                 with open(skill, 'r', encoding='utf-8') as handle:
-                    match = re.search(r'^version:\s*"?([0-9]+\.[0-9]+\.[0-9]+)"?',
+                    match = re.search(r'^version:\s*"?([0-9]+\.[0-9]+\.[0-9]+'
+                                  r'(?:-[0-9A-Za-z.]+)?)"?',
                                       handle.read(4096), re.MULTILINE)
                 if match:
                     return match.group(1)
@@ -1095,6 +1096,12 @@ def cmd_report(plan_dir: str) -> int:
         print('benchmark: disabled for this repository; nothing emitted')
         return 0
     manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
+    if '-' in pack_version():
+        # benchmark-record v1 pins versions.dwp_skill to X.Y.Z: a pre-release
+        # pack (7.0.0-beta.1) is never truncated into a release label.
+        print('benchmark: this pack is a pre-release (%s); benchmark-record v1 '
+              'carries release versions only - not measured' % pack_version())
+        return 0
     if isinstance(manifest, dict) and manifest.get('schema') == MANIFEST_V7_URL:
         # benchmark-record v1 pins generation "v6" (published, frozen bytes):
         # a v7 plan is not mislabelled — it is not measured yet.

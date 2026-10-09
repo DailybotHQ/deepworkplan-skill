@@ -1536,6 +1536,45 @@ def self_test():
           None, lambda es: es[4].update(revised_criterion='AC-one: easier'))
     probe('journal: seq regression',
           None, lambda es: es[5].update(seq=2))
+    # v7 generation (V7_CONTRACT.md): the superset validates; its additions
+    # are refused under the v6 URLs; generations never mix.
+    v7 = json.loads(json.dumps(contract))
+    v7['schema'] = CONTRACT_SCHEMA_URL_V7
+    v7['tasks'][0]['parallel_safe'] = True
+    probes[0] += 1
+    if contract_errors(v7):
+        failures.append('a v7 contract with parallel_safe should be valid: %s'
+                        % contract_errors(v7)[:1])
+    probes[0] += 1
+    v6_marked = json.loads(json.dumps(contract))
+    v6_marked['tasks'][0]['parallel_safe'] = True
+    if not contract_errors(v6_marked):
+        failures.append('parallel_safe under the v6 URL must fail')
+    v7_stamped = dict(v7, contract_id=compute_contract_id(v7))
+    delegation = {'schema': JOURNAL_SCHEMA_URL_V7, 'type': 'delegation',
+                  'seq': 1, 'ts': '2026-10-09T00:00:00Z',
+                  'plan': v7['plan'], 'contract_id': v7_stamped['contract_id'],
+                  'actor': {'kind': 'agent', 'identity': 'selftest'},
+                  'task': v7['tasks'][0]['id'], 'delegation_id': 'd1',
+                  'transport': 'headless', 'via': 'agentkit',
+                  'state': 'launched', 'prompt_digest': 'sha256:' + 'a' * 64}
+    probes[0] += 1
+    if journal_event_errors(delegation, v7_stamped):
+        failures.append('a v7 delegation event should be valid: %s'
+                        % journal_event_errors(delegation, v7_stamped)[:1])
+    for label, mutate, against in (
+            ('delegation under the v6 journal URL',
+             lambda e: e.update(schema=JOURNAL_SCHEMA_URL), None),
+            ('v7 event under a v6 contract', lambda e: None, stamped),
+            ('delegation claims trust', lambda e: e.update(trust='observed'),
+             v7_stamped),
+            ('launch without prompt digest',
+             lambda e: e.pop('prompt_digest'), v7_stamped)):
+        probes[0] += 1
+        ev = dict(delegation)
+        mutate(ev)
+        if not journal_event_errors(ev, against):
+            failures.append('mutant %r should fail' % label)
     return (not failures, failures, probes[0])
 
 
