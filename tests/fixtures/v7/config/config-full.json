@@ -4,7 +4,7 @@
   "addons": {
     "ai-diff-reviewer": { "enabled": true, "version": "v3.3.0" },
     "herdr":            { "enabled": true, "version": "v0.1.0" },
-    "agentkit":         { "enabled": true, "version": "v0.1.1", "note": "accepted; machine-level install deferred" },
+    "agentkit":         { "enabled": true, "version": "v0.3.0", "note": "accepted; machine-level install deferred" },
     "devcontainer":     { "enabled": true, "version": "v0.1.0" },
     "vim":              { "enabled": true, "version": "v0.4.2" },
     "dailybot":         { "enabled": true, "version": "v3.23.3" }

@@ -2,18 +2,22 @@
 # The agentkit addon — a thin integrator of coding-agents-kit (`ak`) as the
 # headless delegation transport (spec/ADDONS.md §6.8, spec/V7_CONTRACT.md).
 # Policy under test: opt-in from onboard Phase 7b, never required; a single
-# pin (coding-agents-kit v0.1.1 — ecosystem amendment A2) across descriptor
-# and docs; install by tagged clone + install.sh only; the pack never spells
-# a permission-bypass flag or a fetch-and-execute pipeline; the transport
-# maps launch/observe/collect/cancel onto one `ak run` per worktree; and a
-# detected kit contributes its abilities only through the registry.
+# pin (coding-agents-kit v0.3.0) across descriptor and docs; install by
+# tagged clone + install.sh only; permissions are the kit's — autonomy by
+# default, and the `--ask` / AGENTKIT_PERMISSIONS=ask opt-out always wins
+# (over `--auto` and over the env file; hub amendment A1) — while the pack
+# never spells a CLI permission flag, never passes `--auto`, and passes
+# `--ask` when a plan records the opt-out; no fetch-and-execute pipeline;
+# the transport maps launch/observe/collect/cancel onto one `ak run` per
+# worktree; and a detected kit contributes its abilities only through the
+# registry.
 bats_require_minimum_version 1.5.0
 
 REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 SK="$REPO_ROOT/skills/deepworkplan"
 ADDON="$SK/addons/agentkit"
 ONBOARD="$SK/onboard/addons.md"
-PIN="v0.1.1"
+PIN="v0.3.0"
 export PYTHONDONTWRITEBYTECODE=1
 
 doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
@@ -35,7 +39,7 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
   ! grep -q '^homepage:' "$ADDON/SKILL.md"
 }
 
-@test "single pin: the descriptor and every spelled ref name coding-agents-kit $PIN (amendment A2)" {
+@test "single pin: the descriptor and every spelled ref name coding-agents-kit $PIN" {
   grep -qF "\"tag\": \"$PIN\"" "$ADDON/addon.json"
   run bash -c "grep -rhoE '(coding-agents-kit@|--branch )v[0-9]+\.[0-9]+\.[0-9]+' '$ADDON' '$ONBOARD' '$SK/spec/ADDONS.md' '$SK/addons/README.md' | sed -E 's/.*(v[0-9.]+)$/\1/' | sort -u"
   [ "$status" -eq 0 ]
@@ -43,15 +47,42 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
   grep -qF "| \`agentkit\` | \`DailybotHQ/coding-agents-kit\` \`$PIN\`, interface 1 |" "$SK/spec/ADDONS.md"
 }
 
-@test "security: no bypass flag, no fetch-and-execute text, install by tagged clone only" {
+@test "security: no CLI permission flag, no fetch-and-execute text, install by tagged clone only" {
   run grep -rnE 'dangerously|--yolo|--force|--approve|--always-approve|skip-permissions' "$ADDON"
   [ "$status" -ne 0 ]
   run grep -rnE '(curl|wget)[^|]*\| *(ba)?sh|irm .*iex|iwr .*iex' "$ADDON"
   [ "$status" -ne 0 ]
   grep -qF "git clone --branch $PIN https://github.com/DailybotHQ/coding-agents-kit" "$ADDON/SKILL.md"
   grep -qF './coding-agents-kit/install.sh' "$ADDON/SKILL.md"
-  doc_has "$ADDON/SPEC.md" 'The addon **MUST NOT** add `--auto` (or any CLI permission-bypass flag) by default.'
+  doc_has "$ADDON/SPEC.md" 'The addon **MUST NOT** spell a CLI permission flag, and **MUST NOT** pass `--auto`'
   doc_has "$ADDON/SPEC.md" '**MUST NOT** carry a secret value'
+}
+
+@test "permissions: autonomy is the kit's default and the opt-out always wins (A1)" {
+  for f in "$ADDON/SKILL.md" "$ADDON/SPEC.md"; do
+    doc_has "$f" 'autonomy by default' || { echo "$f: no autonomy-by-default statement"; return 1; }
+    doc_has "$f" '`AGENTKIT_PERMISSIONS=ask`' || { echo "$f: no env opt-out"; return 1; }
+  done
+  # The opt-out outranks an explicit --auto and an `auto` line in the env file.
+  doc_has "$ADDON/SPEC.md" 'it always wins — over `--auto` on the same command and over an `AGENTKIT_PERMISSIONS=auto` line in the kit'"'"'s env file'
+  doc_has "$ADDON/SKILL.md" 'suppresses the flag even when the same command says `--auto` and even when the kit'"'"'s env file says `AGENTKIT_PERMISSIONS=auto`'
+  # The pack passes --ask on a recorded opt-out and never drops an inherited one.
+  doc_has "$ADDON/SPEC.md" 'It **MUST** pass `--ask` when the plan records the developer'"'"'s opt-out for its delegates, and it **MUST NOT** remove or override an inherited `AGENTKIT_PERMISSIONS=ask`.'
+  doc_has "$ADDON/templates/INTEGRATION.md" 'never unset it'
+  # Autonomy is meant for sandboxes; a host grant is said out loud.
+  doc_has "$ADDON/SPEC.md" 'Autonomy is meant for disposable or sandboxed environments'
+  doc_has "$ADDON/SPEC.md" 'which is not a sandbox'
+}
+
+@test "permissions: the retired no-autonomy-by-default rule is gone and no command passes --auto" {
+  run grep -rnF 'MUST NOT** add `--auto`' "$ADDON" "$SK/spec/ADDONS.md" "$SK/addons/README.md" "$ONBOARD"
+  [ "$status" -ne 0 ]
+  run grep -rnE 'autonomy stays the kit.s explicit|without `--auto` unless|No `--auto` unless' "$ADDON" "$SK/spec/ADDONS.md" "$SK/addons/README.md" "$ONBOARD"
+  [ "$status" -ne 0 ]
+  # every spelled `ak run` command line: the only permission option is the optional --ask
+  run bash -c "grep -rhoE 'ak run <kind>[^\`]*' '$ADDON' | grep -E -- '--auto'"
+  [ "$status" -ne 0 ]
+  [ "$(grep -rhoE 'ak run <kind>[^`]*' "$ADDON" | grep -c -- '\[--ask\]')" -ge 3 ]
 }
 
 @test "transport: the four operations map onto one ak run per dedicated worktree" {
@@ -84,7 +115,7 @@ import resources
 off = resources.effective_abilities(None, sys.argv[2])
 assert not off["abilities"]["subagents"], off
 import config
-config.write_addon(sys.argv[2], "agentkit", True, "v0.1.1")
+config.write_addon(sys.argv[2], "agentkit", True, "v0.3.0")
 on = resources.effective_abilities(None, sys.argv[2])
 assert on["sources"]["model_routing"] == ["addon:agentkit"], on
 print("ok")' "$SK/shared" "$WORK/repo/.dwp"

@@ -32,12 +32,14 @@ python3 <pack>/shared/ledger.py --plan <dir> delegate launch --task <T-id> \
            "kind": "<kind>", "profile": "<@profile or omit>", "target": "<worktree>",
            "worktree": "<worktree>", "prompt_digest": "sha256:<hex>"}'
 mkdir -p <dir>/analysis_results/delegations/<id>
-ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json \
+ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json [--ask] \
   -- "<prompt>" > <dir>/analysis_results/delegations/<id>/result.json &
 ```
 
-No `--auto` unless the developer's per-plan autonomy opt-in is recorded
-and the worktree (or container) is isolated.
+The kit launches the agent in autonomy by default. Add `--ask` when the
+plan records the developer's opt-out; an inherited
+`AGENTKIT_PERMISSIONS=ask` already wins without it, so never unset it.
+Never add `--auto` or spell a CLI permission flag.
 
 ## 4. Observe
 

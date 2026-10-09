@@ -68,7 +68,7 @@ _refusals() { python3 -c 'import json,sys; print(sum(1 for l in open(sys.argv[1]
 
 @test "headless round trip: launch, ak run in a worktree, collect — asserted until the plan's gate observes it" {
   _plan
-  python3 "$CFG" enable agentkit --version v0.1.0 --repo "$REPO" >/dev/null
+  python3 "$CFG" enable agentkit --version v0.3.0 --repo "$REPO" >/dev/null
   python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
   mkdir -p "$WORK/wt-d1"
   run _launch T-publish-schemas "{\"delegation_id\": \"d1\", \"transport\": \"headless\", \"via\": \"agentkit\", \"kind\": \"claude\", \"target\": \"$WORK/wt-d1\", \"worktree\": \"$WORK/wt-d1\", \"prompt_digest\": \"$DIGEST\"}"

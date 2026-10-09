@@ -12,6 +12,10 @@
 #     unless explicitly declined; installs run no upgrade.
 #   - devcontainer + dailybot: explicit opt-ins; never auto-installed for
 #     everyone; never required.
+#   - agentkit: explicit opt-in; enabling grants nothing (delegation needs
+#     the plan's `agent_delegation` grant); the kit's autonomy is its
+#     default and the `--ask` / AGENTKIT_PERMISSIONS=ask opt-out always
+#     wins — the pack neither adds autonomy nor removes the opt-out.
 #
 # Run with:  bats tests/
 # Requires:  bats-core
@@ -64,6 +68,21 @@ c_doc_has() {
     c_doc_has "$DAILY_SPEC" "MUST NOT** auto-install it for everyone"
     # Dailybot reporting additionally requires authorization, not just presence.
     c_doc_has "$DAILY" "authenticated and reporting is authorized"
+}
+
+@test "agentkit: enabling grants nothing; autonomy is the kit's default, the opt-out always wins" {
+    c_doc_has "$ONBOARD" "Enabling it authorizes nothing by itself"
+    c_doc_has "$ONBOARD" "a plan delegates only when its contract grants \`agent_delegation\`"
+    # The consent surfaces agree on the permission posture (hub amendment A1).
+    for f in "$A/agentkit/SKILL.md" "$A/agentkit/SPEC.md" "$SPEC" "$ONBOARD"; do
+        c_doc_has "$f" "autonomy by default" || { echo "$f: no autonomy-by-default statement"; return 1; }
+        c_doc_has "$f" "AGENTKIT_PERMISSIONS=ask" || { echo "$f: no opt-out"; return 1; }
+    done
+    c_doc_has "$SPEC" "the opt-out always wins"
+    c_doc_has "$ONBOARD" "the opt-out always wins"
+    # No surface still claims the pack keeps agents out of autonomy by default.
+    run grep -rnE 'never adds a permission-bypass flag|autonomy stays the kit.s explicit' "$SPEC" "$ONBOARD" "$MECH" "$A/agentkit"
+    [ "$status" -ne 0 ]
 }
 
 @test "every optional addon stays never-required; zero-optional conformance holds" {

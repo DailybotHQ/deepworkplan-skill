@@ -74,7 +74,7 @@ records its Phase 7a status). Offer the seven optional ones independently:
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | **near-default** — the repo has **declared dependencies** (any manifest or lockfile): offer **always**, and install the **inert** `/lib-upgrade` delegator under the onboarding consent **unless explicitly declined**. Installing the delegator runs **no** upgrade — upgrades are always explicit, gated work. |
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: when any surface is detected — even an ambiguous one — the evaluation and offer are **mandatory, not skippable**, with the detection rationale recorded. **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **strongly recommended**; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended**. Every profile **requires explicit acceptance even in trust mode — none is auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
-| **agentkit** | [`../addons/agentkit/`](../addons/agentkit/SKILL.md) | the developer wants plans to hand bounded `parallel_safe` tasks to other coding agents (claude, codex, cursor, …) — a machine-level install (`git clone --branch v0.1.1` + `install.sh`), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. |
+| **agentkit** | [`../addons/agentkit/`](../addons/agentkit/SKILL.md) | the developer wants plans to hand bounded `parallel_safe` tasks to other coding agents (claude, codex, cursor, …) — a machine-level install (`git clone --branch v0.3.0` + `install.sh`), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. The kit runs agents in autonomy by default; the `--ask` / `AGENTKIT_PERMISSIONS=ask` opt-out always wins. |
 | **Herdr** | [`../addons/herdr/`](../addons/herdr/SKILL.md) | the developer runs coding agents in [Herdr](https://herdr.dev) panes (one machine or several) and wants plans to ask a peer agent to take a task — a machine-level install of `herdr-peers@v0.1.0` (+ Herdr's official skill, pinned), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. |
 | **DeepWorkPlan Vim** | [`../addons/vim/`](../addons/vim/SKILL.md) | a person on this machine uses Neovim ≥ 0.12 or asks for a terminal editor for plans — a **machine-level** install, never a repo requirement; the editor is never imposed and an existing Neovim config is **never** overwritten without explicit consent (non-interactive runs onto an existing config stop at instructions). Pinned `deepworkplan-vim@v0.4.2`, detected through the product's `addon/surface.json`. |
 | **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | **not offered here — installed in Phase 7a** (required local review, baseline since 2.3.0). In Phase 7b only confirm the Flow B (CI Action) opt-in decision if it was left open; never install the CI surface unrequested. |
@@ -193,8 +193,12 @@ The **agentkit** addon ([`../addons/agentkit/SKILL.md`](../addons/agentkit/SKILL
 `ak` read-only (`ak doctor --json`, interface `1`), offer it, and on
 acceptance show the pinned install and record `addons.agentkit`. Enabling
 it authorizes nothing by itself — a plan delegates only when its contract
-grants `agent_delegation` (`../execute/delegation.md`). If declined, skip
-it — the repo stays baseline-conformant.
+grants `agent_delegation` (`../execute/delegation.md`). Tell the developer
+how delegates launch: the kit runs agents in **autonomy by default** (meant
+for disposable or sandboxed environments, such as a dev container), and the
+opt-out always wins — `--ask`, or `AGENTKIT_PERMISSIONS=ask` in the
+environment or the kit's env file. If declined, skip it — the repo stays
+baseline-conformant.
 
 The **Herdr** addon ([`../addons/herdr/SKILL.md`](../addons/herdr/SKILL.md) +
 [`SPEC.md`](../addons/herdr/SPEC.md)) is a machine-level offer: detect

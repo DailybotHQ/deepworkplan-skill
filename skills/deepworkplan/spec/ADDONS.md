@@ -386,13 +386,18 @@ template).
 
 An optional addon integrating **coding-agents-kit** (`ak`;
 `https://github.com/DailybotHQ/coding-agents-kit`, MIT, its own release
-cycle) pinned at `v0.1.1` (interface `1`), as the **headless** transport of
+cycle) pinned at `v0.3.0` (interface `1`), as the **headless** transport of
 v7 delegation ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `ak run` per
 delegate, in a dedicated git worktree, recorded through `ledger.py
 delegate`, its result asserted until the plan's own gates observe it.
 `onboard` Phase 7b offers it as an **explicit opt-in**; the install is the
-pinned tagged clone plus the kit's `install.sh`. The pack never adds a
-permission-bypass flag — autonomy stays the kit's explicit per-run opt-in.
+pinned tagged clone plus the kit's `install.sh`. Permissions are the
+kit's: it launches agents in **autonomy by default**, and its opt-out —
+`--ask` or `AGENTKIT_PERMISSIONS=ask`, set or inherited — always wins, even
+over `--auto` and over an `auto` line in the kit's env file. The pack spells
+no CLI permission flag, never passes `--auto`, passes `--ask` when a plan
+records the opt-out, and never drops an inherited one; in short, the opt-out
+always wins.
 It is **never required**: without it every task runs in the current
 session. Full contract: [`SKILL.md`](../addons/agentkit/SKILL.md),
 [`SPEC.md`](../addons/agentkit/SPEC.md), `templates/INTEGRATION.md`.
@@ -422,7 +427,7 @@ The shipped set:
 
 | key | product (pinned) | provides_abilities | requires_grants | transport |
 |---|---|---|---|---|
-| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.1.1`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
+| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.3.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
 | `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.0` | — | — | — |
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.3` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
