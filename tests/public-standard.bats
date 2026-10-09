@@ -95,3 +95,26 @@ PY
   grep -qF '[Keep a Changelog]' "$REPO_ROOT/CHANGELOG.md"
   grep -q 'bash scripts/check-public-hygiene.sh' "$REPO_ROOT/.github/workflows/ci.yml"
 }
+
+@test "README names only commands that exist before onboarding" {
+  # /dwp-* aliases are written by onboarding; the install ships /deepworkplan-*.
+  ! grep -n '/dwp-onboard' "$REPO_ROOT/README.md"
+  grep -qF '/deepworkplan-onboard' "$REPO_ROOT/README.md"
+}
+
+@test "check-github-settings reports FAIL rows, not a traceback, when gh api errors" {
+  stub="$BATS_TEST_TMPDIR/bin"; mkdir -p "$stub"
+  cat > "$stub/gh" <<'GH'
+#!/usr/bin/env bash
+case "$2" in
+  repos/o/r) echo '{"description":"One sentence","homepage":"https://deepworkplan.com","topics":["deepworkplan","a","b","c"],"default_branch":"main","delete_branch_on_merge":true,"has_wiki":false,"has_discussions":false}' ;;
+  *) echo '{"message":"Branch not protected","status":"404"}'; exit 1 ;;
+esac
+GH
+  chmod +x "$stub/gh"
+  run env PATH="$stub:$PATH" bash "$REPO_ROOT/scripts/check-github-settings.sh" o/r
+  [ "$status" -eq 1 ] || return 1
+  [[ "$output" != *Traceback* ]] || return 1
+  [[ "$output" == *"FAIL branch protection requires CI checks"* ]] || return 1
+  [[ "$output" == *"OK   homepage on deepworkplan.com"* ]]
+}

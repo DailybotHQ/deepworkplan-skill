@@ -13,8 +13,9 @@ REPO="${1:-}"
 command -v gh >/dev/null || { echo "ERROR: gh is required" >&2; exit 2; }
 
 repo_json="$(gh api "repos/$REPO")" || { echo "ERROR: cannot read repos/$REPO" >&2; exit 2; }
-prot_json="$(gh api "repos/$REPO/branches/main/protection" 2>/dev/null || echo '{}')"
-pvr_json="$(gh api "repos/$REPO/private-vulnerability-reporting" 2>/dev/null || echo '{}')"
+# On failure gh still prints the error body on stdout: assign, then fall back.
+prot_json="$(gh api "repos/$REPO/branches/main/protection" 2>/dev/null)" || prot_json='{}'
+pvr_json="$(gh api "repos/$REPO/private-vulnerability-reporting" 2>/dev/null)" || pvr_json='{}'
 if gh api "repos/$REPO/vulnerability-alerts" >/dev/null 2>&1; then alerts=true; else alerts=false; fi
 
 REPO_JSON="$repo_json" PROT_JSON="$prot_json" PVR_JSON="$pvr_json" ALERTS="$alerts" python3 - <<'PY'
@@ -48,5 +49,6 @@ reviews = (prot.get('required_pull_request_reviews') or {}).get('required_approv
 need(reviews >= 1, 'branch protection requires one review')
 need((prot.get('enforce_admins') or {}).get('enabled') is False, 'admins may bypass')
 need((prot.get('allow_force_pushes') or {}).get('enabled') is False, 'force pushes blocked on main')
+need((prot.get('allow_deletions') or {}).get('enabled') is False, 'deletion of main blocked')
 sys.exit(1 if fails else 0)
 PY

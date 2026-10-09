@@ -229,9 +229,10 @@ openclaw skills remove deepworkplan
 ## Quickstart
 
 1. **Install** the pack (pinned, above) in the repository you want to make AI-first.
-2. **Onboard** it: run `/dwp-onboard` (Claude Code) or `#deepworkplan-onboard`
-   in any other agent — it writes an adapted `AGENTS.md`, `docs/`, `.agents/`
-   and offers the optional addons.
+2. **Onboard** it: run `/deepworkplan-onboard` (Claude Code) or
+   `#deepworkplan-onboard` in any other agent — it writes an adapted
+   `AGENTS.md`, `docs/`, `.agents/` (including the short `/dwp-*` commands
+   used below) and offers the optional addons.
 3. **Plan** real work: `/dwp-create <what you want done>` writes a Deep Work
    Plan under the gitignored `.dwp/plans/`.
 4. **Execute** it: `/dwp-execute <plan>` works task by task, validates each

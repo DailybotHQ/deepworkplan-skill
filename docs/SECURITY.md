@@ -136,7 +136,8 @@ frontmatter, shellcheck, bats, public hygiene, schema/contract, Python
 floor — one approving review, no force pushes or deletions; administrators
 and the release automation may bypass). Wiki and Discussions are off; head
 branches are deleted on merge. `bash scripts/check-github-settings.sh
-DailybotHQ/deepworkplan-skill` verifies all of it read-only.
+DailybotHQ/deepworkplan-skill` verifies these read-only; it checks that CI
+checks are required, not their names, and does not inspect the bypass list.
 
 ## Security review (dogfooding the spec)
 
