@@ -197,3 +197,26 @@ print("\n".join(r.lines)); sys.exit(1 if r.failed else 0)' "$SK/verify" "$plan"
   [ "$status" -eq 1 ] || return 1
   [[ "$output" == *"this plan is v7"*"the v5 runner does not execute v6 plans"* ]]
 }
+
+@test "a repository holding v5, v6 and v7 plans verifies CONFORMANT in one run" {
+  _plan PLAN_verify_mixed_six v6 || return 1
+  _plan PLAN_verify_mixed_seven v7 || return 1
+  cp -R "$REPO_ROOT/tests/fixtures/lite-plan/.dwp/plans/PLAN_lite_fixture" "$REPO/.dwp/plans/"
+  cd "$REPO"
+  git init -q .
+  printf '# AGENTS.md\n\nDWP standard: 7.0.0\n\n## Quick Commands\n\n- `make test`\n' > AGENTS.md
+  ln -s AGENTS.md CLAUDE.md
+  mkdir -p .agents/agents .agents/commands .agents/skills/ai-diff-reviewer .agents/docs docs .review
+  printf -- '---\nname: ai-diff-reviewer\nversion: "3.3.0"\n---\n' > .agents/skills/ai-diff-reviewer/SKILL.md
+  printf '# Review extension\n' > .review/extension.md
+  printf '# Security\n' > docs/SECURITY.md
+  printf '# Testing\n\nScoped commands and the source-to-test mapping.\n' > docs/TESTING_GUIDE.md
+  ln -s .agents .claude && ln -s .agents .cursor
+  printf '.dwp/*\n!.dwp/config.json\n' > .gitignore
+  run bash "$CONF" "$REPO"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"Plan: PLAN_lite_fixture"* ]] || return 1
+  [[ "$output" == *"v6 manifest pairs with a v6 contract"* ]] || return 1
+  [[ "$output" == *"v7 manifest pairs with a v7 contract"* ]] || return 1
+  [[ "$output" == *"Verdict: CONFORMANT"* ]]
+}
