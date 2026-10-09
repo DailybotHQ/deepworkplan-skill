@@ -108,7 +108,8 @@ The abilities of the host that runs plans here, machine-readable (F-17):
 `"host": {"subagents": true, "cancel_children": true}` — the closed v6 set
 (`stop_agent`, `meter_spend`, `meter_tokens`, `meter_wall_clock`,
 `cancel_children`, `model_routing`, `subagents`, `telemetry`), booleans
-only. Per capability the repository file wins over the user file, and an
+only. Per capability the user file wins over the repository file (the
+record describes a machine; the tracked file is the team baseline), and an
 explicit `resources.py --caps` declaration wins over both; an unstated
 capability stays at the all-False floor. An unknown or non-boolean
 capability is ignored with one warning — never invented. `resources.py
@@ -125,7 +126,7 @@ developer's consent; the record states the host can, not that it may.
 |---|---|---|
 | Writer | `onboard` Phase 7b, on the developer's acceptance of one addon's offer | `python3 <pack>/shared/config.py enable <key> [--version <tag>] --repo <repo>` (a decline writes nothing; an explicit "turn it off" is `disable <key>`) |
 | Writer | an addon's own install step, or the human | the same command, or a hand edit |
-| Writer | `upgrade`, after the developer accepts the upgrade | `config.py backfill --repo <repo>` (dry run), then `--write`: every in-pack addon the repository file does not name and whose read-only detection succeeds is recorded `enabled` with its observed version and a back-fill note (F-15). A recorded decision — enabled or disabled — is never changed |
+| Writer | `upgrade`, after the developer accepts the upgrade | `config.py backfill --repo <repo>` (dry run), then `--write`: every in-pack addon the repository file does not name and that is installed **in the repository** (a repo-relative detect path) is recorded `enabled` with its observed version and a back-fill note (F-15); a machine-level install is reported, never recorded — onboarding offers it. A recorded decision — enabled or disabled — is never changed |
 | Reader | `execute`, `create`, `verify`, `status` | `python3 <pack>/shared/config.py show` / `enabled` (`--plan <dir>` resolves the plan's repository) |
 | Reader | `shared/benchmark.py` | the `benchmark` key only, at its emission point |
 

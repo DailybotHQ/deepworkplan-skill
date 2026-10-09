@@ -160,7 +160,8 @@ versions relative to that directory.
 4. **Back-fill the addon registry** (F-15). Addons installed before the
    registry existed are recorded, never re-decided: run `python3
    <pack>/shared/config.py backfill --repo .` (dry run), show the list,
-   then `--write`. A key the registry already names is never changed.
+   then `--write`. A key the registry already names is never changed, and
+   a machine-level install is only reported (offer it; never back-filled).
    Then propose the `.gitignore` exception that shares the registry
    (`.dwp/*` + `!.dwp/config.json`, `../spec/CONFIG.md` §1).
 5. **Leave `.dwp/` plans untouched.** Plans keep their recorded lifecycle and their

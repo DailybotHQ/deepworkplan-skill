@@ -204,7 +204,8 @@ assert any("herdr" in w for w in d["warnings"]), d' "$output"
   run env PATH="$WORK/bin:$PATH" python3 "$CFG" backfill --repo "$REPO"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   [[ "$output" == *"WOULD addons.ai-diff-reviewer = enabled v3.3.0"* ]] || return 1
-  [[ "$output" == *"WOULD addons.agentkit = enabled v0.1.1"* ]] || return 1
+  # a machine-level install (a command on PATH) is reported, never back-filled
+  [[ "$output" == *"SKIP  addons.agentkit: present on this machine only"* ]] || return 1
   [[ "$output" != *"design-system"* ]] || return 1
   [ "$before" = "$(cat "$REPO/.dwp/config.json")" ] || return 1
   run env PATH="$WORK/bin:$PATH" python3 "$CFG" backfill --repo "$REPO" --write
@@ -213,6 +214,7 @@ assert any("herdr" in w for w in d["warnings"]), d' "$output"
   [ "$(_field ai-diff-reviewer version)" = '"v3.3.0"' ] || return 1
   [[ "$(_field ai-diff-reviewer note)" == *"back-filled on upgrade"* ]] || return 1
   [ "$(_field design-system enabled)" = "false" ] || return 1
+  [ "$(_field agentkit source)" = "null" ] || return 1
   run env PATH="$WORK/bin:$PATH" python3 "$CFG" backfill --repo "$REPO"
   [[ "$output" == *"nothing to back-fill"* ]]
 }

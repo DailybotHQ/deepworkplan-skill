@@ -151,10 +151,13 @@ criterion only when that criterion accepts `asserted`; an observed-only
 criterion refuses it. It is bound to the task whose `gate_intent` declares
 the criterion and counts only inside that task's evidence window (its
 `task_start`); the intent's `check` then describes the human check and is
-not executed. Any other human-actor record (`append --actor-kind
-human`, e.g. an amendment approval) MUST carry an explicit marker:
-`--human-note <file>` (the note the human wrote, recorded by path and
-digest) or an interactive confirmation on a terminal. **Trust limit:** the
+not executed. A human-actor record written by `append --actor-kind
+human` or by `amend` (its amendment and approval) MUST carry an explicit
+marker: `--human-note <file>` (the note the human wrote, recorded by path
+and digest) or an interactive confirmation on a terminal. The
+materialization-time approval (`materialize --authority <who>`) names its
+authority without a marker: it records the plan's authorship or
+pre-authorization, and the same trust limit applies to it. **Trust limit:** the
 ledger cannot authenticate a person. The marker makes the claim explicit
 and auditable; it does not make it observed — a sign-off stays `asserted`
 in every receipt (mechanism `signoff`).

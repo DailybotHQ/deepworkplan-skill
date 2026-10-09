@@ -165,11 +165,12 @@ _declared() { printf '%s' "$output" | python3 -c 'import json,sys; print(json.lo
   run --separate-stderr _abilities --caps '{"subagents": false}'
   [ "$(_ability subagents)" = "False" ] && [ "$(_declared subagents)" = "declared" ] || return 1
   [ "$(_ability cancel_children)" = "True" ] || return 1
-  # the user file applies where the repository file is silent
+  # the user file describes this machine: it wins per capability
   mkdir -p "$HOME/.dwp" && printf '{"host": {"model_routing": true, "subagents": false}}\n' > "$HOME/.dwp/config.json"
   run --separate-stderr _abilities
-  [ "$(_ability model_routing)" = "True" ] && [ "$(_ability subagents)" = "True" ] || return 1
-  [ "$(_declared model_routing)" = "record:~/.dwp/config.json" ]
+  [ "$(_ability model_routing)" = "True" ] && [ "$(_ability subagents)" = "False" ] || return 1
+  [ "$(_ability cancel_children)" = "True" ] || return 1
+  [ "$(_declared subagents)" = "record:~/.dwp/config.json" ]
 }
 
 @test "the host record never invents a capability; the writer refuses unknown names (F-17)" {

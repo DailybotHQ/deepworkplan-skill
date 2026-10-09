@@ -20,7 +20,7 @@
     },
     "host": {
       "type": "object",
-      "description": "Machine-readable host capability record (F-17, spec/CONFIG.md section 3a): which abilities the host that runs plans here provides. Per capability the repository file wins over the user file; an explicit resources.py --caps declaration wins over both. Unstated capabilities stay at the all-False floor; the reader ignores an unknown or non-boolean capability with one warning.",
+      "description": "Machine-readable host capability record (F-17, spec/CONFIG.md section 3a): which abilities the host that runs plans here provides. Per capability the user file wins over the repository file (the record describes a machine); an explicit resources.py --caps declaration wins over both. Unstated capabilities stay at the all-False floor; the reader ignores an unknown or non-boolean capability with one warning.",
       "additionalProperties": false,
       "properties": {
         "stop_agent": { "type": "boolean" },

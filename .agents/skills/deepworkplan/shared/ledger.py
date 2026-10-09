@@ -564,14 +564,7 @@ def criterion_states(contract, events, task_id):
     start = task_start_seq_of(events, task_id)
     accepted_by = {c['id']: c.get('accepted_evidence', [])
                    for c in contract['acceptance']['criteria']}
-    # F-12: an amendment that revised a criterion lists it in
-    # evidence_invalidated; its earlier gate runs never satisfy it again
-    invalid_before = {}
-    for event in events:
-        if isinstance(event, dict) and event.get('type') == 'amendment':
-            for ref in event.get('evidence_invalidated') or []:
-                invalid_before[ref] = max(invalid_before.get(ref, 0),
-                                          event.get('seq', 0))
+    invalid_before = invalidated_before(events)
     states = []
     for intent in task.get('gate_intent', []):
         cid = intent.get('criterion')
@@ -629,6 +622,32 @@ def invariant_findings(contract, events, start_seq):
         elif latest['statement'] != iid + ': pass':
             findings.append('%s failed (seq %s)' % (iid, latest.get('seq')))
     return findings
+
+
+AMEND_TAG = re.compile(r'amendment to revision \d+ contract ([0-9a-f]{64})')
+
+
+def invalidated_before(events):
+    """F-12: {criterion: seq} - evidence for a criterion recorded before
+    this seq no longer counts (gate runs and control pairs alike).
+
+    An amendment lists the revised criteria in ``evidence_invalidated``.
+    One written by ``ledger.py amend`` (its note names the new contract)
+    takes effect only once an approval cites that contract: an abandoned,
+    never-approved amendment invalidates nothing.
+    """
+    approved = {e.get('contract_id') for e in events
+                if isinstance(e, dict) and e.get('type') == 'approval'}
+    found = {}
+    for event in events:
+        if not isinstance(event, dict) or event.get('type') != 'amendment':
+            continue
+        tag = AMEND_TAG.search(event.get('note') or '')
+        if tag and tag.group(1) not in approved:
+            continue
+        for ref in event.get('evidence_invalidated') or []:
+            found[ref] = max(found.get(ref, 0), event.get('seq', 0))
+    return found
 
 
 def task_complete(contract, events, task_id):
@@ -1590,6 +1609,12 @@ class Writer:
         if not isinstance(draft, dict):
             raise LedgerError('amend: the draft is not a JSON object')
         draft.pop('contract_id', None)
+        if contract_v6.revision_content_bytes(draft) == \
+                contract_v6.revision_content_bytes(live):
+            # I5: the live contract already is this draft - nothing to do
+            return {'revision': live.get('revision', 1),
+                    'contract_id': live_id, 'invalidated': [],
+                    'affected_tasks': [], 'noop': True}
         revision = live.get('revision', 1) + 1
         if draft.get('revision') == live.get('revision', 1) and \
                 draft.get('parent_contract_id') == \
@@ -1613,6 +1638,13 @@ class Writer:
                               'and its generation (%s)' %
                               contract_v6.contract_generation(live))
         chain_dir = os.path.join(self.r.dir, 'contracts')
+        first = os.path.join(chain_dir, 'contract.r1.json')
+        if not os.path.exists(first) and live.get('revision', 1) == 1:
+            # W1: bootstrap (or finish bootstrapping) the chain with the
+            # materialized revision 1 before anything reads the chain
+            os.makedirs(chain_dir, exist_ok=True)
+            with open(os.path.join(self.r.dir, 'contract.json'), 'rb') as fh:
+                _atomic_write(first, fh.read().decode('utf-8'))
         parents = {}
         sources = ([os.path.join(chain_dir, n)
                     for n in sorted(os.listdir(chain_dir))
@@ -1632,12 +1664,6 @@ class Writer:
         pending = os.path.join(chain_dir,
                                '.contract.r%d.json.pending' % revision)
         tag = 'amendment to revision %d contract %s' % (revision, new_id)
-        if not os.path.isdir(chain_dir):
-            os.makedirs(chain_dir)
-            with open(os.path.join(self.r.dir, 'contract.json'), 'rb') as fh:
-                first = fh.read()
-            _atomic_write(os.path.join(chain_dir, 'contract.r1.json'),
-                          first.decode('utf-8'))
         if os.path.exists(pending):
             staged = PlanRecords._read_json(pending)
             if staged.get('contract_id') != new_id:
@@ -2800,6 +2826,10 @@ def main(argv):
                 result = writer.amend(args.contract, args.authority,
                                       args.note, marker,
                                       mechanism=args.mechanism)
+                if result.get('noop'):
+                    print('OK: the live contract (revision %d) already is this '
+                          'draft - nothing to amend' % result['revision'])
+                    return 0
                 print('OK: amended to revision %d contract %s (approval '
                       'recorded; criteria re-evidenced: %s)' % (
                           result['revision'], result['contract_id'][:12],

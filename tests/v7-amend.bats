@@ -248,3 +248,65 @@ PY
   run _amend
   [ "$status" -ne 0 ] && [[ "$output" == *"a different revision 2 is pending"* ]] || { echo "$output"; return 1; }
 }
+
+# ------------------------------------------------ pre-merge review fixes
+
+@test "an amend interrupted after creating contracts/ resumes (review W1)" {
+  _plan "$FIX7" PLAN_amend_bootstrap || return 1
+  _revise || return 1
+  mkdir -p "$PLAN/contracts"   # the crash window: directory, no revision 1
+  run _amend
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  cmp -s "$PLAN/contract.json" "$PLAN/contracts/contract.r1.json" || return 1
+  [ -f "$PLAN/contracts/contract.r2.json" ]
+}
+
+@test "re-running a finished amend is a no-op (review I5)" {
+  _plan "$FIX7" PLAN_amend_noop || return 1
+  _revise && _amend >/dev/null || return 1
+  before="$(shasum -a 256 "$PLAN/journal.ndjson")"
+  run _amend
+  [ "$status" -eq 0 ] && [[ "$output" == *"already is this draft - nothing to amend"* ]] || { echo "$output"; return 1; }
+  [ "$before" = "$(shasum -a 256 "$PLAN/journal.ndjson")" ]
+}
+
+@test "an unapproved amendment invalidates nothing (review I4)" {
+  _plan "$FIX7" PLAN_amend_unapproved || return 1
+  _revise || return 1
+  python3 - "$SHARED" "$PLAN" "$WORK/r2.json" "$NOTE" <<'PY' || true
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+import ledger
+original = ledger.Writer._append_raw
+def crash(self, etype, *a, **k):
+    if etype == 'approval':
+        raise SystemExit('crash before approval')
+    return original(self, etype, *a, **k)
+ledger.Writer._append_raw = crash
+ledger.main(['--plan', sys.argv[2], 'amend', '--contract', sys.argv[3],
+             '--authority', 'Ada Lead', '--note', 'n', '--human-note', sys.argv[4]])
+PY
+  [ "$(_count amendment)" -eq 1 ] || return 1
+  _L project >/dev/null
+  python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); t={x["id"]: x["status"] for x in s["tasks"]}; assert t["T-publish-schemas"] == "completed", t' "$PLAN/state.json"
+}
+
+@test "an approved amendment also retires the revised criterion's control pairs (review W2)" {
+  run python3 - "$SHARED" <<'PY'
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+import ledger, outcomes
+cid = 'c' * 64
+events = [
+    {'type': 'control_pair', 'criterion': 'AC-x', 'seq': 5, 'verdict': 'discriminating', 'trust': 'observed'},
+    {'type': 'amendment', 'seq': 6, 'evidence_invalidated': ['AC-x'], 'note': 'amendment to revision 2 contract ' + cid},
+]
+assert outcomes._control_pairs(events, 'AC-x', 0), 'unapproved: the pair still counts'
+events.append({'type': 'approval', 'seq': 7, 'contract_id': cid})
+assert not outcomes._control_pairs(events, 'AC-x', 0), 'approved: the pair is retired'
+print('ok')
+PY
+  [ "$status" -eq 0 ] && [ "$output" = "ok" ] || { echo "$output"; return 1; }
+}

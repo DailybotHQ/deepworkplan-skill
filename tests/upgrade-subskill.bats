@@ -124,7 +124,8 @@ up_has() {
 
 @test "upgrade back-fills the addon registry without re-deciding (F-15)" {
   grep -qF 'shared/config.py backfill --repo .` (dry run)' "$SK/upgrade/SKILL.md"
-  grep -qF 'A key the registry already names is never changed.' "$SK/upgrade/SKILL.md"
+  up_has "$UP" "A key the registry already names is never changed"
+  up_has "$UP" "a machine-level install is only reported"
   grep -qF 'recorded in `.dwp/config.json` (Phase 3 step 4)' "$SK/upgrade/SKILL.md"
 }
 

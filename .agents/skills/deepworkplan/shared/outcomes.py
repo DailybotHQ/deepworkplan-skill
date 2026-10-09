@@ -119,6 +119,9 @@ def _control_pairs(events, criterion, floor_seq):
             continue
         if event.get('seq', 0) < floor_seq:
             continue  # stale: recorded before the current attempt started
+        if event.get('seq', 0) < ledger.invalidated_before(events).get(
+                criterion, 0):
+            continue  # W2: recorded before an approved amendment revised it
         pairs.append(event)
     return pairs
 

@@ -256,7 +256,9 @@ HOST_KEYS = ('stop_agent', 'meter_spend', 'meter_tokens', 'meter_wall_clock',
 def resolve_host(files) -> Tuple[Dict[str, Dict[str, Any]], List[str]]:
     """F-17: the machine-readable host capability record (``host`` key).
 
-    Per capability, the repository file wins over the user file. Values
+    Per capability, the user file wins over the repository file: the
+    record describes the host, and each machine's own file is the better
+    witness of it (the tracked repository file is the team baseline). Values
     are booleans; a non-boolean or a capability outside the closed set is
     ignored with one warning (a capability is never invented). Returns
     ({capability: {"value": bool, "source": label}}, warnings) for the
@@ -264,7 +266,7 @@ def resolve_host(files) -> Tuple[Dict[str, Dict[str, Any]], List[str]]:
     """
     warnings: List[str] = []
     view: Dict[str, Dict[str, Any]] = {}
-    for label, _path, data, reason in files:
+    for label, _path, data, reason in reversed(list(files)):
         if reason or data is None or 'host' not in data:
             continue
         rec = data['host']
@@ -525,7 +527,10 @@ def backfill(dwp_root: str, write: bool = False,
 
     For every in-pack key the repository file does not name (a recorded
     decision - enabled or disabled - is never touched), run the addon's
-    read-only detection; a detected addon is proposed as
+    read-only detection. Only a repository-level install (a repo-relative
+    detect path, e.g. a vendored skill) is back-filled - a machine-level
+    install (a detect command or a ~/ path) is reported, never recorded in
+    the tracked registry. A detected repository-level addon is proposed as
     ``{"enabled": true, "version": <observed tag>, "note": "back-filled
     ..."}``. Dry run by default; ``write`` applies the proposals through the
     reconciling writer. An addon installed before the registry existed was
@@ -549,13 +554,25 @@ def backfill(dwp_root: str, write: bool = False,
     for key in known:
         if key in named:
             continue
+        doc, errs = load_descriptor(key, addons_dir or ADDONS_DIR)
+        det = (doc or {}).get('detect') or {}
+        machine = 'command' in det or not any(
+            not p.startswith('~/') for p in det.get('paths', []))
         verdict = resources.addon_status(key, repo_root, addons_dir)
         if not verdict['detected']:
+            continue
+        if errs or machine:
+            # W3: a machine-level install describes this machine, not the
+            # repository - the tracked registry records it only on the
+            # developer's acceptance (onboarding offers it)
+            proposals.append({'key': key, 'version': verdict.get('version'),
+                              'machine': True})
             continue
         version = verdict.get('version')
         note = 'back-filled on upgrade: already installed (detected %s)' % (
             version or 'present')
-        proposals.append({'key': key, 'version': version, 'note': note})
+        proposals.append({'key': key, 'version': version, 'note': note,
+                          'machine': False})
         if write:
             write_addon(dwp_root, key, True, version, known, note)
     return proposals
@@ -641,10 +658,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             print('ERROR: %s' % exc, file=sys.stderr)
             return 2
         for item in found:
+            if item['machine']:
+                print('SKIP  addons.%s: present on this machine only - a '
+                      'machine-level install is offered, never back-filled '
+                      'into the tracked registry' % item['key'])
+                continue
             print('%s addons.%s = enabled%s' % (
                 'WROTE' if args.write else 'WOULD', item['key'],
                 ' ' + item['version'] if item['version'] else ''))
-        if not found:
+        if not [i for i in found if not i['machine']]:
             print('OK: nothing to back-fill (every present addon is already '
                   'recorded)')
         elif not args.write:
