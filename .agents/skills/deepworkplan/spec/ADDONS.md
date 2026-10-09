@@ -115,10 +115,10 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Eight addon folders ship: six active addons are **optional** and **never
-required**, one is the local-review baseline, and Herdr (§6.6) is a staged
-candidate with no flow hook. A repository is fully conformant with **zero
-optional addons** installed. Of the six active optional addons, the
+Eight addon folders ship: seven are **optional** and **never
+required**, and one is the local-review baseline. A repository is fully
+conformant with **zero optional addons** installed. Of the seven optional
+addons, the
 **dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
 with declared dependencies, with its **inert** `/lib-upgrade` delegator
 installed under the onboarding consent **unless explicitly declined** (an
@@ -331,38 +331,26 @@ form**; only its CI surface is optional.
 ---
 
 
-### 6.6 Herdr Mesh (sixth addon — optional environment capability)
+### 6.6 Herdr (sixth addon — interactive delegation transport, thin integrator)
 
-An optional addon teaching an executing agent to discover, launch and
-orchestrate a **Herdr agent mesh** (`skills/deepworkplan/addons/herdr/`):
-`SKILL.md` (router, detection, launch), `SPEC.md` (normative),
-`protocol.md` (address, discovery, send, grant/reply stamps, stop rules,
-escalation), `orchestration.md` (delegation discipline, one writer per
-path, join on the plan), `movement.md` (inside-Herdr detection and the
-safe command subset), `templates.md` (grant/reply stamps, launch brief).
+An optional addon integrating **herdr-peers** (`DailybotHQ/herdr-peers`,
+MIT, its own release cycle) pinned at `v0.1.0` (protocol/interface `1`), as
+the **interactive** transport of v7 delegation
+([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `herdr-peers ask` to a peer agent
+in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
+the plan journal before the reply is relied on, the reply asserted until
+the plan's own gates observe the work. `onboard` Phase 7b offers it as an
+**explicit opt-in**; installs are the pinned skills
+(`herdr-peers@v0.1.0`, Herdr's official `herdr@v0.9.3`).
 
-Placement decision (recorded per the addon contract): INSIDE DeepWorkPlan,
-not a separate repository — its only consumer is an agent executing or
-coordinating a plan, and it must stay in lockstep with the plan autonomy
-rules; it has no second surface (no CI Action, no marketplace) to justify
-a split. Generic by contract: it names `herdr` on PATH (or a detected
-wrapper taking the same address) and never a product or vendor.
-
-Identity is `(machine_id, pane_id)`; labels and row numbers are never
-addresses. Every delegation body carries the reply grant
-(`[herdr-mesh]` stamp); return hops are marked and never answered. The
-addon is an optional environment capability: never part of the AI-first
-baseline, never a conformance gate, never blocking — a repository with no
-Herdr runs single-agent and stays fully conformant, and a launch failure
-is recorded and continued with available peers.
-
-The addon ships **unwired** in the current line: no flow references it.
-Its `SKILL.md` is not user-invocable in v6, and Phase 7b excludes this
-staged candidate from the active addon offer. The template and validation
-checklist are present for review but do not activate the addon.
-The v7 wiring plan (onboard offer, optional execute delegation,
-`parallel-safe` marks, presence-gated verify) is recorded in
-[`V7_ROADMAP.md`](V7_ROADMAP.md) — non-normative.
+Placement decision (revised for 7.0.0): the peer protocol — stamp, grant,
+reply, loop guard, depth limit 1, fan-out cap, scope — moved out of the
+pack into herdr-peers, which works without DWP; this folder is the
+DWP-side integration only and carries **no copy** of it. It is **never
+required**: a repository without Herdr runs every task in the current
+session and stays fully conformant. Full contract:
+[`SKILL.md`](../addons/herdr/SKILL.md), [`SPEC.md`](../addons/herdr/SPEC.md),
+`install.md`, `templates/INTEGRATION.md`.
 
 ### 6.7 DeepWorkPlan Vim (seventh addon — optional terminal editor, thin integrator)
 

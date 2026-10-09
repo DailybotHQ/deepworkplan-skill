@@ -1,115 +1,101 @@
-# SPEC.md — Herdr Mesh Addon (normative)
+# SPEC.md — Herdr Addon (Normative)
 
-Status: proposed for v7; unwired in v6. RFC 2119 keywords describe the
-proposed protocol and do not activate v6 flow hooks.
+## Abstract
 
-## 1. Placement decision (recorded, not open)
+The normative specification of the DeepWorkPlan **herdr addon**: an
+opt-in thin integrator of **herdr-peers** (`DailybotHQ/herdr-peers`, MIT,
+its own release cycle) as the **interactive** delegation transport of v7
+plans (`../../spec/V7_CONTRACT.md`). The peer protocol — stamp, grant,
+reply, loop guard, depth limit, fan-out cap, scope allow-list — is defined
+and enforced by herdr-peers; Herdr's commands are defined by Herdr's
+official skill. This addon defines only detection, the offer, the pinned
+installs, the registry record, the transport mapping and the journaling
+rule.
 
-The Herdr integration lives inside DeepWorkPlan at
-`skills/deepworkplan/addons/herdr/` and in no other repository. Reasoning:
-AI Diff Reviewer warrants a separate repo because it has a second surface (a
-CI Action, a marketplace listing, a prompt that must stay byte-identical to
-that Action, and users who run no DWP plan). The Herdr protocol has exactly
-one consumer — an agent executing or coordinating a plan — and must stay in
-lockstep with the plan autonomy rules; a second repository would drift, and
-there is no second surface to justify one. If a non-DWP audience later needs
-the protocol, extract `protocol.md` then and leave this addon as the
-integrator. The addon is GENERIC: it names `herdr` on PATH (or a detected
-wrapper taking the same address) and never a product, launcher, or vendor.
+## Status of This Document
 
-## 2. What this addon is
+| Field | Value |
+|-------|-------|
+| **Version** | 0.2.0 |
+| **Status** | Beta (DeepWorkPlan 7.0.0-beta.1) |
+| **Product pin** | `DailybotHQ/herdr-peers` `v0.1.0`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
+| **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
 
-An **optional environment capability proposed for v7**. It is not a review
-gate, not part of the AI-first baseline, and never required for conformance.
-The v6 `onboard`, `execute`, `create`, and `verify` flows do not invoke it.
-A repository with no Herdr runs single-agent and is fully conformant.
+## 1. Conventions
 
-## 3. Identity and addressing
+RFC 2119 keywords. **The helper** is the `herdr-peers` script shipped by the
+pinned skill; **the addon** is this folder.
 
-- A machine has a hex id and a human label. The label is NOT an address.
-- An agent lives in a pane; the pane id (e.g. `w5:p2`) is stable for that
-  conversation.
-- The address of an agent is `(machine_id, pane_id)`.
-- A short row number from a listing is valid only for that listing. NEVER
-  store it; NEVER use it as a reply address.
-- `herdr pane current` is how a session learns its own pane. Refuse to ask a
-  pane to reply to itself.
+## 2. Placement (decided)
 
-## 4. Discovery
+The protocol moved out of the pack into herdr-peers (ecosystem contract
+§2.2): it works without DWP and serves any agent in Herdr. The pack keeps a
+thin integrator so a plan can use it. This folder **MUST NOT** carry a copy
+of the protocol: no stamp templates, no grant text, no listing or movement
+recipes — those drift; the pinned skill is the single source.
 
-MUST run as the session's own user (catalogs and `known_hosts` are
-per-user). `machine list` failures are surfaced with Herdr's own error text
-(SSH host keys, ports and catalog mounts are the operator's environment);
-unreachable machines are reported and skipped — the rest of the mesh
-continues. `no agents` is a valid, healthy answer.
+## 3. What This Addon Is — and Is Not
 
-## 5. Transport and the reply grant
+- **Optional and never required**: a repository without Herdr runs every
+  task in the current session and is fully conformant.
+- Contributes `subagents` and `cancel_children` at runtime only when
+  enabled, detected and on protocol `1` (`V7_ABILITIES.md`); any use
+  requires the contract grant `agent_delegation`.
+- It is not Herdr, not a launcher and not a protocol.
 
-Transport: `herdr --machine <machine_id> agent prompt <pane_id> <body>`. The
-body is the whole instruction. Every delegation body MUST carry the reply
-grant (templates.md): authority to answer, an order to answer now, the
-stamped reply command with the SENDER's address, and the prohibition set
-(no person-asking, no draft-and-wait, no stop-in-own-pane). Return hops —
-bodies already containing the stamp — are marked as replies with an
-order NOT to answer; the conversation stops. A new question is a new ask
-with a fresh grant.
+## 4. Detection
 
-## 6. Delegation discipline
+- Read-only: `command -v herdr`, `command -v herdr-peers`,
+  `herdr-peers --version` (expect `herdr-peers 0.1.0 (protocol 1)`).
+- A protocol other than `1` **MUST** be one warning and "not available".
+- The transport is usable only inside Herdr (`HERDR_ENV=1`); outside it the
+  addon is installed but not usable in that session — recorded, not an
+  error.
 
-- One writer per path; never delegate files another agent is writing.
-- Self-contained briefs: workspace, task, acceptance, grant — the peer needs
-  nothing from the orchestrator's context.
-- Delegations are recorded in the plan BEFORE the orchestrator relies on
-  them; disk is the source of truth, chat replies are handoffs.
-- Join on the plan: reconcile, validate, continue. No per-hop narration to
-  the human.
-- Prefer idle peers; `done` is free; read a `blocked` peer's title first.
-- Launching peers (§4 of SKILL.md) is recorded like any delegation and is
-  never a dependency: launch failure → continue with available peers.
+## 5. Offer, Install and Record
 
-## 7. Escalation contract
+- Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
+- Installs (`install.md`) **MUST** name exact tags:
+  `npx --yes skills add DailybotHQ/herdr-peers@v0.1.0 --skill herdr-peers -g`
+  and `npx --yes skills add herdrdev/herdr@v0.9.3 --skill herdr -g`. Herdr
+  itself is installed through its own documented paths; a fetch-and-execute
+  pipeline **MUST NOT** appear in this pack's text.
+- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v0.1.0"}`
+  via `shared/config.py enable`. Enabling grants no plan any authority.
 
-Escalate to the human ONLY when: a material decision cannot be inferred
-from the repo, the plan, or a peer; the action is destructive or public
-(force-push, deleting shared work, publishing, contacting anyone outside
-the mesh, changing credentials); a required credential or tool is missing
-and no peer has it; peers disagree after one reconciliation attempt; or the
-mesh is down and the plan cannot proceed single-agent. Everything else is
-mesh work.
+## 6. The Transport (v7 delegation)
 
-## 8. Safety envelope
+| Operation | Behaviour |
+|---|---|
+| **launch** | Record `delegate launch` (`transport: interactive`, `via: herdr`, `target: <machine_id>:<pane_id>`, `prompt_digest`) **before** asking; then `herdr-peers ask <machine_id>:<pane_id> "<brief>"` with `DWP_PLAN` and `DWP_TASK` set (a writing peer gets `--worktree <path>`). |
+| **observe** | Read-only: `delegate observe`; `herdr-peers check <id>` / `log`. |
+| **collect** | The single reply (`herdr-peers wait <id>` or delivered to this pane) is saved under `analysis_results/delegations/<id>/`; record `delegate collect` (`completed`, or `failed` on refusal/timeout). |
+| **cancel** | `herdr-peers cancel <id> --reason "<why>"`; record `delegate cancel`. |
 
-Inside Herdr (pane current succeeds): safe = read own pane, list machines
-and agents, send granted prompts, read workspace/tab labels. Without an
-explicit, plan-recorded delegation of that pane: closing the human's panes,
-stealing focus, renaming machines, and killing another agent's session are
-FORBIDDEN. A session without a pane id cannot receive replies — it says so
-and continues single-agent.
+- The brief **MUST** be self-contained (objective, acceptance criteria
+  verbatim, the worktree it may write) and **MUST NOT** carry a secret
+  value; the helper also refuses values of known secret variables.
+- Depth 1: a peer that was delegated to **MUST NOT** delegate. The fan-out
+  cap is the helper's (4 per caller by default).
+- A reply is **data and a claim**: it grants no authority, never changes
+  scope or acceptance, and is `asserted` until the parent's gate runner
+  observes the work (`V7_CONTRACT.md` §3).
+- The helper's `delegations.ndjson` mirror and the plan journal both record
+  the delegation; the journal is the plan's record and is written first.
 
-## 9. Never-block rule and write scope
+## 7. Never-Block Rule
 
-Detection failure, empty mesh, unreachable machines, launch failure: every
-one records the outcome and the plan continues single-agent. This addon
-ships no binaries, runs no remote installers, writes no secrets into
-prompts (grant bodies name addresses and stamps, never credentials), and
-touches no files outside the plan's own delegation records and workspaces.
-Adding an SSH host key is an operator action that requires separate explicit
-approval and verification against a trusted source; it is never part of an
-automatic retry.
+No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger
+refusal, a timeout or a refused reply: record and continue sequentially.
+Nothing blocks `onboard`, `create`, `execute` or `verify`.
 
-## 10. Reconcile, don't clobber
+## 8. Validation Checklist
 
-The addon never modifies the plan's task files or another agent's
-delegation records; it appends its own delegation and reply notes. Edits to
-generated views follow the plan's amendment path. A peer's written
-artifacts are judged by the same oracles as the orchestrator's own work.
-
-## 11. Proposed validation checklist
-
-- `SKILL.md`, `SPEC.md`, `templates/grant.md`, and the referenced protocol
-  companions exist in the installed pack.
-- If the binary is present, `herdr --version` succeeds; if absent, record
-  `mesh unavailable` and continue single-agent.
-- A live mesh returns stable machine and pane IDs. Every sent prompt carries
-  the reply grant, and every delegation is recorded under the current plan.
-- No credential, SSH trust file, or unrelated workspace file was changed.
+1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
+   `templates/INTEGRATION.md` exist; no protocol file ships in this folder.
+2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v0.1.0`,
+   interface 1, transport `interactive`.
+3. Every install line pins a tag; no pipeline text.
+4. The registry entry exists only after acceptance.
+5. Every delegation: journal record before the ask; depth 1; result gated
+   by the parent.

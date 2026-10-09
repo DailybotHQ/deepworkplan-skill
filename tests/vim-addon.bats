@@ -127,7 +127,7 @@ vim_doc_has() {
 @test "wired as an opt-in: onboard Phase 7b offers it; no other flow references it" {
     grep -qF '| **DeepWorkPlan Vim** | [`../addons/vim/`](../addons/vim/SKILL.md) |' "$ONBOARD"
     vim_doc_has "$ONBOARD" "offer — never impose — the editor"
-    vim_doc_has "$ONBOARD" "Five active addons are **explicit opt-ins**"
+    vim_doc_has "$ONBOARD" "Six active addons are **explicit opt-ins**"
     run grep -rIl 'addons/vim\|addon-vim\|DeepWorkPlan Vim' \
         "$SK/execute" "$SK/create" "$SK/refine" "$SK/resume" "$SK/status" "$SK/verify"
     [ "$status" -ne 0 ]

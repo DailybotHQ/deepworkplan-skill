@@ -67,7 +67,7 @@ c_doc_has() {
 }
 
 @test "every optional addon stays never-required; zero-optional conformance holds" {
-    for f in devcontainer dailybot design-system vim agentkit; do
+    for f in devcontainer dailybot design-system vim agentkit herdr; do
         c_doc_has "$A/$f/SKILL.md" "never required"
     done
     # dependency-upgrade phrases it with bold-split emphasis in both files.
@@ -81,8 +81,8 @@ c_doc_has() {
 @test "Phase 7b wording matches the matrix (no blanket explicit-opt-in claim)" {
     run grep -F 'offer each as an **explicit opt-in** step' "$ONBOARD"
     [ "$status" -ne 0 ]
-    c_doc_has "$ONBOARD" "Five active addons are **explicit opt-ins**"
-    c_doc_has "$ONBOARD" "The sixth, **dependency upgrade**, is"
+    c_doc_has "$ONBOARD" "Six active addons are **explicit opt-ins**"
+    c_doc_has "$ONBOARD" "The seventh, **dependency upgrade**, is"
 }
 
 @test "the design-system exclusivity note acknowledges the near-default tier" {
