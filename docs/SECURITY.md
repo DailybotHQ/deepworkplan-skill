@@ -92,7 +92,11 @@ maintains these hard invariants (enforced in review by
    Precedent: `6a05ed9` flipped Snyk to FAIL before this rule existed.
 2. **No permission-bypass literals, no silent credential relocation**
    (Snyk E006): AI-CLI wrappers documented in the pack are **pass-through**
-   (no injected bypass flags — elevated modes are the developer's own choice),
+   (no injected bypass flags — elevated modes are the developer's own choice;
+   the agentkit addon spells no permission flag and never passes `--auto`:
+   coding-agents-kit's own autonomy default and its `--ask` /
+   `AGENTKIT_PERMISSIONS=ask` opt-out, which always wins, are the kit's
+   posture, stated as such),
    and any host-credential seeding (e.g. SSH keys into a devcontainer) ships
    behind an explicit, visible opt-in gate (read-only mount +
    `SEED_SSH_KEYS=1`), default off.
