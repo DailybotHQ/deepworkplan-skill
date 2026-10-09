@@ -52,8 +52,8 @@ company-specific network, volume, CLI or profile file.
 ## 5. Offer, Install and Render
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
-- Install: `git clone --branch v0.1.0
-  https://github.com/DailybotHQ/devcontainer-kit` then
+- Install:
+  `git clone --branch v0.1.0 https://github.com/DailybotHQ/devcontainer-kit` then
   `./devcontainer-kit/install.sh`. A fetch-and-execute pipeline **MUST NOT**
   appear in this pack's text.
 - Options **MUST** be reasoned from the repository's real files

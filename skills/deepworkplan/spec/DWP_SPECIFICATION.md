@@ -39,7 +39,7 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 
 Three version series coexist on purpose and never compare: the skill **package**
 `version:` (release-managed), the **DWP standard** this document versions
-(2.x and 4.x historical, 5.x retained as the base, 6.x current — there is no 3.x standard; the v3 launch
+(2.x and 4.x historical, 5.x retained as the base, 6.x retained, 7.x current — there is no 3.x standard; the v3 launch
 was a product release), and the **schema URLs** (`plan-state/v2.json`,
 `plan-state/v5.json` — a schema-shape series, not the standard's version; the
 v5 URLs are **generation snapshots** of the v2 shape, adding no property).

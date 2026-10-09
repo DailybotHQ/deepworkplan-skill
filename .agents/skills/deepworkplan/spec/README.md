@@ -1,10 +1,14 @@
-# DeepWorkPlan Methodology Specification — v6
+# DeepWorkPlan Methodology Specification — v7
 
 > The canonical normative standard for an **AI-first autopilot repository** and the
-> The current **Deep Work Plan (DWP)** standard is v6. The v5 base documents
-> below remain versioned 5.0.0 so existing plans keep their recorded rules;
-> the four `V6_*.md` documents define the current lifecycle on top of that
-> base. New plans created by the 7.x pack use the v7 contract generation of
+> The current **Deep Work Plan (DWP)** standard is **7.0.0** (decided for the
+> 7.0.0-beta.1 release: it adds normative surface — the configuration file and
+> addon registry `CONFIG.md`, addon descriptors `ADDONS.md` §7,
+> addon-provided abilities `V7_ABILITIES.md`, the v7 contract generation
+> `V7_CONTRACT.md` and four schemas; 6.0.0 declarations stay valid). The v5
+> base documents below remain versioned 5.0.0 so existing plans keep their
+> recorded rules; the four `V6_*.md` documents define the lifecycle on top of
+> that base and the `V7_*.md` documents extend it. New plans created by the 7.x pack use the v7 contract generation of
 > the same record layer (`V7_CONTRACT.md`: v6 plus the `parallel_safe` marker
 > and delegation records); v6 plans keep v6. Existing v1/v2/v5 plans
 > retain their recorded generation and are never silently migrated. Schema

@@ -21,12 +21,18 @@
 
 > The official DeepWorkPlan agent skill pack, maintained by [Dailybot](https://www.dailybot.com).
 
-The current major line is **v6**. New plans use the v6 contract, journal,
-scheduler, and live snapshot; existing v5 plans retain their recorded lifecycle.
-The v6 [manifest](https://deepworkplan.com/schema/plan-manifest/v6.json) and
-[snapshot](https://deepworkplan.com/schema/plan-snapshot/v6.json) schemas are
-published separately. The v6 architecture decision does not establish an
-empirical agent-outcome advantage over v5.
+The current major line is **v7** (DWP standard 7.0.0; `7.0.0-beta.1` is a
+pre-release). The methodology works alone — every addon is optional and only
+amplifies it. New plans use the v7 contract generation of the v6 record layer
+(contract, journal, scheduler, live snapshot) with recorded, gated delegation;
+existing v6 and v5 plans retain their recorded lifecycle. v7 adds an addon
+registry in `.dwp/config.json`, an `addon.json` descriptor per addon,
+addon-provided abilities computed at runtime, and thin integrators for the
+ecosystem products — coding-agents-kit (`agentkit`), herdr-peers (`herdr`),
+devcontainer-kit (`devcontainer`) and DeepWorkPlan Vim (`vim`). See
+[`spec/V7_ROADMAP.md`](skills/deepworkplan/spec/V7_ROADMAP.md). The v6
+architecture decision does not establish an empirical agent-outcome advantage
+over v5.
 
 DeepWorkPlan turns any repository into a **structured environment** — context,
 guardrails, and a durable plan — where any coding agent executes with precision
@@ -84,8 +90,10 @@ capabilities and routes to the right sub-skill based on the developer's intent.
 Each skill can be used independently or together; they share context detection
 through a common `shared/` directory. The **AI Diff Reviewer local review** ships
 in the baseline (installed by `onboard`, run by every Final Review; its CI
-Action stays optional), and opt-in addons such as **devcontainer** support can
-layer more onto an onboarded repo.
+Action stays optional), and opt-in addons — devcontainer, Dailybot,
+dependency upgrade, design system, agentkit, Herdr and the Vim editor — can
+layer more onto an onboarded repo, each recorded in the `.dwp/config.json`
+addon registry and never required.
 
 ## Install
 
@@ -189,8 +197,8 @@ Each repository assigns IDs starting at `001`; the counter is kept in
 `.dwp/plans/.next-plan-id`, so deleting a plan does not reuse its number.
 `latest` selects the highest numbered plan. You can also select a plan by its
 full folder name, ID, or unique slug. Existing folders such as
-`PLAN_improve_docs/` are not renamed and remain usable. The current 6.x pack
-creates v6 plans with 2–5-word slugs. The retained v5 creation flow uses
+`PLAN_improve_docs/` are not renamed and remain usable. The current pack
+creates v7 plans (v6 on explicit request) with 2–5-word slugs. The retained v5 creation flow uses
 2–4 words to fit its frozen schemas.
 
 ## Benchmark metrics and learnings (opt-in)

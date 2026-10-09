@@ -53,8 +53,8 @@ the editor and ships none of its code.
 
 The editor lives in its own public repository and this addon only integrates
 it, per the placement decision recorded in
-[`../../spec/V7_ROADMAP.md`](../../spec/V7_ROADMAP.md) ("Addon 2 —
-DeepWorkPlan Vim"). Reasoning: the editor is a versioned product with its own
+[`../../spec/V7_ROADMAP.md`](../../spec/V7_ROADMAP.md) (the rule that a
+capability useful without DWP is its own product). Reasoning: the editor is a versioned product with its own
 release cycle, installer and contributor environment; a methodology pack that
 embedded it would couple every onboarded repo's documentation to an editor's
 release cadence. The split mirrors how the AI Diff Reviewer is a named
@@ -294,7 +294,7 @@ the editor's observed version from the installed surface and `nvim
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md`
   (reasoning template)
 - `../README.md` (addon mechanism), `../../spec/ADDONS.md` (concept +
-  pointer), `../../spec/V7_ROADMAP.md` (the v7 wiring plan — non-normative)
+  pointer), `../../spec/V7_ROADMAP.md` (what v7 ships — non-normative)
 - The editor repository: `https://github.com/DailybotHQ/deepworkplan-vim`
   (GPL-3.0; CREDITS.md lineage preserved)
 

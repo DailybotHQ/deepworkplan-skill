@@ -1,106 +1,61 @@
-# DeepWorkPlan v7 Roadmap — Optional Super Addons (Planning Record)
+# DeepWorkPlan v7 — What Ships and What Follows (Planning Record)
 
-> **Status: NON-NORMATIVE.** This document is a planning record for the next
-> major version. Nothing in it is part of the current standard, nothing here
-> gates `/deepworkplan-verify` conformance, and the current version is
-> complete without any of it. An implementer looking for rules to enforce
-> should stop reading here and use the current normative documents.
+> **Status: NON-NORMATIVE.** A planning record. The normative rules for
+> everything that ships live in [`CONFIG.md`](CONFIG.md),
+> [`ADDONS.md`](ADDONS.md), [`V7_ABILITIES.md`](V7_ABILITIES.md) and
+> [`V7_CONTRACT.md`](V7_CONTRACT.md). Nothing here gates conformance.
 
-## Version split (load-bearing)
+## The rule v7 is built on
 
-| Version | Scope |
-|---------|-------|
-| Current (v6 line) | Complete as it stands. No new addon work lands here. |
-| v7 (this roadmap) | Two **optional super addons**, offered at onboard, never conformance gates: **(1) Herdr mesh**, **(2) DeepWorkPlan Vim**. |
+**The methodology works alone.** The `deepworkplan` skill needs no addon to
+create, execute, verify or resume a plan. Every addon is optional and only
+amplifies it; no addon gates conformance and no flow requires one
+(`tests/standalone-methodology.bats` runs the whole lifecycle with no
+configuration, every addon disabled, unknown keys and malformed configs, and
+proves no addon file is opened).
 
-A repository without Herdr, without the editor, or without both stays
-single-agent and **fully conformant**. Missing tooling is never a
-conformance failure, never a launch blocker, never a silent surprise.
+The second rule follows from the first: a capability that is useful without
+DWP is its **own product** (own repository, license, tags and interface
+number), and the pack carries a **thin integrator** for it — never a copy.
 
-## Addon 1 — Herdr mesh
+## What v7 ships (7.0.0-beta.1)
 
-**Placement (decided):** in-pack at `skills/deepworkplan/addons/herdr/`,
-not a separate repository. Unlike the AI Diff Reviewer (which has a second
-surface — a CI Action and a marketplace listing — justifying its own repo),
-the mesh's only consumer is an agent executing or coordinating a plan.
+| Surface | What it is |
+|---|---|
+| **Addon registry** | `.dwp/config.json` / `~/.dwp/config.json` → `addons.<key>` (`enabled`, informative `version`); one stdlib reader shared with `benchmark`; per-key precedence; fail-closed with one warning; absent = not enabled ([`CONFIG.md`](CONFIG.md)). |
+| **Addon descriptors** | `addons/<key>/addon.json` for every in-pack addon: pinned product (repo, exact tag, interface), read-only detect (argv without a shell, or paths), abilities, grants, transport ([`ADDONS.md`](ADDONS.md) §7). |
+| **Addon-provided abilities** | effective abilities = host ∪ abilities of enabled, valid, detected, interface-compatible addons; computed per call, never persisted; an ability is never authority or consent ([`V7_ABILITIES.md`](V7_ABILITIES.md)). |
+| **v7 contract generation** | `plan-contract/v7` (v6 + `parallel_safe`), `journal-event/v7` (v6 + `delegation`), `plan-manifest/v7`; default for new plans; v6 plans unchanged ([`V7_CONTRACT.md`](V7_CONTRACT.md)). |
+| **Delegation** | `ledger.py delegate launch|observe|collect|cancel` behind a recorded gate (grant, marker, ability); `execute/delegation.md`; a delegate's result stays `asserted` until the plan's own gates observe it. |
+| **Thin integrators** | `agentkit` → `coding-agents-kit@v0.1.1` (headless transport, `ak run`); `herdr` → `herdr-peers@v0.1.0` (interactive transport; stamp `[herdr-peers]`, protocol owned by herdr-peers); `devcontainer` → `devcontainer-kit` (`dck init`, vendor-neutral); `vim` → `deepworkplan-vim@v0.4.0` (surface-driven editor offer). |
+| **Pre-release channel** | `prerelease.yml` cuts `X.Y.Z-beta.N` on dispatch (never `latest`, with `SHA256SUMS`); stable releases ignore pre-release tags and graduate only on `[graduate]`. |
+| **Standard** | DWP standard **7.0.0** (normative additions above); `6.0.0` declarations stay valid. |
 
-**Current in-tree state:** the addon already exists as an opt-in,
-never-blocking capability (ADDONS.md §6.6) — detection, listing, the
-address/grant protocol, delegation discipline. It is **unwired**: no flow
-(onboard, execute, create, verify, router) references it, and v6 does not
-wire it further. What v7 adds is the wiring and the install surface:
+Interfaces between the pieces are integers (`interface: 1` everywhere in v7);
+tags pin what is installed. An unknown interface major is one warning and
+"not available" — never an error.
 
-| Flow | v7 behavior |
-|------|-------------|
-| `onboard` | Offers the Herdr addon (independently of the editor). A decline is recorded, not a failure. If accepted and `herdr` is not on PATH, print the official install paths and continue single-agent until present. |
-| `execute` | When the addon is installed AND `herdr` is on PATH: may list peers and delegate independent tasks carrying the reply grant; every delegation is recorded in the plan. |
-| `create` | May mark tasks `parallel-safe` when mesh execution is expected. |
-| `verify` | Checks the addon **only if installed**. Missing addon = skip, never a finding. |
+## Release order
 
-Plus a standalone `install.md` (host + container install paths) and a
-`container-profile.md` (the optional in-container mesh pattern for product
-repos that already run Docker).
+1. Product tags: `herdr-peers` `v0.1.0`, `coding-agents-kit` `v0.1.1`
+   (supersedes `v0.1.0`, a security patch), `devcontainer-kit`,
+   `deepworkplan-vim` `v0.4.0`.
+2. `deepworkplan-skill` `v7.0.0-beta.1` — a GitHub **pre-release**.
+3. A field test in real repositories.
+4. `v7.0.0` — graduated from the beta by a `[graduate]` merge.
 
-**Capabilities the addon teaches** (already specified in-tree, restated as
-the v7 acceptance shape): detect Herdr, document (never auto-pipe) its
-installation; list all live agents across machines; ask another machine's
-pane with a prompt that authorizes the reply; receive the reply without a
-human in the loop and never answer a stamped reply.
+## Follow-ups (v7.x)
 
-## Addon 2 — DeepWorkPlan Vim
-
-**Placement (decided):** a separate public repository,
-`https://github.com/DailybotHQ/deepworkplan-vim` (GPL-3.0; lineage
-AndresMpa/mu-vim → DailybotHQ/mu-vim → this product — see that repo's
-`CREDITS.md`). The editor is versioned independently of the methodology
-pack, the same way the AI Diff Reviewer is a named review surface.
-
-**v7 onboard offers (never imposes):** detect Neovim; if the person wants
-the DWP terminal editor, point at the repo's versioned installation
-instructions. An existing Neovim
-config is **never** overwritten without explicit consent. The editor is
-never a conformance failure. Contributor/agent environments (Debian image,
-Herdr, `dev.sh agents|ask`) live **in that repository** — never copied
-into every onboarded repo's Dockerfile, never a required layer of any
-onboard.
-
-## Protocol core — moved to herdr-peers (7.0.0)
-
-The peer protocol drafted here (address, live listing, grant on the first
-hop, reply stop, self-ask refusal, record before relying, escalation) now
-lives, normative and tested, in the separate product
-[`DailybotHQ/herdr-peers`](https://github.com/DailybotHQ/herdr-peers)
-(protocol `1`, stamp `[herdr-peers]`). The pack's `addons/herdr/` is a thin
-integrator that pins it and carries no copy (`ADDONS.md` §6.6).
-
-## Explicit non-copy (product-launcher baggage stays out)
-
-The public pack MUST NOT require: Dailybot hub paths; `dbdev` (or any
-product launcher) as the only entry; `[dailybot-mesh]` as the public
-stamp; private peer filenames as the only peers mechanism. The pack KEEPS:
-grant semantics, the stamp stop, the machine+pane address, ED25519 trust,
-live listing, the `host.docker.internal` rewrite, record-before-relying.
-
-## Success metrics (v7)
-
-1. A person who opts into Herdr: "list agents" shows panes on multiple
-   machines; A asks B with the grant; B replies without a human in the
-   loop; A does not answer the reply.
-2. A person who opts into the editor: DeepWorkPlan Vim installed as
-   `~/.config/nvim`, nothing clobbered without consent.
-3. A person who declines both: normal single-agent DWP, fully conformant.
-4. No current-version tree gained either addon as a surprise: everything
-   above is offered, wired and released through the v7 version bump.
-
-## Implementation order (v7)
-
-1. This roadmap (recorded; you are reading it).
-2. Standalone `install.md` + `container-profile.md` inside the existing
-   in-pack addon; align its SPEC with the grant/stop text above.
-3. Wire the onboard offers (Herdr and the editor, independently), plus
-   execute's optional mesh delegation and create's `parallel-safe` marks.
-4. Verify checks gated on addon presence.
-5. Release through the normal version bump; `init.md` and the website
-   point at the offers.
-6. The editor repository carries its own contributor environment; DWP
-   documentation links to it and never embeds it.
+- **`deepworkplan.nvim`** — the editor's `lua/dwp/` modules as a plugin for
+  people who keep their own Neovim config (v7.1). The vim addon names this
+  route and never offers it before it ships.
+- **A v7 benchmark record** — `benchmark-record/v1` pins `generation: "v6"`
+  and a plain `X.Y.Z` pack version, so v7 plans (and v6 plans run by a
+  pre-release pack) are reported "not measured" today.
+- **`addons.version` parity** — informative in 7.0.0; `verify` warns on a
+  mismatch. A parity failure mode is a candidate once the field test shows
+  how often versions drift.
+- **devcontainer-kit workspaces** (satellites, port pools, a proxy) — in the
+  kit's own roadmap, not the pack's.
+- **Sender authentication between peers** — herdr-peers' `from=` is a claim;
+  a scope allow-list (`HERDR_PEERS_SCOPE`) is the mitigation today.

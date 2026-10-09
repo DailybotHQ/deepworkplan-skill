@@ -103,14 +103,23 @@ of our own files, contains nothing of yours, and is safe to delete. The **core
 methodology makes no CLI calls, no HTTP API calls, no authentication flow, and no
 network calls**, and emits **no telemetry** of any kind.
 
-> **One honest caveat — addons.** The shipped tree includes five addons
+> **One honest caveat — addons.** The shipped tree includes eight addons
 > (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,
-> `addons/ai-diff-reviewer`, `addons/design-system`). Four are opt-in: if you
-> explicitly choose to install them, they may install third-party artifacts —
-> **always behind your consent, always pinned** (a published tag or a
-> package-manager version), and always through a verifiable path: a package
-> manager, the checksummed `skills` CLI, or a documented download → verify
-> SHA-256 → execute flow. The fifth, the **AI Diff Reviewer local review**, is
+> `addons/ai-diff-reviewer`, `addons/design-system`, `addons/agentkit`,
+> `addons/herdr`, `addons/vim`). Seven are opt-in: if you explicitly choose to
+> install them, they may install third-party artifacts — **always behind
+> your consent, always pinned** (a published tag or a package-manager
+> version), and always through a verifiable path: a package manager, the
+> checksummed `skills` CLI, a clone of an exact tag followed by that
+> product's own `install.sh`, or a documented download → verify SHA-256 →
+> execute flow. Three of them (`agentkit`, `herdr`, `vim`) and `devcontainer`
+> are thin integrators of separate products (coding-agents-kit, herdr-peers,
+> deepworkplan-vim, devcontainer-kit); each has its own repository and
+> license, and the pack carries only detection, the offer, the pinned install
+> and — for the two delegation transports — the mapping onto the plan's
+> recorded `delegate` operations. Enabling an addon is recorded in
+> `.dwp/config.json` and authorizes nothing by itself. The eighth, the
+> **AI Diff Reviewer local review**, is
 > part of the baseline since standard 2.3.0: `onboard` installs one MIT-licensed, tag-pinned
 > skill (`DailybotHQ/ai-diff-reviewer`) through the checksummed `skills` CLI,
 > and the Final Review's security pass runs it through your own coding agent —
@@ -203,11 +212,13 @@ grep -RInE --exclude=TRUST.md -- '--dangerous[l]y|--full-permissio[n]|c[u]rl[^|]
   skills/deepworkplan \
   || echo 'OK: no installer pipes, no bypass flags'
 
-# 5. No unpinned installs of any kind: no clone-and-run (installing by
-#    cloning whatever a remote default branch currently holds), no un-tagged
-#    `skills add`, and no moving refs — a pin is an immutable version tag
-#    (@vX.Y.Z), never @main/@master/@latest/@head:
+# 5. No unpinned installs of any kind: no clone-and-run of whatever a remote
+#    default branch currently holds (a clone must name an exact tag,
+#    `git clone --branch vX.Y.Z`), no un-tagged `skills add`, and no moving
+#    refs — a pin is an immutable version tag (@vX.Y.Z), never
+#    @main/@master/@latest/@head:
 grep -RInE --exclude=TRUST.md 'git clone |skills add [A-Za-z0-9_./-]+([[:space:]]|$)|skills add [^`]*@(main|master|latest|head)([[:space:]\`]|$)' skills/deepworkplan \
+  | grep -vE 'git clone --branch v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?([[:space:]`]|$)' \
   || echo 'OK: every install path is tag-pinned or package-managed'
 ```
 

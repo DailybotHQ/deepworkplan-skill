@@ -15,7 +15,7 @@ setup() {
 
 @test "repository provenance accepts v6 while the v5 plan checker stays generation-bound" {
     grep -q "SUPPORTED_SPEC = '5.0.0'" "$SK/verify/plan_contract.py"
-    grep -q 'SUPPORTED_SPEC="6.0.0"' "$SK/verify/conformance.sh"
+    grep -q 'SUPPORTED_SPEC="7.0.0"' "$SK/verify/conformance.sh"
     grep -q 'SPEC_SERIES = (2, 4, 5)' "$SK/verify/plan_contract.py"
     grep -q 'standard_series_ok' "$SK/verify/conformance.sh"
     # Both eras reject a non-series version with the same teaching.
@@ -23,14 +23,14 @@ setup() {
     [ "$(grep -c 'which is not a DWP standard' "$SK/verify/plan_contract.py")" -ge 2 ]
 }
 
-@test "new provenance says 6.0.0 while retained v5 documents keep their version" {
-    grep -q 'DWP standard: 6.0.0 (onboarded' "$SK/onboard/SKILL.md"
+@test "new provenance says 7.0.0 while retained v5 documents keep their version" {
+    grep -q 'DWP standard: 7.0.0 (onboarded' "$SK/onboard/SKILL.md"
     grep -q '"5.0.0"' "$SK/create/SKILL.md"
     grep -q '| Standard | DWP spec 5.0.0 |' "$SK/create/SKILL.md"
     grep -q '| \*\*Version\*\* | 5.0.0 |' "$SK/spec/DWP_SPECIFICATION.md"
     grep -q '| \*\*Version\*\* | 5.0.0 |' "$SK/spec/PLAN_STATE.md"
     grep -q '| Version | 5.0.0 |' "$SK/spec/LITE_PLANS.md"
-    grep -q 'DWP standard: 6.0.0 (onboarded' "$SK/spec/DOCUMENTATION_STANDARD.md"
+    grep -q 'DWP standard: 7.0.0 (onboarded' "$SK/spec/DOCUMENTATION_STANDARD.md"
     # No stale 4.0.0/2.4.0-as-current stamp survives in the shipped pack;
     # only historical prose ("plans created under 4.0.0", "removed in 2.4.0")
     # remains.
@@ -147,4 +147,20 @@ PY
     tr '\n' ' ' < "$SK/spec/DWP_SPECIFICATION.md" | tr -s ' ' | grep -qF 'without changing any requirement from 2.4.0'
     # The anti-lockstep rule: the standard never chases the skill's version.
     tr '\n' ' ' < "$SK/spec/DWP_SPECIFICATION.md" | tr -s ' ' | grep -qF 'Anti-lockstep rule'
+}
+
+@test "behavioral: 6.0.0 and 7.0.0 repository declarations pass; 8.0.0 is newer than the checker" {
+    WORK="$(cd "$(mktemp -d)" && pwd -P)"
+    ( cd "$WORK" && git init -q . && mkdir -p .dwp/plans docs && printf '.dwp/\n' > .gitignore )
+    printf 'scoped mapping fallback\n' > "$WORK/docs/TESTING_GUIDE.md"
+    for spec in 6.0.0 7.0.0 8.0.0; do
+        printf '# AGENTS\n\nDWP standard: %s (onboarded 2026-10-09; skill 7.0.0-beta.1)\n' "$spec" > "$WORK/AGENTS.md"
+        run bash "$SK/verify/conformance.sh" --repo-only "$WORK"
+        case "$spec" in
+            8.0.0) [[ "$output" == *"newer than this checker supports (7.0.0)"* ]] || return 1 ;;
+            *) [[ "$output" == *"AGENTS.md declares DWP standard $spec"* ]] || return 1
+               [[ "$output" != *"not a DWP standard"* ]] || return 1 ;;
+        esac
+    done
+    rm -rf "$WORK"
 }

@@ -390,16 +390,17 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 6.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 7.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
 
   The version in that line is the **umbrella DWP standard** implemented by the
   installed pack, not the version of this retained v5 base document. The v6
-  extension documents in this directory define the current plan lifecycle.
+  extension documents and their v7 additions in this directory define the
+  current plan lifecycle.
   A conformance checker reads the declaration against the standard it
   implements and rejects a newer one. The standard's series are 2.x, 4.x,
-  and 5.x (historical) and 6.x (current — there is no 3.x); the skill package
+  5.x and 6.x (historical) and 7.x (current — there is no 3.x); the skill package
   `version:` and the `/v2.json` and `/v5.json`
   schema URLs are two further, separate series, never compared against this
   line.

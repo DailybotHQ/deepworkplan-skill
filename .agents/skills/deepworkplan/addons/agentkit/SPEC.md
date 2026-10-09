@@ -49,8 +49,8 @@ kit** is coding-agents-kit; **the addon** is this folder.
 - The offer is an explicit opt-in (`onboard` Phase 7b); declining is
   complete and writes nothing.
 - The documented install is the pinned tagged clone plus the kit's
-  installer: `git clone --branch v0.1.1
-  https://github.com/DailybotHQ/coding-agents-kit` then
+  installer:
+  `git clone --branch v0.1.1 https://github.com/DailybotHQ/coding-agents-kit` then
   `./coding-agents-kit/install.sh` (Windows: `install.ps1`). A
   fetch-and-execute pipeline **MUST NOT** appear anywhere in this pack's
   text. The addon **MUST NOT** install coding-agent CLIs on its own.

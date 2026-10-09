@@ -35,9 +35,11 @@ implementations. It does **not** contain any addon's implementation.
 | **License** | MIT |
 
 > **Divergence from v1.** v1 had **no addon concept** anywhere in the framework.
-> The addon mechanism is **net-new in v2** (`RECONCILIATION.md` divergence #7,
-> idea #7), introduced to keep the core baseline lean while allowing optional
-> capabilities (devcontainer support, then Dailybot integration) to be layered in.
+> The addon mechanism is **net-new in v2**, introduced to keep the core
+> baseline lean while allowing optional capabilities (devcontainer support,
+> then Dailybot integration) to be layered in. In 7.0.0 it gained the addon
+> registry ([`CONFIG.md`](CONFIG.md)), descriptors (§7) and addon-provided
+> abilities ([`V7_ABILITIES.md`](V7_ABILITIES.md)).
 
 ---
 
@@ -441,12 +443,13 @@ unchanged (`tests/standalone-methodology.bats`).
 
 - [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
 - `DOCUMENTATION_STANDARD.md` (§7 reason-per-repo), `AGENT_PROTOCOL.md` (approval gates), `ARCHETYPES.md`, `DWP_SPECIFICATION.md`
-- `../RECONCILIATION.md` (divergence #7), `../../ORCHESTRATOR_MANIFEST.md` (devcontainer-addon decision)
+- `CONFIG.md` (the addon registry), `V7_ABILITIES.md` (addon-provided abilities), `V7_CONTRACT.md` (delegation), `V7_ROADMAP.md` (non-normative)
 - Devcontainer addon implementation (`skills/deepworkplan/addons/devcontainer/`)
 - Dailybot addon implementation (`skills/deepworkplan/addons/dailybot/`)
 - Dependency-upgrade addon implementation (`skills/deepworkplan/addons/dependency-upgrade/`)
 - Design-system addon implementation (`skills/deepworkplan/addons/design-system/`)
 - AI Diff Reviewer addon implementation (`skills/deepworkplan/addons/ai-diff-reviewer/`)
+- Herdr, agentkit and Vim integrators (`skills/deepworkplan/addons/{herdr,agentkit,vim}/`)
 
 ---
 

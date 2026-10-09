@@ -97,8 +97,10 @@ maintains these hard invariants (enforced in review by
    behind an explicit, visible opt-in gate (read-only mount +
    `SEED_SSH_KEYS=1`), default off.
 3. **No unpinned clone-and-run installs** (Snyk/Socket W012): every documented
-   cross-repo install is tag-pinned (`@vX.Y.Z`) or package-manager installed;
-   `skills-lock.json` content hashes are the verification story.
+   cross-repo install is tag-pinned (`@vX.Y.Z`, or `git clone --branch
+   vX.Y.Z` for the ecosystem kits, followed by their own `install.sh`) or
+   package-manager installed; `skills-lock.json` content hashes are the
+   verification story.
 4. **Trust boundaries everywhere**: every `SKILL.md` with write-capable
    `allowed-tools` carries a human-readable "Trust boundary (write scope)"
    section — the contract Trust Hub audits against the frontmatter.
@@ -112,7 +114,8 @@ tag-pinned form (dailybot addon, ai-diff-reviewer addon + SPEC/INTEGRATION,
 `onboard` Phase 7 + addon summaries, `spec/ADDONS.md`), narrowed `status` to
 read-only tools, and rolled trust boundaries out to every write-capable
 `SKILL.md`. Self-audit grep #5 enforces the pin rule mechanically: no `git
-clone` installs and no un-tagged `skills add` anywhere under the pack.
+clone` without an exact `--branch vX.Y.Z` tag and no un-tagged `skills add`
+anywhere under the pack.
 
 ## Security review (dogfooding the spec)
 
