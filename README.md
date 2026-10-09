@@ -107,7 +107,7 @@ skill in the right place:
 
 ```bash
 # pinned to a release tag (recommended — reproducible):
-npx --yes skills add DailybotHQ/deepworkplan-skill@v7.0.0 --skill deepworkplan -y
+npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/v7.0.0 --skill deepworkplan -y
 # or the latest published release:
 npx skills add DailybotHQ/deepworkplan-skill
 ```

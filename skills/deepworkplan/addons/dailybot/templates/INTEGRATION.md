@@ -56,7 +56,7 @@ skill's own `shared/auth.md` flow.
 
 | Want | Offer |
 |------|-------|
-| **Dailybot skill** (recommended — brings consent/auth + `report`) | `npx --yes skills add DailybotHQ/agent-skill@v3.23.3 --skill dailybot -y` (**pinned to a published tag**; content hash recorded in `skills-lock.json`) · OpenClaw `openclaw skills install dailybot` (registry-managed pin) |
+| **Dailybot skill** (recommended — brings consent/auth + `report`) | `npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.3 --skill dailybot -y` (**pinned to a published tag**; content hash recorded in `skills-lock.json`) · OpenClaw `openclaw skills install dailybot` (registry-managed pin) |
 | **Dailybot CLI only** (developer explicitly wants the binary) | `pip install 'dailybot-cli>=3.9.0'` (Py 3.10+) · `brew install dailybothq/tap/dailybot` (macOS) · vendor's verified installer flow (macOS / Linux / Windows) via [`shared/auth.md`](https://github.com/DailybotHQ/agent-skill/blob/main/skills/dailybot/shared/auth.md) — `download → verify SHA-256 → execute`, never a one-line remote-installer pipe |
 
 > Prefer installing the **skill** — it owns the SHA-256-verified CLI install and

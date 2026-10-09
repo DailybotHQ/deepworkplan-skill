@@ -410,8 +410,8 @@ and commit the updated lockfile. Auto-release smoke-tests the published tag
 in a temporary directory; it does not refresh this mirror.
 
 Do not hand-edit the Dailybot or AI Diff Reviewer copies; contribute upstream.
-Auto-release refreshes those two addons. Every exact `ai-diff-reviewer@vX.Y.Z`
-install pin in the shipped pack must match the vendored reviewer's version
+Auto-release refreshes those two addons. Every exact
+`https://github.com/DailybotHQ/ai-diff-reviewer/tree/vX.Y.Z` install pin in the shipped pack must match the vendored reviewer's version
 (`tests/agents-dogfood.bats`). The Action's floating `@v2` pin is exempt.
 
 The full refresh procedure, rationale, and release-loop safeguards are in

@@ -37,7 +37,7 @@ Sequenced steps (a-i below), all in one long-running job on `ubuntu-latest`:
 | d. Prepend CHANGELOG.md section | Merged commits since last tag become bullets |
 | e. Commit `chore(release): X.Y.Z [skip ci]` | The `[skip ci]` marker prevents CI from re-running on the release commit |
 | f. Tag `vX.Y.Z` and push | With `--follow-tags` so commit + tag land atomically |
-| g. **Smoke — published tag installs (temp dir)** | Runs `npx --yes skills add DailybotHQ/deepworkplan-skill@vX.Y.Z --skill deepworkplan --force -y` into an isolated temp directory and asserts `version:` matches. Does **not** overwrite `.agents/skills/deepworkplan/` (that copy is repo-adapted; sync via `scripts/refresh-dogfood-skill.sh`) |
+| g. **Smoke — published tag installs (temp dir)** | Runs `npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z --skill deepworkplan --force -y` into an isolated temp directory and asserts `version:` matches. Does **not** overwrite `.agents/skills/deepworkplan/` (that copy is repo-adapted; sync via `scripts/refresh-dogfood-skill.sh`) |
 | h. **Dogfood — dailybot** | `DailybotHQ/agent-skill` → `.agents/skills/dailybot/`. Only commits if the upstream tag moved. Non-interactive contract (`--yes` + `-y`) is mandatory — dropping either flag hangs the workflow indefinitely on the CLI's agent-picker prompt |
 | i. **Dogfood — ai-diff-reviewer** | `DailybotHQ/ai-diff-reviewer` → `.agents/skills/ai-diff-reviewer/`. Same non-interactive contract |
 | j. Create GitHub Release | Uses `gh release create` with auto-generated notes; the release notes include the addon dogfood commits when those skills moved |

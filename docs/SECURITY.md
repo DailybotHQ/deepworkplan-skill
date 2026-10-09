@@ -97,10 +97,14 @@ maintains these hard invariants (enforced in review by
    behind an explicit, visible opt-in gate (read-only mount +
    `SEED_SSH_KEYS=1`), default off.
 3. **No unpinned clone-and-run installs** (Snyk/Socket W012): every documented
-   cross-repo install is tag-pinned (`@vX.Y.Z`, or `git clone --branch
+   cross-repo install is tag-pinned (`skills add
+   https://github.com/OWNER/REPO/tree/vX.Y.Z`, or `git clone --branch
    vX.Y.Z` for the ecosystem kits, followed by their own `install.sh`) or
    package-manager installed; `skills-lock.json` content hashes are the
-   verification story.
+   verification story. The `OWNER/REPO@vX.Y.Z` shorthand is **not** a pin:
+   the skills CLI (1.7.1, verified 2026-10-09) prints the tag and installs
+   the default branch, so 7.0.1 moved every install line to the tree-URL form
+   and a test refuses the shorthand.
 4. **Trust boundaries everywhere**: every `SKILL.md` with write-capable
    `allowed-tools` carries a human-readable "Trust boundary (write scope)"
    section — the contract Trust Hub audits against the frontmatter.
@@ -126,6 +130,9 @@ anywhere under the pack.
 | Delegation (`ledger.py delegate`) | Recorded gate (v7 contract, `agent_delegation` grant, `parallel_safe` marker or a read-only delegate, an enabled and detected transport addon); a raw append cannot write a delegation; a read-only delegate's tree fingerprint is checked at collect and cancel (changed tree → recorded failed), and a read-only delegate on an unmarked task needs a git work tree; a task cannot complete while one of its delegations is open; `result_path` validated and contained before it is read; delegate output is data and `asserted` until this plan's gates observe it. |
 | Gate fingerprints | Touched-surface entries outside the repository are never read (glob matches are contained file by file); links are named, never followed. |
 | Release workflows | Inputs and commit messages reach shell only through `env:`; multi-line step outputs use a random delimiter; versions are re-validated where used; pre-releases only from `main`, above the last stable release, never moving a tag, never `latest`; third-party installers (the ecosystem pin smoke) run in a separate job with read-only permissions and no persisted credentials, before any job that can push. |
+| Human records (7.0.0) | `ledger.py signoff` and human-actor appends/amendments require an authority marker (`--human-note FILE`, recorded by path and digest, or a terminal confirmation); the ledger cannot authenticate a person, so such records stay `asserted` — never `observed`. |
+| Contract amendments (7.0.0) | `ledger.py amend` stages the revision, records the amendment and a fresh approval, then switches the live contract atomically; an unapproved amendment changes nothing; draft checks (closability, declared command classes) run before approval. Command classes are an allowlist of entry points, not a sandbox. |
+| Addon registry back-fill (7.0.0) | `config.py backfill` records only repository-level installs; machine-level tools are reported, never written into the tracked registry. |
 | Public hygiene (ecosystem amendment A3) | `scripts/check-public-hygiene.sh` runs in CI over tracked files: no personal paths, private organization/repository/tooling names, non-public `@dailybot.com` addresses or secret-shaped strings (fixtures must be obviously fake and listed in `.public-hygiene-allow` with a reason). History is not rewritten for non-secret names. |
 
 ## Repository settings (ecosystem amendment A3, S2)

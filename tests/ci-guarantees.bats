@@ -197,7 +197,7 @@ _decide() { # _decide <head message> — run auto-release's decision step in $R
     grep -qF 'files: SHA256SUMS' "$REPO_ROOT/.github/workflows/auto-release.yml"
     grep -q 'gh release create "$TAG" SHA256SUMS' "$WF"
     grep -q 'bash scripts/generate-checksums.sh' "$WF"
-    grep -q 'npx --yes skills add "DailybotHQ/deepworkplan-skill@${TAG}"' "$WF"
+    grep -q 'npx --yes skills add "https://github.com/DailybotHQ/deepworkplan-skill/tree/${TAG}"' "$WF"
     _repo 6.1.0 v6.1.0 v7.0.0-beta.1
     _step "$WF" "Validate the requested version" > "$R/validate.sh"
     for bad in 7.0.0 7.0.0-beta v7.0.0-beta.1 '7.0.0-beta.1; touch pwned' 7.0.0-nightly.1; do

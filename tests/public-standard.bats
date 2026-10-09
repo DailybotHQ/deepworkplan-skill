@@ -30,7 +30,7 @@ assert pos == sorted(pos), (heads, order)
 assert re.search(r'^# .+', text, re.M)
 for badge in ('actions/workflows/ci.yml/badge.svg', 'img.shields.io/github/v/release', 'License-MIT'):
     assert badge in text.split('## What it is')[0], badge
-assert re.search(r'skills add DailybotHQ/deepworkplan-skill@v\d+\.\d+\.\d+', text), 'no pinned install line'
+assert re.search(r'skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/v\d+\.\d+\.\d+', text), 'no pinned install line'
 assert text.rstrip().endswith('Part of the [DeepWorkPlan](https://deepworkplan.com) ecosystem — works on its own.'), 'footer'
 PY
 }

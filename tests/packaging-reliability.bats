@@ -232,3 +232,16 @@ PY
         grep -q 'run: bash scripts/smoke-ecosystem-pins.sh' "$REPO_ROOT/.github/workflows/$wf.yml"
     done
 }
+
+@test "install lines pin with the tree-URL form; the ignored @ref shorthand never ships" {
+    # skills CLI 1.7.1 ignores the ref of `skills add OWNER/REPO@vX.Y.Z` and
+    # installs the default branch (verified 2026-10-09: @v6.1.0 installed
+    # 7.0.0). `skills add https://github.com/OWNER/REPO/tree/vX.Y.Z` pins.
+    # (the prose that explains the defect names the literal OWNER/REPO@)
+    run bash -c "grep -rnE 'skills add \"?[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+@' \
+        '$REPO_ROOT/skills' '$REPO_ROOT/README.md' '$REPO_ROOT/docs' \
+        '$REPO_ROOT/.github/workflows' '$REPO_ROOT/scripts' | grep -v 'OWNER/REPO@'"
+    [ -z "$output" ] || { echo "$output"; return 1; }
+    grep -qF 'skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/' "$REPO_ROOT/skills/deepworkplan/upgrade/SKILL.md"
+    grep -qF 'skills add "https://github.com/DailybotHQ/deepworkplan-skill/tree/${NEW_TAG}"' "$REPO_ROOT/.github/workflows/auto-release.yml"
+}

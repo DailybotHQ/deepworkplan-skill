@@ -180,7 +180,7 @@ jobs:
           printf '%s\n' '{"name":"dwp-smoke","private":true}' > "$SMOKE_DIR/package.json"
           (
             cd "$SMOKE_DIR"
-            npx --yes skills add "DailybotHQ/deepworkplan-skill@${TAG}" \
+            npx --yes skills add "https://github.com/DailybotHQ/deepworkplan-skill/tree/${TAG}" \
               --skill deepworkplan --force -y
           )
           INSTALLED=$(sed -nE 's/^version:[[:space:]]*"([^"]+)".*/\1/p' \

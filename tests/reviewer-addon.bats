@@ -59,13 +59,13 @@ rev_doc_has() {
     # The mechanism README mirror carries the same pin.
     rev_doc_has "$MECH" "currently **v${REV_VERSION}**"
     # Install commands are tag-pinned to that same version.
-    grep -qF "ai-diff-reviewer@v${REV_VERSION}" "$ADDON/SKILL.md"
+    grep -qF "github.com/DailybotHQ/ai-diff-reviewer/tree/v${REV_VERSION}" "$ADDON/SKILL.md"
     # No exact pin anywhere in the addon or its README mirror names a DIFFERENT
     # version than the vendored one. `@v2` (the Action's floating major tag) is
     # deliberately excluded — it must stay floating so patch fixes flow.
     local stale
-    stale="$(grep -rhoE 'ai-diff-reviewer@v[0-9]+\.[0-9]+\.[0-9]+' "$ADDON" "$MECH" \
-        | sed 's/.*@v//' | sort -u | grep -v "^${REV_VERSION}\$" || true)"
+    stale="$(grep -rhoE 'ai-diff-reviewer(@|/tree/)v[0-9]+\.[0-9]+\.[0-9]+' "$ADDON" "$MECH" \
+        | sed -E 's#.*(@|/tree/)v##' | sort -u | grep -v "^${REV_VERSION}\$" || true)"
     [ -z "$stale" ]
 }
 

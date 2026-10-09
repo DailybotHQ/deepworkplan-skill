@@ -116,7 +116,7 @@ versions relative to that directory.
    command a fresh consumer would run through the skills.sh channel (both
    `-y` flags are required in a non-interactive session):
    ```bash
-   npx --yes skills add DailybotHQ/deepworkplan-skill@vX.Y.Z --skill deepworkplan --force -y
+   npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z --skill deepworkplan --force -y
    ```
    A repository that installed via Method 2 or 3 upgrades through its own
    documented channel instead (`openclaw skills update deepworkplan`, or

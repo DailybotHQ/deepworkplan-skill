@@ -117,8 +117,11 @@ setup() {
         | sed -E 's/.*"([^"]+)".*/\1/')"
     [ -n "$vendored" ]
 
-    pins="$(grep -rhoE 'ai-diff-reviewer@v[0-9]+\.[0-9]+\.[0-9]+' "$REPO_ROOT/skills" \
-        | sed 's/.*@v//' | sort -u)"
+    # Installs are pinned with the tree-URL form (`skills add
+    # https://github.com/OWNER/REPO/tree/vX.Y.Z`): the skills CLI ignores the
+    # ref of the `OWNER/REPO@vX.Y.Z` shorthand and installs the default branch.
+    pins="$(grep -rhoE 'ai-diff-reviewer/tree/v[0-9]+\.[0-9]+\.[0-9]+' "$REPO_ROOT/skills" \
+        | sed 's#.*/tree/v##' | sort -u)"
     [ -n "$pins" ]
     # Every exact pin in the shipped pack names exactly the vendored version.
     [ "$pins" = "$vendored" ]

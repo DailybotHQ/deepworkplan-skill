@@ -147,7 +147,7 @@ mutates the target repository — non-destructively and by explicit design:
 - On the plan-driven path, plan artifacts under `.dwp/` as `create` defines.
 
 **Writes include:** with Phase 0 consent, Phase 7a may run the tag-pinned
-`npx --yes skills add DailybotHQ/ai-diff-reviewer@v3.3.0 --skill ai-diff-reviewer -y`
+`npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.0 --skill ai-diff-reviewer -y`
 install into `.agents/skills/ai-diff-reviewer/` and bootstrap the repo-tailored
 `.review/extension.md`; decline or offline failure is recorded as a declared
 exception.
@@ -725,7 +725,7 @@ and **stack-appropriate**, not generic boilerplate.
 
 1. **Make the DeepWorkPlan skill available** to the target repo via one of (offer
    the developer the choice; recommend the first):
-   - `npx --yes skills add DailybotHQ/deepworkplan-skill@<tag> --skill deepworkplan -y`
+   - `npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/<tag> --skill deepworkplan -y`
      — **pin the latest published tag** from the repo's Releases (check it;
      never write a tag you did not verify; both `--yes` and `-y` are required
      in non-TTY)

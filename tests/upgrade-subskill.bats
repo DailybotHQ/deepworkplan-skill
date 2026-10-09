@@ -77,7 +77,7 @@ up_has() {
 }
 
 @test "upgrade phase uses the documented exact-tag install and verifies it" {
-    up_has "$UP" "npx --yes skills add DailybotHQ/deepworkplan-skill@vX.Y.Z --skill deepworkplan --force -y"
+    up_has "$UP" "npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z --skill deepworkplan --force -y"
     # Task 8 of PLAN_v5_superiority_guarantee strengthened this pin with the
     # install-verification contract (pre-create, tag + non-empty verify,
     # retry-once, git-archive fallback) — the old sentence pinned only the
@@ -158,7 +158,7 @@ up_has() {
 }
 
 @test "herdr-peers can be trialled repo-locally; the rest stay machine-level (F-10)" {
-  grep -qF 'skills add DailybotHQ/herdr-peers@v0.1.0 --skill herdr-peers -y' "$SK/addons/herdr/install.md"
+  grep -qF 'skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.1.0 --skill herdr-peers -y' "$SK/addons/herdr/install.md"
   grep -qF 'stay machine-level' "$SK/addons/herdr/install.md"
 }
 

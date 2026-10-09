@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-verify
 description: Verify that a repository is DeepWorkPlan-conformant (AI-first) and that its plans are well-formed, producing an objective pass/fail report. Use when the developer asks to verify, audit, or check conformance of a repo or a plan.
-version: "7.0.0-beta.1"
+version: "7.0.0"
 documentation_url: https://deepworkplan.com
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
@@ -204,7 +204,7 @@ End with one of: **CONFORMANT** (all MUST criteria pass) or **NOT CONFORMANT —
 > **Unsupported newer plan.** If a plan (or `AGENTS.md`) declares a DWP
 > standard newer than this skill implements, the checker fails with an upgrade
 > message. Do not execute such a plan as if it were legacy: upgrade the installed
-> skill (`npx --yes skills add DailybotHQ/deepworkplan-skill@<newer tag> --skill deepworkplan -y`), then
+> skill (`npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/<newer tag> --skill deepworkplan -y`), then
 > re-run `verify`.
 
 > **Large repo / in-progress onboarding.** A big repo may be mid-onboarding via
