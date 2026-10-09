@@ -77,7 +77,7 @@ vim_doc_has() {
 @test "single pin: every product tag in the addon tree is the pinned one" {
     # Every deepworkplan-vim ref the addon spells (tag pins, clone branches,
     # DWP_VIM_REF) names exactly one tag.
-    run bash -c "grep -rhoE '(deepworkplan-vim@|--branch |DWP_VIM_REF=)v[0-9]+\.[0-9]+\.[0-9]+' '$ADDON' '$ONBOARD' '$README' '$SPEC' | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+)$/\1/' | sort -u"
+    run bash -c "{ grep -rhoE '(deepworkplan-vim@|DWP_VIM_REF=)v[0-9]+\.[0-9]+\.[0-9]+' '$ADDON' '$ONBOARD' '$README' '$SPEC'; grep -rhoE -- '--branch v[0-9]+\.[0-9]+\.[0-9]+' '$ADDON'; } | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+)$/\1/' | sort -u"
     [ "$status" -eq 0 ]
     [ "$output" = "$PIN_TAG" ]
 }
@@ -119,7 +119,7 @@ vim_doc_has() {
     grep -F '| DeepWorkPlan Vim |' "$README" | grep -qF 'never impose'
     grep -F '| DeepWorkPlan Vim |' "$README" | grep -qF 'previous-deepworkplan-vim'
     grep -q '^### 6\.7 DeepWorkPlan Vim' "$SPEC"
-    vim_doc_has "$SPEC" "Seven addon folders ship"
+    vim_doc_has "$SPEC" "Eight addon folders ship"
     vim_doc_has "$SPEC" "never** overwritten without explicit consent"
     vim_doc_has "$SPEC" "skills/deepworkplan/addons/vim/"
 }
@@ -127,7 +127,7 @@ vim_doc_has() {
 @test "wired as an opt-in: onboard Phase 7b offers it; no other flow references it" {
     grep -qF '| **DeepWorkPlan Vim** | [`../addons/vim/`](../addons/vim/SKILL.md) |' "$ONBOARD"
     vim_doc_has "$ONBOARD" "offer — never impose — the editor"
-    vim_doc_has "$ONBOARD" "Four active addons are **explicit opt-ins**"
+    vim_doc_has "$ONBOARD" "Five active addons are **explicit opt-ins**"
     run grep -rIl 'addons/vim\|addon-vim\|DeepWorkPlan Vim' \
         "$SK/execute" "$SK/create" "$SK/refine" "$SK/resume" "$SK/status" "$SK/verify"
     [ "$status" -ne 0 ]

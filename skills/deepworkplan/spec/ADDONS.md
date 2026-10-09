@@ -115,10 +115,10 @@ An addon **MAY** additionally ship examples, per-stack presets, or migration not
 
 ## 6. Shipping Addons
 
-Seven addon folders ship: five active addons are **optional** and **never
+Eight addon folders ship: six active addons are **optional** and **never
 required**, one is the local-review baseline, and Herdr (§6.6) is a staged
 candidate with no flow hook. A repository is fully conformant with **zero
-optional addons** installed. Of the five active optional addons, the
+optional addons** installed. Of the six active optional addons, the
 **dependency-upgrade** addon (§6.3) is **near-default**: offered for every repo
 with declared dependencies, with its **inert** `/lib-upgrade` delegator
 installed under the onboarding consent **unless explicitly declined** (an
@@ -395,6 +395,21 @@ implementation lives at `skills/deepworkplan/addons/vim/` — see its
 install paths, validation), and `templates/INTEGRATION.md` (reasoning
 template).
 
+### 6.8 agentkit (eighth addon — headless delegation transport, thin integrator)
+
+An optional addon integrating **coding-agents-kit** (`ak`;
+`https://github.com/DailybotHQ/coding-agents-kit`, MIT, its own release
+cycle) pinned at `v0.1.1` (interface `1`), as the **headless** transport of
+v7 delegation ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `ak run` per
+delegate, in a dedicated git worktree, recorded through `ledger.py
+delegate`, its result asserted until the plan's own gates observe it.
+`onboard` Phase 7b offers it as an **explicit opt-in**; the install is the
+pinned tagged clone plus the kit's `install.sh`. The pack never adds a
+permission-bypass flag — autonomy stays the kit's explicit per-run opt-in.
+It is **never required**: without it every task runs in the current
+session. Full contract: [`SKILL.md`](../addons/agentkit/SKILL.md),
+[`SPEC.md`](../addons/agentkit/SPEC.md), `templates/INTEGRATION.md`.
+
 ## 7. Addon Descriptors (`addon.json`)
 
 Every in-pack addon **MUST** ship `addons/<key>/addon.json`, a closed JSON
@@ -420,7 +435,7 @@ The shipped set:
 
 | key | product (pinned) | provides_abilities | requires_grants | transport |
 |---|---|---|---|---|
-| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.1.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
+| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.1.1`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
 | `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.2.3` | — | — | — |
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.3` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
