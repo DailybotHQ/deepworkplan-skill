@@ -124,3 +124,12 @@ setup() {
 doc_has() {
     tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"
 }
+
+@test "README and SECURITY name no concrete current release: the release bot does not edit them" {
+    # The auto-release bot stamps SKILL.md, CHANGELOG.md and the lockfile only.
+    # A hand-written "current version" in these files is stale after the next
+    # release (it was v7.0.1 / v7.0.0 while the pack was 7.1.4).
+    ! grep -nE 'currently `v[0-9]+\.[0-9]+\.[0-9]+`' "$REPO_ROOT/SECURITY.md" "$REPO_ROOT/README.md"
+    ! grep -nE 'deepworkplan-skill/tree/v[0-9]+\.[0-9]+\.[0-9]+' "$REPO_ROOT/README.md"
+    ! grep -nE 'major line is \*\*v7\*\* \(`v[0-9]' "$REPO_ROOT/README.md"
+}
