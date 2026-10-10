@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-herdr
 description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v0.1.0, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
-version: "7.1.0"
+version: "7.1.1"
 documentation_url: https://deepworkplan.com/kit/herdr
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write

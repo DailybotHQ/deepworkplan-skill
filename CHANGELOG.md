@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.1.1] — 2026-10-10
+
+### Changes
+
+- Merge pull request #66 from DailybotHQ/ci/release-refreshes-dogfood-mirror
+- ci(release): refresh the dogfood mirror inside the release commit
+
+
 ## [7.1.0] — 2026-10-10
 
 ### Changes
