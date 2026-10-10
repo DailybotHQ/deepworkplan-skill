@@ -450,7 +450,7 @@ concrete plan.
   guaranteed to be identical run to run; input parity is the claim, output
   equality is not.
 
-**Five sub-skills** the addon defers to (all live in the upstream
+**Six capabilities** (the parent default flow plus five sub-skills) the addon defers to (all live in the upstream
 `ai-diff-reviewer` repo — the DWP addon does NOT re-implement them):
 
 - **parent default flow** — run a local review on the current branch.
@@ -461,6 +461,9 @@ concrete plan.
 - **`apply-review`** — read CI reviews on a PR and walk through findings
   per-finding (apply / defer / skip). Read-only by default. Optional
   Flow B companion.
+- **`address-review`** — close the loop: resolve the CI review's findings,
+  repair the PR's other failing workflows and re-arm the reviewer (commits
+  and pushes: only on the developer's explicit request).
 
 **How the addon fits a DWP plan.** Since DWP standard 2.3.0 the local review
 is part of the baseline (`skills/deepworkplan/spec/ADDONS.md` §6.5):
