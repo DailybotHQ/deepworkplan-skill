@@ -1,7 +1,7 @@
 {
   "schema": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
   "key": "agentkit",
-  "product": { "repo": "DailybotHQ/coding-agents-kit", "tag": "v0.1.1", "interface": 1 },
+  "product": { "repo": "DailybotHQ/coding-agents-kit", "tag": "v0.3.0", "interface": 1 },
   "detect": { "command": "ak doctor --json", "interface_from": "json:interface" },
   "provides_abilities": ["subagents", "cancel_children", "model_routing"],
   "requires_grants": ["agent_delegation"],

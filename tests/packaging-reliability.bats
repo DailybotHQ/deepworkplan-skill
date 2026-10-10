@@ -233,6 +233,22 @@ PY
     done
 }
 
+@test "the pin smoke verifies every pin's release SHA256SUMS against the tagged tree" {
+    local s="$REPO_ROOT/scripts/smoke-ecosystem-pins.sh"
+    grep -qF 'releases/download/${tag}/SHA256SUMS' "$s"
+    # one pinned 64-hex digest per pin, compared against the downloaded file
+    for k in herdr agentkit devcontainer vim; do
+        grep -qE "^ +${k}\) +echo [0-9a-f]{64} ;;" "$s" || { echo "no pinned digest for $k"; return 1; }
+    done
+    grep -qF 'if digest(sums) != expected:' "$s"
+    grep -qF 'verify_sums herdr' "$s"
+    grep -qF 'verify_sums vim "$src"' "$s"
+    # agentkit and devcontainer share smoke_kit, which verifies after install
+    grep -qF 'verify_sums "$key" "$src"' "$s"
+    grep -qE '^ +agentkit\) +smoke_kit agentkit ' "$s"
+    grep -qE '^ +devcontainer\) +smoke_kit devcontainer ' "$s"
+}
+
 @test "install lines pin with the tree-URL form; the ignored @ref shorthand never ships" {
     # skills CLI 1.7.1 ignores the ref of `skills add OWNER/REPO@vX.Y.Z` and
     # installs the default branch (verified 2026-10-09: @v6.1.0 installed

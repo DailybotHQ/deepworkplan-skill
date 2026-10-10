@@ -15,9 +15,9 @@ registry record and the mapping of the four delegation operations onto
 
 | Field | Value |
 |-------|-------|
-| **Version** | 0.1.0 |
-| **Status** | Stable (DeepWorkPlan 7.0.0) |
-| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.1.1`, interface `1` |
+| **Version** | 0.2.0 |
+| **Status** | Stable — autonomy by default (coding-agents-kit `v0.2.0` and later) |
+| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.3.0`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/V7_ABILITIES.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -43,6 +43,9 @@ kit** is coding-agents-kit; **the addon** is this folder.
   and the addon is **not available** — never an error.
 - The addon **MUST NOT** read or print provider key values; `ak doctor`
   reports key **names** only.
+- The addon **SHOULD** report the doctor's `permissions` field (`auto` or
+  `ask`), so the developer knows how a delegate will launch before granting
+  delegation.
 
 ## 4. Offer, Install and Record
 
@@ -50,12 +53,12 @@ kit** is coding-agents-kit; **the addon** is this folder.
   complete and writes nothing.
 - The documented install is the pinned tagged clone plus the kit's
   installer:
-  `git clone --branch v0.1.1 https://github.com/DailybotHQ/coding-agents-kit` then
+  `git clone --branch v0.3.0 https://github.com/DailybotHQ/coding-agents-kit` then
   `./coding-agents-kit/install.sh` (Windows: `install.ps1`). A
   fetch-and-execute pipeline **MUST NOT** appear anywhere in this pack's
   text. The addon **MUST NOT** install coding-agent CLIs on its own.
 - On acceptance the addon **MUST** record `addons.agentkit` =
-  `{"enabled": true, "version": "v0.1.1"}` through `shared/config.py
+  `{"enabled": true, "version": "v0.3.0"}` through `shared/config.py
   enable`. Enabling grants no plan any authority.
 
 ## 5. The Transport (v7 delegation)
@@ -65,7 +68,7 @@ worktree:
 
 | Operation | Behaviour |
 |---|---|
-| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json -- "<prompt>"`, stdout redirected to the delegation's result file. |
+| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json [--ask] -- "<prompt>"` (`--ask` only when the plan records the opt-out), stdout redirected to the delegation's result file. |
 | **observe** | Read-only: `delegate observe` and whether the process is alive. |
 | **collect** | Parse the single JSON object; `exit` 0 → `completed`, any other → `failed`; record `delegate collect` with `result_path`. Integration of the worktree diff and the task's gates happen in the parent session. |
 | **cancel** | SIGTERM to `ak run` (the kit kills the process tree and exits 5); record `delegate cancel`. |
@@ -73,11 +76,24 @@ worktree:
 - The prompt **MUST** carry the task objective and acceptance criteria and
   name the worktree as the only writable location; it **MUST NOT** carry a
   secret value.
-- The addon **MUST NOT** add `--auto` (or any CLI permission-bypass flag)
-  by default. `--auto` **MAY** be used only when the developer opted into
-  autonomy for that plan explicitly (recorded in the plan) **and** the
-  delegate runs in an isolated worktree or container; the kit's own
-  opt-in remains the only place a bypass flag is spelled.
+- **Permissions are the kit's.** From `v0.2.0` the kit launches every agent
+  in autonomy by default: `ak` adds the CLI's own autonomy flag, which
+  lives only in the kit's `providers.toml`. The opt-out is `--ask` or
+  `AGENTKIT_PERMISSIONS=ask`, set by the developer (in the environment or
+  the kit's env file) or inherited from an opted-out session; it always wins — over `--auto` on the same command and over an
+  `AGENTKIT_PERMISSIONS=auto` line in the kit's env file. Autonomy is meant
+  for disposable or sandboxed environments, such as a dev container.
+- The addon **MUST NOT** spell a CLI autonomy flag, and **MUST NOT** pass
+  `--auto` (it is the default, so it adds nothing but a way to look past an
+  opt-out). It **MUST** pass `--ask` when the plan records the developer's
+  opt-out for its delegates, and it **MUST NOT** remove or override an
+  inherited `AGENTKIT_PERMISSIONS=ask`.
+- Granting `agent_delegation` on a host (not in a container) accepts
+  autonomous delegates confined by their dedicated worktree, which is not a
+  sandbox. The addon **SHOULD** say so when it asks for the grant, and
+  offer the opt-out. A delegate in ask mode has no terminal to answer
+  prompts, so it may stop at its first permission prompt; `--timeout`
+  bounds it.
 - `--timeout` **SHOULD** always be set; exit 4 (timeout) and 5 (cancelled)
   are terminal `failed`/`cancelled` outcomes, never retried blindly.
 - Exit 3 (CLI not installed / not logged in) is a recorded `failed`
@@ -95,16 +111,19 @@ here blocks `onboard`, `create`, `execute` or `verify`.
 
 This SPEC versions independently. Compatibility is decided by the kit's
 interface integer (`1`); the installed release by the pinned tag
-(`v0.1.1`), moved only by a parity-tested pack change.
+(`v0.3.0`), moved only by a parity-tested pack change. The default
+permission posture is behaviour, not interface: the kit carries it in its
+minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
 ## 8. Validation Checklist
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist;
    `addon.json` validates with key `agentkit`, product
-   `DailybotHQ/coding-agents-kit` `v0.1.1`, interface 1, transport
+   `DailybotHQ/coding-agents-kit` `v0.3.0`, interface 1, transport
    `headless`.
 2. Detection is read-only; interface 1 or one warning.
 3. Install used the pinned tagged clone; no pipeline anywhere in the text.
 4. The registry entry exists only after acceptance.
-5. Each delegate: own worktree, recorded launch before start, no `--auto`
-   without the recorded opt-in, result gated by the parent.
+5. Each delegate: own worktree, recorded launch before start, no
+   autonomy flag spelled by the addon, `--ask` when the plan records the
+   opt-out, result gated by the parent.

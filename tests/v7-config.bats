@@ -161,7 +161,7 @@ PY
 # ------------------------------------------- F-04 / F-05 / F-15 (v7.0.0)
 
 @test "a one-line note records a decision; malformed notes fail closed (F-05)" {
-  run python3 "$CFG" enable agentkit --version v0.1.1 --note "accepted; machine-level install deferred" --repo "$REPO"
+  run python3 "$CFG" enable agentkit --version v0.3.0 --note "accepted; machine-level install deferred" --repo "$REPO"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   run _show
   [ "$(_field agentkit note)" = '"accepted; machine-level install deferred"' ] || return 1

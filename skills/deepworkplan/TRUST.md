@@ -133,7 +133,11 @@ run without a shell under a timeout (see `shared/resources.py` above).
 > no service, no provider secret, no telemetry; its CI Action stays opt-in and
 > a decline is recorded, never hidden. No addon ever pipes a remote installer
 > into a shell, copies host credentials anywhere without an explicit visible
-> opt-in, or documents permission-bypass shortcuts. **A repository is fully
+> opt-in, or documents permission-bypass shortcuts. (The agentkit addon's
+> delegates run under coding-agents-kit's own posture — autonomy by default,
+> with an opt-out, `--ask` or `AGENTKIT_PERMISSIONS=ask`, that always wins;
+> the pack spells no autonomy flag and passes only `--ask`, when a plan
+> records the opt-out.) **A repository is fully
 > conformant with zero optional addons**. Core runtime helpers never touch the
 > network; consent-gated onboarding Phase 7a is the sole baseline exception and
 > may run the pinned AI Diff Reviewer install plus extension bootstrap. The
