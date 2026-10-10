@@ -9,6 +9,22 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.1.0] — 2026-10-10
+
+### Changes
+
+- Merge pull request #65 from DailybotHQ/feat/addons-autonomy-dockerfile
+- fix(addon): pin devcontainer-kit v0.2.1, the security release that retires v0.2.0
+- ci(scripts): verify each pinned release's SHA256SUMS in the ecosystem pin smoke
+- fix(addon): address the AI Diff Reviewer findings on the autonomy wording
+- fix(addon): align the devcontainer addon with the released devcontainer-kit v0.2.0
+- docs: register the new addon pins and posture in the testing and security guides
+- feat(addon): vim pins deepworkplan-vim v0.5.1
+- feat(addon): devcontainer pins devcontainer-kit v0.2.0 and offers dck-dockerfile
+- feat(addon): agentkit pins coding-agents-kit v0.3.0 with autonomy by default
+- chore(skill): refresh the dogfood mirror to the 7.0.1 stamp
+
+
 ## [7.0.1] — 2026-10-09
 
 ### Changes
