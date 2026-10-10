@@ -240,8 +240,9 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 
 The router skill is named `deepworkplan`; sub-skills are `deepworkplan-create`,
 `deepworkplan-execute`, `deepworkplan-refine`, `deepworkplan-resume`,
-`deepworkplan-status`, `deepworkplan-onboard`, and the addon is
-`deepworkplan-addon-devcontainer`. The `documentation_url` field replaces the
+`deepworkplan-status`, `deepworkplan-verify`, `deepworkplan-onboard`,
+`deepworkplan-author`, `deepworkplan-upgrade`, and the addons are named
+`deepworkplan-addon-<name>` (for example `deepworkplan-addon-devcontainer`). The `documentation_url` field replaces the
 legacy `homepage` because some agent harnesses interpret `homepage` as a
 re-fetch source. `validate-frontmatter.py` fails CI if any SKILL.md uses the
 old key, is not kebab-case, does not start with `deepworkplan`, or has an
