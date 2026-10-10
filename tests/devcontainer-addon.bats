@@ -113,3 +113,12 @@ PY
   grep -F '| Devcontainer support |' "$SK/addons/README.md" | grep -qF 'vendor-neutral thin integrator'
   doc_has "$ADDON/SKILL.md" 'never required for a repo to be AI-first and never a conformance gate'
 }
+
+@test "ssh_host_config: own git aliases work inside, public keys only, the developer answers ssh-add" {
+    for f in "$ADDON/SKILL.md" "$ADDON/SPEC.md" "$ADDON/templates/INTEGRATION.md"; do
+        grep -qF 'ssh_host_config' "$f" || { echo "$f does not name ssh_host_config"; return 1; }
+    done
+    doc_has "$ADDON/SKILL.md" 'no private key is copied'
+    doc_has "$ADDON/SPEC.md" 'the addon **MUST NOT** answer the kit'"'"'s `ssh-add` offer or write `[ssh] host_extra`'
+    doc_has "$ADDON/SKILL.md" 'answer dck'"'"'s `ssh-add` prompt or set `[ssh] host_extra` in the developer'"'"'s host profile on their behalf'
+}
