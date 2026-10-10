@@ -211,13 +211,46 @@ PY
   [ "$status" -eq 0 ]
 }
 
-@test "benchmark reports a v7 plan as not measured, never mislabelled as v6 or v5" {
+@test "benchmark measures a v7 plan as generation v7, with learnings derived from its journal (X-1)" {
+  _draft v7; _materialize >/dev/null
+  mkdir -p "$REPO/.dwp"
+  printf '%s\n' '{"benchmark": {"enabled": true, "learnings": true}}' > "$REPO/.dwp/config.json"
+  python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
+  # a refused completion is a recorded refusal: the derived learnings half copies its reason
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -ne 0 ]
+  run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"not measured"* ]] || return 1
+  python3 - "$PLAN" <<'PY'
+import json, sys
+plan = sys.argv[1]
+rec = json.load(open(plan + '/analysis_results/benchmark.json'))
+lrn = json.load(open(plan + '/analysis_results/learnings.json'))
+assert rec['generation'] == 'v7', rec['generation']
+assert lrn['generation'] == 'v7', lrn['generation']
+assert any(d['event_type'] == 'refusal' for d in lrn['derived']), lrn['derived']
+assert lrn['curated'] == []
+PY
+  [ -s "$PLAN/analysis_results/DWP_REPORT.md" ]
+  # rerun is byte-identical (determinism contract)
+  cp "$PLAN/analysis_results/benchmark.json" "$BATS_TEST_TMPDIR/b1.json"
+  run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
+  cmp "$BATS_TEST_TMPDIR/b1.json" "$PLAN/analysis_results/benchmark.json"
+}
+
+@test "benchmark still refuses a plan that is neither v6 nor v7 (v5 line frozen)" {
   _draft v7; _materialize >/dev/null
   mkdir -p "$REPO/.dwp"
   printf '%s\n' '{"benchmark": {"enabled": true}}' > "$REPO/.dwp/config.json"
+  python3 - "$PLAN/manifest.json" <<'PY'
+import json, sys
+m = json.load(open(sys.argv[1])); m['schema'] = 'https://deepworkplan.com/schema/plan-manifest/v5.json'
+json.dump(m, open(sys.argv[1], 'w'))
+PY
   run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"plan is v7-generation"*"not measured"* ]] || return 1
+  [[ "$output" == *"not measured"* ]] || return 1
   [ ! -f "$PLAN/analysis_results/benchmark.json" ]
 }
 

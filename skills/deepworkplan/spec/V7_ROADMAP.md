@@ -53,9 +53,9 @@ The 7.0.0 release history, not the current pins: each addon's
 - **`deepworkplan.nvim`** — the editor's `lua/dwp/` modules as a plugin for
   people who keep their own Neovim config (v7.1). The vim addon names this
   route and never offers it before it ships.
-- **A v7 benchmark record** — `benchmark-record/v1` pins `generation: "v6"`
-  and a plain `X.Y.Z` pack version, so v7 plans (and v6 plans run by a
-  pre-release pack) are reported "not measured" today.
+- **A v7 benchmark record** — delivered in 7.1.5: `generation` accepts
+  `"v6"` and `"v7"`. The record still carries a plain `X.Y.Z` pack version,
+  so plans run by a pre-release pack are reported "not measured".
 - **`addons.version` parity** — informative in 7.0.0; `verify` warns on a
   mismatch. A parity failure mode is a candidate once the field test shows
   how often versions drift.

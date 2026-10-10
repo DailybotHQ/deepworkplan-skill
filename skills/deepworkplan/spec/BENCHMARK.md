@@ -90,7 +90,10 @@ python3 <pack>/shared/benchmark.py report --plan <dir>
   warning line and exit status 0. Plan completion MUST NOT depend on
   benchmark emission. Emission failure is never a plan failure. Usage
   errors (bad arguments) are the only exit-2 conditions.
-- **v5 stance:** v5-generation plans (no v6 manifest contract pointer) are
+- **Generations:** v6 and v7 plans (a v6 or v7 manifest contract pointer)
+  are measured; the record's `generation` names which (`"v6"` or `"v7"`,
+  7.1.5).
+- **v5 stance:** v5-generation plans (no v6 or v7 manifest contract pointer) are
   never measured. `report` on a v5 plan prints one line and exits 0
   without writing artifacts. The v5 line stays frozen.
 

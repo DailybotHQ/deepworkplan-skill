@@ -24,10 +24,11 @@
 - v7 plans project into the unchanged `plan-snapshot/v6` shape (its
   `positions` are keyed by event type, so the `delegation` type needs no new
   snapshot schema).
-- `shared/benchmark.py` measures v6 plans only: the published
-  `benchmark-record/v1` and `learnings-record/v1` pin `generation: "v6"`,
-  so a v7 plan is reported as not measured — one line, never mislabelled,
-  never blocking. A v7 record shape is a later release.
+- `shared/benchmark.py` measures v6 and v7 plans (7.1.5): the records
+  carry `generation: "v6"` or `"v7"` (a widening of the `generation` field
+  in `benchmark-record/v1` and `learnings-record/v1`; every earlier v6
+  record still validates), and the derived learnings half is built from the
+  v7 journal exactly as from a v6 one. Only the v5 line stays unmeasured.
 
 ## 2. The contract: `tasks[].parallel_safe`
 
