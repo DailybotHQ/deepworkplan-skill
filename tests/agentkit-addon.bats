@@ -123,3 +123,13 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   [ "$status" -eq 0 ]
   [ "$output" = "ok" ]
 }
+
+@test "permissions: read-only intent means ask; writing delegates keep the autonomy default" {
+    doc_has "$ADDON/SPEC.md" '**Read-only intent means ask.**'
+    doc_has "$ADDON/SPEC.md" '**MUST** always be launched with `--ask`, whatever the plan'
+    doc_has "$ADDON/SKILL.md" '**Read-only intent means ask.**'
+    doc_has "$ADDON/templates/INTEGRATION.md" 'launch it with `--ask` (read-only intent means ask'
+    # the host-grant disclosure is a MUST, and create points the grant at it
+    doc_has "$ADDON/SPEC.md" 'The addon **MUST** say so when the grant is asked for'
+    doc_has "$SK/create/v6.md" "read the enabled transport addon's permissions note"
+}

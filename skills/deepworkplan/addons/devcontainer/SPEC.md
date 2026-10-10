@@ -48,6 +48,9 @@ volume, CLI or profile file.
 - Read-only: `command -v dck`, `dck doctor --json`.
 - `interface` **MUST** equal `2`; otherwise one warning and "not available"
   (interface `1` is a kit older than `v0.2.0`: offer the upgrade).
+- `version` `0.2.0` reports interface `2` but is unsupported since the
+  `v0.2.1` security release: the addon **MUST NOT** treat it as compatible
+  and **MUST** offer the upgrade to the pinned tag.
 - An existing `.devcontainer/`, `docker/` layout or `dev.sh` **MUST** be
   treated as the repository's own work: reconciled through the render,
   never replaced.
@@ -93,8 +96,8 @@ volume, CLI or profile file.
 
 Ports bind `127.0.0.1` unless the repository's config says otherwise; no
 `privileged`, `cap_add`, host namespaces, Docker socket or host bind mounts
-in what this addon proposes — in particular no host `~/.ssh`, `~/.gitconfig`
-or `${HOME}` mount; SSH and git inside the container use the host's
+beyond the workspace and the SSH agent socket in what this addon proposes —
+in particular no host `~/.ssh`, `~/.gitconfig` or `${HOME}` mount; SSH and git inside the container use the host's
 **agent** (forwarding, or the agent socket the kit picks by Docker
 provider — Docker Desktop and OrbStack share the host agent, a native
 Linux engine mounts `$SSH_AUTH_SOCK`, other runtimes get none in exec

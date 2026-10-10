@@ -13,7 +13,9 @@ git worktree add ../<repo>-<delegation_id> -b dwp/<plan>/<delegation_id>
 ```
 
 A read-only delegate gets no worktree: `--cwd` is the repository and the
-prompt says "do not modify files"; record `"worktree": null`.
+prompt says "do not modify files"; record `"worktree": null`, and always
+launch it with `--ask` (read-only intent means ask: autonomy in the
+repository itself would approve writes to the developer's checkout).
 
 ## 2. Compose the prompt (data the delegate reads)
 

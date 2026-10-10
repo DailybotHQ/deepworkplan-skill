@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-devcontainer
 description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.2.1, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yaml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
-version: "7.0.1"
+version: "7.1.0"
 documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -93,8 +93,8 @@ and Herdr sessions still forward it).
   registry entry, and the validation record.
 - **It MUST NOT:** pass `dck init --yes` without the developer's explicit
   acceptance of the shown diff; add `privileged`, `cap_add`, host namespaces,
-  the Docker socket or host bind mounts (no host `~/.ssh`, `~/.gitconfig` or
-  `${HOME}`); publish a port beyond loopback unless the repository's own
+  the Docker socket or host bind mounts beyond the workspace and the SSH
+  agent socket (never host `~/.ssh`, `~/.gitconfig` or `${HOME}`); publish a port beyond loopback unless the repository's own
   config says so; pass `--trust` on the developer's behalf; copy a private
   key into an image or container; run `dck herdr add` (it edits
   `~/.ssh/config`) without its own explicit approval; install anything on

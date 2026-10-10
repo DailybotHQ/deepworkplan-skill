@@ -68,7 +68,7 @@ worktree:
 
 | Operation | Behaviour |
 |---|---|
-| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json [--ask] -- "<prompt>"` (`--ask` only when the plan records the opt-out), stdout redirected to the delegation's result file. |
+| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json [--ask] -- "<prompt>"` (`--ask` when the plan records the opt-out; always for a read-only delegate, whose `--cwd` is the repository), stdout redirected to the delegation's result file. |
 | **observe** | Read-only: `delegate observe` and whether the process is alive. |
 | **collect** | Parse the single JSON object; `exit` 0 → `completed`, any other → `failed`; record `delegate collect` with `result_path`. Integration of the worktree diff and the task's gates happen in the parent session. |
 | **cancel** | SIGTERM to `ak run` (the kit kills the process tree and exits 5); record `delegate cancel`. |
@@ -88,9 +88,17 @@ worktree:
   opt-out). It **MUST** pass `--ask` when the plan records the developer's
   opt-out for its delegates, and it **MUST NOT** remove or override an
   inherited `AGENTKIT_PERMISSIONS=ask`.
+- **Read-only intent means ask.** A read-only delegate (research, review,
+  analysis — no worktree, `"worktree": null`, `--cwd` is the repository
+  itself) **MUST** always be launched with `--ask`, whatever the plan
+  records: it runs in the developer's checkout, where autonomy would
+  approve any write without a prompt, and the ledger only sees a tree
+  change after the fact. Writing delegates keep the kit's autonomy default
+  inside their dedicated worktree, and the developer's opt-out still wins
+  for them.
 - Granting `agent_delegation` on a host (not in a container) accepts
   autonomous delegates confined by their dedicated worktree, which is not a
-  sandbox. The addon **SHOULD** say so when it asks for the grant, and
+  sandbox. The addon **MUST** say so when the grant is asked for, and
   offer the opt-out. A delegate in ask mode has no terminal to answer
   prompts, so it may stop at its first permission prompt; `--timeout`
   bounds it.
@@ -124,6 +132,7 @@ minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 2. Detection is read-only; interface 1 or one warning.
 3. Install used the pinned tagged clone; no pipeline anywhere in the text.
 4. The registry entry exists only after acceptance.
-5. Each delegate: own worktree, recorded launch before start, no
-   autonomy flag spelled by the addon, `--ask` when the plan records the
-   opt-out, result gated by the parent.
+5. Each delegate: recorded launch before start, no autonomy flag spelled
+   by the addon, result gated by the parent; a writing delegate in its own
+   worktree (`--ask` when the plan records the opt-out), a read-only one
+   always with `--ask`.

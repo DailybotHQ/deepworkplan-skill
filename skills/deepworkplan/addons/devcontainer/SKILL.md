@@ -93,8 +93,8 @@ and Herdr sessions still forward it).
   registry entry, and the validation record.
 - **It MUST NOT:** pass `dck init --yes` without the developer's explicit
   acceptance of the shown diff; add `privileged`, `cap_add`, host namespaces,
-  the Docker socket or host bind mounts (no host `~/.ssh`, `~/.gitconfig` or
-  `${HOME}`); publish a port beyond loopback unless the repository's own
+  the Docker socket or host bind mounts beyond the workspace and the SSH
+  agent socket (never host `~/.ssh`, `~/.gitconfig` or `${HOME}`); publish a port beyond loopback unless the repository's own
   config says so; pass `--trust` on the developer's behalf; copy a private
   key into an image or container; run `dck herdr add` (it edits
   `~/.ssh/config`) without its own explicit approval; install anything on

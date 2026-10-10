@@ -86,6 +86,13 @@ plan records it, launch each delegate with `ak run --ask …`; a delegate in
 ask mode has no terminal, so it may stop at its first prompt, and
 `--timeout` bounds it.
 
+**Read-only intent means ask.** A read-only delegate (research, review,
+analysis) gets no worktree and runs in the repository itself, so it is
+**always** launched with `--ask`, whatever the plan records — autonomy
+there would approve writes in the developer's checkout. Writing delegates
+keep the autonomy default inside their own worktree, and the opt-out still
+wins for them.
+
 ## The flow
 
 ### Step 0 — Detect (read-only)
@@ -130,7 +137,7 @@ One delegate = one `ak run` in one dedicated worktree
 
 | Operation | Mapping |
 |-----------|---------|
-| launch | `git worktree add <wt> -b dwp/<plan>/<delegation_id>`; record `ledger.py delegate launch` (with `prompt_digest`); start `ak run <kind> [@profile] --cwd <wt> --timeout <s> --output-format json [--ask] -- "<prompt>"` in the background, stdout to the result file (`--ask` only when the plan records the opt-out) |
+| launch | `git worktree add <wt> -b dwp/<plan>/<delegation_id>`; record `ledger.py delegate launch` (with `prompt_digest`); start `ak run <kind> [@profile] --cwd <wt> --timeout <s> --output-format json [--ask] -- "<prompt>"` in the background, stdout to the result file (`--ask` when the plan records the opt-out; always for a read-only delegate, `--cwd` the repository) |
 | observe | `ledger.py delegate observe`; the background process is alive or has exited |
 | collect | on exit read the one JSON object (`exit` 0 → `completed`, otherwise `failed`); `ledger.py delegate collect` with `result_path`; integrate the worktree's diff; run the task's gates here |
 | cancel | send SIGTERM to `ak run` (the kit kills the whole process tree, exit 5); `ledger.py delegate cancel` |
@@ -152,6 +159,7 @@ One delegate = one `ak run` in one dedicated worktree
 2. Detection is read-only and reports `interface` 1, or one warning.
 3. Install used the pinned tagged clone + `install.sh`; nothing piped.
 4. The registry entry exists only after acceptance.
-5. Every delegate ran in its own worktree, with no autonomy flag spelled
+5. Every writing delegate ran in its own worktree and every read-only one
+   with `--ask`, with no autonomy flag spelled
    by the addon (`--ask` when the plan records the opt-out), and its result
    was gated here.
