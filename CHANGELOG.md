@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.1.4] — 2026-10-10
+
+### Changes
+
+- Merge pull request #68 from DailybotHQ/feat/devcontainer-kit-v0.2.2
+- fix(addon): disclose the ssh_host_config public-key copy at the devcontainer offer
+- fix(addon): pin devcontainer-kit v0.2.2 and document git over SSH with your own aliases
+
+
 ## [7.1.3] — 2026-10-10
 
 ### Changes

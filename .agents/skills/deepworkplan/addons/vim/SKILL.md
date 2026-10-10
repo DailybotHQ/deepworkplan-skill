@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-vim
 description: Optional DeepWorkPlan addon that offers DeepWorkPlan Vim, the terminal editor for Deep Work Plan (Neovim 0.12+, its own repository DailybotHQ/deepworkplan-vim pinned at v0.5.1), as a machine-level install for the person behind a repository - a thin integrator that reads the product's own addon/surface.json (interface 1) to detect the editor, offers it (never imposes it) from onboard Phase 7b, guides the product's documented, checksum-verified install under an absolute consent gate, and validates the installed surface. Two routes - the full editor today, the Neovim plugin in v7.1. Never required, never a conformance gate, and an existing Neovim config is never overwritten without explicit consent.
-version: "7.1.3"
+version: "7.1.4"
 documentation_url: https://deepworkplan.com/kit/vim
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
