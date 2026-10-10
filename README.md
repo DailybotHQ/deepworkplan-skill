@@ -106,9 +106,10 @@ The [skills.sh](https://skills.sh) CLI auto-detects your agent and installs the
 skill in the right place:
 
 ```bash
-# pinned to a release tag (recommended — reproducible); replace vX.Y.Z with a
-# tag from https://github.com/DailybotHQ/deepworkplan-skill/releases:
-npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z --skill deepworkplan -y
+# pinned to a release tag (recommended — reproducible; v7.1.4 is an existing
+# example, newer tags are listed at
+# https://github.com/DailybotHQ/deepworkplan-skill/releases):
+npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/v7.1.4 --skill deepworkplan -y
 # or the latest published release:
 npx skills add DailybotHQ/deepworkplan-skill
 ```

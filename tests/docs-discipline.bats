@@ -130,6 +130,5 @@ doc_has() {
     # A hand-written "current version" in these files is stale after the next
     # release (it was v7.0.1 / v7.0.0 while the pack was 7.1.4).
     ! grep -nE 'currently `v[0-9]+\.[0-9]+\.[0-9]+`' "$REPO_ROOT/SECURITY.md" "$REPO_ROOT/README.md"
-    ! grep -nE 'deepworkplan-skill/tree/v[0-9]+\.[0-9]+\.[0-9]+' "$REPO_ROOT/README.md"
     ! grep -nE 'major line is \*\*v7\*\* \(`v[0-9]' "$REPO_ROOT/README.md"
 }

@@ -401,14 +401,24 @@ PY
 
 @test "a migrated plan continues under v6: the blocked criterion closes on a re-run gate" {
   plan="$(_migrated)"
-  # T-03 is pending and ready; start it and gate it under v6 execution,
-  # proving the migration did not just freeze the plan
+  # T-03 follows T-02, whose migrated evidence is broken: starting it early is
+  # refused (X-3, prerequisites are enforced), so continuation begins by
+  # re-running T-02's gate under v6 execution - the migration did not freeze it
+  run python3 "$LEDGER" --plan "$plan" start --task T-03-pending-task
+  [ "$status" -eq 3 ]
+  run python3 "$LEDGER" --plan "$plan" start --task T-02-broken-evidence-task
+  [ "$status" -eq 0 ]
+  run python3 "$LEDGER" --plan "$plan" gate --task T-02-broken-evidence-task \
+    --criterion AC-t02-broken-evidence-task --json '"true"'
+  [ "$status" -eq 0 ]
+  printf '%s' "$output" | grep -qF 'RAN: exit 0'
+  run python3 "$LEDGER" --plan "$plan" complete --task T-02-broken-evidence-task
+  [ "$status" -eq 0 ]
   run python3 "$LEDGER" --plan "$plan" start --task T-03-pending-task
   [ "$status" -eq 0 ]
   run python3 "$LEDGER" --plan "$plan" gate --task T-03-pending-task \
     --criterion AC-t03-pending-task --json '"true"'
   [ "$status" -eq 0 ]
-  printf '%s' "$output" | grep -qF 'RAN: exit 0'
   run python3 "$LEDGER" --plan "$plan" complete --task T-03-pending-task
   [ "$status" -eq 0 ]
   python3 "$LEDGER" --plan "$plan" project >/dev/null
@@ -417,6 +427,6 @@ import json, sys
 s = json.load(open(f'{sys.argv[1]}/state.json'))
 status = {t['id']: t['status'] for t in s['tasks']}
 assert status['T-03-pending-task'] == 'completed', status
-assert status['T-02-broken-evidence-task'] == 'in_progress', status
+assert status['T-02-broken-evidence-task'] == 'completed', status
 PY
 }
