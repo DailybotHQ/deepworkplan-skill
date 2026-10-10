@@ -11,7 +11,9 @@ set -euo pipefail
 # pull the last *published tag* while this repo's contributors must dogfood
 # the pack at THIS working revision — including changes not yet released.
 # Addon skills (`dailybot`, `ai-diff-reviewer`) ARE auto-refreshed on
-# release from their own upstreams; deepworkplan is not.
+# release from their own upstreams. For deepworkplan, auto-release and
+# prerelease run THIS script right after stamping `version:`, so the release
+# commit keeps the mirror byte-identical.
 #
 # The dogfood copy carries no local adaptations: after this script runs it
 # is byte-identical to skills/deepworkplan/, and the check below enforces

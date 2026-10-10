@@ -17,15 +17,16 @@ name: Auto-release on merge to main
 #      when the current version is a stamped pre-release (X.Y.Z-beta.N, cut
 #      by prerelease.yml), the release GRADUATES it to X.Y.Z instead
 #   3. Writes the new version into ALL SKILL.md files (router + every sub-skill
-#      + every addon) so they stay in sync
+#      + every addon) so they stay in sync, then re-syncs the dogfood mirror
+#      `.agents/skills/deepworkplan/` (+ its skills-lock.json hash) from the
+#      stamped pack via `scripts/refresh-dogfood-skill.sh`
 #   4. Prepends a new section to CHANGELOG.md with the merged commits as bullets
 #   5. Commits as "Dailybot Automations" with `[skip ci]` to break the loop
 #   6. Tags `vX.Y.Z` and pushes
 #   7. Smoke-tests that the just-published tag installs cleanly via
-#      `npx skills add` into a TEMP directory (does NOT overwrite the
-#      repo-adapted `.agents/skills/deepworkplan/` dogfood copy — that copy
-#      is synced from `skills/deepworkplan/` via
-#      `scripts/refresh-dogfood-skill.sh` when contributors need it).
+#      `npx skills add` into a TEMP directory (never installs the tag over
+#      `.agents/skills/deepworkplan/` — that mirror is re-synced from this
+#      revision in step 3).
 #   8. Dogfoods the latest upstream tags of the two *addon* skills
 #      (`dailybot`, `ai-diff-reviewer`) into `.agents/skills/` — those are
 #      safe to pin blindly; deepworkplan is not.
@@ -183,6 +184,12 @@ jobs:
           while IFS= read -r f; do
             sed -i "s/^version: \".*\"/version: \"${NEW_VERSION}\"/" "$f"
           done < <(find skills/deepworkplan -name 'SKILL.md')
+          # Keep the dogfood mirror byte-identical to the stamped pack (and the
+          # skills-lock.json hash) inside the release commit itself, so main is
+          # never left failing the mirror test after a release. node rewrites
+          # the lockfile entry; without it the refresh would leave it stale.
+          command -v node >/dev/null || { echo "::error::node is required to refresh skills-lock.json"; exit 1; }
+          bash scripts/refresh-dogfood-skill.sh
 
       - name: Update CHANGELOG.md
         if: steps.version.outputs.skip != 'true'
@@ -249,12 +256,9 @@ jobs:
       - name: Smoke — prove the just-published tag installs (temp dir only)
         # Live smoke test of the just-cut tag via `npx skills add`, but into
         # an isolated temp directory — NEVER into this repo's
-        # `.agents/skills/deepworkplan/`. That dogfood copy is repo-adapted
-        # (contributor kit wiring for Dailybot + AI Diff Reviewer addons)
-        # and is synced from `skills/deepworkplan/` via
-        # `scripts/refresh-dogfood-skill.sh` when intentionally refreshed.
-        # Blind reinstall from the published tag would overwrite that
-        # adaptation.
+        # `.agents/skills/deepworkplan/`. That mirror is re-synced from this
+        # revision's stamped `skills/deepworkplan/` in the bump step; a blind
+        # reinstall from the published tag would replace it with the tag.
         if: steps.version.outputs.skip != 'true'
         env:
           NEW_TAG: ${{ steps.version.outputs.new_tag }}

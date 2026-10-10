@@ -121,6 +121,10 @@ jobs:
           while IFS= read -r f; do
             sed -i "s/^version: \".*\"/version: \"${NEW_VERSION}\"/" "$f"
           done < <(find skills/deepworkplan -name 'SKILL.md')
+          # Same as auto-release: the dogfood mirror and its skills-lock.json
+          # hash follow the stamped pack inside the pre-release commit.
+          command -v node >/dev/null || { echo "::error::node is required to refresh skills-lock.json"; exit 1; }
+          bash scripts/refresh-dogfood-skill.sh
 
       - name: Update CHANGELOG.md
         env:
@@ -159,7 +163,7 @@ jobs:
           BRANCH: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          git add -A -- skills CHANGELOG.md
+          git add -A -- skills .agents/skills/deepworkplan skills-lock.json CHANGELOG.md
           git commit -m "chore(release): ${NEW_VERSION} (pre-release) [skip ci]"
           # Branch first: a rejected push leaves no dangling tag.
           git push origin "HEAD:${BRANCH}"
