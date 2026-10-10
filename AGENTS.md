@@ -144,7 +144,7 @@ deepworkplan-skill/
 │   ├── ISSUE_TEMPLATE/ · CODEOWNERS · dependabot.yml ← issue forms + config.yml, owners, Actions updates (NOT installed)
 │   └── markdown-link-check.json                ← link-check config (NOT installed)
 ├── .agents/skills/                             ← THREE vendored dogfood copies (NOT installed on end-user machines)
-│   ├── deepworkplan/                           ← byte-identical dogfood copy of this skill (sync via scripts/refresh-dogfood-skill.sh; NOT auto-overwritten on release)
+│   ├── deepworkplan/                           ← byte-identical dogfood copy of this skill (scripts/refresh-dogfood-skill.sh; auto-release re-syncs it in the release commit)
 │   ├── dailybot/                               ← DailybotHQ/agent-skill — auto-refreshed on release
 │   └── ai-diff-reviewer/                       ← DailybotHQ/ai-diff-reviewer — auto-refreshed on release
 ├── skills-lock.json                            ← pinned versions/hashes for the vendored skills (NOT installed)
@@ -260,22 +260,21 @@ The `auto-release.yml` workflow runs on every merge to `main` and:
  - `feat(scope):` → **MINOR**
  - everything else (`fix:`, `chore:`, no prefix, etc.) → **PATCH**
 4. Bumps `version:` in **all** SKILL.md files in sync (router + nine sub-skills
- + addons), prepends a section to `CHANGELOG.md`, commits as
- `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, and pushes.
+ + addons), re-syncs the dogfood mirror and its lock hash, prepends a
+ section to `CHANGELOG.md`, commits as `chore(release): X.Y.Z [skip ci]`,
+ tags `vX.Y.Z`, and pushes.
 5. **Smoke-tests the just-published tag** — runs `npx skills add
  https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z` into a **temp directory** and asserts
- the installed `version:` matches. This proves the release installs for
- consumers **without** overwriting the dogfood copy at
- `.agents/skills/deepworkplan/`.
+ the installed `version:` matches (never over the dogfood copy).
 6. **Dogfoods addon skills only** — refreshes `.agents/skills/dailybot/` and
  `.agents/skills/ai-diff-reviewer/` to their latest upstream tags (see
- "Vendored agent skills" below). `deepworkplan` is intentionally excluded.
+ "Vendored agent skills" below).
 7. Creates a GitHub Release with auto-generated notes and the SHA256SUMS
  provenance artifact attached.
 
 To refresh the in-repo `deepworkplan` dogfood after changing
 `skills/deepworkplan/`, run `bash scripts/refresh-dogfood-skill.sh`, review
-the diff, and commit it on a PR — never rely on auto-release to do it.
+the diff, and commit it on a PR; the release re-syncs only its own stamp.
 
 What this means for you:
 
@@ -406,8 +405,8 @@ Multiple AI agents may work on this repo simultaneously. They all read this
 The tracked copies are pinned in `skills-lock.json`. Treat DeepWorkPlan as a
 **generated mirror** of `skills/deepworkplan/`: refresh only with
 `bash scripts/refresh-dogfood-skill.sh`, review the checksum-verified diff,
-and commit the updated lockfile. Auto-release smoke-tests the published tag
-in a temporary directory; it does not refresh this mirror.
+and commit the updated lockfile. Both release workflows run the same
+script in the release commit, after stamping `version:`.
 
 Do not hand-edit the Dailybot or AI Diff Reviewer copies; contribute upstream.
 Auto-release refreshes those two addons. Every exact

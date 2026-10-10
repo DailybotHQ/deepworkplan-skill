@@ -287,7 +287,45 @@ pre = yaml.safe_load(open(os.path.join(sys.argv[1], 'prerelease.yml')))
 run = '\n'.join(s.get('run') or '' for s in pre['jobs']['prerelease']['steps'])
 assert 'cp /tmp/new_section.md RELEASE_NOTES.md' in run and '--notes-file RELEASE_NOTES.md' in run
 assert 'git tag -a "$TAG"' in run
-assert 'git add -A -- skills CHANGELOG.md' in run   # the notes file is never committed
+assert 'git add -A -- skills .agents/skills/deepworkplan skills-lock.json CHANGELOG.md' in run   # the notes file is never committed
 print('ok')
 PY
+}
+
+# _stamp_and_refresh <workflow> <step> <version> — run a release's stamping
+# step in a throwaway copy of the pack, its dogfood mirror and its lockfile.
+_stamp_and_refresh() {
+    R="$(cd "$(mktemp -d)" && pwd -P)"
+    mkdir -p "$R/scripts" "$R/.agents"
+    cp -R "$REPO_ROOT/skills" "$R/skills"
+    cp -R "$REPO_ROOT/.agents/skills" "$R/.agents/skills"
+    cp "$REPO_ROOT/skills-lock.json" "$R/"
+    cp "$REPO_ROOT/scripts/refresh-dogfood-skill.sh" "$REPO_ROOT/scripts/update-dogfood-lock.mjs" "$R/scripts/"
+    _step "$REPO_ROOT/.github/workflows/$1" "$2" > "$R/stamp.sh"
+    mkdir -p "$R/bin"
+    if ! sed --version >/dev/null 2>&1; then   # BSD sed (macOS): the runner's `sed -i` is GNU
+        printf '%s\n' '#!/usr/bin/env bash' \
+            'if [ "$1" = "-i" ]; then shift; exec /usr/bin/sed -i "" "$@"; fi' \
+            'exec /usr/bin/sed "$@"' > "$R/bin/sed"
+        chmod +x "$R/bin/sed"
+    fi
+    ( cd "$R" && PATH="$R/bin:$PATH" NEW_VERSION="$3" bash "$R/stamp.sh" >/dev/null )
+}
+
+@test "releases refresh the dogfood mirror and its lockfile inside the release commit" {
+    command -v node >/dev/null || skip "node is required by the lockfile refresh"
+    for spec in 'auto-release.yml|Bump version in ALL SKILL.md files|9.9.9' \
+                'prerelease.yml|Stamp the version in ALL SKILL.md files|9.9.9-beta.1'; do
+        IFS='|' read -r wf step ver <<< "$spec"
+        _stamp_and_refresh "$wf" "$step" "$ver"
+        grep -qx "version: \"$ver\"" "$R/.agents/skills/deepworkplan/SKILL.md" \
+            || { echo "$wf: mirror router not stamped $ver"; return 1; }
+        diff -r "$R/skills/deepworkplan" "$R/.agents/skills/deepworkplan" \
+            || { echo "$wf: mirror differs from the stamped pack"; return 1; }
+        ! cmp -s "$REPO_ROOT/skills-lock.json" "$R/skills-lock.json" \
+            || { echo "$wf: skills-lock.json hash not refreshed"; return 1; }
+        rm -rf "$R"
+    done
+    # auto-release commits everything it changed; the pre-release names the paths
+    grep -qF 'git add -A' "$REPO_ROOT/.github/workflows/auto-release.yml"
 }
