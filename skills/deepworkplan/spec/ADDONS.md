@@ -142,7 +142,7 @@ form**; only its CI surface is optional.
 - **Per-repository layout, no shared base image (devcontainer-kit
   `v0.2.0`):** the render produces `.devcontainer/devcontainer.json`,
   `docker/local/<service>/Dockerfile` (plus its entrypoint),
-  `docker/local/docker-compose.yml` and `dev.sh`. The Dockerfile starts from
+  `docker/local/docker-compose.yaml` and `dev.sh`. The Dockerfile starts from
   the official runtime image pinned by digest; the kit's GHCR base image is
   not required. The addon offers the skill through
   `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.2.0 --skill dck-dockerfile -y`

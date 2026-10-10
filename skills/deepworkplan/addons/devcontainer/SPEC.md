@@ -65,7 +65,7 @@ volume, CLI or profile file.
   the exact tag in that tree-URL form.
 - **The layout.** The render produces exactly
   `.devcontainer/devcontainer.json`, `docker/local/<service>/Dockerfile`
-  (plus its entrypoint and layer scripts), `docker/local/docker-compose.yml`
+  (plus its entrypoint and layer scripts), `docker/local/docker-compose.yaml`
   and `dev.sh` (kept when it exists). `devcontainer.json` opens the same
   compose service as `dev.sh`.
 - **No shared base image.** The Dockerfile starts from the official runtime
@@ -108,7 +108,10 @@ addon's container profile): enable the kit's Herdr machine option; `dck up`
 (or `bash dev.sh up`) registers it. `dck herdr add` writes the user's
 `~/.ssh/config` include and **MUST** be run only with its own explicit
 approval. Peers then run the pinned herdr-peers skill inside the container
-(`../herdr/install.md` §3).
+(`../herdr/install.md` §3); every `v0.2.0` image carries herdr-peers. The
+kit's `[herdr] layout` key (`"standard"`: Home · Editor · Development ·
+Agents, created by `dck up`; `"none"` skips it) is the kit's choice, and the
+addon passes the person's preference without adding its own.
 
 ## 8. Validation Checklist
 

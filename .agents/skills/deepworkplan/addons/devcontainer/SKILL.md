@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-devcontainer
-description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.2.0, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.2.0, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yaml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
 version: "7.0.1"
 documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
@@ -52,7 +52,7 @@ not touch the host); or on direct invocation. No other flow requires it.
 ```
 .devcontainer/devcontainer.json        # opens the same compose service as dev.sh
 docker/local/<service>/Dockerfile      # plus its entrypoint and layer scripts
-docker/local/docker-compose.yml
+docker/local/docker-compose.yaml
 dev.sh                                 # up, down, shell, exec, build, rebuild, herdr
 ```
 
@@ -62,6 +62,14 @@ the repository owns its Dockerfile, and nothing depends on the kit's GHCR
 image. The kit's managed blocks carry a render stamp, so `dck init`
 re-renders them and `dck doctor` reports drift; a project section outside
 them survives every re-render. An existing `dev.sh` is kept.
+
+The options live in `.devcontainer/dck.toml` (interface 2; `dck init`
+migrates an interface-1 file). `dev.sh` is the one entry point
+(`bash dev.sh up` builds, starts and registers). `ssh_agent` (default on)
+gives git over SSH through the host's agent, so no key enters the container.
+`[herdr] machine` registers the container as a Herdr machine, and
+`[herdr] layout = "standard"` opens it with the Home · Editor · Development ·
+Agents sidebar (`"none"` skips it). Every image carries herdr-peers.
 
 ## Trust boundary (write scope)
 

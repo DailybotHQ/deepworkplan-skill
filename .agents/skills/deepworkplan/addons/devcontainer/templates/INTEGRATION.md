@@ -23,7 +23,7 @@ digest in the kit's pin file. No shared base image is needed.
 - Ports: only ports the app really listens on in dev (existing compose,
   framework config, dev-script flags); they bind `127.0.0.1`.
 - Backing services (database, cache, queue) the app really uses in dev go in
-  `docker/local/docker-compose.yml` **outside** the kit's managed blocks,
+  `docker/local/docker-compose.yaml` **outside** the kit's managed blocks,
   with their versions pinned.
 
 ## 3. What goes in the image

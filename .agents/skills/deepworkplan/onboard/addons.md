@@ -89,7 +89,7 @@ that addon's `SKILL.md` and run its flow — detect the kit (`dck doctor
 then let the skill (or you, from the stack you detected in Phase 1) reason
 the service, runtime, ports and agents and render the repository's own
 layout — `.devcontainer/devcontainer.json`,
-`docker/local/<service>/Dockerfile`, `docker/local/docker-compose.yml` and
+`docker/local/<service>/Dockerfile`, `docker/local/docker-compose.yaml` and
 `dev.sh` — from the official runtime image (no shared base image is
 required). Show the plan and diffs first and let `dck init` reconcile any
 **existing devcontainer — never clobbered**: an existing file changes only

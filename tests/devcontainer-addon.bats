@@ -76,7 +76,7 @@ PY
 }
 
 @test "layout: the per-repository files are documented and no shared base image is required" {
-  for p in '.devcontainer/devcontainer.json' 'docker/local/<service>/Dockerfile' 'docker/local/docker-compose.yml' 'dev.sh'; do
+  for p in '.devcontainer/devcontainer.json' 'docker/local/<service>/Dockerfile' 'docker/local/docker-compose.yaml' 'dev.sh'; do
     for f in "$ADDON/SKILL.md" "$ADDON/SPEC.md" "$ONBOARD" "$SK/spec/ADDONS.md"; do
       grep -qF -- "$p" "$f" || { echo "$f does not name $p"; return 1; }
     done
