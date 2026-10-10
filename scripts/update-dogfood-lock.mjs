@@ -5,9 +5,10 @@
 // Why this exists: `computedHash` is a content hash of the installed skill
 // folder — NOT a tag pin. The two addon skills are re-installed (and re-hashed)
 // by the release workflow through the real `skills` CLI, but `deepworkplan` is
-// deliberately excluded from that refresh because it must mirror THIS working
-// revision, not the last published tag. Without this step its hash silently
-// goes stale the moment the pack changes.
+// never installed from a tag because it must mirror THIS working revision.
+// scripts/refresh-dogfood-skill.sh runs this after every copy — on a PR, and
+// in both release workflows right after the version stamp — so the hash never
+// goes stale when the pack changes.
 //
 // The algorithm below is copied from the producer, `skills@1.5.24`
 // (`dist/cli.mjs` → `computeSkillFolderHash`): sha256 over every file in the

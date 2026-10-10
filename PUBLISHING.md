@@ -64,7 +64,9 @@ On every merge to `main`, `auto-release.yml`:
    router carries a pre-release version it releases nothing unless the merge
    commit says `[graduate]`, and then graduates `X.Y.Z-beta.N` → `X.Y.Z`.
 3. Syncs the new version into **all** SKILL.md files (router, every
-   sub-skill, every addon).
+   sub-skill, every addon), then re-syncs the `.agents/skills/deepworkplan/`
+   dogfood mirror and its `skills-lock.json` hash
+   (`scripts/refresh-dogfood-skill.sh`), so `main` stays byte-identical.
 4. Prepends a dated section to `CHANGELOG.md`.
 5. Commits as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z` (annotated),
    pushes, and creates a GitHub Release whose notes are that version's

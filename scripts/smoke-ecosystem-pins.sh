@@ -52,8 +52,8 @@ ok()   { echo "OK   $1"; }
 fail() { echo "FAIL $1"; failures=$((failures + 1)); }
 
 expected_sums() {  # expected_sums <key>: sha256 of the pinned release's SHA256SUMS asset
-    # Pinned beside the tag in addon.json (the descriptor schema carries no
-    # digest): bumping a tag without updating its digest fails this smoke.
+    # Pinned here, per addon tag (the descriptor schema carries no digest):
+    # bumping a tag in addon.json without updating its digest fails this smoke.
     case "$1" in
         herdr)        echo 373823f4ceb1891032a474f776ad502c2d745d45318b42eb8f38f8c4aaf2a6d1 ;;
         agentkit)     echo d38d4f989bd7c05826a142067b92010c390045094b046641984d20d33894e9fa ;;
@@ -83,20 +83,25 @@ verify_sums() {  # verify_sums <key> [tagged-clone]
 import hashlib, os, sys
 sums, src, key, repo, tag, expected = sys.argv[1:]
 digest = lambda p: hashlib.sha256(open(p, "rb").read()).hexdigest()
+# Trust the downloaded file only once its pinned digest matches.
+if digest(sums) != expected:
+    print("FAIL %s: sha256(SHA256SUMS)=%s, expected %s" % (key, digest(sums), expected or "(none pinned)"))
+    sys.exit(1)
+root = os.path.realpath(src)
 checked, bad = 0, []
 for line in open(sums):
     parts = line.split(None, 1)
     if len(parts) != 2:
         continue
     want, name = parts[0], parts[1].strip().lstrip("*")
-    path = os.path.join(src, name)
+    path = os.path.realpath(os.path.join(root, name))
+    if os.path.isabs(name) or not path.startswith(root + os.sep):
+        bad.append(name + " (outside the clone)")
+        continue
     if os.path.isfile(path):
         checked += 1
         if digest(path) != want:
             bad.append(name)
-if digest(sums) != expected:
-    print("FAIL %s: sha256(SHA256SUMS)=%s, expected %s" % (key, digest(sums), expected or "(none pinned)"))
-    sys.exit(1)
 if bad or not checked:
     print("FAIL %s: SHA256SUMS mismatch %s (checked %d)" % (key, ", ".join(bad) or "-", checked))
     sys.exit(1)

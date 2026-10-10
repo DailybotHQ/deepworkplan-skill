@@ -275,3 +275,32 @@ MD
     grep -qF 'skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/' "$REPO_ROOT/skills/deepworkplan/upgrade/SKILL.md"
     grep -qF 'skills add "https://github.com/DailybotHQ/deepworkplan-skill/tree/${NEW_TAG}"' "$REPO_ROOT/.github/workflows/auto-release.yml"
 }
+
+@test "the pin smoke's SHA256SUMS verifier refuses a wrong digest, escaping paths and tampered files" {
+    local s="$REPO_ROOT/scripts/smoke-ecosystem-pins.sh" d v
+    d="$(mktemp -d)"
+    v="$d/verify.py"
+    sed -n '/python3 - "$sums"/,/^PY$/p' "$s" | sed '1d;$d' > "$v"
+    [ -s "$v" ]
+    mkdir -p "$d/src"
+    printf 'ok' > "$d/src/a"
+    sha() { python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"; }
+    good="$(sha "$d/src/a")"
+    printf '%s  a\n' "$good" > "$d/sums"
+    # a correct file under the pinned digest passes
+    python3 -I "$v" "$d/sums" "$d/src" k r t "$(sha "$d/sums")"
+    # a digest that is not the pinned one fails before any line is trusted
+    run python3 -I "$v" "$d/sums" "$d/src" k r t "$(printf '0%.0s' $(seq 64))"
+    [ "$status" -ne 0 ]; [[ "$output" == *"expected"* ]]
+    # a name escaping the clone fails, even under the pinned digest
+    printf '%s  ../outside\n' "$good" > "$d/sums"
+    printf 'ok' > "$d/outside"
+    run python3 -I "$v" "$d/sums" "$d/src" k r t "$(sha "$d/sums")"
+    [ "$status" -ne 0 ]; [[ "$output" == *"outside the clone"* ]]
+    # a tampered file fails
+    printf '%s  a\n' "$good" > "$d/sums"
+    printf 'tampered' > "$d/src/a"
+    run python3 -I "$v" "$d/sums" "$d/src" k r t "$(sha "$d/sums")"
+    [ "$status" -ne 0 ]
+    rm -rf "$d"
+}
