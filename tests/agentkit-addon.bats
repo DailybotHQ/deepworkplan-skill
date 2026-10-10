@@ -6,7 +6,7 @@
 # tagged clone + install.sh only; permissions are the kit's — autonomy by
 # default, and the `--ask` / AGENTKIT_PERMISSIONS=ask opt-out always wins
 # (over `--auto` and over the env file; hub amendment A1) — while the pack
-# never spells a CLI permission flag, never passes `--auto`, and passes
+# never spells a CLI autonomy flag, never passes `--auto`, and passes
 # `--ask` when a plan records the opt-out; no fetch-and-execute pipeline;
 # the transport maps launch/observe/collect/cancel onto one `ak run` per
 # worktree; and a detected kit contributes its abilities only through the
@@ -47,14 +47,14 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
   grep -qF "| \`agentkit\` | \`DailybotHQ/coding-agents-kit\` \`$PIN\`, interface 1 |" "$SK/spec/ADDONS.md"
 }
 
-@test "security: no CLI permission flag, no fetch-and-execute text, install by tagged clone only" {
+@test "security: no CLI autonomy flag, no fetch-and-execute text, install by tagged clone only" {
   run grep -rnE 'dangerously|--yolo|--force|--approve|--always-approve|skip-permissions' "$ADDON"
   [ "$status" -ne 0 ]
   run grep -rnE '(curl|wget)[^|]*\| *(ba)?sh|irm .*iex|iwr .*iex' "$ADDON"
   [ "$status" -ne 0 ]
   grep -qF "git clone --branch $PIN https://github.com/DailybotHQ/coding-agents-kit" "$ADDON/SKILL.md"
   grep -qF './coding-agents-kit/install.sh' "$ADDON/SKILL.md"
-  doc_has "$ADDON/SPEC.md" 'The addon **MUST NOT** spell a CLI permission flag, and **MUST NOT** pass `--auto`'
+  doc_has "$ADDON/SPEC.md" 'The addon **MUST NOT** spell a CLI autonomy flag, and **MUST NOT** pass `--auto`'
   doc_has "$ADDON/SPEC.md" '**MUST NOT** carry a secret value'
 }
 

@@ -39,7 +39,8 @@ ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format js
 The kit launches the agent in autonomy by default. Add `--ask` when the
 plan records the developer's opt-out; an inherited
 `AGENTKIT_PERMISSIONS=ask` already wins without it, so never unset it.
-Never add `--auto` or spell a CLI permission flag.
+Never add `--auto` or spell a CLI autonomy flag; `--ask` is the only flag
+the pack passes.
 
 ## 4. Observe
 

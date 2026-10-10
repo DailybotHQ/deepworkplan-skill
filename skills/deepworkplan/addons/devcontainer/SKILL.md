@@ -143,7 +143,8 @@ then validate what was rendered:
 - a **real** `docker build` (the skill runs it; a failed build is a failed
   run, never a success), then `bash dev.sh up`;
 - inside the container: `ak doctor --json` reports `permissions: auto`
-  when agents are installed, `nvim --headless +qa` exits 0 when the editor
+  when agents are installed (`ask` when the documented opt-out is set —
+  that is the expected result, never a failure to "fix"), `nvim --headless +qa` exits 0 when the editor
   is, and the repository's real test command runs.
 
 Every result is recorded; none blocks a flow.

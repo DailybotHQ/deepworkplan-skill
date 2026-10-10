@@ -37,6 +37,9 @@ tags pin what is installed. An unknown interface major is one warning and
 
 ## Release order
 
+The 7.0.0 release history, not the current pins: each addon's
+`addon.json` (`product.tag`) is the pin in force.
+
 1. Product tags: `herdr-peers` `v0.1.0`, `coding-agents-kit` `v0.1.1`
    (supersedes `v0.1.0`, a security patch), `devcontainer-kit` `v0.1.4`
    (after the `v0.1.1` security release and an agents-layer fix),

@@ -85,7 +85,7 @@ volume, CLI or profile file.
   its checksum-verified release and the CLIs through `ak install`; agents in
   the container launch in the kit's autonomy by default, and the compose
   carries the commented `AGENTKIT_PERMISSIONS=ask` opt-out. The addon adds
-  no permission flag.
+  no autonomy flag.
 - On acceptance: `addons.devcontainer` = `{"enabled": true, "version":
   "v0.2.0"}` via `shared/config.py enable`.
 

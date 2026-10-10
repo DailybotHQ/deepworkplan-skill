@@ -83,7 +83,7 @@ worktree:
   the kit's env file) or inherited from an opted-out session; it always wins — over `--auto` on the same command and over an
   `AGENTKIT_PERMISSIONS=auto` line in the kit's env file. Autonomy is meant
   for disposable or sandboxed environments, such as a dev container.
-- The addon **MUST NOT** spell a CLI permission flag, and **MUST NOT** pass
+- The addon **MUST NOT** spell a CLI autonomy flag, and **MUST NOT** pass
   `--auto` (it is the default, so it adds nothing but a way to look past an
   opt-out). It **MUST** pass `--ask` when the plan records the developer's
   opt-out for its delegates, and it **MUST NOT** remove or override an
@@ -125,5 +125,5 @@ minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 3. Install used the pinned tagged clone; no pipeline anywhere in the text.
 4. The registry entry exists only after acceptance.
 5. Each delegate: own worktree, recorded launch before start, no
-   permission flag spelled by the addon, `--ask` when the plan records the
+   autonomy flag spelled by the addon, `--ask` when the plan records the
    opt-out, result gated by the parent.

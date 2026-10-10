@@ -405,7 +405,7 @@ pinned tagged clone plus the kit's `install.sh`. Permissions are the
 kit's: it launches agents in **autonomy by default**, and its opt-out —
 `--ask` or `AGENTKIT_PERMISSIONS=ask`, set or inherited — always wins, even
 over `--auto` and over an `auto` line in the kit's env file. The pack spells
-no CLI permission flag, never passes `--auto`, passes `--ask` when a plan
+no CLI autonomy flag, never passes `--auto`, passes `--ask` when a plan
 records the opt-out, and never drops an inherited one; in short, the opt-out
 always wins.
 It is **never required**: without it every task runs in the current
