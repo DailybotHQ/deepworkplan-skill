@@ -113,8 +113,10 @@ silent pass. Addons and CI may change; the core loop must not.
   duplicates changelog sections. See AGENTS.md Rule #4 ("Versioning is
   automatic — write good commits"). (The dogfood copy at
   `.agents/skills/deepworkplan/**` is synced via
-  `scripts/refresh-dogfood-skill.sh`, not by auto-release — flag
-  unreviewed drift from `skills/deepworkplan/` as `warning`, not a
+  `scripts/refresh-dogfood-skill.sh`: on a PR by the contributor, and by
+  both release workflows inside the release commit right after stamping
+  `version:` — that release-commit sync is expected, not a hand-edit. Flag
+  unreviewed drift from `skills/deepworkplan/` on a PR as `warning`, not a
   versioning critical.)
 - **Always `critical`:** a sub-skill `SKILL.md` frontmatter `version:` that
   drifts from the router `skills/deepworkplan/SKILL.md` `version:` on any
