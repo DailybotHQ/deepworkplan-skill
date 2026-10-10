@@ -9,6 +9,17 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.1.2] — 2026-10-10
+
+### Changes
+
+- Merge pull request #67 from DailybotHQ/fix/agentkit-readonly-delegates-ask
+- fix(addon): state the read-only --ask rule on every agentkit launch surface
+- Merge remote-tracking branch 'origin/main' into fix/agentkit-readonly-delegates-ask
+- docs(release): describe the release-commit mirror refresh in the review extension, PUBLISHING and the lock helper
+- fix(addon): launch read-only agentkit delegates with --ask
+
+
 ## [7.1.1] — 2026-10-10
 
 ### Changes

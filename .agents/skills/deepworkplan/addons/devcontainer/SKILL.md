@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-devcontainer
 description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.2.1, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yaml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
-version: "7.1.1"
+version: "7.1.2"
 documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
