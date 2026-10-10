@@ -40,8 +40,12 @@ digest in the kit's pin file. No shared base image is needed.
 Want the container as a Herdr machine? Turn on the kit's Herdr machine
 option; `bash dev.sh up` registers it. Running `dck herdr add` edits
 `~/.ssh/config` (a guarded include) — ask for that separately. Git and SSH
-inside use the host's agent, never a mounted `~/.ssh`. Inside, peers use the
-pinned herdr-peers skill (`../../herdr/install.md`).
+inside use the host's agent, never a mounted `~/.ssh`; the kit picks the
+agent socket by Docker provider. Inside, peers use the pinned herdr-peers
+skill (`../../herdr/install.md`). `[herdr] mesh` (default `true`, Docker
+Desktop only) connects the repository's container to the other dck
+containers; it widens trust between them, so name that cost, and set
+`mesh = false` when the container should stay on its own.
 
 ## 5. Render and validate
 
@@ -53,6 +57,6 @@ bash dev.sh build && bash dev.sh up         # a real build; a failure is a faile
 dck exec -- <the repo's real test command>
 ```
 
-Use the option names the kit's `v0.2.0` documentation gives (`dck init
+Use the option names the kit's `v0.2.1` documentation gives (`dck init
 --help`). Record each outcome. A failure is a finding about the environment,
 never a repository conformance failure.

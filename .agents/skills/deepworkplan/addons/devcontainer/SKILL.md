@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-devcontainer
-description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.2.0, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yaml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.2.1, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yaml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
 version: "7.0.1"
 documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
@@ -28,7 +28,7 @@ file name.
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/devcontainer-kit` |
-| Tag | `v0.2.0` (per-repository Dockerfile; no shared base image) |
+| Tag | `v0.2.1` (per-repository Dockerfile; no shared base image) |
 | Interface | `2` (`dck doctor --json` → `"interface": 2`) |
 | Skill | `dck-dockerfile`, installed from the same tag |
 | Registry key | `devcontainer` (`.dwp/config.json` → `addons.devcontainer`) |
@@ -70,6 +70,13 @@ gives git over SSH through the host's agent, so no key enters the container.
 `[herdr] machine` registers the container as a Herdr machine, and
 `[herdr] layout = "standard"` opens it with the Home · Editor · Development ·
 Agents sidebar (`"none"` skips it). Every image carries herdr-peers.
+`[herdr] mesh` (optional, default `true`, Docker Desktop only) lets agents
+inside reach the other dck containers; it widens trust between containers,
+so say so when you offer it, and `mesh = false` keeps the container on its
+own. The agent socket follows the Docker provider: Docker Desktop and
+OrbStack share the host agent, a native Linux engine mounts
+`$SSH_AUTH_SOCK`, and other runtimes get none in exec sessions (`dck ssh`
+and Herdr sessions still forward it).
 
 ## Trust boundary (write scope)
 
@@ -100,7 +107,8 @@ Agents sidebar (`"none"` skips it). Every image carries herdr-peers.
 
 `command -v dck` → `dck doctor --json`: `interface` must be `2` (otherwise one
 warning and "not available"; a `1` means a kit older than `v0.2.0` — offer the
-upgrade); read `runtime` (Docker/OrbStack/colima and Compose), `repo` (config
+upgrade; `version` `0.2.0` is unsupported since `v0.2.1`, its security
+release — offer the upgrade too); read `runtime` (Docker/OrbStack/colima and Compose), `repo` (config
 validity) and `drift`. Note an existing `.devcontainer/`, `docker/` or
 `dev.sh` — it will be **reconciled**, never replaced silently.
 
@@ -114,9 +122,9 @@ optional coding agents and DeepWorkPlan Vim inside) and what it costs
 ### Step 2 — Install the kit and its skill (pinned; point-don't-run by default)
 
 ```
-git clone --branch v0.2.0 https://github.com/DailybotHQ/devcontainer-kit
+git clone --branch v0.2.1 https://github.com/DailybotHQ/devcontainer-kit
 ./devcontainer-kit/install.sh
-npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.2.0 --skill dck-dockerfile -y
+npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.2.1 --skill dck-dockerfile -y
 ```
 
 The third line installs the `dck-dockerfile` skill into the repository
@@ -136,7 +144,7 @@ then `dck init …` after acceptance.
 
 ### Step 4 — Record and validate
 
-`python3 ../../shared/config.py enable devcontainer --version v0.2.0 --repo <repo>`,
+`python3 ../../shared/config.py enable devcontainer --version v0.2.1 --repo <repo>`,
 then validate what was rendered:
 
 - `dck doctor --json` — interface 2, repo config valid, no drift;
@@ -177,7 +185,7 @@ plan simply declares the host command instead.
 ## Validation checklist (component 4 — mirrored from SPEC §8)
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist; the
-   descriptor pins `DailybotHQ/devcontainer-kit` `v0.2.0`, interface 2; no
+   descriptor pins `DailybotHQ/devcontainer-kit` `v0.2.1`, interface 2; no
    template, Dockerfile, compose file, entrypoint or `dev.sh` copy ships here.
 2. `dck doctor --json` reports interface 2, a valid repo config and no drift.
 3. Existing files were changed only through accepted render diffs, each
