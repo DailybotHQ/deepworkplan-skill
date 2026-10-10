@@ -57,6 +57,7 @@ doc['scope']['allowed_command_classes'] = ['python3', 'test']
 doc['scope']['allowed_paths'] = ['src/']
 for t in doc['tasks']:
     t['touched_surface'] = ['src/']
+    t['prerequisites'] = []  # ordering is covered by tests/v7-contract.bats (X-3)
 if sys.argv[3]:
     exec(sys.argv[3])
 json.dump(doc, open(sys.argv[2], 'w'), indent=2)

@@ -118,7 +118,8 @@ PY
 }
 
 @test "gate: an unstarted task, an unmarked task, an unenabled or mismatched addon refuse" {
-  _draft v7; _materialize >/dev/null
+  _draft v7 "doc['tasks'][1]['prerequisites'] = []"  # ordering is covered by the X-3 tests below
+  _materialize >/dev/null
   run _launch T-publish-schemas
   [ "$status" -eq 5 ]; [[ "$output" == *"has not started"* ]] || return 1
   python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
@@ -139,7 +140,8 @@ PY
 }
 
 @test "a read-only delegate (worktree null) may run on an unmarked task" {
-  _draft v7; _materialize >/dev/null
+  _draft v7 "doc['tasks'][1]['prerequisites'] = []"  # ordering is covered by the X-3 tests below
+  _materialize >/dev/null
   python3 "$CFG" enable agentkit --repo "$REPO" >/dev/null
   python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator >/dev/null
   run _launch T-ship-validator '"worktree": null'
@@ -355,4 +357,29 @@ PY
   python3 "$SHARED/outcomes.py" --plan "$PLAN" receipt > "$WORK/body.json" 2> "$WORK/summary.txt" || return 1
   python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["totals"]["criteria"] == 3' "$WORK/body.json" || return 1
   grep -qF 'OK: receipt stdout' "$WORK/summary.txt"
+}
+
+@test "ledger start refuses a task whose prerequisites are not complete: exit 3, recorded (X-3)" {
+  _draft v7; _materialize >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"prerequisite"*"T-publish-schemas"* ]] || return 1
+  grep -q '"type": *"refusal"' "$PLAN/journal.ndjson"
+  grep -q 'prerequisite(s) not complete: T-publish-schemas' "$PLAN/journal.ndjson"
+  # no task_start was recorded for the refused task
+  ! grep -q '"type": *"task_start"' "$PLAN/journal.ndjson"
+  # the task without prerequisites still starts
+  run python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas
+  [ "$status" -eq 0 ]
+}
+
+@test "ledger start accepts a task once its prerequisite is complete (X-3)" {
+  _draft v7; _materialize >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"python3 --version"'
+  [ "$status" -eq 0 ]
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 0 ]
+  run python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator
+  [ "$status" -eq 0 ]
 }

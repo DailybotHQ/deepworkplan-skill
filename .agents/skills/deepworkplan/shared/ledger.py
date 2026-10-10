@@ -124,6 +124,10 @@ class ApprovalMissing(LedgerError):
     """task_start refused: no approval event cites the live contract. Exit 3."""
 
 
+class PrerequisitesUnmet(ApprovalMissing):
+    """task_start refused: a declared prerequisite is not complete. Exit 3."""
+
+
 class CompletionRefused(LedgerError):
     """Completion refused on missing in-window accepted evidence. Exit 4."""
 
@@ -1261,7 +1265,19 @@ class Writer:
         """
         self._check_position()
         task = self._task(task_id)
-        del task  # presence check only; the payload carries the id
+        unmet = [pre for pre in task.get('prerequisites', [])
+                 if not task_complete(self.r.contract, self.events, pre)]
+        if unmet:
+            reason = ('prerequisite(s) not complete: %s' % ', '.join(unmet))
+            self._append_raw('refusal',
+                             {'subject': task_id, 'stage': 'task_start',
+                              'reason': reason},
+                             actor={'kind': 'helper',
+                                    'identity': LEDGER_IDENTITY},
+                             ts=_utc_now())
+            raise PrerequisitesUnmet(
+                'task_start of %s refused: %s — complete them first '
+                '(scheduler.py ready names the next task)' % (task_id, reason))
         root = self.repo_root()
         revision, rev_ok = self._git(['rev-parse', 'HEAD'], root)
         dirty, _dirty_ok = self._git(['status', '--porcelain'], root)
