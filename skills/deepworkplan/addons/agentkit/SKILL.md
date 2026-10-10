@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-agentkit
-description: Optional DeepWorkPlan addon that integrates coding-agents-kit (the `ak` command, DailybotHQ/coding-agents-kit pinned at v0.3.0, interface 1) as the headless delegation transport - a thin integrator that detects the kit through `ak doctor --json`, offers it (never imposes it) from onboard Phase 7b, documents the install from a clone of the pinned tag plus the kit's install.sh, records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations (launch, observe, collect, cancel) onto one `ak run` per delegate in a dedicated git worktree. Never required, never a conformance gate. The kit launches agents in autonomy by default and its opt-out (--ask or AGENTKIT_PERMISSIONS=ask) always wins; the pack spells no CLI autonomy flag, never passes --auto, and passes --ask when a plan records the opt-out.
+description: Optional DeepWorkPlan addon that integrates coding-agents-kit (the `ak` command, DailybotHQ/coding-agents-kit pinned at v0.3.0, interface 1) as the headless delegation transport - a thin integrator that detects the kit through `ak doctor --json`, offers it (never imposes it) from onboard Phase 7b, documents the install from a clone of the pinned tag plus the kit's install.sh, records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations (launch, observe, collect, cancel) onto one `ak run` per delegate in a dedicated git worktree. Never required, never a conformance gate. The kit launches agents in autonomy by default and its opt-out (--ask or AGENTKIT_PERMISSIONS=ask) always wins; the pack spells no CLI autonomy flag, never passes --auto, and passes --ask always for a read-only delegate and for writing delegates when a plan records the opt-out.
 version: "7.1.1"
 documentation_url: https://deepworkplan.com/kit/agentkit
 user-invocable: true
@@ -62,8 +62,9 @@ write scope is bounded:
   result under the plan's `analysis_results/delegations/<id>/`.
 - **It MUST NOT:** spell a CLI autonomy flag (they stay in the kit's
   `providers.toml`) or pass `--auto` (autonomy is already the kit's
-  default) — `--ask`, the opt-out, is the one flag it passes, and only when
-  the plan records it; drop or override an `--ask` /
+  default) — `--ask` is the one flag it passes: always for a read-only
+  delegate (no worktree, `--cwd` the repository), and for a writing
+  delegate when the plan records the opt-out; drop or override an `--ask` /
   `AGENTKIT_PERMISSIONS=ask` opt-out; read, print or write any provider key
   value; let a delegate write outside its worktree; install a coding-agent
   CLI unasked (`ak install` is the developer's call); run a delegate the
@@ -159,7 +160,6 @@ One delegate = one `ak run` in one dedicated worktree
 2. Detection is read-only and reports `interface` 1, or one warning.
 3. Install used the pinned tagged clone + `install.sh`; nothing piped.
 4. The registry entry exists only after acceptance.
-5. Every writing delegate ran in its own worktree and every read-only one
-   with `--ask`, with no autonomy flag spelled
-   by the addon (`--ask` when the plan records the opt-out), and its result
-   was gated here.
+5. Every writing delegate ran in its own worktree (`--ask` when the plan
+   records the opt-out) and every read-only one with `--ask`; no autonomy
+   flag was spelled by the addon, and each result was gated here.

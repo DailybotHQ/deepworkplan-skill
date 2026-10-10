@@ -7,7 +7,8 @@
 # default, and the `--ask` / AGENTKIT_PERMISSIONS=ask opt-out always wins
 # (over `--auto` and over the env file; hub amendment A1) — while the pack
 # never spells a CLI autonomy flag, never passes `--auto`, and passes
-# `--ask` when a plan records the opt-out; no fetch-and-execute pipeline;
+# `--ask` when a plan records the opt-out (always for a read-only delegate);
+# no fetch-and-execute pipeline;
 # the transport maps launch/observe/collect/cancel onto one `ak run` per
 # worktree; and a detected kit contributes its abilities only through the
 # registry.
@@ -132,4 +133,10 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
     # the host-grant disclosure is a MUST, and create points the grant at it
     doc_has "$ADDON/SPEC.md" 'The addon **MUST** say so when the grant is asked for'
     doc_has "$SK/create/v6.md" "read the enabled transport addon's permissions note"
+    # every launch surface states the read-only exception, not opt-out-only
+    doc_has "$ADDON/SKILL.md" '`--ask` is the one flag it passes: always for a read-only delegate'
+    doc_has "$ADDON/templates/INTEGRATION.md" 'A **read-only** delegate always gets `--ask`, with `--cwd` the repository'
+    grep -qF -- '--cwd <repo> --timeout <seconds> --output-format json --ask' "$ADDON/templates/INTEGRATION.md"
+    run grep -rnF 'and only when the plan records it' "$ADDON"
+    [ "$status" -ne 0 ]
 }

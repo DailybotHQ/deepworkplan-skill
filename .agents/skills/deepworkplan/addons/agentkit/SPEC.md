@@ -87,7 +87,8 @@ worktree:
   `--auto` (it is the default, so it adds nothing but a way to look past an
   opt-out). It **MUST** pass `--ask` when the plan records the developer's
   opt-out for its delegates, and it **MUST NOT** remove or override an
-  inherited `AGENTKIT_PERMISSIONS=ask`.
+  inherited `AGENTKIT_PERMISSIONS=ask`. A read-only delegate always gets
+  `--ask` (next rule).
 - **Read-only intent means ask.** A read-only delegate (research, review,
   analysis — no worktree, `"worktree": null`, `--cwd` is the repository
   itself) **MUST** always be launched with `--ask`, whatever the plan

@@ -94,7 +94,8 @@ maintains these hard invariants (enforced in review by
    (Snyk E006): AI-CLI wrappers documented in the pack are **pass-through**
    (no injected bypass flags — elevated modes are the developer's own choice;
    the agentkit addon spells no autonomy flag, never passes `--auto`, and
-   passes only the `--ask` opt-out:
+   passes only `--ask` — always for a read-only delegate, and as the
+   recorded opt-out for writing ones:
    coding-agents-kit's own autonomy default and its `--ask` /
    `AGENTKIT_PERMISSIONS=ask` opt-out, which always wins, are the kit's
    posture, stated as such),
