@@ -75,6 +75,7 @@ PY
 }
 
 @test "CODEOWNERS and dependabot (github-actions weekly)" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
   grep -qE '^\* @[A-Za-z0-9-]+' "$REPO_ROOT/.github/CODEOWNERS"
   python3 - "$REPO_ROOT/.github/dependabot.yml" <<'PY'
 import sys, yaml

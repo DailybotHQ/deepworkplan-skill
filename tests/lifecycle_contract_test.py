@@ -148,6 +148,8 @@ class LifecycleContracts(unittest.TestCase):
         self.state['materialization'] = 'ready'
         self.verify()
 
+    @unittest.skipUnless(importlib.util.find_spec("jsonschema"),
+                         "jsonschema not installed (CI installs it)")
     def test_shape_validator_matches_jsonschema(self):
         from jsonschema import Draft202012Validator
         schema = json.loads((PACK/'spec/schema/plan-state-v2.schema.json').read_text())

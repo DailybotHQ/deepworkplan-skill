@@ -176,7 +176,10 @@ PY
   python3 "$CFG" enable agentkit --note "install deferred: \$HOME excluded" --repo "$REPO" >/dev/null
   python3 "$CFG" enable herdr --repo "$REPO" >/dev/null
   plan="$REPO/.dwp/plans/PLAN_x"
-  run python3 - "$SK/shared" "$REPO/.dwp" <<'PY'
+  # hermetic: a machine-wide ak / herdr-peers must not make the addons detected
+  mkdir -p "$WORK/isolated-bin"
+  ln -sf "$(command -v python3)" "$WORK/isolated-bin/python3"
+  run env PATH="$WORK/isolated-bin" python3 - "$SK/shared" "$REPO/.dwp" <<'PY'
 import json, sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, sys.argv[1])

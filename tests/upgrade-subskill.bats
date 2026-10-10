@@ -20,6 +20,7 @@ up_has() {
 }
 
 @test "frontmatter validates and the sub-skill is user-invocable" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     grep -q '^name: deepworkplan-upgrade$' "$UP"
     grep -q '^user-invocable: true$' "$UP"
     grep -q 'documentation_url: https://deepworkplan.com' "$UP"

@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 @test "v2 preserves v1 task evidence for both representations" {
+  python3 -c 'import jsonschema' 2>/dev/null || skip "jsonschema not installed (CI installs it)"
   run python3 - "$BATS_TEST_DIRNAME/.." <<'PY'
 import copy, json, pathlib, sys
 from jsonschema import Draft202012Validator
@@ -31,6 +32,7 @@ PY
 }
 
 @test "v2 rejects missing and mistyped gate evidence fields" {
+  python3 -c 'import jsonschema' 2>/dev/null || skip "jsonschema not installed (CI installs it)"
   run python3 - "$BATS_TEST_DIRNAME/.." <<'PY'
 import copy, json, pathlib, sys
 from jsonschema import Draft202012Validator
