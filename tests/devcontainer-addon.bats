@@ -122,3 +122,10 @@ PY
     doc_has "$ADDON/SPEC.md" 'the addon **MUST NOT** answer the kit'"'"'s `ssh-add` offer or write `[ssh] host_extra`'
     doc_has "$ADDON/SKILL.md" 'answer dck'"'"'s `ssh-add` prompt or set `[ssh] host_extra` in the developer'"'"'s host profile on their behalf'
 }
+
+@test "ssh_host_config is disclosed at the offer, and INTEGRATION keeps host_extra the developer's" {
+    doc_has "$ADDON/SKILL.md" 'Say that `ssh_host_config` is on by default'
+    doc_has "$ADDON/templates/INTEGRATION.md" '`[ssh] host_extra` in their host profile (never the repository'"'"'s `dck.toml`); never set it for them'
+    run grep -nF 'so no key enters the container' "$ADDON/SKILL.md"
+    [ "$status" -ne 0 ]
+}

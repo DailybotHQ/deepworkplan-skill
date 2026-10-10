@@ -44,8 +44,10 @@ inside use the host's agent, never a mounted `~/.ssh`; the kit picks the
 agent socket by Docker provider. Your own `~/.ssh/config` aliases for git
 hosting services work inside too (`ssh_host_config`, default on: public keys
 and trusted host keys only, no private key copied); `dck up` may offer
-`ssh-add` for a missing key — the developer answers. Inside, peers use the
-pinned herdr-peers skill (`../../herdr/install.md`). `[herdr] mesh` (default `true`, Docker
+`ssh-add` for a missing key — the developer answers. Hosts beyond the git
+services are the developer's own opt-in through `[ssh] host_extra` in their
+host profile (never the repository's `dck.toml`); never set it for them.
+Inside, peers use the pinned herdr-peers skill (`../../herdr/install.md`). `[herdr] mesh` (default `true`, Docker
 Desktop only) connects the repository's container to the other dck
 containers; it widens trust between them, so name that cost, and set
 `mesh = false` when the container should stay on its own.

@@ -66,7 +66,7 @@ them survives every re-render. An existing `dev.sh` is kept.
 The options live in `.devcontainer/dck.toml` (interface 2; `dck init`
 migrates an interface-1 file). `dev.sh` is the one entry point
 (`bash dev.sh up` builds, starts and registers). `ssh_agent` (default on)
-gives git over SSH through the host's agent, so no key enters the container.
+gives git over SSH through the host's agent, so no private key enters the container.
 `[herdr] machine` registers the container as a Herdr machine, and
 `[herdr] layout = "standard"` opens it with the Home · Editor · Development ·
 Agents sidebar (`"none"` skips it). Every image carries herdr-peers.
@@ -126,9 +126,11 @@ validity) and `drift`. Note an existing `.devcontainer/`, `docker/` or
 ### Step 1 — Offer (never impose)
 
 Explain what it adds (one reproducible environment the developer and every
-agent share, loopback-only ports, agent forwarding instead of key copies,
-optional coding agents and DeepWorkPlan Vim inside) and what it costs
-(Docker, an image build). Declining is complete.
+agent share, loopback-only ports, agent forwarding instead of private-key
+copies, optional coding agents and DeepWorkPlan Vim inside) and what it
+costs (Docker, an image build). Say that `ssh_host_config` is on by default:
+the developer's git-host aliases, their public keys and trusted host keys
+are copied in. Declining is complete.
 
 ### Step 2 — Install the kit and its skill (pinned; point-don't-run by default)
 
