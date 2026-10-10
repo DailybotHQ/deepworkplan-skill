@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.1.3] — 2026-10-10
+
+### Changes
+
+- Merge pull request #62 from DailybotHQ/dependabot/github_actions/softprops/action-gh-release-3
+- ci: bump softprops/action-gh-release from 2 to 3
+
+
 ## [7.1.2] — 2026-10-10
 
 ### Changes
