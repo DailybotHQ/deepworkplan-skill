@@ -204,3 +204,16 @@ _declared() { printf '%s' "$output" | python3 -c 'import json,sys; print(json.lo
   [[ "$stderr" != *"vim"* ]] || return 1
   printf '%s' "$output" | python3 -c 'import json,sys; v=json.load(sys.stdin)["addons"]["vim"]; assert v["compatible"] and "state" not in v, v'
 }
+
+@test "observed version of a JSON detect output is its own version field, not the first semver (O-1)" {
+  run python3 -c '
+import sys
+sys.path.insert(0, sys.argv[1])
+import resources
+doc = "{\"providers\": {\"claude\": \"2.1.295\"}, \"interface\": 1, \"version\": \"0.3.0\"}"
+assert resources._observed_version({"command": "x"}, doc) == "v0.3.0"
+assert resources._observed_version({"command": "x"}, "herdr-peers 0.1.0 (protocol 1)") == "v0.1.0"
+assert resources._observed_version({"command": "x"}, "{\"interface\": 1}") is None
+' "$BATS_TEST_DIRNAME/../skills/deepworkplan/shared"
+  [ "$status" -eq 0 ]
+}

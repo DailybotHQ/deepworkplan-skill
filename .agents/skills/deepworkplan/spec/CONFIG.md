@@ -126,6 +126,7 @@ developer's consent; the record states the host can, not that it may.
 |---|---|---|
 | Writer | `onboard` Phase 7b, on the developer's acceptance of one addon's offer | `python3 <pack>/shared/config.py enable <key> [--version <tag>] --repo <repo>` (a decline writes nothing; an explicit "turn it off" is `disable <key>`) |
 | Writer | an addon's own install step, or the human | the same command, or a hand edit |
+| Writer | the developer, or an agent they asked, turning field metrics on | `python3 <pack>/shared/config.py benchmark enabled\|learnings true\|false --repo <repo>` (7.1.5): sets one `benchmark` key, preserves the other and every other top-level key, refuses an unknown key or a file it cannot parse. `learnings` still rides on `enabled` (BENCHMARK.md §1). `enable`/`disable` stay addon-only |
 | Writer | `upgrade`, after the developer accepts the upgrade | `config.py backfill --repo <repo>` (dry run), then `--write`: every in-pack addon the repository file does not name and that is installed **in the repository** (a repo-relative detect path) is recorded `enabled` with its observed version and a back-fill note (F-15); a machine-level install is reported, never recorded — onboarding offers it. A recorded decision — enabled or disabled — is never changed |
 | Reader | `execute`, `create`, `verify`, `status` | `python3 <pack>/shared/config.py show` / `enabled` (`--plan <dir>` resolves the plan's repository) |
 | Reader | `shared/benchmark.py` | the `benchmark` key only, at its emission point |
