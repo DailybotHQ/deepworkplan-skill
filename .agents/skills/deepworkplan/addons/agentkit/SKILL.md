@@ -120,6 +120,10 @@ git clone --branch v0.5.0 https://github.com/DailybotHQ/coding-agents-kit
 ./coding-agents-kit/install.sh
 ```
 
+Before running the installer, check the tag and the release's `SHA256SUMS`
+(pinned digest, at least one file verified) as
+[`../machine-installs.md`](../machine-installs.md) shows.
+
 (Windows: the same tagged clone, then `.\coding-agents-kit\install.ps1`.)
 The installer touches no network, installs no CLI and never overwrites the
 env file. Run it yourself only interactively and with explicit acceptance;

@@ -8,6 +8,9 @@ recorded, the pack's pin, and the one next action:
   install         absent — offer it; install on acceptance
   upgrade         installed older than the pack's pin
   record          installed at the pin, but the registry is missing or stale
+  available       a machine-level tool is present, but this repository never
+                  enabled it — offered only in a full setup, never recorded
+                  on an upgrade
   current         installed at the pin and recorded — nothing to do
   newer           installed newer than the pin — keep it, never downgrade
   reconcile       hand-written work is present (a docker setup without dck):
@@ -21,8 +24,9 @@ recorded, the pack's pin, and the one next action:
 Nothing here installs, upgrades, renders or writes: the onboarding agent
 runs each addon's own flow, then records the result with ``config.py
 enable``. Running the planner twice on an unchanged repository prints the
-same plan, and a repository in which every row is ``current``, ``newer``,
-``declined``, ``evaluate`` or ``not-applicable`` has nothing pending.
+same plan. ``pending`` lists only what the repository uses or requires and
+is not yet at the pin; ``offers`` lists what fits but was never chosen here,
+and ``evaluate`` what the addon itself must decide.
 
 Usage::
 
@@ -49,7 +53,8 @@ import resources  # noqa: E402
 _HERE = os.path.dirname(os.path.abspath(__file__))
 PACK_ROOT = os.path.normpath(os.path.join(_HERE, '..'))
 TAG_RE = re.compile(r'v?(\d+)\.(\d+)\.(\d+)')
-NOTHING_PENDING = ('current', 'newer', 'declined', 'evaluate', 'not-applicable')
+NOTHING_PENDING = ('current', 'newer', 'available', 'declined', 'evaluate',
+                   'not-applicable')
 
 # Repository-level copies a skills CLI install leaves behind.
 VENDORED = {'ai-diff-reviewer': 'ai-diff-reviewer', 'dailybot': 'dailybot'}
@@ -252,19 +257,28 @@ def plan_row(key: str, repo: str, reg: Dict[str, Any]) -> Dict[str, Any]:
             row['reason'] = 'offer only when an interface surface is detected'
     else:  # machine-level products: agentkit, herdr, vim, and future ones
         status = resources.addon_status(key, repo)
+        enabled = isinstance(entry, dict) and entry.get('enabled') is True
         if status.get('state') == 'installed-without-surface':
-            row.update(installed=True, action='upgrade', reason=status['reason'])
+            row.update(installed=True, reason=status['reason'],
+                       action='upgrade' if enabled else 'available')
         elif status.get('detected'):
             row.update(installed=True,
                        version=status.get('version') or surface_version(det))
             row['action'] = version_action(row['version'], pin)
             if not status.get('compatible') and row['action'] == 'current':
                 row.update(action='verify', reason=status.get('reason'))
+            if not enabled:
+                # present on this machine (perhaps for another project), never
+                # enabled here: the registry records only this repo's choices
+                row.update(action='available',
+                           reason='on this machine (%s, pin %s); not enabled '
+                                  'for this repository' % (row['version'] or
+                                                           'version unknown', pin))
         else:
             row.update(action='install', reason=status.get('reason'))
     base = row['action']
     row['action'] = with_registry(base, entry, pin, row['version'])
-    if row['action'] in ('install', 'upgrade', 'record', 'reconcile'):
+    if row['action'] in ('install', 'upgrade', 'record', 'reconcile', 'available'):
         tag = row['version'] if base == 'newer' else pin
         row['record'] = ('python3 <pack>/shared/config.py enable %s%s --repo %s'
                          % (key, ' --version %s' % tag if tag else '', repo))
@@ -280,12 +294,24 @@ def build_plan(repo: str, keys: Optional[List[str]] = None) -> Dict[str, Any]:
     pack = skill_version(os.path.join(PACK_ROOT, 'SKILL.md'))
     vendored = skill_version(os.path.join(repo, '.agents', 'skills',
                                           'deepworkplan', 'SKILL.md'))
-    pending = [r['key'] for r in rows if r['action'] not in NOTHING_PENDING]
+    # pending: what this repository uses or requires and is not yet at the
+    # pin. offers: what fits but was never chosen here — made once; a
+    # decline writes nothing, so an offer never blocks "nothing pending".
+    def required(r):
+        entry = r['registry']
+        return r['key'] == 'ai-diff-reviewer' or (
+            isinstance(entry, dict) and entry.get('enabled') is True)
+    pending = [r['key'] for r in rows if r['action'] not in NOTHING_PENDING
+               and (r['action'] != 'install' or required(r))]
+    offers = [r['key'] for r in rows if r['action'] == 'available'
+              or (r['action'] == 'install' and not required(r))]
+    to_evaluate = [r['key'] for r in rows if r['action'] == 'evaluate']
     return {'schema': 'dwp-addon-sync/v1', 'repo': repo, 'pack': pack,
             'vendored_pack': vendored,
             'pack_action': (None if vendored is None
                             else version_action(vendored, pack)),
-            'rows': rows, 'pending': pending,
+            'rows': rows, 'pending': pending, 'offers': offers,
+            'evaluate': to_evaluate,
             'warnings': [warning] if warning else []}
 
 
@@ -302,6 +328,12 @@ def render(plan: Dict[str, Any]) -> str:
         lines.append('deepworkplan pack   repo          %-10s  %-10s  %s' % (
             plan['vendored_pack'], plan['pack'], plan['pack_action']))
     lines.append('pending: %s' % (', '.join(plan['pending']) or 'nothing'))
+    if plan['offers']:
+        lines.append('offers: %s (only where they fit; a decline writes nothing)'
+                     % ', '.join(plan['offers']))
+    if plan['evaluate']:
+        lines.append('evaluate: %s (run its detection before reporting done)'
+                     % ', '.join(plan['evaluate']))
     for w in plan['warnings']:
         lines.append('warning: %s' % w)
     return '\n'.join(lines)

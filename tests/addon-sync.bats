@@ -69,6 +69,25 @@ tree_digest() { (cd "$REPO" && find . -type f -print0 | sort -z | xargs -0 shasu
   [ "$(field devcontainer layout)" = none ]
 }
 
+@test "pending is what the repository uses or requires; the rest are offers" {
+  printf '{}\n' > "$REPO/package.json"
+  stub herdr-peers "herdr-peers $(bare herdr) (protocol 1)"
+  run plan_json
+  printf '%s' "$output" | "$PY" -c '
+import json,sys
+d=json.load(sys.stdin)
+assert d["pending"]==["ai-diff-reviewer"], d["pending"]          # required in every repo
+assert "herdr" in d["offers"] and "agentkit" in d["offers"], d["offers"]
+assert d["evaluate"]==["design-system"], d["evaluate"]'
+  run "$PY" "$SYNC" plan --repo "$REPO"
+  [[ "$output" == *"evaluate: design-system"* ]]
+  # an addon this repository enabled but that is missing is pending again
+  mkdir -p "$REPO/.dwp"
+  printf '{"addons": {"agentkit": {"enabled": true, "version": "%s"}}}\n' "$(pin agentkit)" > "$REPO/.dwp/config.json"
+  run plan_json
+  printf '%s' "$output" | "$PY" -c 'import json,sys; d=json.load(sys.stdin); assert "agentkit" in d["pending"], d["pending"]'
+}
+
 @test "fresh repository without a manifest: dependency-upgrade is not applicable" {
   [ "$(action dependency-upgrade)" = not-applicable ]
 }
@@ -117,7 +136,7 @@ EOF
   [ "$(field devcontainer layout)" = dck ]
   [ "$(field devcontainer stamp)" = v0.2.5 ]
   [ "$(action dependency-upgrade)" = record ]   # present, not in the registry
-  [ "$(action herdr)" = record ]                # at the pin, not in the registry
+  [ "$(action herdr)" = available ]             # on the machine, never enabled here
   run plan_json
   printf '%s' "$output" | "$PY" -c 'import json,sys; d=json.load(sys.stdin); assert d["pack_action"]=="upgrade", d'
 }

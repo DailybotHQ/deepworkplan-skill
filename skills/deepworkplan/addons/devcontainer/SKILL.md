@@ -187,6 +187,10 @@ git clone --branch v0.3.0 https://github.com/DailybotHQ/devcontainer-kit
 npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.0 --skill dck-dockerfile -y
 ```
 
+Before running the installer, check the tag and the release's `SHA256SUMS`
+(pinned digest, at least one file verified) as
+[`../machine-installs.md`](../machine-installs.md) shows.
+
 The third line installs the `dck-dockerfile` skill into the repository
 (repo-local, recorded in `skills-lock.json`), so "install the kit, ask the
 agent" works in any coding agent. Run them yourself only interactively and

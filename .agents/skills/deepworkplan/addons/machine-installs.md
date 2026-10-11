@@ -7,8 +7,10 @@ session. Each tag below is the pack's pin for that addon (its `addon.json`
 `product.tag`, printed by `../shared/addon_sync.py plan`).
 
 **Kits.** Both installers upgrade in place, so install and upgrade are the
-same sequence at the pin: a tagged clone, its tag checked, the release's
-`SHA256SUMS` checked against the tree, then the installer.
+same sequence at the pin, with three gates before the installer runs: the
+tag checked, the downloaded `SHA256SUMS` checked against the digest pinned
+here, and the tree checked against `SHA256SUMS` with at least one file
+actually verified (`--ignore-missing` alone would pass with none).
 
 coding-agents-kit (`agentkit`):
 
@@ -16,7 +18,9 @@ coding-agents-kit (`agentkit`):
 git clone --branch v0.5.0 --depth 1 https://github.com/DailybotHQ/coding-agents-kit cak
 git -C cak describe --tags --exact-match            # must print v0.5.0
 curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v0.5.0/SHA256SUMS -o cak.SHA256SUMS
-(cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS)   # every listed file OK
+echo "a90f45e44085370694a954a3578d037d0637d0eb4ec2f1b846a8d29556b1ec27  cak.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
+(cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS)       # must exit 0
+(cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS | grep -c ': OK$')   # must print a number above 0
 ./cak/install.sh
 ```
 
@@ -26,7 +30,9 @@ devcontainer-kit (`devcontainer`):
 git clone --branch v0.3.0 --depth 1 https://github.com/DailybotHQ/devcontainer-kit dck
 git -C dck describe --tags --exact-match            # must print v0.3.0
 curl -fsSL https://github.com/DailybotHQ/devcontainer-kit/releases/download/v0.3.0/SHA256SUMS -o dck.SHA256SUMS
-(cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS)   # every listed file OK
+echo "02d4de086eeb010b42458dd131b690df36638b361033e5df6aa3d5ceba4a7eea  dck.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
+(cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS)       # must exit 0
+(cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS | grep -c ': OK$')   # must print a number above 0
 ./dck/install.sh
 ```
 

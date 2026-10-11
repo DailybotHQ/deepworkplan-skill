@@ -169,11 +169,15 @@ ai-diff-reviewer    repo          v3.1.0      v3.3.9      upgrade
 dailybot            repo          -           v3.23.12    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
-devcontainer        machine+repo  -           v0.3.0     reconcile
+                    offer only when an interface surface is detected
+devcontainer        machine+repo  -           v0.3.0      reconcile
                     a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
-herdr               machine       v0.2.1      v0.2.1      current
+herdr               machine       v0.2.1      v0.2.1      available
+                    on this machine (v0.2.1, pin v0.2.1); not enabled for this repository
 vim                 machine       -           v0.7.0      install
-pending: agentkit, ai-diff-reviewer, dailybot, dependency-upgrade, devcontainer, vim
+pending: agentkit, ai-diff-reviewer, dependency-upgrade, devcontainer
+offers: dailybot, herdr, vim (only where they fit; a decline writes nothing)
+evaluate: design-system (run its detection before reporting done)
 ```
 
 (Illustrative output; the pins are the ones the installed pack carries.)
@@ -181,12 +185,15 @@ pending: agentkit, ai-diff-reviewer, dailybot, dependency-upgrade, devcontainer,
 For each addon the planner reads its detection, the vendored skill and
 `skills-lock.json`, the `.dwp/config.json` registry and the dev-container
 layout, and names one action: **install**, **upgrade** to the pin,
-**record**, **current**, **newer** (never downgraded), **reconcile**
-(hand-written work, changed only through a shown diff and your consent),
-**declined** (never re-offered) and a few more. The agent then makes one
-consolidated offer, runs each accepted addon's own flow in a fixed order,
-records the result, and re-plans until `pending: nothing`. A second pass over
-a finished repository changes nothing. Machine-level installs (`ak`, `dck`,
+**record**, **current**, **newer** (never downgraded), **reconcile** (a
+hand-written dev container, changed only through a shown diff and your
+consent), **available** (a tool on your machine this repository never
+enabled), **declined** (never re-offered) and a few more. `pending` is what
+the repository uses or requires and is not yet at the pin; `offers` is what
+fits but was never chosen here — made once, and a decline writes nothing. The
+agent runs each accepted addon's own flow in a fixed order, records the
+result, and re-plans until `pending: nothing`. A second pass over a finished
+repository changes nothing. Machine-level installs (`ak`, `dck`,
 herdr-peers, the editor) are shown as exact, tag-pinned, checksum-verified
 commands and run only on your acceptance.
 

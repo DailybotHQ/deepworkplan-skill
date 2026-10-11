@@ -29,7 +29,8 @@ the installed version, the pack's pin and one action:
 |--------|---------|-------------|
 | `install` | absent | offer it; on acceptance run the addon's flow |
 | `upgrade` | older than the pin (or an old release without its surface) | offer the upgrade; on acceptance run the addon's flow at the pin |
-| `record` | at the pin (or newer), registry missing or stale | run the row's `record` command — only for an addon the developer uses |
+| `record` | a repository-level install at the pin (or newer), registry missing or stale; or an addon this repository enabled | run the row's `record` command |
+| `available` | a machine-level tool is present, but this repository never enabled it | nothing on an upgrade; in a full setup, offer it like `install` |
 | `current` | at the pin and recorded | nothing |
 | `newer` | newer than the pin | keep it — **never downgrade** |
 | `reconcile` | a hand-written dev container (`.devcontainer/devcontainer.json` or `docker/local/` without dck) | the addon's diff-and-consent flow (§3) |
@@ -47,7 +48,7 @@ Show the table and make **one** consolidated offer: per row, its action and
 what it costs (machine-level installs, Docker, accounts). **On a harness
 upgrade** the offer covers only the addons the repository already uses
 (`upgrade`, `record`, `reconcile`) and names, in one line, any new addon that
-fits; it never re-pitches an absent addon the repository has done without.
+fits — a machine tool that is merely present (`available`) is not enabled; it never re-pitches an absent addon the repository has done without.
 The full offer of every fitting addon is for a developer who asked to set up
 the addons. The developer may accept all, some or none; a decline writes nothing, and only an explicit
 "turn it off" is `config.py disable <key>`. Trust mode may recommend rows; it
@@ -75,9 +76,9 @@ For each accepted row:
 3. Re-run the planner. The row must now read `current` (or `newer`); if not,
    report what it says — never mark it done on your own word.
 
-**Idempotency:** a second pass over a finished repository finds every row
-`current`, `newer`, `declined`, `evaluate` or `not-applicable`, runs nothing
-and writes nothing.
+**Idempotency:** a second pass over a finished repository prints
+`pending: nothing`, runs nothing and writes nothing; the offers it lists were
+already answered.
 
 ## 3. The dev container: the full working stack
 
@@ -92,22 +93,26 @@ Herdr workspace.
    changed file is backed up first.
 
    ```bash
-   dck init --dry-run --agents --clis "<the CLIs the developer chose>" \
-     <--editor|--no-editor> <--herdr|--no-herdr> --port <name>=<port>
-   dck init …the same flags…   # after the diff was accepted
+   # vim and herdr accepted:
+   dck init --dry-run --agents --clis "claude codex" --editor --herdr --port web=4321
+   # neither accepted:
+   dck init --dry-run --agents --clis "claude codex" --no-editor --no-herdr --port web=4321
    ```
 
-   `--editor` only when the vim addon was accepted, `--herdr` only when the
-   herdr addon was; otherwise pass `--no-editor` / `--no-herdr`.
+   Substitute the CLIs the developer chose and the repository's ports; pass
+   `--editor` only when the vim addon was accepted and `--herdr` only when
+   the herdr addon was (otherwise `--no-editor` / `--no-herdr`). After the
+   diff is accepted, run the same command without `--dry-run`.
 
    - `[agents] clis`: **only** the CLIs the developer names; none by default.
    - `[layers] editor = true` when the vim addon is on; `[layers] dailybot = true`
      when the dailybot addon is on (set in `.devcontainer/dck.toml`, then
      `dck init` again).
-   - `[herdr] machine = true`, `layout = "standard"` (App · Editor ·
-     Development · Agents, every pane opening in the workspace, `/app` by
-     default) and `mesh = true` (Docker Desktop; it widens trust between
-     containers — say so).
+   - Only when the herdr addon was accepted: `[herdr] machine = true`,
+     `layout = "standard"` (App · Editor · Development · Agents, every pane
+     opening in the workspace, `/app` by default) and `mesh = true` (Docker
+     Desktop; it widens trust between containers — say so). Without it,
+     none of the three is set.
 2. **Start hook** where the stack needs one: `docker/local/dev-setup-hook.sh`,
    run by the container at every start as the dev user from the workspace
    (build caches off the bind mount, generated files). It is the repository's
@@ -158,4 +163,8 @@ and its opt-out (`AGENTKIT_PERMISSIONS=ask`) decide.
 One line per addon: action taken, version before → after, the record
 written, and anything left for the developer (a declined row, a machine
 install shown but not run, a failed check). Re-run the planner and include
-its `pending:` line — `nothing` is the only "addons done".
+its `pending:`, `offers:` and `evaluate:` lines. "Addons done" means
+`pending: nothing` (what the repository uses is at the pin), every offer made
+once with the answer reported (a decline writes nothing, so offers never
+block), and every `evaluate` row's own detection run with its result
+(design-system: the surface found, or none).
