@@ -178,6 +178,11 @@ for r in json.load(sys.stdin)["rows"]:
   [ "$(action dailybot)" = declined ]
   [ "$(action ai-diff-reviewer)" = record ]
   [[ "$(field ai-diff-reviewer record)" == *"--version v99.0.0"* ]]
+  # once recorded at its own tag, a newer install is done: never pending
+  eval "$(field ai-diff-reviewer record | sed "s#<pack>#$SK#")"
+  [ "$(action ai-diff-reviewer)" = newer ]
+  run plan_json
+  printf '%s' "$output" | "$PY" -c 'import json,sys; d=json.load(sys.stdin); assert "ai-diff-reviewer" not in d["pending"], d["pending"]'
 }
 
 @test "an unreadable registry is a warning, never a crash or a write" {

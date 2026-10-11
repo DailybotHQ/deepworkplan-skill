@@ -152,7 +152,7 @@ Decision notes:
 
 The §4 wiring is prompt-layer — it relies on the model remembering. When
 `dailybot-cli` is **>= 3.9.0** (the unified floor for the current skill pack,
-currently **3.23.3**), also offer (opt-in, show the exact config first) to commit
+currently **3.23.10**), also offer (opt-in, show the exact config first) to commit
 the repo-level harness hook config so the harness itself reminds the agent about
 unreported work at end of turn:
 

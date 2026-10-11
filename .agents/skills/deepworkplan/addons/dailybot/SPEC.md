@@ -116,7 +116,7 @@ with explicit acceptance, and each reconciled if already present (§7):
 ### 3.4 Optional harness hook enforcement
 
 - When `dailybot-cli` is **>= 3.9.0** (the unified floor for the current skill
-  pack, currently **3.23.3**), the addon **SHOULD** offer — and **MAY**, with
+  pack, currently **3.23.10**), the addon **SHOULD** offer — and **MAY**, with
   explicit acceptance, commit — repo-level harness hook configs whose entries
   invoke the `dailybot hook` lifecycle commands (`session-start`, `activity`,
   `post-commit`, `stop`, `dismiss`), e.g. Claude Code `.claude/settings.json`
@@ -137,7 +137,7 @@ with explicit acceptance, and each reconciled if already present (§7):
 
 ### 3.5 Paired Dailybot skill — full capability surface (informational)
 
-The Dailybot agent skill (currently **3.23.3**, source
+The Dailybot agent skill (currently **3.23.10**, source
 [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)) exposes
 **17 coordinated sub-skills**: report, ask, messages, email, chat,
 conversations, health, check-ins (complete + authoring), kudos (give + browse),
@@ -294,7 +294,7 @@ A repo is **conformant to this addon** when **all** hold (after acceptance):
 - `SKILL.md` (the onboarding hook + flow), `templates/INTEGRATION.md` (reasoning aid)
 - `../README.md` (addon mechanism), [`../../spec/ADDONS.md`](../../spec/ADDONS.md) (concept + pointer)
 - Dailybot skill: [`DailybotHQ/agent-skill`](https://github.com/DailybotHQ/agent-skill)
-  — `SKILL.md` (currently **3.23.3**), `shared/auth.md`, `TRUST.md`,
+  — `SKILL.md` (currently **3.23.10**), `shared/auth.md`, `TRUST.md`,
   `report/SKILL.md`, `report/hooks.md`, `report/triggers.md`
 - Dailybot CLI: [`DailybotHQ/cli`](https://github.com/DailybotHQ/cli), PyPI `dailybot-cli`
   — minimum **>= 3.9.0**; `docs/AGENT_HOOKS.md` (the `dailybot hook` command group

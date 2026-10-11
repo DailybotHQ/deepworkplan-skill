@@ -102,6 +102,8 @@ lane meets a first-run screen, not by answering one:
    `herdr pane run <pane> 'ak <kind> @<profile> --trust-cwd "<lane brief>"'`
    (or `AGENTKIT_TRUST_CWD=1`; coding-agents-kit `v0.5.0` and later). That
    removes the Claude and Codex folder-trust screens with no keystrokes.
+   With an older kit, launch `ak <kind> @<profile> "<lane brief>"`: the
+   folder-trust screen then appears once per folder, and step 4 covers it.
 3. **Watch.** `herdr agent list` shows each lane as working, idle, blocked or
    done; a lane blocked, or idle with no output, gets `herdr pane read <pane>`.
    herdr-peers releases after `v0.1.0` add a `lanes` view (account and vendor

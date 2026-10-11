@@ -21,8 +21,8 @@ recorded, the pack's pin, and the one next action:
 Nothing here installs, upgrades, renders or writes: the onboarding agent
 runs each addon's own flow, then records the result with ``config.py
 enable``. Running the planner twice on an unchanged repository prints the
-same plan, and a repository in which every row is ``current``, ``declined``,
-``evaluate`` or ``not-applicable`` has nothing pending.
+same plan, and a repository in which every row is ``current``, ``newer``,
+``declined``, ``evaluate`` or ``not-applicable`` has nothing pending.
 
 Usage::
 
@@ -49,7 +49,7 @@ import resources  # noqa: E402
 _HERE = os.path.dirname(os.path.abspath(__file__))
 PACK_ROOT = os.path.normpath(os.path.join(_HERE, '..'))
 TAG_RE = re.compile(r'v?(\d+)\.(\d+)\.(\d+)')
-NOTHING_PENDING = ('current', 'declined', 'evaluate', 'not-applicable')
+NOTHING_PENDING = ('current', 'newer', 'declined', 'evaluate', 'not-applicable')
 
 # Repository-level copies a skills CLI install leaves behind.
 VENDORED = {'ai-diff-reviewer': 'ai-diff-reviewer', 'dailybot': 'dailybot'}

@@ -59,17 +59,17 @@ PY
 }
 
 @test "gates run through a declared container wrapper and stay observed (F-21)" {
-  # a stand-in for `dck exec -- <cmd>`: runs the command after `--`
-  printf '#!/bin/sh\n[ "$1" = exec ] && [ "$2" = -- ] || exit 64\nshift 2\necho "[container] $*"\nexec "$@"\n' > "$WORK/bin/dck"
+  # a stand-in for `dck exec <service> -- <cmd>`: runs the command after `--`
+  printf '#!/bin/sh\n[ "$1" = exec ] && [ -n "$2" ] && [ "$3" = -- ] || exit 64\nshift 3\necho "[container] $*"\nexec "$@"\n' > "$WORK/bin/dck"
   chmod +x "$WORK/bin/dck"
   export PATH="$WORK/bin:$PATH"
-  _draft '["python3"]' 'dck exec -- python3 -V'
+  _draft '["python3"]' 'dck exec app -- python3 -V'
   run python3 "$CV6" validate-contract "$WORK/draft.json"
   [ "$status" -eq 1 ] && [[ "$output" == *"starts with 'dck'"* ]] || { echo "$output"; return 1; }
-  _draft '["python3", "dck"]' 'dck exec -- python3 -V'
+  _draft '["python3", "dck"]' 'dck exec app -- python3 -V'
   _L materialize --contract "$WORK/draft.json" --authority bats >/dev/null || return 1
   _L start --task T-publish-schemas >/dev/null || return 1
-  run _L gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"dck exec -- python3 -V"'
+  run _L gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"dck exec app -- python3 -V"'
   [ "$status" -eq 0 ] && [[ "$output" == "RAN: exit 0"* ]] || { echo "$output"; return 1; }
   grep -rqF '[container] python3 -V' "$PLAN/gates/T-publish-schemas/" || return 1
   tail -n 1 "$PLAN/journal.ndjson" | grep -qF '"trust":"observed"' || return 1

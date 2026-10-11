@@ -122,7 +122,7 @@ all authentication** to the Dailybot skill's own consent flow (`shared/auth.md`
 wire the **four lifecycle events** (kickoff, significant task, blocked,
 completion) as optional progress reports via the dailybot `report` sub-skill,
 and **MAY** offer deterministic hook enforcement (`dailybot hook`, CLI >=
-3.9.0). The paired Dailybot skill (**3.23.3**) exposes 17 capabilities (chat,
+3.9.0). The paired Dailybot skill (**3.23.10**) exposes 17 capabilities (chat,
 check-ins, forms authoring, ask AI, per-repo API keys, Plan (Beta; CLI >= 3.25.0), and more); this addon wires only **report**
 into DWP execution. Every report is strictly **best-effort and never blocks**
 the work if Dailybot is absent, unauthenticated, or unreachable. The core

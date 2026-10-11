@@ -83,9 +83,12 @@ Herdr workspace.
 
    ```bash
    dck init --dry-run --agents --clis "<the CLIs the developer chose>" \
-     --editor --herdr --port <name>=<port>
-   dck init --agents --clis "<…>" --editor --herdr --port <name>=<port>   # after acceptance
+     <--editor|--no-editor> <--herdr|--no-herdr> --port <name>=<port>
+   dck init …the same flags…   # after the diff was accepted
    ```
+
+   `--editor` only when the vim addon was accepted, `--herdr` only when the
+   herdr addon was; otherwise pass `--no-editor` / `--no-herdr`.
 
    - `[agents] clis`: **only** the CLIs the developer names; none by default.
    - `[layers] editor = true` when the vim addon is on; `[layers] dailybot = true`
