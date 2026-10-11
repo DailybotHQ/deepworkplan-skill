@@ -304,10 +304,11 @@ def build_plan(repo: str, keys: Optional[List[str]] = None) -> Dict[str, Any]:
         entry = r['registry']
         return r['key'] == 'ai-diff-reviewer' or (
             isinstance(entry, dict) and entry.get('enabled') is True)
+    offer_like = ('install', 'reconcile')
     pending = [r['key'] for r in rows if r['action'] not in NOTHING_PENDING
-               and (r['action'] != 'install' or required(r))]
+               and (r['action'] not in offer_like or required(r))]
     offers = [r['key'] for r in rows if r['action'] == 'available'
-              or (r['action'] == 'install' and not required(r))]
+              or (r['action'] in offer_like and not required(r))]
     to_evaluate = [r['key'] for r in rows if r['action'] == 'evaluate']
     return {'schema': 'dwp-addon-sync/v1', 'repo': repo, 'pack': pack,
             'vendored_pack': vendored,

@@ -33,7 +33,7 @@ the installed version, the pack's pin and one action:
 | `available` | a machine-level tool is present, but this repository never enabled it | nothing on an upgrade; in a full setup, offer it like `install` |
 | `current` | at the pin and recorded | nothing |
 | `newer` | newer than the pin | keep it — **never downgrade** |
-| `reconcile` | a hand-written dev container (`.devcontainer/devcontainer.json` or `docker/local/` without dck) | the addon's diff-and-consent flow (§3) |
+| `reconcile` | a hand-written dev container (`.devcontainer/devcontainer.json` or `docker/local/` without dck) | the addon's diff-and-consent flow (§3); an offer unless this repository enabled the addon |
 | `verify` | detected, version unreadable | re-run its detection by hand; report |
 | `declined` | the registry records a decline | do not re-offer |
 | `evaluate` | applicability is the addon's call (design-system) | run that addon's detection |

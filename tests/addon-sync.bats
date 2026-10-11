@@ -190,7 +190,14 @@ for r in json.load(sys.stdin)["rows"]:
   [ "$(action devcontainer)" = reconcile ]
   [ "$(field devcontainer layout)" = handwritten ]
   [[ "$(field devcontainer reason)" == *"--dry-run"* ]]
+  # never enabled here: an offer, never a blocker; once enabled, pending
+  run plan_json
+  printf '%s' "$output" | "$PY" -c 'import json,sys; d=json.load(sys.stdin); assert "devcontainer" in d["offers"] and "devcontainer" not in d["pending"], d'
   [ "$(tree_digest)" = "$before" ]
+  mkdir -p "$REPO/.dwp"
+  printf '{"addons": {"devcontainer": {"enabled": true}}}\n' > "$REPO/.dwp/config.json"
+  run plan_json
+  printf '%s' "$output" | "$PY" -c 'import json,sys; d=json.load(sys.stdin); assert "devcontainer" in d["pending"], d'
 }
 
 @test "an application Dockerfile alone is not a hand-written dev container" {
