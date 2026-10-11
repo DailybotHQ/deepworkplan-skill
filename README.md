@@ -205,7 +205,7 @@ agent runs **lanes** — one agent per repository, each in its own
 | Launch | `ak <kind> @<profile> --trust-cwd "<lane brief>"` in a pane on the lane's checkout; in containers, the host's accounts through host profiles |
 | Coordination | only the lead and each lane, through herdr-peers asks and replies: plan ready, PR open, blocked, done; GO with the release tags |
 | Branches and releases | one lane per repository on its base checkout: one branch, one PR, one release; worktrees only when two writers share a repository |
-| Unattended operation | under your standing authorization, the lead clears only known first-run screens and escalates everything else — logins, permission requests, destructive or payment prompts |
+| Unattended operation | under your standing authorization, lanes launch with no per-launch approval: folders are pre-trusted with `--trust-cwd`, Claude's bypass-permissions acknowledgement is a one-time step you take per profile, and any prompt a lane meets is recorded and escalated to you — no agent answers it |
 | Verification and record | each repository's own gate decides; every delegation, intervention and account is recorded in the plan |
 
 Guide: [`guide/orchestration-at-scale.md`](skills/deepworkplan/guide/orchestration-at-scale.md).

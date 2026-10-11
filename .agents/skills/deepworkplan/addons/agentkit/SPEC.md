@@ -125,9 +125,9 @@ worktree:
   (`--exclude @p`), re-pick and relaunch **once**; a second failure goes to
   the developer.
 - A pane lane **MAY** be launched with `--trust-cwd` for its own folder. The
-  addon sends no keystrokes; unblocking a lane's first-run screens is the
-  lead's procedure with Herdr's commands, bounded by
-  `../../guide/orchestration-at-scale.md` §16.5.
+  addon sends no keystrokes. Claude's per-profile bypass-permissions
+  acknowledgement is a one-time developer step when the profile is created;
+  no agent answers it (`../../guide/orchestration-at-scale.md` §16.5).
 
 ## 6. Never-Block Rule
 

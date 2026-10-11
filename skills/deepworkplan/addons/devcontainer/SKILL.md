@@ -109,8 +109,8 @@ repository's `dck.toml`:
   `AGENTKIT_ENV`. Claude authenticates through the profile's token, Codex
   through its auth file. Values never appear in compose, logs or doctor.
 - Folder trust for the app path is written in the container's homes and in
-  shared profiles. Claude's bypass-permissions acknowledgement goes only in
-  the container's own homes with autonomy on — never in a shared host
+  shared profiles. Claude's bypass-permissions acknowledgement is written by
+  the kit only in the container's own homes with autonomy on — never in a shared host
   profile, and never with `AGENTKIT_PERMISSIONS=ask`.
 - A shared Codex `auth.json` is read-write: **one active writer per
   account** — do not run the same Codex account in two places at once.

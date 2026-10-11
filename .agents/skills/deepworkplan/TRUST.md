@@ -145,7 +145,14 @@ above).
 > with an opt-out, `--ask` or `AGENTKIT_PERMISSIONS=ask`, that always wins;
 > the pack spells no autonomy flag and passes only `--ask`: always for a
 > read-only delegate, and for writing ones when a plan records the
-> opt-out.) **A repository is fully
+> opt-out. In the orchestration guide's unattended mode, §16.5, no agent
+> ever sends keys for Claude Code's bypass-permissions acknowledgement: it is
+> a one-time developer step per profile. Folder trust is avoided with
+> `--trust-cwd`; any first-run screen an agent meets is read, recorded and
+> escalated to the developer, and the only keystroke an agent may send is
+> folder trust on a pane it launched itself when `--trust-cwd` was
+> unavailable.)
+> **A repository is fully
 > conformant with zero optional addons**. Core runtime helpers never touch the
 > network; consent-gated onboarding Phase 7a is the sole baseline exception and
 > may run the pinned AI Diff Reviewer install plus extension bootstrap. The

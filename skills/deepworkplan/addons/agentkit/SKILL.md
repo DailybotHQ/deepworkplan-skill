@@ -163,7 +163,9 @@ developer's accounts (`../../guide/orchestration-at-scale.md` §16):
   Handled by name only.
 - **Pre-trusted folder.** `ak <kind> @p --trust-cwd` (or
   `AGENTKIT_TRUST_CWD=1`) pre-trusts the launch folder, so a lane started in
-  a pane shows no folder-trust screen.
+  a pane shows no folder-trust screen. Claude's per-profile
+  bypass-permissions acknowledgement is the developer's one-time step when
+  the profile is created; no agent answers it.
 - **The lead's loop** is the kit's own `agentkit-orchestrate` skill
   (`ak --skill orchestrate`): inventory, pick, run, verify, fail over,
   report the spend. This addon adds only the plan side — the lane table,

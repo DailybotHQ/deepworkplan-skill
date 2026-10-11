@@ -123,9 +123,9 @@ repository or workstream, each in its own pane.
 - **State.** `herdr agent list` shows each lane working, idle, blocked or
   done; `herdr pane read` shows its screen. herdr-peers' `lanes` lists the
   lanes with their account and vendor, and `status <pane>` classifies a
-  blocked screen (herdr-peers releases after `v0.1.0`). Launching and unblocking lanes
-  unattended — and what always escalates to the developer — is §16.5 of
-  the guide; this addon sends no keys of its own.
+  blocked screen (herdr-peers releases after `v0.1.0`). Launching lanes
+  unattended — and why a first-run screen is escalated, never answered — is
+  §16.5 of the guide; this addon sends no keys.
 - **Record.** The lead sets `DWP_PLAN` (and `DWP_TASK`) so every ask and
   reply is mirrored into the plan's `analysis_results/delegations.ndjson`.
 
