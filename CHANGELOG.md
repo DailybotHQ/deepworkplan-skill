@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.4.0] — 2026-10-11
+
+### Changes
+
+- Merge pull request #75 from DailybotHQ/feat/dck-v0.2.9-app-layout
+- feat(addons): pin devcontainer-kit v0.2.9 (App layout, every pane in the app path)
+
+
 ## [7.3.3] — 2026-10-11
 
 ### Changes
