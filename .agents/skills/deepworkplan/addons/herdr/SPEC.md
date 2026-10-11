@@ -18,7 +18,7 @@ rule.
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable (DeepWorkPlan 7.0.0) |
-| **Product pin** | `DailybotHQ/herdr-peers` `v0.1.0`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
+| **Product pin** | `DailybotHQ/herdr-peers` `v0.2.1`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
 | **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -46,7 +46,7 @@ recipes — those drift; the pinned skill is the single source.
 ## 4. Detection
 
 - Read-only: `command -v herdr`, `command -v herdr-peers`,
-  `herdr-peers --version` (expect `herdr-peers 0.1.0 (protocol 1)`).
+  `herdr-peers --version` (expect `herdr-peers 0.2.1 (protocol 1)`).
 - A protocol other than `1` **MUST** be one warning and "not available".
 - The transport is usable only inside Herdr (`HERDR_ENV=1`); outside it the
   addon is installed but not usable in that session — recorded, not an
@@ -56,11 +56,11 @@ recipes — those drift; the pinned skill is the single source.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Installs (`install.md`) **MUST** name exact tags:
-  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.1.0 --skill herdr-peers -g -y`
+  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.2.1 --skill herdr-peers -g -y`
   and `npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y`. Herdr
   itself is installed through its own documented paths; a fetch-and-execute
   pipeline **MUST NOT** appear in this pack's text.
-- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v0.1.0"}`
+- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v0.2.1"}`
   via `shared/config.py enable`. Enabling grants no plan any authority.
 
 ## 6. The Transport (v7 delegation)
@@ -83,6 +83,21 @@ recipes — those drift; the pinned skill is the single source.
 - The helper's `delegations.ndjson` mirror and the plan journal both record
   the delegation; the journal is the plan's record and is written first.
 
+## 6.1. Lanes (orchestration at scale)
+
+- A long-lived lane is one peer per repository or workstream, addressed
+  `<machine>:<pane>` from a fresh `herdr-peers list`, on the host, in a
+  registered dev container or on another machine. Lanes **MUST** coordinate
+  only with the lead; the protocol limits (depth 1, fan-out cap, scope) are
+  unchanged at any scale.
+- No agent following this addon sends keystrokes to a pane, with one
+  exception (`../../guide/orchestration-at-scale.md` §16.5): folder trust
+  for a pane the lead launched itself, when `--trust-cwd` was unavailable.
+  Every other first-run screen — a permission acknowledgement above all —
+  is read, recorded and escalated to the developer.
+- The lead **SHOULD** set `DWP_PLAN` and `DWP_TASK` so the helper mirrors
+  every ask and reply into the plan.
+
 ## 7. Never-Block Rule
 
 No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger
@@ -93,7 +108,7 @@ Nothing blocks `onboard`, `create`, `execute` or `verify`.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol file ships in this folder.
-2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v0.1.0`,
+2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v0.2.1`,
    interface 1, transport `interactive`.
 3. Every install line pins a tag; no pipeline text.
 4. The registry entry exists only after acceptance.

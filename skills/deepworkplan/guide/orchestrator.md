@@ -27,7 +27,7 @@
 1. Verify readiness for the recorded mode (§13.10): runtime-dependent predecessors must be executed with outputs present; contract-parallel work requires the frozen shared contract and sibling plans.
 2. Emit a **ready-to-use hand-off prompt** to the user (or to a separate automated agent session running inside `repositories/{repo_name}/`). The prompt is a single copy-pasteable block that tells the target agent what plan to execute and what predecessor reports to read.
 3. **Stop.** Do not `cd` into the target repo with write or execution intent. Do not edit target-repo files. Do not run the child DWP's tasks inline. Do not commit in the target repo.
-4. **Wait** for the user to confirm the child DWP is complete (`DONE: ...` naming the declared artifact paths).
+4. **Wait** for the user to confirm the child DWP is complete (`DONE: ...` naming the declared artifact paths) — or, when the child runs as an authorized lane ([`orchestration-at-scale.md`](orchestration-at-scale.md) §16), for that lane's done report through herdr-peers, which counts as the same confirmation. Either way, step 5's read-only verification decides; wherever this section waits for a user's `DONE`, an authorized lane's report stands in for it.
 5. Verify from Core Hub (read-only) that the child plan reports `completed` and its declared artifacts exist, then register outputs in the orchestrator manifest and mark this task `[x]`.
 
 **What the orchestrator agent MUST NOT do:**
@@ -51,6 +51,11 @@
 > `execute_child_dwp` tasks remain hand-offs.
 
 See also the hand-off task template: `example_prompts/ORCHESTRATOR_TASK_TEMPLATE_execute_child_dwp.md`.
+
+> **At scale.** When the separate sessions are many agents — lanes in Herdr
+> panes on the host, in containers or on other machines, each on an account
+> chosen by headroom and coordinated with the lead through herdr-peers —
+> read [`orchestration-at-scale.md`](orchestration-at-scale.md) §16.
 
 ### 13.1. What Are Orchestrator Plans?
 

@@ -59,9 +59,9 @@ dck init --dry-run <options from §1–§3>     # plan + diffs; writes nothing
 dck init <options from §1–§3>               # after acceptance (per-file prompt on a terminal)
 dck doctor --json                           # interface 2, runtime, repo, drift
 bash dev.sh build && bash dev.sh up         # a real build; a failure is a failed run
-dck exec -- <the repo's real test command>
+dck exec <service> -- <the repo's real test command>
 ```
 
-Use the option names the kit's `v0.2.11` documentation gives (`dck init
+Use the option names the kit's `v0.3.0` documentation gives (`dck init
 --help`). Record each outcome. A failure is a finding about the environment,
 never a repository conformance failure.

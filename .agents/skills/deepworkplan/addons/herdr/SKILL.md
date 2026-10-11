@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-herdr
-description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v0.1.0, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v0.2.1, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
 version: "7.5.1"
 documentation_url: https://deepworkplan.com/kit/herdr
 user-invocable: true
@@ -26,7 +26,7 @@ the install lines, the transport mapping and the journaling rule.
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/herdr-peers` |
-| Tag | `v0.1.0` |
+| Tag | `v0.2.1` |
 | Interface | `1` (`herdr-peers --version` → `(protocol 1)`; `metadata.protocol: 1` in its `SKILL.md`) |
 | Depends on | Herdr's official skill, pinned `herdrdev/herdr@v0.9.3` |
 | Registry key | `herdr` (`.dwp/config.json` → `addons.herdr`) |
@@ -89,7 +89,7 @@ its own documented paths, never a piped installer.
 
 ### Step 3 — Record
 
-`python3 ../../shared/config.py enable herdr --version v0.1.0 --repo <repo>`.
+`python3 ../../shared/config.py enable herdr --version v0.2.1 --repo <repo>`.
 Enabling grants nothing: delegation still needs the plan's grant.
 
 ### Step 4 — Transport (during execute)
@@ -104,6 +104,33 @@ Enabling grants nothing: delegation still needs the plan's grant.
 The helper's own record is the transport's log; the **plan journal** is the
 plan's record — both are written, the journal first.
 
+## Lanes across machines and containers
+
+The same transport carries an orchestra of long-lived lanes
+(`../../guide/orchestration-at-scale.md` §16): a lead and one agent per
+repository or workstream, each in its own pane.
+
+- **Where a lane runs.** A pane on this host, inside a dev container that
+  devcontainer-kit registered as a Herdr machine (its mesh lets container
+  agents reach the host and the other dck containers), or on another
+  machine Herdr reaches. Every lane is addressed `<machine>:<pane>` from a
+  fresh `herdr-peers list`.
+- **Coordination.** Lanes talk only to the lead: milestone asks (plan
+  ready, PR open, blocked, done) and the lead's asks (GO, new pins). The
+  fan-out cap (4 open asks per caller) still holds; the lead raises it per
+  call with `--fanout N --reason` only when the developer asked for more
+  lanes.
+- **State.** `herdr agent list` shows each lane working, idle, blocked or
+  done; `herdr pane read` shows its screen. `herdr-peers lanes` lists the
+  lanes with their agent, vendor, profile and state, and
+  `herdr-peers status <machine>:<pane>` classifies a waiting screen; both
+  are read-only. Launching lanes
+  unattended is §16.5 of the guide: no agent sends keys, except folder
+  trust on a pane the lead launched itself when `--trust-cwd` was
+  unavailable; every other first-run screen is escalated to the developer.
+- **Record.** The lead sets `DWP_PLAN` (and `DWP_TASK`) so every ask and
+  reply is mirrored into the plan's `analysis_results/delegations.ndjson`.
+
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** Not inside Herdr, helper missing,
@@ -115,7 +142,7 @@ plan's record — both are written, the journal first.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol copy ships here.
-2. The descriptor pins `DailybotHQ/herdr-peers` `v0.1.0`, interface 1,
+2. The descriptor pins `DailybotHQ/herdr-peers` `v0.2.1`, interface 1,
    transport `interactive`.
 3. Every install line names an exact tag.
 4. The registry entry exists only after acceptance.

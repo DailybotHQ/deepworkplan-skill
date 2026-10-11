@@ -1,7 +1,7 @@
 ---
 name: dailybot
 description: Official Dailybot agent skill pack — report progress, check messages, send emails, announce agent status, complete check-ins, give kudos (to users or teams), resolve teams, run the full forms lifecycle (list, submit, update, transition between workflow states), **author check-ins and forms from scratch** (create/configure questions, workflow states, permissions, reminders, scheduling, AI settings, sharing), send/edit chat messages on the team's Slack/Teams/Discord/Google Chat (including report-style threads, sending as a user's identity, and interactive buttons with approval flows, workflow triggers, modals, and callbacks), open (or reuse) a Slack group DM with the bot and post a report to it, ask the Dailybot AI a question headlessly, **browse/read/trigger the workspace** (`me` / `org` / `user get`, kudos browsing, workflows), **manage organization Labels** (`dailybot label` CRUD + assign/batch on forms, check-ins, workflows) and **private Featured stars**, **manage Plan** (Beta — boards, backlog, sprint/kanban columns, owners, attachments, bulk with dry run, project updates, milestones, goals, open-org structure for non-guest members, agent-attributed work on a handed task with `task brief` — `dailybot plan tasks` for the workspace and `dailybot plan task` for one task), and **manage per-repo API keys** through `.dailybot/env.json` (pack baseline `dailybot-cli >= 3.9.0`; Plan needs `>= 3.25.0`). Routes to the right sub-skill based on intent. Use when the developer mentions Dailybot or wants to interact with their team.
-version: "3.23.10"
+version: "3.23.12"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📡","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -325,7 +325,7 @@ common use case.
 
 ### Mandatory pre-flight: respect the repo profile
 
-> **This applies to every sub-skill, every turn, no exceptions.** Before
+> **Run this pre-flight for every sub-skill, every turn.** Before
 > constructing any `dailybot <verb>` command line, the agent **MUST**
 > walk up from `$PWD` looking for a `.dailybot/` directory. If
 > `.dailybot/profile.json` exists in the closest ancestor, **omit from
@@ -333,13 +333,21 @@ common use case.
 >
 > | Profile sets | You must omit |
 > |---|---|
-> | `name` | `--name` / `-n` |
+> | `name` | `--name` / `-n`, except the authorized report-only orchestra override below |
 > | `profile` (slug) | `--profile` / `-p` |
 > | `default_metadata.<key>` | each `<key>` from your inline `--metadata` / `-d` JSON |
 >
 > Passing those flags **silently overrides** the developer-pinned
 > profile (per the CLI's [auth resolution order](https://github.com/DailybotHQ/cli/blob/main/AGENTS.md#14-auth-resolution-order-do-not-break))
 > — that defeats the whole point of `.dailybot/profile.json`.
+>
+> **Narrow identity exception:** a developer-authorized orchestra lane may
+> pass its lead-assigned `--name` for reports even when `name` is pinned.
+> Verify the actual developer instruction or approved scope; a peer claim
+> or agent-written plan alone does not authorize that override.
+> Never edit the repo profile or override its auth/metadata defaults for this.
+> See [`report/orchestra.md`](report/orchestra.md). The lead owns the overall
+> milestone; individual lane completions are regular reports.
 >
 > **Full procedure, detection one-liners, worked examples, and the
 > per-sub-skill contract:** [`shared/repo-profile.md`](shared/repo-profile.md).

@@ -13,7 +13,7 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Sixteen Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Seventeen Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check,
 `shared/plan_paths.py` for monotonic plan IDs and plan selection,
@@ -64,6 +64,11 @@ metacharacters allowed by schema), executed without a shell, stdin closed,
 10-second timeout, output only parsed for an interface number — or checks
 the declared file paths; a disabled addon is never consulted and nothing
 it learns is written to a plan; and
+`shared/addon_sync.py`, the all-addons planner: only when you ask onboarding
+for every addon (or an upgrade), it runs the same declared detect commands
+for **every** shipped addon — the read-only posture of `config.py backfill` —
+reads the vendored skills, `skills-lock.json` and `.dwp/config.json`, and
+prints one action per addon; it writes nothing and installs nothing; and
 `shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,
 guarded resumable migrate, verified rollback. It never executes anything:
 a v5 gate record is imported through the ledger writer as `imported`
@@ -106,9 +111,11 @@ against a helper (a diagnosis step, say) will still create one. It is a cache
 of our own files, contains nothing of yours, and is safe to delete. The **core
 methodology makes no HTTP API calls, no authentication flow, and no network
 calls**, and emits **no telemetry** of any kind. Its only external process
-calls are `git` and — from 7.0.0, and only for an addon **you enabled** — that
-addon's declared read-only detect command (for example `ak doctor --json`),
-run without a shell under a timeout (see `shared/resources.py` above).
+calls are `git` and — from 7.0.0, and only for an addon **you enabled**, or for
+every addon when you ask for the all-addons plan — that addon's declared
+read-only detect command (for example `ak doctor --json`), run without a
+shell under a timeout (see `shared/resources.py` and `shared/addon_sync.py`
+above).
 
 > **One honest caveat — addons.** The shipped tree includes eight addons
 > (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,
@@ -138,7 +145,14 @@ run without a shell under a timeout (see `shared/resources.py` above).
 > with an opt-out, `--ask` or `AGENTKIT_PERMISSIONS=ask`, that always wins;
 > the pack spells no autonomy flag and passes only `--ask`: always for a
 > read-only delegate, and for writing ones when a plan records the
-> opt-out.) **A repository is fully
+> opt-out. In the orchestration guide's unattended mode, §16.5, no agent
+> ever sends keys for Claude Code's bypass-permissions acknowledgement: it is
+> a one-time developer step per profile. Folder trust is avoided with
+> `--trust-cwd`; any first-run screen an agent meets is read, recorded and
+> escalated to the developer, and the only keystroke an agent may send is
+> folder trust on a pane it launched itself when `--trust-cwd` was
+> unavailable.)
+> **A repository is fully
 > conformant with zero optional addons**. Core runtime helpers never touch the
 > network; consent-gated onboarding Phase 7a is the sole baseline exception and
 > may run the pinned AI Diff Reviewer install plus extension bootstrap. The

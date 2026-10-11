@@ -43,5 +43,8 @@ teammates`, NOT `N local agents`.
 reason and execute the remaining group tasks sequentially (standard single-task
 rules) — no special handling needed.
 
+Team agents share one Claude Code session. Agents in their own panes, on other
+accounts or vendors, are lanes: `../guide/orchestration-at-scale.md` §16.
+
 - **Team agents:** detect, offer, fall back to sequential on failure, and always
   clean up the team after each parallel group.

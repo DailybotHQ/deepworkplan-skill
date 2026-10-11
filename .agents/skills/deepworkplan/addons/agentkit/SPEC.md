@@ -17,7 +17,7 @@ registry record and the mapping of the four delegation operations onto
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable — autonomy by default (coding-agents-kit `v0.2.0` and later) |
-| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.4.0`, interface `1` |
+| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.5.0`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/V7_ABILITIES.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -53,12 +53,12 @@ kit** is coding-agents-kit; **the addon** is this folder.
   complete and writes nothing.
 - The documented install is the pinned tagged clone plus the kit's
   installer:
-  `git clone --branch v0.4.0 https://github.com/DailybotHQ/coding-agents-kit` then
+  `git clone --branch v0.5.0 https://github.com/DailybotHQ/coding-agents-kit` then
   `./coding-agents-kit/install.sh` (Windows: `install.ps1`). A
   fetch-and-execute pipeline **MUST NOT** appear anywhere in this pack's
   text. The addon **MUST NOT** install coding-agent CLIs on its own.
 - On acceptance the addon **MUST** record `addons.agentkit` =
-  `{"enabled": true, "version": "v0.4.0"}` through `shared/config.py
+  `{"enabled": true, "version": "v0.5.0"}` through `shared/config.py
   enable`. Enabling grants no plan any authority.
 
 ## 5. The Transport (v7 delegation)
@@ -110,6 +110,25 @@ worktree:
 - `result_text` is the agent's claim: the delegation result is `asserted`
   until the parent's gate runner observes it (`V7_CONTRACT.md` §3).
 
+## 5.1. Accounts and Lanes (kit `v0.5.0` and later)
+
+- Account choice **MUST** come from the kit: `ak usage --json` and
+  `ak pick <kind> [--count N]`, at most once per batch and on request —
+  **never** in a loop or on a timer. A lane **MUST** run on an account the
+  developer holds; accounts **MUST NOT** be rotated to get past a limit.
+- `ak profiles --json` (`profiles-v1`) and `ak pick … --json` (`pick-v1`)
+  are read-only inputs; the addon records the chosen profile in the plan's
+  lane table and in `delegate launch`, never a credential.
+- `CLAUDE_CODE_OAUTH_TOKEN[_<SUFFIX>]` and every provider key are handled by
+  **name** only; the addon **MUST NOT** read, print or forward a value.
+- Failover (limit, exit 3, exit 4): exclude the account for the batch
+  (`--exclude @p`), re-pick and relaunch **once**; a second failure goes to
+  the developer.
+- A pane lane **MAY** be launched with `--trust-cwd` for its own folder. The
+  addon sends no keystrokes. Claude's per-profile bypass-permissions
+  acknowledgement is a one-time developer step when the profile is created;
+  no agent answers it (`../../guide/orchestration-at-scale.md` §16.5).
+
 ## 6. Never-Block Rule
 
 Absence, detection failure, an unknown interface, a ledger refusal or a
@@ -120,7 +139,7 @@ here blocks `onboard`, `create`, `execute` or `verify`.
 
 This SPEC versions independently. Compatibility is decided by the kit's
 interface integer (`1`); the installed release by the pinned tag
-(`v0.4.0`), moved only by a parity-tested pack change. The default
+(`v0.5.0`), moved only by a parity-tested pack change. The default
 permission posture is behaviour, not interface: the kit carries it in its
 minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
@@ -128,7 +147,7 @@ minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist;
    `addon.json` validates with key `agentkit`, product
-   `DailybotHQ/coding-agents-kit` `v0.4.0`, interface 1, transport
+   `DailybotHQ/coding-agents-kit` `v0.5.0`, interface 1, transport
    `headless`.
 2. Detection is read-only; interface 1 or one warning.
 3. Install used the pinned tagged clone; no pipeline anywhere in the text.

@@ -57,7 +57,7 @@ checks) and what each implies:
 Present the editor as what it is — the terminal editor for Deep Work Plan —
 with its actual surface, and what it costs: a **machine-level Neovim config**,
 not a repo file. The only claims allowed are the pinned surface's
-`features[]` (at `v0.6.0`):
+`features[]` (at `v0.7.0`):
 
 - `command_index` — `<Leader>hh` (generated live from the actual keymaps)
 - `vscode_gestures` — `<C-a>` select-all in normal mode, `<Leader>y` system
@@ -68,6 +68,9 @@ not a repo file. The only claims allowed are the pinned surface's
 - `markdown_viewer` — `<Leader>mp` browser preview, `<Leader>mr` in-buffer
   render
 - `one_line_installer` — the consent-first `install.sh`
+- `orchestra_lanes` — `<Leader>O` / `:DwpLanes` (read-only: an orchestrator
+  plan's lanes and child plans from its manifest and README tables, with an
+  optional herdr-peers live snapshot)
 
 Decision notes:
 
@@ -105,9 +108,9 @@ accepted (§3), using the documented command **verbatim**.
 
 | OS | Path (verbatim from the editor's docs) |
 |----|----------------------------------------|
-| macOS / Linux | The documented installer at the pinned tag (`https://deepworkplan.com/vim`): download `install.sh` to a local file, verify its SHA-256 against the pinned surface (`install.script.sha256`; stop on a mismatch), then `DWP_VIM_REF=v0.6.0 bash install.sh` — three separate steps. Never spell a remote-installer pipe in reasoning, output, or recorded notes. |
-| Windows | `winget install Neovim.Neovim`, then `git clone --branch v0.6.0` into `%LOCALAPPDATA%\nvim`, then `lua install.lua`. **Never piped PowerShell.** |
-| Manual (any OS) | `git clone --branch v0.6.0` into `<config-dir>`, then `lua install.lua`. |
+| macOS / Linux | The documented installer at the pinned tag (`https://deepworkplan.com/vim`): download `install.sh` to a local file, verify its SHA-256 against the pinned surface (`install.script.sha256`; stop on a mismatch), then `DWP_VIM_REF=v0.7.0 bash install.sh` — three separate steps. Never spell a remote-installer pipe in reasoning, output, or recorded notes. |
+| Windows | `winget install Neovim.Neovim`, then `git clone --branch v0.7.0` into `%LOCALAPPDATA%\nvim`, then `lua install.lua`. **Never piped PowerShell.** |
+| Manual (any OS) | `git clone --branch v0.7.0` into `<config-dir>`, then `lua install.lua`. |
 
 Decision notes:
 
@@ -116,7 +119,7 @@ Decision notes:
   (`DailybotHQ/deepworkplan-vim`); the website serves a byte-identical copy.
 - After any install, **re-detect** (§1) and record the observed version.
 - On acceptance, record `addons.vim` = `{"enabled": true, "version":
-  "v0.6.0"}` in the repository's `.dwp/config.json`, reconciling an existing
+  "v0.7.0"}` in the repository's `.dwp/config.json`, reconciling an existing
   file (other keys untouched). A decline writes nothing.
 - On Windows, reason which of the two documented paths fits the person's
   setup (winget availability vs git clone); do not mix them into a hybrid.

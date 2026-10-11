@@ -17,7 +17,7 @@ the pinned official skill).
 
 ```
 npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y
-npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.1.0 --skill herdr-peers -g -y
+npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.2.1 --skill herdr-peers -g -y
 ```
 
 Both `-y` flags are required in an agent's non-interactive shell (`npx
@@ -25,13 +25,13 @@ Both `-y` flags are required in an agent's non-interactive shell (`npx
 The first is Herdr's official skill (the authority for every `herdr`
 command; `herdr --skill` prints the copy matching the installed binary).
 The second installs the herdr-peers skill and its helper script. Verify:
-`herdr-peers --version` → `herdr-peers 0.1.0 (protocol 1)`.
+`herdr-peers --version` → `herdr-peers 0.2.1 (protocol 1)`.
 
 For a scoped trial in one repository without touching `$HOME` (F-10),
 install the helper skill repo-locally — drop `-g`:
 
 ```
-npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.1.0 --skill herdr-peers -y
+npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.2.1 --skill herdr-peers -y
 ```
 
 It lands under the repository's agent skills directory (e.g.
@@ -50,7 +50,7 @@ inside a container, peers on the host are reached through Herdr's own
 machine registration — never by editing `~/.ssh` or host trust from this
 addon; SSH trust changes need their own explicit approval.
 
-With devcontainer-kit `v0.2.11` the mesh needs no hand step: `dck up` pushes
+With devcontainer-kit `v0.3.0` the mesh needs no hand step: `dck up` pushes
 into the container the host (through the kit's opt-in host listener, or an
 existing loopback listener named in the dck host profile), every other dck
 container and the other loopback containers the host's Herdr already
@@ -64,5 +64,5 @@ host profile — this addon describes them, never sets them.
 ## 4. Record the acceptance
 
 ```
-python3 <pack>/shared/config.py enable herdr --version v0.1.0 --repo <repo>
+python3 <pack>/shared/config.py enable herdr --version v0.2.1 --repo <repo>
 ```

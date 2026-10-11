@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-agentkit
-description: Optional DeepWorkPlan addon that integrates coding-agents-kit (the `ak` command, DailybotHQ/coding-agents-kit pinned at v0.4.0, interface 1) as the headless delegation transport - a thin integrator that detects the kit through `ak doctor --json`, offers it (never imposes it) from onboard Phase 7b, documents the install from a clone of the pinned tag plus the kit's install.sh, records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations (launch, observe, collect, cancel) onto one `ak run` per delegate in a dedicated git worktree. Never required, never a conformance gate. The kit launches agents in autonomy by default and its opt-out (--ask or AGENTKIT_PERMISSIONS=ask) always wins; the pack spells no CLI autonomy flag, never passes --auto, and passes --ask always for a read-only delegate and for writing delegates when a plan records the opt-out.
+description: Optional DeepWorkPlan addon that integrates coding-agents-kit (the `ak` command, DailybotHQ/coding-agents-kit pinned at v0.5.0, interface 1) as the headless delegation transport - a thin integrator that detects the kit through `ak doctor --json`, offers it (never imposes it) from onboard Phase 7b, documents the install from a clone of the pinned tag plus the kit's install.sh, records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations (launch, observe, collect, cancel) onto one `ak run` per delegate in a dedicated git worktree. Never required, never a conformance gate. The kit launches agents in autonomy by default and its opt-out (--ask or AGENTKIT_PERMISSIONS=ask) always wins; the pack spells no CLI autonomy flag, never passes --auto, and passes --ask always for a read-only delegate and for writing delegates when a plan records the opt-out.
 version: "7.5.1"
 documentation_url: https://deepworkplan.com/kit/agentkit
 user-invocable: true
@@ -26,7 +26,7 @@ DWP); everything this addon relies on is the kit's frozen **interface 1**
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/coding-agents-kit` |
-| Tag | `v0.4.0` (autonomy by default since `v0.2.0`; `classic` and `providers` alias presets) |
+| Tag | `v0.5.0` (autonomy by default since `v0.2.0`; accounts, `ak usage`, `ak pick`, `ak profiles --json`, `--trust-cwd` and the `agentkit-orchestrate` skill since `v0.5.0`) |
 | Interface | `1` (`ak doctor --json` → `"interface": 1`) |
 | Registry key | `agentkit` (`.dwp/config.json` → `addons.agentkit`) |
 | Transport | `headless` — provides `subagents`, `cancel_children`, `model_routing`; requires the `agent_delegation` grant |
@@ -116,9 +116,13 @@ Declining is a complete answer.
 ### Step 2 — Install (pinned; point-don't-run by default)
 
 ```
-git clone --branch v0.4.0 https://github.com/DailybotHQ/coding-agents-kit
+git clone --branch v0.5.0 https://github.com/DailybotHQ/coding-agents-kit
 ./coding-agents-kit/install.sh
 ```
+
+Before running the installer, check the tag and the release's `SHA256SUMS`
+(pinned digest, at least one file verified) as
+[`../machine-installs.md`](../machine-installs.md) shows.
 
 (Windows: the same tagged clone, then `.\coding-agents-kit\install.ps1`.)
 The installer touches no network, installs no CLI and never overwrites the
@@ -127,7 +131,7 @@ re-detect afterwards.
 
 ### Step 3 — Record
 
-`python3 ../../shared/config.py enable agentkit --version v0.4.0 --repo <repo>`.
+`python3 ../../shared/config.py enable agentkit --version v0.5.0 --repo <repo>`.
 Delegation still needs each plan's contract to grant `agent_delegation` —
 enabling the addon grants nothing.
 
@@ -143,6 +147,37 @@ One delegate = one `ak run` in one dedicated worktree
 | collect | on exit read the one JSON object (`exit` 0 → `completed`, otherwise `failed`); `ledger.py delegate collect` with `result_path`; integrate the worktree's diff; run the task's gates here |
 | cancel | send SIGTERM to `ak run` (the kit kills the whole process tree, exit 5); `ledger.py delegate cancel` |
 
+## Accounts and lanes (coding-agents-kit `v0.5.0` and later)
+
+Beyond one headless delegate, the kit is how a lead spreads lanes over the
+developer's accounts (`../../guide/orchestration-at-scale.md` §16):
+
+- **Accounts.** One CLI × one profile. `@default` is the CLI's own home;
+  `@name` lives under the profiles root. `ak profiles` lists them (login
+  yes/no, key **names**); `ak profiles --json` emits schema `profiles-v1`.
+- **Quota.** `ak usage --json` reports every account's windows and status —
+  once per batch, never in a loop (each call contacts the vendors).
+- **Choice.** `ak pick <kind> --count N` returns up to N accounts with room,
+  best first (`--exclude @p`, `--model <m>`, `--need 5h:40`); exit 1 means
+  none qualifies and names the soonest reset. The lead records each pick in
+  the plan's lane table.
+- **Claude token per profile.** `CLAUDE_CODE_OAUTH_TOKEN` (`@default`) and
+  `CLAUDE_CODE_OAUTH_TOKEN_<SUFFIX>` (`@name`) live in the kit's env file and
+  reach only that profile's Claude; a named profile never falls back.
+  Handled by name only.
+- **Pre-trusted folder.** `ak <kind> @p --trust-cwd` (or
+  `AGENTKIT_TRUST_CWD=1`) pre-trusts the launch folder, so a lane started in
+  a pane shows no folder-trust screen. Claude's per-profile
+  bypass-permissions acknowledgement is the developer's one-time step when
+  the profile is created; no agent answers it.
+- **The lead's loop** is the kit's own `agentkit-orchestrate` skill
+  (`ak --skill orchestrate`): inventory, pick, run, verify, fail over,
+  report the spend. This addon adds only the plan side — the lane table,
+  the journal record and the plan's gates.
+
+Using an account is never a reason to look past an opt-out: `--ask` and
+`AGENTKIT_PERMISSIONS=ask` win in every lane too.
+
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** Not installed, not logged in, unknown
@@ -155,7 +190,7 @@ One delegate = one `ak run` in one dedicated worktree
 ## Validation checklist (component 4 — mirrored from SPEC §8)
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist;
-   the descriptor pins `DailybotHQ/coding-agents-kit` `v0.4.0`, interface 1,
+   the descriptor pins `DailybotHQ/coding-agents-kit` `v0.5.0`, interface 1,
    transport `headless`.
 2. Detection is read-only and reports `interface` 1, or one warning.
 3. Install used the pinned tagged clone + `install.sh`; nothing piped.

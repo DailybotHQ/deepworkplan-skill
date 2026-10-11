@@ -133,19 +133,19 @@ form**; only its CI surface is optional.
 - An optional addon at `skills/deepworkplan/addons/devcontainer/` that gives a
   repository a reproducible dev container through **devcontainer-kit**
   (`dck`; `https://github.com/DailybotHQ/devcontainer-kit`, MIT, its own
-  release cycle) pinned at `v0.2.11` (interface `2`). The kit owns the
+  release cycle) pinned at `v0.3.0` (interface `2`). The kit owns the
   Dockerfile template and its render (`dck init`, which reconciles and never
   clobbers), the pinned images and tools, the entrypoint, the launcher, SSH
   agent forwarding, Herdr registration and the `dck-dockerfile` skill; the
   addon owns detection, the offer, the stack → options reasoning, the
   registry record and validation.
 - **Per-repository layout, no shared base image (devcontainer-kit
-  `v0.2.11`):** the render produces `.devcontainer/devcontainer.json`,
+  `v0.3.0`):** the render produces `.devcontainer/devcontainer.json`,
   `docker/local/<service>/Dockerfile` (plus its entrypoint),
   `docker/local/docker-compose.yaml` and `dev.sh`. The Dockerfile starts from
   the official runtime image pinned by digest; the kit's GHCR base image is
   not required. The addon offers the skill through
-  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.2.11 --skill dck-dockerfile -y`
+  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.0 --skill dck-dockerfile -y`
   (repo-local), and the pack keeps no copy of the template.
 - **Vendor-neutral (7.0.0):** the 1.x in-pack templates and their
   company-specific requirements are retired; no network, volume, CLI or
@@ -172,8 +172,8 @@ form**; only its CI surface is optional.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.9 --skill dailybot -y`,
-  currently **3.23.3**; or OpenClaw `openclaw skills install dailybot`) and/or
+  (`npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.12 --skill dailybot -y`,
+  currently **3.23.12**; or OpenClaw `openclaw skills install dailybot`) and/or
   the **Dailybot CLI** (`dailybot-cli >= 3.9.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
   never a one-line remote-installer pipe); **defers all authentication** to the
@@ -287,7 +287,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.6 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.9 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
@@ -344,14 +344,14 @@ form**; only its CI surface is optional.
 ### 6.6 Herdr (sixth addon — interactive delegation transport, thin integrator)
 
 An optional addon integrating **herdr-peers** (`DailybotHQ/herdr-peers`,
-MIT, its own release cycle) pinned at `v0.1.0` (protocol/interface `1`), as
+MIT, its own release cycle) pinned at `v0.2.1` (protocol/interface `1`), as
 the **interactive** transport of v7 delegation
 ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `herdr-peers ask` to a peer agent
 in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
 the plan journal before the reply is relied on, the reply asserted until
 the plan's own gates observe the work. `onboard` Phase 7b offers it as an
 **explicit opt-in**; installs are the pinned skills
-(`herdr-peers@v0.1.0`, Herdr's official `herdr@v0.9.3`).
+(`herdr-peers@v0.2.1`, Herdr's official `herdr@v0.9.3`).
 
 Placement decision (revised for 7.0.0): the peer protocol — stamp, grant,
 reply, loop guard, depth limit 1, fan-out cap, scope — moved out of the
@@ -380,7 +380,7 @@ lives in its own public repository
 (`https://github.com/DailybotHQ/deepworkplan-vim`, GPL-3.0, versioned
 independently of the pack); this folder is the DWP-side integration
 contract only, a **thin integrator** pinned to the product tag
-`deepworkplan-vim@v0.6.0`: detection, feature claims and the install steps
+`deepworkplan-vim@v0.7.0`: detection, feature claims and the install steps
 are read from the product's machine-readable surface (`addon/surface.json`,
 interface `1`); an unknown interface major is one warning and "not
 available", never an error. `onboard` Phase 7b offers it as an **explicit
@@ -397,7 +397,7 @@ template).
 
 An optional addon integrating **coding-agents-kit** (`ak`;
 `https://github.com/DailybotHQ/coding-agents-kit`, MIT, its own release
-cycle) pinned at `v0.4.0` (interface `1`), as the **headless** transport of
+cycle) pinned at `v0.5.0` (interface `1`), as the **headless** transport of
 v7 delegation ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `ak run` per
 delegate, in a dedicated git worktree, recorded through `ledger.py
 delegate`, its result asserted until the plan's own gates observe it.
@@ -438,17 +438,20 @@ The shipped set:
 
 | key | product (pinned) | provides_abilities | requires_grants | transport |
 |---|---|---|---|---|
-| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.4.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
-| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.6` | — | — | — |
-| `dailybot` | `DailybotHQ/agent-skill` `v3.23.9` | `telemetry` (reporting only, consent-gated) | — | — |
+| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.5.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
+| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.9` | — | — | — |
+| `dailybot` | `DailybotHQ/agent-skill` `v3.23.12` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
-| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.2.11`, interface 2 | — | — | — |
-| `herdr` | `DailybotHQ/herdr-peers` `v0.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
-| `vim` | `DailybotHQ/deepworkplan-vim` `v0.6.0`, interface 1 | — | — | — |
+| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.3.0`, interface 2 | — | — | — |
+| `herdr` | `DailybotHQ/herdr-peers` `v0.2.1`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
+| `vim` | `DailybotHQ/deepworkplan-vim` `v0.7.0`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
-`detect.command`, and only for an addon the registry enables. A product
+`detect.command`, and only for an addon the registry enables — or, when
+the developer asks onboarding to set up or update the addons (or on a
+harness upgrade), for every shipped addon through the read-only
+`shared/addon_sync.py plan`. A product
 reporting an interface major other than the descriptor's is treated as
 **not available** with one warning — never an error of the plan or the
 repository. Descriptors never gate conformance: an addon whose descriptor

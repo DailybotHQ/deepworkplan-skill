@@ -33,6 +33,7 @@ Team agents allow multiple Claude Code instances to work on plan tasks **in para
 | **Subagents** | Claude Code | Spawn helper agents within same session for focused sub-tasks |
 | **Team Agents** | Claude Code only | Multiple Claude instances work parallel tasks with shared coordination |
 | **Orchestrator** | All agents | Parent plan creates child DWPs in sub-repos |
+| **Lanes** | Any agent in Herdr panes | A lead runs one agent per repository or workstream, across accounts and vendors — [`orchestration-at-scale.md`](orchestration-at-scale.md) §16 |
 
 ### 14.2. Parallel Task Groups
 
