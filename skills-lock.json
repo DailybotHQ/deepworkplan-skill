@@ -3,10 +3,10 @@
   "skills": {
     "ai-diff-reviewer": {
       "source": "DailybotHQ/ai-diff-reviewer",
-      "ref": "v3.3.1",
+      "ref": "v3.3.2",
       "sourceType": "github",
       "skillPath": "skills/ai-diff-reviewer/SKILL.md",
-      "computedHash": "58e0b873beceeb8298813c5cb49ee7d98f522f7fea3f0fc4b49ff51f2501a2a0"
+      "computedHash": "94f2207fafb4625001d30dcb82e9dd82b47698be3812864a28a40567a1e97cef"
     },
     "dailybot": {
       "source": "DailybotHQ/agent-skill",
