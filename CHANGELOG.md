@@ -9,6 +9,21 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.2.0] — 2026-10-11
+
+### Changes
+
+- Merge pull request #69 from DailybotHQ/feat/v7-1-5-autonomy-fixes
+- test: migrated plans re-gate the broken task before continuing; keep the README pin
+- docs: keep README and SECURITY free of a hand-written current release
+- docs(docs): refresh stale version references and complete the sub-skill list
+- docs: correct addon counts, add the address-review capability and document hermetic test runs
+- test: skip cleanly without PyYAML/jsonschema and isolate machine-wide agents (X-6)
+- feat(shared): ledger start refuses a task with unmet prerequisites (X-3)
+- feat(shared): config.py benchmark setter and correct observed addon versions (X-2)
+- feat(shared): benchmark and learnings measure v7 plans (X-1)
+
+
 ## [7.1.4] — 2026-10-10
 
 ### Changes
