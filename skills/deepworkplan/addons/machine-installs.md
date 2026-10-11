@@ -23,9 +23,9 @@ curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v0.
 devcontainer-kit (`devcontainer`):
 
 ```bash
-git clone --branch v0.2.11 --depth 1 https://github.com/DailybotHQ/devcontainer-kit dck
-git -C dck describe --tags --exact-match            # must print v0.2.11
-curl -fsSL https://github.com/DailybotHQ/devcontainer-kit/releases/download/v0.2.11/SHA256SUMS -o dck.SHA256SUMS
+git clone --branch v0.3.0 --depth 1 https://github.com/DailybotHQ/devcontainer-kit dck
+git -C dck describe --tags --exact-match            # must print v0.3.0
+curl -fsSL https://github.com/DailybotHQ/devcontainer-kit/releases/download/v0.3.0/SHA256SUMS -o dck.SHA256SUMS
 (cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS)   # every listed file OK
 ./dck/install.sh
 ```

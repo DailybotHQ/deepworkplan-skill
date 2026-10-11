@@ -1,7 +1,7 @@
 ---
 name: ai-diff-reviewer
 description: Local & CI companion to the AI Diff Reviewer GitHub Action (DailybotHQ/ai-diff-reviewer). Router for six capabilities — (1) review the current branch diff locally (same methodology as CI); (2) generate repo-tailored .review/extension.md overrides (generate-extension); (3) install and configure the Action, and answer action.yml input questions (setup); (4) author a documented pull request from the branch diff (open-pr); (5) read the CI review and walk findings to apply, defer or skip — read-only (apply-review); (6) close the loop in one invocation — resolve the CI review's findings (commits and pushes), repair the PR's other failing workflows (codecheck, tests, branch not up to date), and re-arm the reviewer per the repo label configuration (address-review). Auto-detects .review/extension.md. Use when the developer asks to review changes, customize the reviewer, set up the Action, open a PR, read the CI review, close the review loop (resolve, re-trigger, arm an unreviewed PR), or fix failing PR workflows.
-version: "3.3.7"
+version: "3.3.9"
 documentation_url: https://github.com/DailybotHQ/ai-diff-reviewer/blob/main/skills/ai-diff-reviewer/SKILL.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"🔍","homepage":"https://github.com/DailybotHQ/ai-diff-reviewer","requires":{"anyBins":["git"]}}}
@@ -277,6 +277,16 @@ four sibling sub-skills have their own procedures in their respective
 - [`setup/SKILL.md`](setup/SKILL.md) — install the GitHub Action
 - [`open-pr/SKILL.md`](open-pr/SKILL.md) — author the PR title + body
 - [`apply-review/SKILL.md`](apply-review/SKILL.md) — read + apply the CI review posted on the PR (artifact-first since v3: the `review-output/3.0` document carries findings, verification, refuted findings and the prior ledger; threads are the fallback)
+
+---
+
+## Dedicated orchestra reviewer
+
+When the lead assigns an independent review lane, read
+[`orchestra.md`](orchestra.md) before the default flow. It covers choosing a
+different vendor/account with `ak pick`, reviewing a frozen base/head range
+in the shared base checkout, returning findings through herdr-peers, and the
+lead's merge gate. The assignment does not expand this skill's write scope.
 
 ---
 

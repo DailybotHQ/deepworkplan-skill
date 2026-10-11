@@ -1,7 +1,7 @@
 ---
 name: dailybot-report
 description: Report work progress to Dailybot. Activate after completing a discrete task or subtask, or after any batch of edits that modifies 3 or more files. Compose a standup-style update describing what changed and why.
-version: "3.23.10"
+version: "3.23.12"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"📡","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
@@ -11,6 +11,16 @@ allowed-tools: Bash, Read, Grep, Glob
 # Dailybot Progress Report
 
 You help developers keep their team informed. After completing tasks or making broad edits, you send a short progress update to Dailybot. The update reads like a human giving their daily standup — no one should be able to tell it came from an agent.
+
+---
+
+## Orchestra reporting
+
+For a lead-assigned repository lane, read [`orchestra.md`](orchestra.md).
+Each lane reports its own significant results and blockers under a distinct,
+authorized agent name; the lead sends the integrated completion milestone.
+The guide covers explicit lane-name overrides without editing the repo
+profile, and avoiding duplicate hook, lane, and lead reports.
 
 ---
 
@@ -265,11 +275,17 @@ Model identifier examples: `"claude-sonnet-4-6"`, `"o3"`, `"gemini-2.5-pro"`, `"
 >
 > The examples below show `--name` and `--metadata` **for the case where the repo has no `.dailybot/profile.json`** (no repo profile, no pinned identity). **If a repo profile exists, omit the flags it already provides** — see the per-key table in the router. The `Plain report (with repo profile)` block at the end shows what each example collapses to in that case.
 
+For an orchestra assignment, the only exception to the pinned-name default
+is an **explicitly authorized lead-assigned lane name**; see
+[`orchestra.md`](orchestra.md#assign-identities-before-work-starts).
+This per-command override never changes the repository profile or its auth
+and metadata defaults.
+
 ### Flag reference
 
 | Flag | Short | Description | Omit if `.dailybot/profile.json` sets |
 |------|-------|-------------|---------------------------------------|
-| `--name` | `-n` | Agent worker name | `name` |
+| `--name` | `-n` | Agent worker name | `name`, except an explicitly authorized orchestra report identity (see `orchestra.md`) |
 | `--profile` | `-p` | Named auth profile slug (from `agents.json`) | `profile` |
 | `--metadata` | `-d` | JSON metadata (repo, branch, model, etc.) | each `default_metadata.<key>` (omit those keys from the JSON; pass only what the profile does NOT set) |
 | `--json-data` | `-j` | Structured JSON data | (always pass — not affected by repo profile) |
@@ -486,6 +502,9 @@ Each item: concise, human-readable string. Empty arrays are fine.
 
 ### Milestone flag
 
+In an orchestra, the lead owns the integrated completion milestone; lane
+completions are regular reports (see [`orchestra.md`](orchestra.md)).
+
 Mark a report as a milestone only when the **top-level task is fully completed** — all subtasks are done and the entire requested piece of work is wrapped up. Individual subtask completions are regular reports, not milestones. If the developer explicitly asks for a milestone, always honor it.
 
 ### Co-authors
@@ -533,6 +552,7 @@ Reporting must **never block your primary work**. If the CLI is missing, auth fa
 
 ## Additional Resources
 
+- [`orchestra.md`](orchestra.md) — lane identities, reporting ownership, and duplicate prevention
 - [`triggers.md`](triggers.md) — auto-activation trigger templates for each supported agent
 - [`hooks.md`](hooks.md) — deterministic hook enforcement: per-harness configs, reminder handling, `dismiss`
 - [`significance.md`](significance.md) — when to report and when to stay silent, with edge cases
