@@ -1,7 +1,7 @@
 ---
 name: dailybot-tasks
 description: Manage Dailybot Plan via the CLI — boards, columns, tasks, projects, goals and milestones. Read the workspace in one call (pulse, what needs attention, recent activity, goal progress), poll what changed since a cursor, create/update/move tasks and set their owner, comment with @mentions, relate, attach files, watch or mute, run bulk operations with a server-side dry run, archive safely with a previewed consequence, administer boards (columns, members, saved views), post project updates so the team sees what an agent did, and work a task you were handed (read the whole card with `task brief`, write back attributed to the agent). Use when the developer mentions tasks, a board, a backlog, a sprint, a kanban column, a project update, a milestone or a goal, or asks what is open / overdue / blocked. Not for check-in responses (use dailybot-checkin) or form submissions (use dailybot-forms).
-version: "3.23.7"
+version: "3.23.8"
 documentation_url: https://www.dailybot.com/skill.md
 user-invocable: true
 metadata: {"openclaw":{"emoji":"✅","homepage":"https://dailybot.com","requires":{"anyBins":["dailybot","curl"]},"primaryEnv":"DAILYBOT_API_KEY","install":[{"id":"cli-install-script","kind":"download","url":"https://cli.dailybot.com/install.sh","label":"Install Dailybot CLI (official script — preferred on Linux/macOS)"},{"id":"pip","kind":"pip","package":"dailybot-cli","bins":["dailybot"],"label":"Install Dailybot CLI via pip (fallback if binary fails)"}]}}
