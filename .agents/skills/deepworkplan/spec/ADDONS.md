@@ -344,14 +344,14 @@ form**; only its CI surface is optional.
 ### 6.6 Herdr (sixth addon — interactive delegation transport, thin integrator)
 
 An optional addon integrating **herdr-peers** (`DailybotHQ/herdr-peers`,
-MIT, its own release cycle) pinned at `v0.1.0` (protocol/interface `1`), as
+MIT, its own release cycle) pinned at `v0.2.1` (protocol/interface `1`), as
 the **interactive** transport of v7 delegation
 ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `herdr-peers ask` to a peer agent
 in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
 the plan journal before the reply is relied on, the reply asserted until
 the plan's own gates observe the work. `onboard` Phase 7b offers it as an
 **explicit opt-in**; installs are the pinned skills
-(`herdr-peers@v0.1.0`, Herdr's official `herdr@v0.9.3`).
+(`herdr-peers@v0.2.1`, Herdr's official `herdr@v0.9.3`).
 
 Placement decision (revised for 7.0.0): the peer protocol — stamp, grant,
 reply, loop guard, depth limit 1, fan-out cap, scope — moved out of the
@@ -380,7 +380,7 @@ lives in its own public repository
 (`https://github.com/DailybotHQ/deepworkplan-vim`, GPL-3.0, versioned
 independently of the pack); this folder is the DWP-side integration
 contract only, a **thin integrator** pinned to the product tag
-`deepworkplan-vim@v0.6.0`: detection, feature claims and the install steps
+`deepworkplan-vim@v0.7.0`: detection, feature claims and the install steps
 are read from the product's machine-readable surface (`addon/surface.json`,
 interface `1`); an unknown interface major is one warning and "not
 available", never an error. `onboard` Phase 7b offers it as an **explicit
@@ -397,7 +397,7 @@ template).
 
 An optional addon integrating **coding-agents-kit** (`ak`;
 `https://github.com/DailybotHQ/coding-agents-kit`, MIT, its own release
-cycle) pinned at `v0.4.0` (interface `1`), as the **headless** transport of
+cycle) pinned at `v0.5.0` (interface `1`), as the **headless** transport of
 v7 delegation ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `ak run` per
 delegate, in a dedicated git worktree, recorded through `ledger.py
 delegate`, its result asserted until the plan's own gates observe it.
@@ -438,14 +438,14 @@ The shipped set:
 
 | key | product (pinned) | provides_abilities | requires_grants | transport |
 |---|---|---|---|---|
-| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.4.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
+| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.5.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
 | `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.7` | — | — | — |
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.10` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
 | `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.2.11`, interface 2 | — | — | — |
-| `herdr` | `DailybotHQ/herdr-peers` `v0.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
-| `vim` | `DailybotHQ/deepworkplan-vim` `v0.6.0`, interface 1 | — | — | — |
+| `herdr` | `DailybotHQ/herdr-peers` `v0.2.1`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
+| `vim` | `DailybotHQ/deepworkplan-vim` `v0.7.0`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
 `detect.command`, and only for an addon the registry enables. A product

@@ -106,9 +106,10 @@ lane meets a first-run screen, not by answering one:
    folder-trust screen then appears once per folder, and step 4 covers it.
 3. **Watch.** `herdr agent list` shows each lane as working, idle, blocked or
    done; a lane blocked, or idle with no output, gets `herdr pane read <pane>`.
-   herdr-peers releases after `v0.1.0` add a `lanes` view (account and vendor
-   per lane) and `status <pane>` (a blocked screen classified); with
-   `v0.1.0`, the two Herdr commands are the whole step.
+   herdr-peers (`v0.2.0` and later) adds `herdr-peers lanes` (agent, vendor,
+   profile, live state and screen class per lane) and
+   `herdr-peers status <machine>:<pane>` (a waiting screen classified, with
+   its documented next step); both are read-only and never send keys.
 4. **A screen anyway: read, record, escalate.** If a lane meets any prompt —
    the bypass-permissions acknowledgement, a login or credential prompt, a
    per-action permission request, a destructive confirmation, a payment or
@@ -153,9 +154,9 @@ escalation is recorded in the plan (§16.7).
   are appended to the plan journal.
 - **Spend:** one `ak usage --json` after the batch — accounts used and the
   room left — in the completion report.
-- **Watching it:** when the installed DeepWorkPlan Vim lists a lanes view in
-  its surface, it shows an orchestrator plan's lanes and children side by
-  side (`../addons/vim/SKILL.md`).
+- **Watching it:** DeepWorkPlan Vim's lanes view (`<Leader>O`,
+  `:DwpLanes`) shows an orchestrator plan's lanes and child plans read-only,
+  with herdr-peers' live state when it is reachable (`../addons/vim/SKILL.md`).
 
 ### 16.8. Authority
 

@@ -13,9 +13,9 @@ same sequence at the pin: a tagged clone, its tag checked, the release's
 coding-agents-kit (`agentkit`):
 
 ```bash
-git clone --branch v0.4.0 --depth 1 https://github.com/DailybotHQ/coding-agents-kit cak
-git -C cak describe --tags --exact-match            # must print v0.4.0
-curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v0.4.0/SHA256SUMS -o cak.SHA256SUMS
+git clone --branch v0.5.0 --depth 1 https://github.com/DailybotHQ/coding-agents-kit cak
+git -C cak describe --tags --exact-match            # must print v0.5.0
+curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v0.5.0/SHA256SUMS -o cak.SHA256SUMS
 (cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS)   # every listed file OK
 ./cak/install.sh
 ```
