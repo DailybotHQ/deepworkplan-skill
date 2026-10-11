@@ -9,6 +9,28 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.6.0] — 2026-10-11
+
+### Changes
+
+- Merge pull request #78 from DailybotHQ/feat/agent-orchestra
+- fix(onboard): accepting an available tool records it; stamp versionless entries
+- fix(onboard): a hand-written dev container is an offer unless the addon is enabled
+- docs(onboard): name only chosen CLIs in dck examples; refine recorded dck gates
+- fix(onboard): scope the addon plan to its triggers; no record for an unchosen tool
+- fix(onboard): pending is what the repository uses; offers are separate; verified kit installs
+- fix(onboard): only a hand-written dev container is reconcile; upgrades offer only addons in use
+- feat(onboard): detect every addon, upgrade the ones you use, offer the ones that fit
+- feat(addons): pin devcontainer-kit v0.3.0, ai-diff-reviewer v3.3.9 and Dailybot v3.23.12
+- feat(addons): pin coding-agents-kit v0.5.0, herdr-peers v0.2.1 and deepworkplan-vim v0.7.0
+- fix(onboard): a recorded newer install is done; conditional dck flags; stale pins
+- fix(docs): no agent answers a permission prompt; version-gate the new kit commands
+- docs(skill): README leads with all-addons onboarding and orchestration at scale
+- feat(onboard): install or upgrade every addon, ending in the full dev-container stack
+- feat(docs): teach orchestration at scale — lanes, accounts, unattended launch
+- fix(addon): align the reviewer and Dailybot pins with the vendored copies
+
+
 ## [7.5.1] — 2026-10-11
 
 ### Changes
