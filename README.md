@@ -25,28 +25,37 @@
 
 > The official DeepWorkPlan agent skill pack, maintained by [Dailybot](https://www.dailybot.com).
 
-The current major line is **v7** (DWP standard 7.0.0; the latest release is on the [Releases](https://github.com/DailybotHQ/deepworkplan-skill/releases) page). The methodology works alone — every addon is optional and only
-amplifies it. New plans use the v7 contract generation of the v6 record layer
-(contract, journal, scheduler, live snapshot) with recorded, gated delegation;
-existing v6 and v5 plans retain their recorded lifecycle. v7 adds an addon
-registry in `.dwp/config.json`, an `addon.json` descriptor per addon,
-addon-provided abilities computed at runtime, and thin integrators for the
-ecosystem products — coding-agents-kit (`agentkit`), herdr-peers (`herdr`),
-devcontainer-kit (`devcontainer`) and DeepWorkPlan Vim (`vim`). See
-[`spec/V7_ROADMAP.md`](skills/deepworkplan/spec/V7_ROADMAP.md). The v6
-architecture decision does not establish an empirical agent-outcome advantage
-over v5.
-
 DeepWorkPlan turns any repository into a **structured environment** — context,
-guardrails, and a durable plan — where any coding agent executes with precision
-and finishes short- and long-horizon work. It makes the repo AI-first (an adapted
-`AGENTS.md`, `docs/`, per-module docs, and `.agents/` config), then drives
-structured **Deep Work Plans**: a compact executable **Lite** plan for bounded
-work, or a per-task **Full** plan for longer work; then execute, refine, resume,
-and report with all plan output living in a gitignored
-`.dwp/` directory.
+guardrails and a durable plan — where any coding agent executes with precision
+and finishes short- and long-horizon work. It is for developers and teams who
+hand real work to coding agents (Claude Code, Codex, Cursor, Gemini CLI,
+Copilot, OpenClaw and others) and need that work to survive context resets,
+agent changes and long runs.
 
 > DeepWorkPlan is spec-driven development where the repository itself becomes the harness.
+
+The pack does three things:
+
+- **Onboards any repository, completely.** `/deepworkplan-onboard` writes an
+  adapted `AGENTS.md`, `docs/`, per-module docs and `.agents/`, installs the
+  required local review, and can **install or upgrade every addon** in one
+  pass — whether the repository has none, an older release, or a hand-written
+  docker setup — ending, when you want a container, in the full working stack:
+  dev container, editor, agents on your own accounts and a Herdr workspace.
+- **Runs Deep Work Plans.** A compact executable **Lite** plan for bounded
+  work, or a per-task **Full** plan for longer work: atomic tasks, acceptance
+  criteria, validation gates and resumable state under a gitignored `.dwp/`.
+- **Orchestrates many agents.** A lead agent runs one agent per repository or
+  workstream in its own pane — on the host, in containers or on other
+  machines — each on an account chosen by remaining quota, across vendors,
+  coordinated through one authorized ask and reply, with one branch and one
+  release per repository.
+
+The methodology works alone: every addon is optional and only amplifies it.
+The current major line is **v7** (DWP standard 7.0.0; releases are on the
+[Releases](https://github.com/DailybotHQ/deepworkplan-skill/releases) page).
+New plans use the v7 contract; existing v6 and v5 plans keep their recorded
+lifecycle.
 
 **What it rests on**
 
@@ -67,63 +76,23 @@ and report with all plan output living in a gitignored
   skills are decided task-locally — so the plan pays for itself instead of
   crowding out the work.
 
-**At a glance**
-
-- **License:** [MIT](LICENSE)
-- **Security policy:** [SECURITY.md](SECURITY.md)
-- **Changes:** [CHANGELOG.md](CHANGELOG.md)
-- **Format:** [Open Agent Skills](https://agentskills.io) standard
-- **Docs:** <https://deepworkplan.com>
-
-### Skills
-
-| Skill | What it does |
-|-------|-------------|
-| **deepworkplan-onboard** | Make any repo AI-first. Reasons about the repo's stack and archetype (orchestrator hub vs individual repo), then generates an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/`, and the `.claude → .agents` / `.cursor → .agents` symlinks. Offers opt-in addons. |
-| **deepworkplan-create** | Create a Deep Work Plan. Starts every request as an executable Lite plan, recommends Lite or Full from the work's risk and horizon, and promotes safely to Full only when needed. |
-| **deepworkplan-execute** | Execute an existing plan task-by-task, run each task's validation, and log progress. |
-| **deepworkplan-refine** | Modify the scope or tasks of an existing plan, or promote a Lite plan to Full task files. |
-| **deepworkplan-resume** | Resume an interrupted plan from its recorded progress state. |
-| **deepworkplan-status** | Report the status of a plan — completed tasks, what's left, and blockers — without executing. |
-| **deepworkplan-verify** | Check the repository and its plans against the standard — read-only, pass/fail, exits `0`/`1`. Confirms the harness is in place and that every plan's tasks, gates, evidence and final review actually hold, so "done" is auditable rather than asserted. |
-| **deepworkplan-author** | Author or update reusable skills, agents, and commands in the current repo — reasons about the repo's `.agents/` layout, follows the Open Agent Skills frontmatter contract, and keeps the `.agents/docs/` catalog in sync. Backs the `/skill-create` and `/agent-create` aliases. |
-
-A root **deepworkplan** meta-skill acts as a router — it describes all
-capabilities and routes to the right sub-skill based on the developer's intent.
-Each skill can be used independently or together; they share context detection
-through a common `shared/` directory. The **AI Diff Reviewer local review** ships
-in the baseline (installed by `onboard`, run by every Final Review; its CI
-Action stays optional), and opt-in addons — devcontainer, Dailybot,
-dependency upgrade, design system, agentkit, Herdr and the Vim editor — can
-layer more onto an onboarded repo, each recorded in the `.dwp/config.json`
-addon registry and never required.
-
 ## Install
+
+Pin a release tag: the commands below install exactly `v7.6.0` (newer tags are on
+the [Releases](https://github.com/DailybotHQ/deepworkplan-skill/releases) page).
 
 ### Option 1 — `npx skills` (cross-agent, recommended)
 
-The [skills.sh](https://skills.sh) CLI auto-detects your agent and installs the
-skill in the right place:
-
 ```bash
-# pinned to a release tag (recommended — reproducible; v7.1.4 is an existing
-# example, newer tags are listed at
-# https://github.com/DailybotHQ/deepworkplan-skill/releases):
-npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/v7.1.4 --skill deepworkplan -y
-# or the latest published release:
-npx skills add DailybotHQ/deepworkplan-skill
+npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/v7.6.0 --skill deepworkplan -y
 ```
 
-To target a specific agent or list available skills first:
-
-```bash
-npx skills add DailybotHQ/deepworkplan-skill --list
-npx skills add DailybotHQ/deepworkplan-skill -a claude-code
-```
-
-Installing at **project scope** writes an entry to a workspace-root
-`skills-lock.json` so the exact skill version is reproducible across your team
-(see [Reproducible installs](#reproducible-installs-skills-lockjson) below).
+The [skills.sh](https://skills.sh) CLI detects your agent and installs the pack
+in the right place; `-a claude-code` (or another agent id) targets one agent.
+Installed at **project scope**, it records the source and a content hash in a
+workspace-root `skills-lock.json` — commit it so your team restores the same
+revision. Pin with the tree-URL form above: the CLI ignores the ref of the
+`OWNER/REPO@ref` shorthand and installs the default branch.
 
 ### Option 2 — OpenClaw native registry
 
@@ -131,118 +100,153 @@ Installing at **project scope** writes an entry to a workspace-root
 openclaw skills install deepworkplan
 ```
 
-OpenClaw loads the pack natively on every eligible session — no trigger setup
-required.
-
-### Option 3 — Git clone + setup script
-
-Pick the path for your agent, clone, then run `setup.sh`:
-
-| Agent | Default path |
-|-------|--------------|
-| Claude Code | `~/.claude/skills/deepworkplan/` |
-| Cursor | `~/.cursor/skills/deepworkplan/` |
-| OpenAI Codex | `~/.codex/skills/deepworkplan/` |
-| Windsurf | `~/.codeium/windsurf/skills/deepworkplan/` |
-| GitHub Copilot | `~/.copilot/skills/deepworkplan/` |
-| Cline | `~/.cline/skills/deepworkplan/` |
-| Gemini CLI | `~/.gemini/skills/deepworkplan/` |
-| OpenCode | `~/.config/opencode/skills/deepworkplan/` |
-| Antigravity | `~/.antigravity/skills/deepworkplan/` |
-| OpenClaw | `<workspace>/skills/deepworkplan/` or `~/.openclaw/skills/` |
+### Option 3 — Git clone + setup script (verifiable)
 
 ```bash
-git clone https://github.com/DailybotHQ/deepworkplan-skill.git ~/deepworkplan-skill
+git clone --branch v7.6.0 https://github.com/DailybotHQ/deepworkplan-skill.git ~/deepworkplan-skill
 cd ~/deepworkplan-skill
+curl -fsSL https://github.com/DailybotHQ/deepworkplan-skill/releases/download/v7.6.0/SHA256SUMS -o SHA256SUMS
+./scripts/verify-integrity.sh SHA256SUMS   # non-zero exit: a shipped file does not match
 ./setup.sh                # auto-detect installed agents
 ./setup.sh --host claude  # or target one agent explicitly
 ```
 
-`setup.sh` symlinks the `deepworkplan` pack plus each sub-skill
-(`deepworkplan-create`, `deepworkplan-execute`, `deepworkplan-refine`,
-`deepworkplan-resume`, `deepworkplan-status`, `deepworkplan-onboard`) into the
-agent's skills directory so they're discoverable as independent slash commands.
+`setup.sh` links the `deepworkplan` router plus each sub-skill
+(`deepworkplan-create`, `-execute`, `-refine`, `-resume`, `-status`,
+`-onboard`, `-verify`, `-author`, `-upgrade`) into the agent's skills
+directory. Default paths per agent are in
+[docs/INSTALLATION.md](docs/INSTALLATION.md).
 
-### Invoke a skill
+### Update and uninstall
 
-`/dwp-create` accepts mode tokens at either edge of the request. `trust` (or
-`auto`) skips the guided review; `lite` and `full` override the recommendation.
-For example: `/dwp-create trust fix the broken link`, `/dwp-create lite trust
-rename this setting`, and `/dwp-create redesign the auth flow full trust`.
-`lite` and `full` together are rejected. A direct-edit request remains direct;
-the router only offers DWP when the developer asks to plan or organize work.
-
-Once installed, describe what you want and the agent routes to the right
-sub-skill:
-
-- "Make this repo AI-first" / "onboard this repo" → **deepworkplan-onboard**
-- "Create a plan to ship feature X" → **deepworkplan-create**
-- "Execute the plan" / "continue the plan" → **deepworkplan-execute**
-- "What's left on the plan?" → **deepworkplan-status**
-- "Create a skill / agent" / "evolve the kit" → **deepworkplan-author** (also `/skill-create`, `/agent-create`)
-
-Or invoke directly: `/deepworkplan-create`, `/deepworkplan-onboard`, etc.
-
-### Reproducible installs (`skills-lock.json`)
-
-When you install at **project scope** (e.g. `npx skills add` run inside a
-workspace), the skills.sh CLI writes the resolved skill source, path, and a
-content hash to a `skills-lock.json` at your workspace root. Commit that file to
-pin the exact version of DeepWorkPlan your team uses — re-running the installer
-later restores the same revision. This skill repo does **not** ship a
-`skills-lock.json` of its own; it is a consumer-side artifact that lives in
-*your* workspace, not in the skill pack.
-
-### Update
-
-```bash
-# npx
-npx skills update DailybotHQ/deepworkplan-skill
-
-# Git clone
-cd <skill-path> && git pull && ./setup.sh
-
-# OpenClaw
-openclaw skills update deepworkplan
-```
-
-### Uninstall
-
-```bash
-# Remove the skill pack itself
-rm -rf <skill-path>
-
-# Remove sub-skill symlinks (Claude Code example)
-rm -f ~/.claude/skills/deepworkplan \
-      ~/.claude/skills/deepworkplan-create \
-      ~/.claude/skills/deepworkplan-execute \
-      ~/.claude/skills/deepworkplan-refine \
-      ~/.claude/skills/deepworkplan-resume \
-      ~/.claude/skills/deepworkplan-status \
-      ~/.claude/skills/deepworkplan-onboard
-
-# OpenClaw
-openclaw skills remove deepworkplan
-```
+- **Update:** re-run the pinned install with the new tag, or ask the agent to
+  `/deepworkplan-upgrade` — it checks for a newer release read-only and
+  downloads only with your explicit acceptance; `.dwp/` is never migrated.
+  OpenClaw: `openclaw skills update deepworkplan`.
+- **Uninstall:** remove the skill directory and the `deepworkplan-*` links the
+  installer created (`openclaw skills remove deepworkplan` on OpenClaw).
 
 ## Quickstart
 
-1. **Install** the pack (pinned, above) in the repository you want to make AI-first.
-2. **Onboard** it: run `/deepworkplan-onboard` (Claude Code) or
-   `#deepworkplan-onboard` in any other agent — it writes an adapted
+1. **Install** the pack (pinned, above) where your agent can see it.
+2. **Onboard** the repository: `/deepworkplan-onboard` (Claude Code) or
+   `#deepworkplan-onboard` in any other agent. It writes an adapted
    `AGENTS.md`, `docs/`, `.agents/` (including the short `/dwp-*` commands
-   used below) and offers the optional addons.
+   used below), installs the required local review and offers the addons.
+   Say **"install every addon"** to take the all-addons path; run it again on
+   an older onboarding (`upgrade`) to bring every addon to the pack's pins.
 3. **Plan** real work: `/dwp-create <what you want done>` writes a Deep Work
    Plan under the gitignored `.dwp/plans/`.
 4. **Execute** it: `/dwp-execute <plan>` works task by task, validates each
    one against its gates and commits; `/dwp-resume` picks up after an
    interruption; `/dwp-status` and `/dwp-verify` report.
 
+`/dwp-create` accepts mode tokens at either edge of the request: `trust` (or
+`auto`) skips the guided review, `lite` and `full` override the recommended
+format — for example `/dwp-create trust fix the broken link` or
+`/dwp-create redesign the auth flow full trust`.
+
+## Onboarding every addon
+
+The all-addons path starts from one read-only plan of the repository:
+
+```bash
+python3 <pack>/shared/addon_sync.py plan --repo .
+```
+
+```text
+addon               scope         installed   pin         action
+------------------  ------------  ----------  ----------  ----------
+agentkit            machine       v0.3.0      v0.4.0      upgrade
+ai-diff-reviewer    repo          v3.1.0      v3.3.7      upgrade
+dailybot            repo          -           v3.23.10    install
+dependency-upgrade  repo          yes         (in pack)   record
+design-system       repo          -           (in pack)   evaluate
+devcontainer        machine+repo  -           v0.2.11     reconcile
+                    a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
+herdr               machine       v0.1.0      v0.1.0      current
+vim                 machine       -           v0.6.0      install
+pending: agentkit, ai-diff-reviewer, dailybot, dependency-upgrade, devcontainer, vim
+```
+
+(Illustrative output; the pins are the ones the installed pack carries.)
+
+For each addon the planner reads its detection, the vendored skill and
+`skills-lock.json`, the `.dwp/config.json` registry and the dev-container
+layout, and names one action: **install**, **upgrade** to the pin,
+**record**, **current**, **newer** (never downgraded), **reconcile**
+(hand-written work, changed only through a shown diff and your consent),
+**declined** (never re-offered) and a few more. The agent then makes one
+consolidated offer, runs each accepted addon's own flow in a fixed order,
+records the result, and re-plans until `pending: nothing`. A second pass over
+a finished repository changes nothing. Machine-level installs (`ak`, `dck`,
+herdr-peers, the editor) are shown as exact, tag-pinned, checksum-verified
+commands and run only on your acceptance.
+
+With the dev container, onboarding ends in the full stack: `dck init` with the
+agents layer and only the CLIs you choose, the editor and Dailybot layers when
+those addons are on, a Herdr machine with the App · Editor · Development ·
+Agents layout, then `bash dev.sh up` and a verification checklist
+(`dck doctor`, `ak doctor` inside, `herdr workspace list`, `ssh -T`,
+`gh auth status`). Your own accounts can reach the container only through your
+**host** profile (`[agents] host_profiles`), never the repository.
+
+Procedure: [`onboard/all-addons.md`](skills/deepworkplan/onboard/all-addons.md).
+
+## Orchestrating many agents
+
+For work across several repositories or long parallel workstreams, a **lead**
+agent runs **lanes** — one agent per repository, each in its own
+[Herdr](https://herdr.dev) pane:
+
+| Concern | How |
+|---------|-----|
+| Accounts and vendors | `ak usage --json` once per batch; `ak pick <kind> --count N` assigns the accounts with the most room; Claude, Codex and others mix by plan choice |
+| Launch | `ak <kind> @<profile> --trust-cwd "<lane brief>"` in a pane on the lane's checkout; in containers, the host's accounts through host profiles |
+| Coordination | only the lead and each lane, through herdr-peers asks and replies: plan ready, PR open, blocked, done; GO with the release tags |
+| Branches and releases | one lane per repository on its base checkout: one branch, one PR, one release; worktrees only when two writers share a repository |
+| Unattended operation | under your standing authorization, the lead clears only known first-run screens and escalates everything else — logins, permission requests, destructive or payment prompts |
+| Verification and record | each repository's own gate decides; every delegation, intervention and account is recorded in the plan |
+
+Guide: [`guide/orchestration-at-scale.md`](skills/deepworkplan/guide/orchestration-at-scale.md).
+
+## Skills
+
+| Skill | What it does |
+|-------|-------------|
+| **deepworkplan-onboard** | Make any repo AI-first: an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/` and the `.claude → .agents` / `.cursor → .agents` symlinks; installs the required local review; installs or upgrades the addons. A targeted, idempotent harness upgrade for repositories onboarded earlier. |
+| **deepworkplan-create** | Create a Deep Work Plan: every request starts as an executable Lite plan, promoted to Full only when the work's risk and horizon call for it. |
+| **deepworkplan-execute** | Execute a plan task by task, run each task's gates, and log progress; delegate `parallel_safe` tasks when the plan grants it. |
+| **deepworkplan-refine** | Change a plan's scope or tasks, or promote a Lite plan to Full task files. |
+| **deepworkplan-resume** | Resume an interrupted plan from its recorded state. |
+| **deepworkplan-status** | Report a plan's progress, what is left and its blockers, without executing. |
+| **deepworkplan-verify** | Check the repository and its plans against the standard — read-only, exits `0`/`1` — so "done" is auditable rather than asserted. |
+| **deepworkplan-author** | Author or update skills, agents and commands in the repo's `.agents/`, keeping the catalog in sync (`/skill-create`, `/agent-create`). |
+| **deepworkplan-upgrade** | Check for a newer pack release (read-only) and upgrade only with explicit consent. |
+
+A root **deepworkplan** router describes every capability and routes by intent.
+
+### Addons
+
+Every addon is optional, recorded in the `.dwp/config.json` registry, and
+documented on its kit page:
+
+| Addon | What it adds | Kit page |
+|-------|--------------|----------|
+| AI Diff Reviewer | the required local review in every Final Review; an optional CI Action | [/kit/ai-diff-reviewer](https://deepworkplan.com/kit/ai-diff-reviewer) |
+| agentkit | headless delegates, accounts and quota through coding-agents-kit (`ak`) | [/kit/agentkit](https://deepworkplan.com/kit/agentkit) |
+| Herdr | interactive delegates and lanes in Herdr panes through herdr-peers | [/kit/herdr](https://deepworkplan.com/kit/herdr) |
+| devcontainer | a reproducible dev container through devcontainer-kit (`dck`) | [/kit/devcontainer](https://deepworkplan.com/kit/devcontainer) |
+| DeepWorkPlan Vim | the terminal editor for plans | [/kit/vim](https://deepworkplan.com/kit/vim) |
+| Dailybot | progress reports at the plan lifecycle events | [/kit/dailybot](https://deepworkplan.com/kit/dailybot) |
+| dependency upgrade | safe, batched, revertible dependency upgrades (`/lib-upgrade`) | [/kit/dependency-upgrade](https://deepworkplan.com/kit/dependency-upgrade) |
+| design system | a `DESIGN.md` reasoned from the repository's real design source | [/kit/design-system](https://deepworkplan.com/kit/design-system) |
+
 ## Documentation
 
 - [deepworkplan.com](https://deepworkplan.com) — the methodology, the kit pages and the published schemas
 - [`skills/deepworkplan/spec/`](skills/deepworkplan/spec/README.md) — the normative standard (7.0.0)
-- [`skills/deepworkplan/guide/GUIDE.md`](skills/deepworkplan/guide/GUIDE.md) — the methodology guide
+- [`skills/deepworkplan/guide/GUIDE.md`](skills/deepworkplan/guide/GUIDE.md) — the methodology guide, including [orchestration at scale](skills/deepworkplan/guide/orchestration-at-scale.md)
 - [`docs/`](docs/) — [installation](docs/INSTALLATION.md), [design](docs/DESIGN.md), [compatibility](docs/COMPATIBILITY.md), [testing](docs/TESTING_GUIDE.md)
 - [CHANGELOG.md](CHANGELOG.md) · [Open Agent Skills standard](https://agentskills.io) · [skills.sh](https://skills.sh)
 
@@ -335,13 +339,35 @@ The specification is [`skills/deepworkplan/spec/BENCHMARK.md`](skills/deepworkpl
 (record schemas: [`benchmark-record`](skills/deepworkplan/spec/schema/benchmark-record.schema.json)
 and [`learnings-record`](skills/deepworkplan/spec/schema/learnings-record.schema.json)).
 
+## Part of the DeepWorkPlan ecosystem
+
+[DeepWorkPlan](https://deepworkplan.com) turns any repository into an AI-first,
+agent-pilotable codebase. These projects ship together; every addon is optional.
+
+| Repository | Role | Purpose |
+| --- | --- | --- |
+| [deepworkplan-skill](https://github.com/DailybotHQ/deepworkplan-skill) (this repository) | Pack | The methodology, specification and kit as an installable agent skill |
+| [coding-agents-kit](https://github.com/DailybotHQ/coding-agents-kit) | Addon: agentkit | One command for every coding agent: accounts, quota, `ak pick`, headless runs |
+| [devcontainer-kit](https://github.com/DailybotHQ/devcontainer-kit) | Addon: devcontainer | A reproducible dev container per repository, wired to Herdr and the host's accounts |
+| [herdr-peers](https://github.com/DailybotHQ/herdr-peers) | Addon: Herdr | Ask an agent in another Herdr pane, on any machine, and get one authorized reply |
+| [deepworkplan-vim](https://github.com/DailybotHQ/deepworkplan-vim) | Addon: DeepWorkPlan Vim | The terminal editor for plans: plan browser, lanes view, Markdown viewer |
+| [ai-diff-reviewer](https://github.com/DailybotHQ/ai-diff-reviewer) | Required local review | Reviews a change set locally and in CI; every Final Review runs it |
+| [agent-skill](https://github.com/DailybotHQ/agent-skill) | Addon: Dailybot | The Dailybot agent skill: progress reports, check-ins, chat and more |
+| [deepworkplan.com](https://deepworkplan.com) ([source](https://github.com/DailybotHQ/deepworkplan-website)) | Site and hub | The methodology, specification, kit catalog and `/init.md`; coordinates the ecosystem |
+
 ## Security
 
 Report vulnerabilities privately — see [SECURITY.md](SECURITY.md) (GitHub
-private vulnerability reporting or security@dailybot.com). What the pack may
-and may not do on your machine, with a self-audit you can run, is in
-[`skills/deepworkplan/TRUST.md`](skills/deepworkplan/TRUST.md). CI runs a
-public-hygiene check on every change.
+private vulnerability reporting or security@dailybot.com). In short: the core
+methodology makes no network calls and emits no telemetry; its only external
+processes are `git` and, for addons, their declared read-only detect commands;
+every install the pack names is tag-pinned or package-managed, and nothing is
+piped into a shell;
+secrets are referred to by name, never printed or stored. Coding agents launched
+through `ak` run in autonomy by default, and your opt-out
+(`AGENTKIT_PERMISSIONS=ask`) always wins. The full model, with a self-audit you
+can run, is [`skills/deepworkplan/TRUST.md`](skills/deepworkplan/TRUST.md). CI
+runs a public-hygiene check on every change.
 
 ## Contributing
 
