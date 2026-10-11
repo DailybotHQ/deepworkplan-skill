@@ -143,6 +143,35 @@ One delegate = one `ak run` in one dedicated worktree
 | collect | on exit read the one JSON object (`exit` 0 → `completed`, otherwise `failed`); `ledger.py delegate collect` with `result_path`; integrate the worktree's diff; run the task's gates here |
 | cancel | send SIGTERM to `ak run` (the kit kills the whole process tree, exit 5); `ledger.py delegate cancel` |
 
+## Accounts and lanes (coding-agents-kit `v0.5.0` and later)
+
+Beyond one headless delegate, the kit is how a lead spreads lanes over the
+developer's accounts (`../../guide/orchestration-at-scale.md` §16):
+
+- **Accounts.** One CLI × one profile. `@default` is the CLI's own home;
+  `@name` lives under the profiles root. `ak profiles` lists them (login
+  yes/no, key **names**); `ak profiles --json` emits schema `profiles-v1`.
+- **Quota.** `ak usage --json` reports every account's windows and status —
+  once per batch, never in a loop (each call contacts the vendors).
+- **Choice.** `ak pick <kind> --count N` returns up to N accounts with room,
+  best first (`--exclude @p`, `--model <m>`, `--need 5h:40`); exit 1 means
+  none qualifies and names the soonest reset. The lead records each pick in
+  the plan's lane table.
+- **Claude token per profile.** `CLAUDE_CODE_OAUTH_TOKEN` (`@default`) and
+  `CLAUDE_CODE_OAUTH_TOKEN_<SUFFIX>` (`@name`) live in the kit's env file and
+  reach only that profile's Claude; a named profile never falls back.
+  Handled by name only.
+- **Pre-trusted folder.** `ak <kind> @p --trust-cwd` (or
+  `AGENTKIT_TRUST_CWD=1`) pre-trusts the launch folder, so a lane started in
+  a pane shows no folder-trust screen.
+- **The lead's loop** is the kit's own `agentkit-orchestrate` skill
+  (`ak --skill orchestrate`): inventory, pick, run, verify, fail over,
+  report the spend. This addon adds only the plan side — the lane table,
+  the journal record and the plan's gates.
+
+Using an account is never a reason to look past an opt-out: `--ask` and
+`AGENTKIT_PERMISSIONS=ask` win in every lane too.
+
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** Not installed, not logged in, unknown

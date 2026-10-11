@@ -65,3 +65,6 @@ and the task is then implemented here.
   authority, widens no scope and never changes acceptance.
 - An orchestrator never delegates a **child plan's** tasks — children run
   in their own sessions; delegating the plan's **own** tasks is this file.
+  Running those sessions as lanes — one agent per repository in its own
+  pane, on an account picked by headroom — is
+  `../guide/orchestration-at-scale.md` §16.

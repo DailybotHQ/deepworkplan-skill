@@ -27,8 +27,8 @@ Use this document whenever you need to generate a new deep-work plan.
 
 This file is the **routing index** of the methodology guide. The guide's content
 is unchanged; it is split into flow-scoped files so an agent loads only what its
-current flow needs (`spec/DWP_SPECIFICATION.md` §5). The design rationale is
-maintained in the contributor-only repository ADR, not shipped in the pack.
+current flow needs (`spec/DWP_SPECIFICATION.md` §5). The design rationale lives
+in the contributor-only repository ADR.
 Nothing here is compressed — every section that existed in
 the single-file guide exists verbatim in exactly one file below.
 
@@ -37,9 +37,9 @@ the single-file guide exists verbatim in exactly one file below.
 | Your flow | Read (essential) | Read only when triggered |
 |-----------|------------------|--------------------------|
 | **Create** a plan | [`authoring.md`](./authoring.md) (README + task-file templates, test & security discipline), [`structure.md`](./structure.md) (folders, naming, lifecycle) | [`orchestrator.md`](./orchestrator.md) if the plan spans sub-repositories; [`team-agents.md`](./team-agents.md) if parallel groups were detected; [`prompts.md`](./prompts.md) when writing `PROMPTS.md`; [`skills-integration.md`](./skills-integration.md) when referencing skills/agents in tasks; the flow file `../create/v6.md` + `../spec/V6_CONTRACT.md` when creating a new plan |
-| **Execute** / **resume** a plan | [`execution.md`](./execution.md) (agent rules, per-task commits, completion tracking, final review) | [`orchestrator.md`](./orchestrator.md) for orchestrator plans; [`team-agents.md`](./team-agents.md) for parallel groups; [`prompts.md`](./prompts.md) §9 for resume scenarios; the flow file `../execute/v6.md` (loop: contract, journal, scheduler, verified closure) when the plan folder is v6 by its artifacts — `../spec/V6_LIFECYCLE.md` is the normative wiring; for a v6 plan the resume flow loads `../resume/v6.md` (journal-is-truth ladder, export handoff) and v5 → v6 migration is refine 3.2a's explicit surface (`../shared/migrate_v6.py`) |
+| **Execute** / **resume** a plan | [`execution.md`](./execution.md) (agent rules, per-task commits, completion tracking, final review) | [`orchestrator.md`](./orchestrator.md) for orchestrator plans; [`team-agents.md`](./team-agents.md) for parallel groups; [`orchestration-at-scale.md`](./orchestration-at-scale.md) for a lead running agents in panes across accounts; [`prompts.md`](./prompts.md) §9 for resume scenarios; the flow file `../execute/v6.md` when the plan folder is v6 by its artifacts (`../spec/V6_LIFECYCLE.md` is normative); a v6 resume loads `../resume/v6.md`; v5 → v6 migration is refine 3.2a (`../shared/migrate_v6.py`) |
 | **Refine** a plan | [`authoring.md`](./authoring.md), [`structure.md`](./structure.md) | as for Create |
-| **Onboard** a repository | [`structure.md`](./structure.md) | [`large-repo-onboarding.md`](./large-repo-onboarding.md) when the repository is large enough to onboard as its own plan; the flow file `../onboard/v6.md` (the four bounded-autonomy records) when the repository will run v6 plans — `../spec/V6_LIFECYCLE.md` §10 is normative |
+| **Onboard** a repository | [`structure.md`](./structure.md) | [`large-repo-onboarding.md`](./large-repo-onboarding.md) when the repository is large enough to be its own plan; `../onboard/v6.md` (bounded-autonomy records) for v6 plans — `../spec/V6_LIFECYCLE.md` §10 is normative |
 | **Verify** / **status** | [`structure.md`](./structure.md) §1–§2 | — |
 | **Upgrade** the installed skill | [`structure.md`](./structure.md) §1–§2 (what lives where) | the `upgrade` sub-skill itself (`../upgrade/SKILL.md`) — check is read-only, download needs explicit acceptance, `.dwp/` is never migrated |
 | **Author** skills/agents | [`skills-integration.md`](./skills-integration.md) | — |
@@ -69,6 +69,7 @@ names its essential files and its conditional triggers.
 | ## 13. Orchestrator Plans (Core Hub Only) | [`orchestrator.md`](./orchestrator.md) |
 | ## 14. Team Agents Execution Mode (Claude Code Only) | [`team-agents.md`](./team-agents.md) |
 | ## 15. Onboarding a Large Repo as Its Own Deep Work Plan | [`large-repo-onboarding.md`](./large-repo-onboarding.md) |
+| ## 16. Orchestration at Scale | [`orchestration-at-scale.md`](./orchestration-at-scale.md) |
 | ## 12. Summary | this file (below) |
 
 Section numbers and headings are preserved inside each file, so a reference such
@@ -95,7 +96,8 @@ This guide defines how an agent should:
 - Pass outputs between child DWPs using the inter-child output passing protocol (see section 13.9)
 - **Hand off** child DWPs for execution by separate agent sessions inside each target repo (orchestrator agents never execute children inline — see §13.0) with dependency-aware execution modes and readiness gates (see section 13.10)
 - Optionally enable parallel task execution via team agents as a progressive enhancement for Claude Code (see section 14)
-- Accelerate plan creation itself by generating task files in parallel via team agents (see section 14.8)
+- Run many agents at once — lanes in panes, on chosen accounts and vendors (see section 16)
+- Generate task files in parallel via team agents (see section 14.8)
 
 Use this as the **authoritative specification** whenever an agent is asked to:
 

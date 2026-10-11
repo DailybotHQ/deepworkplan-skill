@@ -113,6 +113,28 @@ pubkey-only with host keys generated at runtime, never baked in; every
 download in the image is verified; `.env` files are `0600` and gitignored;
 no secret value is written by the addon.
 
+## 6.1. Host Accounts (`host_profiles`, opt-in)
+
+- `[agents] host_profiles` (bool, default `false`) and `host_env_keys`
+  (list of variable **names**, default `[]`) belong to the developer's
+  **host** profile (`~/.config/dck/profile.toml`). The addon **MUST NOT**
+  set them, and **MUST NOT** propose them in a repository's `dck.toml`.
+- When on, only the profiles of the CLIs the repository installs are shared
+  (`$AGENTKIT_PROFILES_DIR/<cli>` for file-portable CLIs, read-write; host
+  `~/.codex` for Codex `@default`); the agentkit home is never mounted, and
+  Cursor and Antigravity profiles are skipped.
+- Shared variables reach the container only through a host-generated
+  `0600` env file mounted read-only as `AGENTKIT_ENV`, holding the
+  allow-listed names (and `CLAUDE_CODE_OAUTH_TOKEN[_*]`). A value **MUST
+  NOT** appear in compose, a log, doctor output or anything this addon
+  writes.
+- Claude's bypass-permissions acknowledgement is written only in the
+  container's own homes with autonomy on — never in a shared host profile,
+  and never with `AGENTKIT_PERMISSIONS=ask`.
+- The offer **MUST** say which CLIs' accounts become usable inside the
+  container, and that a shared Codex `auth.json` allows one active writer
+  per account.
+
 ## 7. Herdr Container Profile
 
 When the repository wants its container as a Herdr machine (the herdr

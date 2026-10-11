@@ -83,6 +83,20 @@ recipes — those drift; the pinned skill is the single source.
 - The helper's `delegations.ndjson` mirror and the plan journal both record
   the delegation; the journal is the plan's record and is written first.
 
+## 6.1. Lanes (orchestration at scale)
+
+- A long-lived lane is one peer per repository or workstream, addressed
+  `<machine>:<pane>` from a fresh `herdr-peers list`, on the host, in a
+  registered dev container or on another machine. Lanes **MUST** coordinate
+  only with the lead; the protocol limits (depth 1, fan-out cap, scope) are
+  unchanged at any scale.
+- The addon **MUST NOT** send keystrokes to a pane. Unattended launch and
+  the narrow first-run unblocking a lead may do with Herdr's own commands
+  are governed by `../../guide/orchestration-at-scale.md` §16.5; anything
+  else escalates to the developer.
+- The lead **SHOULD** set `DWP_PLAN` and `DWP_TASK` so the helper mirrors
+  every ask and reply into the plan.
+
 ## 7. Never-Block Rule
 
 No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger

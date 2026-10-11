@@ -172,7 +172,7 @@ form**; only its CI surface is optional.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.9 --skill dailybot -y`,
+  (`npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.10 --skill dailybot -y`,
   currently **3.23.3**; or OpenClaw `openclaw skills install dailybot`) and/or
   the **Dailybot CLI** (`dailybot-cli >= 3.9.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
@@ -287,7 +287,7 @@ form**; only its CI surface is optional.
 
 - **Required local review (baseline since standard 2.3.0).** The `onboard` flow
   **MUST** install the vendored coding-agent skill
-  (`npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.6 --skill ai-diff-reviewer -y`
+  (`npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.7 --skill ai-diff-reviewer -y`
   — **tag-pinned**, both `--yes` and `-y` required) and bootstrap a
   repo-tailored extension file (`.review/extension.md`, via the upstream
   `generate-extension` sub-skill) as part of the baseline scaffolding
@@ -439,8 +439,8 @@ The shipped set:
 | key | product (pinned) | provides_abilities | requires_grants | transport |
 |---|---|---|---|---|
 | `agentkit` | `DailybotHQ/coding-agents-kit` `v0.4.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
-| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.6` | — | — | — |
-| `dailybot` | `DailybotHQ/agent-skill` `v3.23.9` | `telemetry` (reporting only, consent-gated) | — | — |
+| `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.7` | — | — | — |
+| `dailybot` | `DailybotHQ/agent-skill` `v3.23.10` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
 | `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.2.11`, interface 2 | — | — | — |

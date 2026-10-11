@@ -52,6 +52,11 @@
 
 See also the hand-off task template: `example_prompts/ORCHESTRATOR_TASK_TEMPLATE_execute_child_dwp.md`.
 
+> **At scale.** When the separate sessions are many agents — lanes in Herdr
+> panes on the host, in containers or on other machines, each on an account
+> chosen by headroom and coordinated with the lead through herdr-peers —
+> read [`orchestration-at-scale.md`](orchestration-at-scale.md) §16.
+
 ### 13.1. What Are Orchestrator Plans?
 
 Orchestrator plans are a special type of Core Hub DWP plan whose tasks **create child DWP plans inside sub-repositories** rather than (or in addition to) directly executing code changes.

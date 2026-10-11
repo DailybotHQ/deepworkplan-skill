@@ -18,7 +18,10 @@ feature work, or the user explicitly mentions child DWPs / orchestrator /
 **2.7–2.9 (orchestrator only):** ask for target repositories (note each repo
 root — for an orchestrator hub this is `repositories/{repo}/`), dependency order,
 and execution mode (Distributed / Sequential with Output Handoff / Sequential
-basic). Default to Distributed.
+basic). Default to Distributed. When the developer wants the children run by
+lanes — one agent per repository in its own Herdr pane, on chosen accounts —
+record the lane table and the release order from
+`../guide/orchestration-at-scale.md` §16 in the README.
 
 ## Materialization — orchestrator additions
 

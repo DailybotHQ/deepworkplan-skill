@@ -87,6 +87,40 @@ hosts are the developer's opt-in through `[ssh] host_extra` in the host
 profile, never the repository's `dck.toml`. `ssh_host_config = false` turns
 it off.
 
+### Host accounts inside the container (`host_profiles`, opt-in)
+
+With devcontainer-kit's host profiles a container's agents use the
+developer's own `ak` accounts with no login inside — the way git already
+works through the host's SSH agent. Both keys live in the developer's
+**host** profile (`~/.config/dck/profile.toml`, `[agents]`), never in the
+repository's `dck.toml`:
+
+- `host_profiles = true` (default `false`) mounts, for each CLI the
+  repository installs (`[agents] clis`) whose profiles are file-portable
+  (claude, codex, pi, cline, grok, opencode), `$AGENTKIT_PROFILES_DIR/<cli>`
+  read-write — logins refresh in place — and sets `AGENTKIT_PROFILES_DIR`
+  inside; never the whole agentkit home. Codex `@default` gets the host
+  `~/.codex` when codex is installed. Cursor and Antigravity profiles are
+  skipped (they hold absolute host links).
+- `host_env_keys = [...]` (default `[]`) lists env variable **names**: dck
+  writes a host-side env file (`0600`) holding only those names from the
+  `ak` env file, plus `CLAUDE_CODE_OAUTH_TOKEN` and
+  `CLAUDE_CODE_OAUTH_TOKEN_*` implicitly, and mounts it read-only as
+  `AGENTKIT_ENV`. Claude authenticates through the profile's token, Codex
+  through its auth file. Values never appear in compose, logs or doctor.
+- Folder trust for the app path is written in the container's homes and in
+  shared profiles. Claude's bypass-permissions acknowledgement goes only in
+  the container's own homes with autonomy on — never in a shared host
+  profile, and never with `AGENTKIT_PERMISSIONS=ask`.
+- A shared Codex `auth.json` is read-write: **one active writer per
+  account** — do not run the same Codex account in two places at once.
+
+Offer it only when the developer wants container lanes on host accounts
+(`../../guide/orchestration-at-scale.md` §16.3); it widens what a container
+can use, so say which CLIs' profiles it shares. Setting it is the
+developer's decision in their host profile — this addon describes it, never
+sets it.
+
 ## Trust boundary (write scope)
 
 `allowed-tools` includes write-capable `Edit`, `Write`, and `Bash`:
@@ -106,7 +140,9 @@ it off.
   agent socket (never host `~/.ssh`, `~/.gitconfig` or `${HOME}`); publish a port beyond loopback unless the repository's own
   config says so; pass `--trust` on the developer's behalf; copy a private
   key into an image or container; answer dck's `ssh-add` prompt or set
-  `[ssh] host_extra` in the developer's host profile on their behalf; run
+  `[ssh] host_extra` in the developer's host profile on their behalf; set
+  `[agents] host_profiles` or `host_env_keys` there for them, or print a
+  shared credential's value; run
   `dck herdr add` (it edits
   `~/.ssh/config`) without its own explicit approval; install anything on
   the host beyond the kit and its skill; or write any secret value (`.env`

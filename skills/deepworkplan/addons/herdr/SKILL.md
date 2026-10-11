@@ -104,6 +104,31 @@ Enabling grants nothing: delegation still needs the plan's grant.
 The helper's own record is the transport's log; the **plan journal** is the
 plan's record — both are written, the journal first.
 
+## Lanes across machines and containers
+
+The same transport carries an orchestra of long-lived lanes
+(`../../guide/orchestration-at-scale.md` §16): a lead and one agent per
+repository or workstream, each in its own pane.
+
+- **Where a lane runs.** A pane on this host, inside a dev container that
+  devcontainer-kit registered as a Herdr machine (its mesh lets container
+  agents reach the host and the other dck containers), or on another
+  machine Herdr reaches. Every lane is addressed `<machine>:<pane>` from a
+  fresh `herdr-peers list`.
+- **Coordination.** Lanes talk only to the lead: milestone asks (plan
+  ready, PR open, blocked, done) and the lead's asks (GO, new pins). The
+  fan-out cap (4 open asks per caller) still holds; the lead raises it per
+  call with `--fanout N --reason` only when the developer asked for more
+  lanes.
+- **State.** `herdr agent list` shows each lane working, idle, blocked or
+  done; `herdr pane read` shows its screen. herdr-peers' `lanes` lists the
+  lanes with their account and vendor, and `status <pane>` classifies a
+  blocked screen (herdr-peers releases after `v0.1.0`). Launching and unblocking lanes
+  unattended — and what always escalates to the developer — is §16.5 of
+  the guide; this addon sends no keys of its own.
+- **Record.** The lead sets `DWP_PLAN` (and `DWP_TASK`) so every ask and
+  reply is mirrored into the plan's `analysis_results/delegations.ndjson`.
+
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** Not inside Herdr, helper missing,

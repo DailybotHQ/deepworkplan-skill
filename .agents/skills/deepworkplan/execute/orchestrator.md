@@ -57,6 +57,11 @@ working API seam.
    authorization, mode, predecessor pointers and completion evidence expected.
    Checkpoint while waiting for the user or authorized separate session. Do not
    busy-poll, execute the child inline, or mark a hand-off as completed work.
+   When the separate sessions are lanes in Herdr panes (one agent per
+   repository, on an account picked by headroom, coordinated through
+   herdr-peers), the prompt is the lane's launch brief and
+   `../guide/orchestration-at-scale.md` §16 governs launch, release order,
+   failover and the record.
 4. After completion is reported, verify the child's top-level completion status,
    README and task evidence, applicable closing review, and declared artifacts.
    A nested completed task in JSON is not a completed plan. Missing, failed or

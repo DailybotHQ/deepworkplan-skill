@@ -110,6 +110,25 @@ worktree:
 - `result_text` is the agent's claim: the delegation result is `asserted`
   until the parent's gate runner observes it (`V7_CONTRACT.md` §3).
 
+## 5.1. Accounts and Lanes (kit `v0.5.0` and later)
+
+- Account choice **MUST** come from the kit: `ak usage --json` and
+  `ak pick <kind> [--count N]`, at most once per batch and on request —
+  **never** in a loop or on a timer. A lane **MUST** run on an account the
+  developer holds; accounts **MUST NOT** be rotated to get past a limit.
+- `ak profiles --json` (`profiles-v1`) and `ak pick … --json` (`pick-v1`)
+  are read-only inputs; the addon records the chosen profile in the plan's
+  lane table and in `delegate launch`, never a credential.
+- `CLAUDE_CODE_OAUTH_TOKEN[_<SUFFIX>]` and every provider key are handled by
+  **name** only; the addon **MUST NOT** read, print or forward a value.
+- Failover (limit, exit 3, exit 4): exclude the account for the batch
+  (`--exclude @p`), re-pick and relaunch **once**; a second failure goes to
+  the developer.
+- A pane lane **MAY** be launched with `--trust-cwd` for its own folder. The
+  addon sends no keystrokes; unblocking a lane's first-run screens is the
+  lead's procedure with Herdr's commands, bounded by
+  `../../guide/orchestration-at-scale.md` §16.5.
+
 ## 6. Never-Block Rule
 
 Absence, detection failure, an unknown interface, a ledger refusal or a
