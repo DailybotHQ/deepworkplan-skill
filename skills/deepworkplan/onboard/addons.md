@@ -25,7 +25,7 @@ and run its flow as a required step, under the Phase 0 onboarding consent:
    > `.github/ai-pr-reviewer/extension.md`), a `.review/.skip-bootstrap`
    marker, and any existing `pr-review.yml`. Fill gaps only.
 2. **Install the vendored skill, pinned:**
-   `npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.3 --skill ai-diff-reviewer -y`
+   `npx --yes skills add https://github.com/DailybotHQ/ai-diff-reviewer/tree/v3.3.4 --skill ai-diff-reviewer -y`
    (both `--yes` and `-y` are required in non-TTY; never an unpinned ref, never
    a remote installer piped to a shell). Assert the vendored `SKILL.md` version
    equals the requested tag.
@@ -70,7 +70,7 @@ records its Phase 7a status). Offer the seven optional ones independently:
 
 | Addon | Folder | Recommend in trust mode when… |
 |-------|--------|-------------------------------|
-| **Devcontainer support** | [`../addons/devcontainer/`](../addons/devcontainer/SKILL.md) | the repo benefits from a reproducible isolated dev container (most repos with Docker/services). Pinned devcontainer-kit `v0.2.8` plus its `dck-dockerfile` skill; the repository owns its Dockerfile, no shared base image. |
+| **Devcontainer support** | [`../addons/devcontainer/`](../addons/devcontainer/SKILL.md) | the repo benefits from a reproducible isolated dev container (most repos with Docker/services). Pinned devcontainer-kit `v0.2.9` plus its `dck-dockerfile` skill; the repository owns its Dockerfile, no shared base image. |
 | **Dailybot integration** | [`../addons/dailybot/`](../addons/dailybot/SKILL.md) | the developer/team **already uses Dailybot** or asks for team progress reporting — **do NOT auto-install for everyone**. |
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | **near-default** — the repo has **declared dependencies** (any manifest or lockfile): offer **always**, and install the **inert** `/lib-upgrade` delegator under the onboarding consent **unless explicitly declined**. Installing the delegator runs **no** upgrade — upgrades are always explicit, gated work. |
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: when any surface is detected — even an ambiguous one — the evaluation and offer are **mandatory, not skippable**, with the detection rationale recorded. **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **strongly recommended**; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended**. Every profile **requires explicit acceptance even in trust mode — none is auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
@@ -82,10 +82,10 @@ records its Phase 7a status). Offer the seven optional ones independently:
 The first addon is **devcontainer support**
 ([`../addons/devcontainer/SKILL.md`](../addons/devcontainer/SKILL.md) +
 [`SPEC.md`](../addons/devcontainer/SPEC.md)), a thin integrator of
-devcontainer-kit (`dck`, pinned `v0.2.8`). If the developer accepts: read
+devcontainer-kit (`dck`, pinned `v0.2.9`). If the developer accepts: read
 that addon's `SKILL.md` and run its flow — detect the kit (`dck doctor
 --json`, interface `2`), install it and offer its `dck-dockerfile` skill
-(`npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.2.8 --skill dck-dockerfile -y`),
+(`npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.2.9 --skill dck-dockerfile -y`),
 then let the skill (or you, from the stack you detected in Phase 1) reason
 the service, runtime, ports and agents and render the repository's own
 layout — `.devcontainer/devcontainer.json`,
@@ -106,7 +106,7 @@ reporting; in trust mode, recommend it **only** on that signal and **never
 auto-install it for everyone**. If accepted: read that addon's `SKILL.md` and run
 its flow — detect whether the Dailybot skill/CLI is already present
 (reconcile-don't-clobber), offer the **opt-in** install paths (Dailybot agent
-skill via `npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.6 --skill dailybot -y`
+skill via `npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.7 --skill dailybot -y`
 / `npx --yes skills update dailybot -y` / OpenClaw `openclaw skills install dailybot`,
 or the Dailybot CLI **>= 3.9.0** via pip / Homebrew / the skill's verified
 installer flow), **defer
