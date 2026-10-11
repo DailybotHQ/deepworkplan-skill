@@ -126,7 +126,9 @@ repository's `dck.toml`:
 
 Offer it only when the developer wants container lanes on host accounts
 (`../../guide/orchestration-at-scale.md` §16.3); it widens what a container
-can use, so say which CLIs' profiles it shares. Setting it is the
+can use, so say which profiles it shares and that a process in the container
+can use those accounts and change their login files (the read-write
+mounts). Setting it is the
 developer's decision in their host profile — this addon describes it, never
 sets it.
 

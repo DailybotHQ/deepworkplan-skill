@@ -32,7 +32,7 @@ the installed version, the pack's pin and one action:
 | `record` | at the pin (or newer), registry missing or stale | run the row's `record` command — only for an addon the developer uses |
 | `current` | at the pin and recorded | nothing |
 | `newer` | newer than the pin | keep it — **never downgrade** |
-| `reconcile` | hand-written work present (a docker setup without dck) | the addon's diff-and-consent flow (§3) |
+| `reconcile` | a hand-written dev container (`.devcontainer/devcontainer.json` or `docker/local/` without dck) | the addon's diff-and-consent flow (§3) |
 | `verify` | detected, version unreadable | re-run its detection by hand; report |
 | `declined` | the registry records a decline | do not re-offer |
 | `evaluate` | applicability is the addon's call (design-system) | run that addon's detection |
@@ -44,8 +44,12 @@ unchanged repository prints the same plan.
 ## 2. Offer once, then work row by row
 
 Show the table and make **one** consolidated offer: per row, its action and
-what it costs (machine-level installs, Docker, accounts). The developer may
-accept all, some or none; a decline writes nothing, and only an explicit
+what it costs (machine-level installs, Docker, accounts). **On a harness
+upgrade** the offer covers only the addons the repository already uses
+(`upgrade`, `record`, `reconcile`) and names, in one line, any new addon that
+fits; it never re-pitches an absent addon the repository has done without.
+The full offer of every fitting addon is for a developer who asked to set up
+the addons. The developer may accept all, some or none; a decline writes nothing, and only an explicit
 "turn it off" is `config.py disable <key>`. Trust mode may recommend rows; it
 accepts none of the signal-gated ones by itself (`addons.md`).
 

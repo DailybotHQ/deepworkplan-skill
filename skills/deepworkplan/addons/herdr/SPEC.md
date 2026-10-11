@@ -90,12 +90,11 @@ recipes — those drift; the pinned skill is the single source.
   registered dev container or on another machine. Lanes **MUST** coordinate
   only with the lead; the protocol limits (depth 1, fan-out cap, scope) are
   unchanged at any scale.
-- The addon **MUST NOT** send keystrokes to a pane. Unattended launch is
-  governed by `../../guide/orchestration-at-scale.md` §16.5: no agent sends
-  keys for a permission acknowledgement; a first-run screen is read,
-  recorded and escalated to the developer; the one keystroke allowed is
-  folder trust on a pane the lead launched when `--trust-cwd` was
-  unavailable.
+- No agent following this addon sends keystrokes to a pane, with one
+  exception (`../../guide/orchestration-at-scale.md` §16.5): folder trust
+  for a pane the lead launched itself, when `--trust-cwd` was unavailable.
+  Every other first-run screen — a permission acknowledgement above all —
+  is read, recorded and escalated to the developer.
 - The lead **SHOULD** set `DWP_PLAN` and `DWP_TASK` so the helper mirrors
   every ask and reply into the plan.
 

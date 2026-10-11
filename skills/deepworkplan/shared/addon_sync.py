@@ -60,10 +60,13 @@ MANIFESTS = ('package.json', 'pyproject.toml', 'requirements.txt', 'setup.py',
              'pom.xml', 'build.gradle', 'build.gradle.kts', 'mix.exs',
              'pubspec.yaml', 'Package.swift')
 
-# A docker or dev-container setup somebody wrote by hand.
-DOCKER_FILES = ('.devcontainer/devcontainer.json', 'Dockerfile',
-                'docker-compose.yml', 'docker-compose.yaml', 'compose.yml',
-                'compose.yaml', 'docker/local/docker-compose.yaml')
+# A dev-container setup somebody wrote by hand: the paths dck init would
+# reconcile. A production Dockerfile or compose file elsewhere is not one —
+# it is reported (``docker_files``) and the row stays an offer.
+DEVCONTAINER_FILES = ('.devcontainer/devcontainer.json',
+                      'docker/local/docker-compose.yaml')
+APP_DOCKER_FILES = ('Dockerfile', 'docker-compose.yml', 'docker-compose.yaml',
+                    'compose.yml', 'compose.yaml')
 
 
 def parse_tag(text: Optional[str]) -> Optional[Tuple[int, int, int]]:
@@ -142,7 +145,7 @@ def devcontainer_layout(repo: str) -> Tuple[str, Optional[str]]:
                 stamp = as_tag(match.group(1)) if match else None
                 break
         return 'dck', stamp
-    if any(os.path.exists(os.path.join(repo, p)) for p in DOCKER_FILES):
+    if any(os.path.exists(os.path.join(repo, p)) for p in DEVCONTAINER_FILES):
         return 'handwritten', None
     return 'none', None
 
@@ -207,7 +210,9 @@ def plan_row(key: str, repo: str, reg: Dict[str, Any]) -> Dict[str, Any]:
         kit_version = kit.get('version') if kit.get('detected') else None
         row.update(scope='machine+repo', layout=layout, stamp=stamp,
                    kit=kit_version, installed=layout == 'dck',
-                   version=stamp)
+                   version=stamp,
+                   docker_files=[p for p in APP_DOCKER_FILES
+                                 if os.path.exists(os.path.join(repo, p))])
         if layout == 'handwritten':
             row.update(action='reconcile',
                        reason='a docker setup without dck markers: dck init '
@@ -215,6 +220,10 @@ def plan_row(key: str, repo: str, reg: Dict[str, Any]) -> Dict[str, Any]:
                               'changes without consent, and a backup first')
         elif layout == 'none':
             row['action'] = 'install'
+            if row['docker_files']:
+                row['reason'] = ('an application docker setup is present (%s); '
+                                 'dck renders its own files beside it'
+                                 % ', '.join(row['docker_files']))
         else:
             worst = min((compare(v, pin) for v in (stamp, kit_version)
                          if compare(v, pin) is not None), default=None)

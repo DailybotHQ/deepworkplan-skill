@@ -133,9 +133,10 @@ no secret value is written by the addon.
 - Claude's bypass-permissions acknowledgement is written by the kit only in
   the container's own homes with autonomy on — never in a shared host profile,
   and never with `AGENTKIT_PERMISSIONS=ask`. No agent sends keys for it.
-- The offer **MUST** say which CLIs' accounts become usable inside the
-  container, and that a shared Codex `auth.json` allows one active writer
-  per account.
+- The offer **MUST** say which accounts become usable inside the
+  container, that a process there can change those profiles' login files
+  through the read-write mounts, and that a shared Codex `auth.json` allows
+  one active writer per account.
 
 ## 7. Herdr Container Profile
 

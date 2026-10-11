@@ -171,6 +171,14 @@ for r in json.load(sys.stdin)["rows"]:
   [ "$(tree_digest)" = "$before" ]
 }
 
+@test "an application Dockerfile alone is not a hand-written dev container" {
+  printf 'FROM node:24\n' > "$REPO/Dockerfile"
+  printf 'services:\n  web:\n    build: .\n' > "$REPO/docker-compose.yml"
+  [ "$(action devcontainer)" = install ]
+  [ "$(field devcontainer layout)" = none ]
+  [[ "$(field devcontainer reason)" == *"Dockerfile"* ]]
+}
+
 @test "a recorded decline is respected; a newer install is never downgraded" {
   mkdir -p "$REPO/.dwp"
   printf '{"addons": {"dailybot": {"enabled": false}}}\n' > "$REPO/.dwp/config.json"
