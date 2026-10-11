@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://deepworkplan.com/schema/addon-descriptor/v1.json",
-  "description": "DeepWorkPlan addon descriptor, v1 (spec/ADDONS.md section 7): addons/<key>/addon.json, one per in-pack addon, key equal to the directory name (ecosystem contract amendment A1). Declares the product an integrator pins (repo, tag, integer interface), how presence is detected, which host abilities the addon can contribute at runtime when enabled and detected (spec/V7_ABILITIES.md), which contract grants its use requires, and its delegation transport. Data only: the pack never executes anything a descriptor names except the detect command, run without a shell, read-only, bounded by a timeout, and only for an addon the registry enables.",
+  "description": "DeepWorkPlan addon descriptor, v1 (spec/ADDONS.md section 7): addons/<key>/addon.json, one per in-pack addon, key equal to the directory name (ecosystem contract amendment A1). Declares the product an integrator pins (repo, tag, integer interface), how presence is detected, which host abilities the addon can contribute at runtime when enabled and detected (spec/V7_ABILITIES.md), which contract grants its use requires, and its delegation transport. Data only: the pack never executes anything a descriptor names except the detect command, run without a shell, read-only, bounded by a timeout, and only for an addon the registry enables, or for every shipped addon when the developer asks onboarding for the read-only addon plan (shared/addon_sync.py).",
   "type": "object",
   "additionalProperties": false,
   "required": [

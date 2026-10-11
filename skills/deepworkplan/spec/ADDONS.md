@@ -448,7 +448,10 @@ The shipped set:
 | `vim` | `DailybotHQ/deepworkplan-vim` `v0.7.0`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
-`detect.command`, and only for an addon the registry enables. A product
+`detect.command`, and only for an addon the registry enables — or, when
+the developer asks onboarding to set up or update the addons (or on a
+harness upgrade), for every shipped addon through the read-only
+`shared/addon_sync.py plan`. A product
 reporting an interface major other than the descriptor's is treated as
 **not available** with one warning — never an error of the plan or the
 repository. Descriptors never gate conformance: an addon whose descriptor

@@ -70,10 +70,11 @@ the developer assigns the accounts):
 The lane table in the orchestrator README records lane, pane, account, vendor,
 repository and branch (§16.7).
 
-### 16.4. Coordination: herdr-peers only
+### 16.4. Coordination: lead and lanes only
 
 - **Lead ↔ lane, nothing else.** Lanes never message each other; the lead
-  carries outputs between them (§13.9).
+  carries outputs between them (§13.9). herdr-peers is the transport when
+  Herdr is in use; without it, the developer relays the same messages.
 - **Milestone asks** from each lane: plan ready, PR open, blocked (with what
   it needs), done. The lead answers with `herdr-peers reply`; a lane answers
   the lead's asks (GO, new pins, a changed requirement) the same way.

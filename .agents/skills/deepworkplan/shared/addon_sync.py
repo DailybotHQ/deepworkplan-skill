@@ -278,7 +278,10 @@ def plan_row(key: str, repo: str, reg: Dict[str, Any]) -> Dict[str, Any]:
             row.update(action='install', reason=status.get('reason'))
     base = row['action']
     row['action'] = with_registry(base, entry, pin, row['version'])
-    if row['action'] in ('install', 'upgrade', 'record', 'reconcile', 'available'):
+    # The record to run after an accepted step succeeds; never for a tool that
+    # is merely present on the machine (`available`): the repository's
+    # registry records only what it chose.
+    if row['action'] in ('install', 'upgrade', 'record', 'reconcile'):
         tag = row['version'] if base == 'newer' else pin
         row['record'] = ('python3 <pack>/shared/config.py enable %s%s --repo %s'
                          % (key, ' --version %s' % tag if tag else '', repo))

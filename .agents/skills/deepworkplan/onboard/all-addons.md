@@ -71,8 +71,9 @@ For each accepted row:
      `/lib-upgrade` delegator or `DESIGN.md` is the repository's own work —
      reconcile on request, never regenerate.
    - **Machine-level products** (agentkit, herdr, vim, the dck kit): §4.
-2. On success, run the row's `record` command (the planner prints it with
-   the pin). It reconciles `.dwp/config.json`: other keys stay.
+2. Only after the row's step succeeded, run its `record` command (the
+   planner prints it with the pin; an `available` row has none until the
+   developer accepts it in a full setup). It reconciles `.dwp/config.json`: other keys stay.
 3. Re-run the planner. The row must now read `current` (or `newer`); if not,
    report what it says — never mark it done on your own word.
 
@@ -126,8 +127,9 @@ Herdr workspace.
    (`CLAUDE_CODE_OAUTH_TOKEN[_<SUFFIX>]` in the `ak` env file), Codex through
    its auth file; one active writer per Codex account. Describe it; never
    set it.
-4. **Bring it up:** `bash dev.sh up` (builds, starts, registers the Herdr
-   machine and opens the layout). A failed build is a failed run.
+4. **Bring it up:** `bash dev.sh up` (builds and starts; with the herdr
+   addon, also registers the Herdr machine and opens the layout). A failed
+   build is a failed run.
 5. **Verify** and record each result:
 
    | Check | Expect |
@@ -135,7 +137,7 @@ Herdr workspace.
    | `dck doctor --json` | `interface` 2, repo config valid, no drift, the layers you chose |
    | `bash dev.sh exec ak doctor --json` | the chosen CLIs; `permissions` `auto` (or `ask` when opted out — expected, not a failure) |
    | `bash dev.sh exec ak usage --json` | each shared account answers (only with host profiles on) |
-   | `herdr workspace list` | the container's workspace with the four panes |
+   | `herdr workspace list` | the container's workspace with the four panes (only with the herdr addon) |
    | `bash dev.sh exec ssh -T git@github.com` | the greeting through the host agent (exit 1 with a greeting is success) |
    | `bash dev.sh exec gh auth status` | logged in, when the repository uses `gh` |
    | the repository's real test command, inside | passes, or the failure is recorded |

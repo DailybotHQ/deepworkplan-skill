@@ -154,9 +154,12 @@ EOF
   skill deepworkplan "$(grep -m1 '^version:' "$SK/SKILL.md" | tr -d '"' | awk '{print $2}')"
   # Each row's record command, as the planner prints it.
   run plan_json
+  # only the rows whose step this test performed (upgrade, record); never
+  # an offer the developer did not accept
   printf '%s' "$output" | "$PY" -c 'import json,sys
 for r in json.load(sys.stdin)["rows"]:
-    if r.get("record"): print(r["record"])' > "$WORK/records"
+    assert r["action"] != "available" or not r.get("record"), r
+    if r["action"] in ("upgrade", "record") and r.get("record"): print(r["record"])' > "$WORK/records"
   [ -s "$WORK/records" ]
   while IFS= read -r line; do
     eval "${line/<pack>/$SK}"
