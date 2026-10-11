@@ -1,10 +1,16 @@
-# DeepWorkPlan — Onboard: install or upgrade every addon (read only when triggered)
+# DeepWorkPlan — Onboard: detect every addon, upgrade the ones in use, offer the ones that fit (read only when triggered)
 
-Read this file in Phase 7b when the developer asks for **all addons** ("install
-everything", "bring every addon up to date"), or on a **harness upgrade**
-(Phase 0) of a repository that already has addons. A single-addon offer stays
-in [`addons.md`](addons.md). Nothing here weakens an addon's own rules: each
-addon's `SKILL.md` still owns its consent, its install and its validation.
+Read this file in Phase 7b when the developer asks to set up or update the
+repository's addons ("which addons fit here?", "bring my addons up to date"),
+or on a **harness upgrade** (Phase 0) of a repository that already has addons.
+A single-addon offer stays in [`addons.md`](addons.md). Nothing here weakens
+an addon's own rules: each addon's `SKILL.md` still owns its consent, its
+install and its validation.
+
+**What goes where.** The pack and the required AI Diff Reviewer local review
+go into **every** repository. Every other addon goes only where it fits: an
+installed one the repository still uses is upgraded in place to the pack's
+pin, one that fits is offered, and nothing is added just to complete the set.
 
 ## 1. Plan (read-only)
 
@@ -104,7 +110,8 @@ Herdr workspace.
    own code: write it only for a real need the stack shows.
 3. **Host accounts** (optional; `../addons/devcontainer/SKILL.md`, host
    accounts): to let agents inside use the developer's own accounts, the
-   developer sets `[agents] host_profiles = true` (and any `host_env_keys`) in
+   developer sets `[agents] host_profiles = true` (optionally
+   `host_profile_names` and exact `host_env_keys`) in
    their **host** profile `~/.config/dck/profile.toml` — never the repository.
    Claude then authenticates through the profile's token
    (`CLAUDE_CODE_OAUTH_TOKEN[_<SUFFIX>]` in the `ak` env file), Codex through
@@ -147,4 +154,4 @@ and its opt-out (`AGENTKIT_PERMISSIONS=ask`) decide.
 One line per addon: action taken, version before → after, the record
 written, and anything left for the developer (a declined row, a machine
 install shown but not run, a failed check). Re-run the planner and include
-its `pending:` line — `nothing` is the only "all addons done".
+its `pending:` line — `nothing` is the only "addons done".

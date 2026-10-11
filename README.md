@@ -37,11 +37,13 @@ agent changes and long runs.
 The pack does three things:
 
 - **Onboards any repository, completely.** `/deepworkplan-onboard` writes an
-  adapted `AGENTS.md`, `docs/`, per-module docs and `.agents/`, installs the
-  required local review, and can **install or upgrade every addon** in one
-  pass — whether the repository has none, an older release, or a hand-written
-  docker setup — ending, when you want a container, in the full working stack:
-  dev container, editor, agents on your own accounts and a Herdr workspace.
+  adapted `AGENTS.md`, `docs/`, per-module docs and `.agents/` and installs
+  the required local review — the pack and that review go into every
+  repository. It then **detects every addon, upgrades the ones you use and
+  offers the ones that fit**, whether the repository has none, an older
+  release or a hand-written docker setup; nothing is added just to complete
+  the set. When you want a container, it ends in the full working stack: dev
+  container, editor, agents on your own accounts and a Herdr workspace.
 - **Runs Deep Work Plans.** A compact executable **Lite** plan for bounded
   work, or a per-task **Full** plan for longer work: atomic tasks, acceptance
   criteria, validation gates and resumable state under a gitignored `.dwp/`.
@@ -51,7 +53,8 @@ The pack does three things:
   coordinated through one authorized ask and reply, with one branch and one
   release per repository.
 
-The methodology works alone: every addon is optional and only amplifies it.
+The methodology works alone: apart from the required local review, every addon
+is optional and only amplifies it.
 The current major line is **v7** (DWP standard 7.0.0; releases are on the
 [Releases](https://github.com/DailybotHQ/deepworkplan-skill/releases) page).
 New plans use the v7 contract; existing v6 and v5 plans keep their recorded
@@ -133,8 +136,10 @@ directory. Default paths per agent are in
    `#deepworkplan-onboard` in any other agent. It writes an adapted
    `AGENTS.md`, `docs/`, `.agents/` (including the short `/dwp-*` commands
    used below), installs the required local review and offers the addons.
-   Say **"install every addon"** to take the all-addons path; run it again on
-   an older onboarding (`upgrade`) to bring every addon to the pack's pins.
+   Ask it to **set up the addons that fit** — it detects every addon,
+   upgrades the ones you use and offers the rest only where they fit; run it
+   again on an older onboarding (`upgrade`) to bring the addons you use to the
+   pack's pins.
 3. **Plan** real work: `/dwp-create <what you want done>` writes a Deep Work
    Plan under the gitignored `.dwp/plans/`.
 4. **Execute** it: `/dwp-execute <plan>` works task by task, validates each
@@ -146,9 +151,11 @@ directory. Default paths per agent are in
 format — for example `/dwp-create trust fix the broken link` or
 `/dwp-create redesign the auth flow full trust`.
 
-## Onboarding every addon
+## Addons that fit, kept up to date
 
-The all-addons path starts from one read-only plan of the repository:
+The pack and the required local review go into every repository; every other
+addon only where it fits. Onboarding starts from one read-only plan of the
+repository:
 
 ```bash
 python3 <pack>/shared/addon_sync.py plan --repo .
@@ -158,11 +165,11 @@ python3 <pack>/shared/addon_sync.py plan --repo .
 addon               scope         installed   pin         action
 ------------------  ------------  ----------  ----------  ----------
 agentkit            machine       v0.4.0      v0.5.0      upgrade
-ai-diff-reviewer    repo          v3.1.0      v3.3.7      upgrade
-dailybot            repo          -           v3.23.10    install
+ai-diff-reviewer    repo          v3.1.0      v3.3.9      upgrade
+dailybot            repo          -           v3.23.12    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
-devcontainer        machine+repo  -           v0.2.11     reconcile
+devcontainer        machine+repo  -           v0.3.0     reconcile
                     a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
 herdr               machine       v0.2.1      v0.2.1      current
 vim                 machine       -           v0.7.0      install
@@ -228,8 +235,9 @@ A root **deepworkplan** router describes every capability and routes by intent.
 
 ### Addons
 
-Every addon is optional, recorded in the `.dwp/config.json` registry, and
-documented on its kit page:
+The AI Diff Reviewer local review goes into every repository; the others are
+optional and installed only where they fit. Each is recorded in the
+`.dwp/config.json` registry and documented on its kit page:
 
 | Addon | What it adds | Kit page |
 |-------|--------------|----------|
