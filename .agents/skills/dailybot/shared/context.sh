@@ -126,7 +126,7 @@ emit_json() {
   fi
   if command -v python3 >/dev/null 2>&1; then
     REPO="$REPO" BRANCH="$BRANCH" AGENT_TOOL="$AGENT_TOOL" AGENT_NAME="$AGENT_NAME" \
-      python3 -c 'import json,os; print(json.dumps({"repo":os.environ["REPO"],"branch":os.environ["BRANCH"],"agent_tool":os.environ["AGENT_TOOL"],"agent_name":os.environ["AGENT_NAME"]}))'
+      python3 -c 'import json,os; print(json.dumps({"repo":os.environ["REPO"],"branch":os.environ["BRANCH"],"agent_tool":os.environ["AGENT_TOOL"],"agent_name":os.environ["AGENT_NAME"]}, separators=(",", ":")))'
     return
   fi
   # Hardened bash fallback: escapes \ " and the most common control chars.
