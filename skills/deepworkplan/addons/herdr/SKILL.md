@@ -125,8 +125,9 @@ repository or workstream, each in its own pane.
   lanes with their agent, vendor, profile and state, and
   `herdr-peers status <machine>:<pane>` classifies a waiting screen; both
   are read-only. Launching lanes
-  unattended — and why a first-run screen is escalated, never answered — is
-  §16.5 of the guide; this addon sends no keys.
+  unattended is §16.5 of the guide: no agent sends keys, except folder
+  trust on a pane the lead launched itself when `--trust-cwd` was
+  unavailable; every other first-run screen is escalated to the developer.
 - **Record.** The lead sets `DWP_PLAN` (and `DWP_TASK`) so every ask and
   reply is mirrored into the plan's `analysis_results/delegations.ndjson`.
 

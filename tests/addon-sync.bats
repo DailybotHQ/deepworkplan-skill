@@ -222,6 +222,23 @@ for r in json.load(sys.stdin)["rows"]:
   printf '%s' "$output" | "$PY" -c 'import json,sys; d=json.load(sys.stdin); assert "ai-diff-reviewer" not in d["pending"], d["pending"]'
 }
 
+@test "a repository-level install that predates the registry is recorded (back-fill)" {
+  skill dailybot "$(bare dailybot)"
+  [ "$(action dailybot)" = record ]
+  mkdir -p "$REPO/.dwp"
+  printf '{"addons": {"dailybot": {"enabled": true}}}\n' > "$REPO/.dwp/config.json"
+  [ "$(action dailybot)" = record ]          # enabled without the version it runs
+  eval "$(field dailybot record | sed "s#<pack>#$SK#")"
+  [ "$(action dailybot)" = current ]
+}
+
+@test "an available machine tool carries an on-accept command, never a record" {
+  stub herdr-peers "herdr-peers $(bare herdr) (protocol 1)"
+  [ "$(action herdr)" = available ]
+  [ "$(field herdr record)" = None ]
+  [[ "$(field herdr on_accept)" == *"enable herdr --version $(pin herdr)"* ]]
+}
+
 @test "an unreadable registry is a warning, never a crash or a write" {
   mkdir -p "$REPO/.dwp"
   printf 'not json' > "$REPO/.dwp/config.json"
@@ -234,7 +251,7 @@ for r in json.load(sys.stdin)["rows"]:
 @test "onboard wires the planner: all-addons.md is linked and names every action" {
   grep -qF '[`all-addons.md`](all-addons.md)' "$SK/onboard/SKILL.md"
   grep -qF '[`all-addons.md`](all-addons.md)' "$SK/onboard/addons.md"
-  for a in install upgrade record current newer reconcile verify declined evaluate not-applicable; do
+  for a in install upgrade record available current newer reconcile verify declined evaluate not-applicable; do
     grep -qF "| \`$a\` |" "$SK/onboard/all-addons.md" || { echo "no row for $a"; return 1; }
   done
   grep -qF 'python3 ../shared/addon_sync.py plan --repo <repo>' "$SK/onboard/all-addons.md"

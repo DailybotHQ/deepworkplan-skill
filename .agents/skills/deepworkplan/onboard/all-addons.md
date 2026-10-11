@@ -30,7 +30,7 @@ the installed version, the pack's pin and one action:
 | `install` | absent | offer it; on acceptance run the addon's flow |
 | `upgrade` | older than the pin (or an old release without its surface) | offer the upgrade; on acceptance run the addon's flow at the pin |
 | `record` | a repository-level install at the pin (or newer), registry missing or stale; or an addon this repository enabled | run the row's `record` command |
-| `available` | a machine-level tool is present, but this repository never enabled it | nothing on an upgrade; in a full setup, offer it like `install` |
+| `available` | a machine-level tool is present, but this repository never enabled it | nothing on an upgrade; in a full setup, offer it, and on acceptance (upgrade it first when older than the pin) run its `on_accept` command |
 | `current` | at the pin and recorded | nothing |
 | `newer` | newer than the pin | keep it — **never downgrade** |
 | `reconcile` | a hand-written dev container (`.devcontainer/devcontainer.json` or `docker/local/` without dck) | the addon's diff-and-consent flow (§3); an offer unless this repository enabled the addon |
@@ -72,8 +72,8 @@ For each accepted row:
      reconcile on request, never regenerate.
    - **Machine-level products** (agentkit, herdr, vim, the dck kit): §4.
 2. Only after the row's step succeeded, run its `record` command (the
-   planner prints it with the pin; an `available` row has none until the
-   developer accepts it in a full setup). It reconciles `.dwp/config.json`: other keys stay.
+   planner prints it with the pin; an `available` row prints `on_accept`
+   instead, run only when the developer accepts it). It reconciles `.dwp/config.json`: other keys stay.
 3. Re-run the planner. The row must now read `current` (or `newer`); if not,
    report what it says — never mark it done on your own word.
 

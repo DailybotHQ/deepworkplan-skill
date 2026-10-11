@@ -170,8 +170,8 @@ def with_registry(action: str, entry: Any, pin: Optional[str],
     expected = version if action == 'newer' else pin
     if not isinstance(entry, dict) or entry.get('enabled') is not True:
         return 'record'
-    if expected and entry.get('version') and as_tag(entry['version']) != expected:
-        return 'record'
+    if expected and as_tag(entry.get('version')) != expected:
+        return 'record'  # stale, or enabled without the version it runs
     return action
 
 
@@ -285,6 +285,11 @@ def plan_row(key: str, repo: str, reg: Dict[str, Any]) -> Dict[str, Any]:
         tag = row['version'] if base == 'newer' else pin
         row['record'] = ('python3 <pack>/shared/config.py enable %s%s --repo %s'
                          % (key, ' --version %s' % tag if tag else '', repo))
+    elif row['action'] == 'available':
+        # run only when the developer accepts it in a full setup
+        tag = as_tag(row['version']) if compare(row['version'], pin) == 1 else pin
+        row['on_accept'] = ('python3 <pack>/shared/config.py enable %s%s --repo %s'
+                            % (key, ' --version %s' % tag if tag else '', repo))
     return row
 
 
