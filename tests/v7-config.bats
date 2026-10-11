@@ -243,7 +243,7 @@ assert any("herdr" in w for w in d["warnings"]), d' "$output"
 
 @test "config.py benchmark sets enabled and learnings, preserving every other key (X-2)" {
   mkdir -p "$REPO/.dwp"
-  printf '%s\n' '{"addons": {"vim": {"enabled": true, "version": "v0.5.1"}}}' > "$REPO/.dwp/config.json"
+  printf '%s\n' '{"addons": {"vim": {"enabled": true, "version": "v0.6.0"}}}' > "$REPO/.dwp/config.json"
   run python3 "$CFG" benchmark enabled true --repo "$REPO"
   [ "$status" -eq 0 ]
   run python3 "$CFG" benchmark learnings true --repo "$REPO"
@@ -254,7 +254,7 @@ assert any("herdr" in w for w in d["warnings"]), d' "$output"
 import json, sys
 d = json.load(open(sys.argv[1]))
 assert d['benchmark'] == {'enabled': True, 'learnings': True}, d
-assert d['addons'] == {'vim': {'enabled': True, 'version': 'v0.5.1'}}, d
+assert d['addons'] == {'vim': {'enabled': True, 'version': 'v0.6.0'}}, d
 PY
   run python3 "$CFG" benchmark learnings false --repo "$REPO"
   [ "$status" -eq 0 ]
