@@ -9,6 +9,17 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.3.0] — 2026-10-11
+
+### Changes
+
+- Merge pull request #71 from DailybotHQ/fix/smoke-pins-sums
+- fix(release): pin SHA256SUMS digests for devcontainer-kit v0.2.5 and deepworkplan-vim v0.6.0
+- Merge pull request #70 from DailybotHQ/feat/dck-v0.2.3-mesh-pins
+- feat(addons): pin devcontainer-kit v0.2.5 (executable install.sh)
+- feat(addons): pin devcontainer-kit v0.2.4 (agent mesh) and deepworkplan-vim v0.6.0
+
+
 ## [7.2.0] — 2026-10-11
 
 ### Changes
