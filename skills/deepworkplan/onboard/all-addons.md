@@ -94,13 +94,14 @@ Herdr workspace.
    changed file is backed up first.
 
    ```bash
-   # vim and herdr accepted:
-   dck init --dry-run --agents --clis "claude codex" --editor --herdr --port web=4321
-   # neither accepted:
-   dck init --dry-run --agents --clis "claude codex" --no-editor --no-herdr --port web=4321
+   # vim and herdr accepted; the CLIs the developer named:
+   dck init --dry-run --agents --clis "<named-clis>" --editor --herdr --port web=<repo-port>
+   # neither accepted, and no CLIs named:
+   dck init --dry-run --agents --no-editor --no-herdr --port web=<repo-port>
    ```
 
-   Substitute the CLIs the developer chose and the repository's ports; pass
+   Substitute only the CLIs the developer named (omit `--clis` when none)
+   and the repository's ports; pass
    `--editor` only when the vim addon was accepted and `--herdr` only when
    the herdr addon was (otherwise `--no-editor` / `--no-herdr`). After the
    diff is accepted, run the same command without `--dry-run`.
@@ -114,6 +115,9 @@ Herdr workspace.
      opening in the workspace, `/app` by default) and `mesh = true` (Docker
      Desktop; it widens trust between containers — say so). Without it,
      none of the three is set.
+   An in-flight plan that recorded a container gate as `dck exec -- <cmd>`
+   needs the service first (`dck exec <service> -- <cmd>`): change it through
+   an explicit `refine`, never by migrating the plan silently.
 2. **Start hook** where the stack needs one: `docker/local/dev-setup-hook.sh`,
    run by the container at every start as the dev user from the workspace
    (build caches off the bind mount, generated files). It is the repository's

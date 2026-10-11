@@ -230,6 +230,8 @@ rendered compose sets nothing for permissions and carries a commented
 run inside the container, a plan declares `dck` in
 `scope.allowed_command_classes` and writes each gate check as
 `dck exec <service> -- <command>` (a compound command: `dck exec <service> -- bash -c '…'`).
+A plan that recorded `dck exec -- <command>` (no service) is changed
+through an explicit `refine`, never migrated silently.
 `ledger.py gate` executes the wrapper itself, so the evidence stays
 `observed`; `validate-contract` refuses a check whose wrapper is not
 declared. Without the container the methodology is unchanged — the same

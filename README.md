@@ -228,7 +228,7 @@ Guide: [`guide/orchestration-at-scale.md`](skills/deepworkplan/guide/orchestrati
 
 | Skill | What it does |
 |-------|-------------|
-| **deepworkplan-onboard** | Make any repo AI-first: an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/` and the `.claude → .agents` / `.cursor → .agents` symlinks; installs the required local review; installs or upgrades the addons. A targeted, idempotent harness upgrade for repositories onboarded earlier. |
+| **deepworkplan-onboard** | Make any repo AI-first: an adapted `AGENTS.md`, `docs/`, per-module docs, `.agents/` and the `.claude → .agents` / `.cursor → .agents` symlinks; installs the required local review; offers the optional addons where they fit and, on request or on a harness upgrade, upgrades the ones the repository uses. A targeted, idempotent harness upgrade for repositories onboarded earlier. |
 | **deepworkplan-create** | Create a Deep Work Plan: every request starts as an executable Lite plan, promoted to Full only when the work's risk and horizon call for it. |
 | **deepworkplan-execute** | Execute a plan task by task, run each task's gates, and log progress; delegate `parallel_safe` tasks when the plan grants it. |
 | **deepworkplan-refine** | Change a plan's scope or tasks, or promote a Lite plan to Full task files. |
