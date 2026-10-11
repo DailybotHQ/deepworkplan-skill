@@ -33,12 +33,12 @@ Both files share one shape:
 {
   "benchmark": { "enabled": true, "learnings": true },
   "addons": {
-    "ai-diff-reviewer": { "enabled": true, "version": "v3.3.0" },
+    "ai-diff-reviewer": { "enabled": true, "version": "v3.3.1" },
     "herdr":            { "enabled": true, "version": "v0.1.0" },
     "agentkit":         { "enabled": false },
-    "devcontainer":     { "enabled": true, "version": "v0.2.5" },
+    "devcontainer":     { "enabled": true, "version": "v0.2.6" },
     "vim":              { "enabled": true, "version": "v0.6.0" },
-    "dailybot":         { "enabled": true, "version": "v3.23.3" }
+    "dailybot":         { "enabled": true, "version": "v3.23.4" }
   }
 }
 ```

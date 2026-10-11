@@ -50,12 +50,12 @@ inside a container, peers on the host are reached through Herdr's own
 machine registration — never by editing `~/.ssh` or host trust from this
 addon; SSH trust changes need their own explicit approval.
 
-With devcontainer-kit `v0.2.5` the mesh needs no hand step: `dck up` pushes
+With devcontainer-kit `v0.2.6` the mesh needs no hand step: `dck up` pushes
 into the container the host (through the kit's opt-in host listener, or an
 existing loopback listener named in the dck host profile), every other dck
 container and the other loopback containers the host's Herdr already
 manages, each with a pinned host key; the container's Herdr machine catalog
-survives `dck rebuild`; and `dck setup` installs a verified herdr-peers on
+survives `dck rebuild`, and since `v0.2.6` is a copy of the host's own Herdr catalog, so every agent names every machine by the same id and replies route back; and `dck setup` installs a verified herdr-peers on
 the host, so host agents answer with `herdr-peers reply` too. Enabling the
 listener, and listing extra keys (`[ssh] authorized_extra`) so non-dck
 containers can reach dck ones, are the developer's decisions in the kit's
