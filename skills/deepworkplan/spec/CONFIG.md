@@ -36,7 +36,7 @@ Both files share one shape:
     "ai-diff-reviewer": { "enabled": true, "version": "v3.3.0" },
     "herdr":            { "enabled": true, "version": "v0.1.0" },
     "agentkit":         { "enabled": false },
-    "devcontainer":     { "enabled": true, "version": "v0.2.4" },
+    "devcontainer":     { "enabled": true, "version": "v0.2.5" },
     "vim":              { "enabled": true, "version": "v0.6.0" },
     "dailybot":         { "enabled": true, "version": "v3.23.3" }
   }
