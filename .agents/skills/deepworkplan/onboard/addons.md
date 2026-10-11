@@ -65,6 +65,13 @@ an explicit "turn it off" is `config.py disable <key>`. The registry only
 records what the repository opted into — no flow requires an entry, and a
 repository with no file stays fully conformant.
 
+**All at once, or an upgrade:** when the developer asks for every addon, or
+the repository already has addons from an earlier pack, read
+[`all-addons.md`](all-addons.md): one read-only plan
+(`../shared/addon_sync.py plan --repo <repo>`) gives each addon's installed
+version, the pin and the action, and the file sets the order and the
+dev-container stack.
+
 Eight active addons ship today; the table lists all of them (the AI Diff Reviewer row
 records its Phase 7a status). Offer the seven optional ones independently:
 

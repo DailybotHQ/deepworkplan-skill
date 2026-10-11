@@ -57,6 +57,7 @@ work reliably without per-session human hand-holding.
 - **Guide (conditional — read only when the trigger fires):** [`../guide/structure.md`](../guide/structure.md) §1–§2, §10 when Phase 7 scaffolds `.dwp/` beyond the paths `../shared/dwp-paths.md` names or Phase 3b authors the first plan; [`../guide/large-repo-onboarding.md`](../guide/large-repo-onboarding.md) §15 when the repo is large enough for the plan-driven path (Phase 2b); [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 for an orchestrator hub (child-DWP capability); [`../guide/authoring.md`](../guide/authoring.md) §4–§5 when emitting an onboarding plan's task files. Do not read other guide files for this flow; [`../guide/GUIDE.md`](../guide/GUIDE.md) is the routing index, consulted only when a section is not named above.
 - **Spec (conditional — read the named sections when the trigger fires):** [`../spec/DOCUMENTATION_STANDARD.md`](../spec/DOCUMENTATION_STANDARD.md) §3.4 (the required content of `TESTING_GUIDE.md`) when writing or reconciling the testing guide, and §3.5 (install / onboard / upgrade, provenance, legacy-vs-declared) when the repository was onboarded before. The Phase 4 and Phase 0 text below is self-sufficient for the common case.
 - [`addons.md`](addons.md) (this directory) — **read in Phase 7a and Phase 7b**: Phase 7a installs the required AI Diff Reviewer local review; Phase 7b offers the seven optional addons (dependency upgrade is near-default for repos with declared dependencies; the rest are signal-gated opt-ins) and records each acceptance in the `.dwp/config.json` addon registry. No optional addon is required for a repository to use DWP.
+- [`all-addons.md`](all-addons.md) (this directory) — read only when the developer asks for **all addons**, or on a harness upgrade of a repository that already has addons: `../shared/addon_sync.py plan` reports each addon's installed version against the pack's pin and the one action (install, upgrade, record, reconcile, current); the file carries the order, the full dev-container stack and the machine-level install lines.
 - **Working principles (conditional):** read
   [`../shared/working-principles.md`](../shared/working-principles.md) when
   Phase 0 assesses an existing harness or Phase 3 writes its agent rules;
@@ -795,7 +796,9 @@ runs from an install. Each acceptance is recorded with `python3
 ../shared/config.py enable <key> --repo <repo>` (`../spec/CONFIG.md`); a
 decline writes nothing. On a **harness
 upgrade** (Phase 0) do not re-offer addons the repository already declined or
-already has; mention only new ones, briefly.
+already has; mention only new ones, briefly — and bring the installed ones
+to the pack's pins through [`all-addons.md`](all-addons.md) (never a
+downgrade, never a re-offer of a decline). "All addons" uses the same file.
 
 ## Phase 8 — Self-check / validation (mandatory)
 

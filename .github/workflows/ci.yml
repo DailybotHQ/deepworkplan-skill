@@ -213,6 +213,7 @@ jobs:
                         skills/deepworkplan/shared/migrate_v6.py \
                         skills/deepworkplan/shared/benchmark.py \
                         skills/deepworkplan/shared/config.py \
+                        skills/deepworkplan/shared/addon_sync.py \
                         skills/deepworkplan/shared/delegators.py \
                         skills/deepworkplan/verify/plan_contract.py; do
             python3 -m py_compile "$helper"
@@ -251,6 +252,10 @@ jobs:
           # stdlib-only and runs against a throwaway plan directory.
           PYTHONDONTWRITEBYTECODE=1 python3 \
             skills/deepworkplan/shared/resources.py self-test
+          # The all-addons planner as well: version parsing and the
+          # registry-lag rule; its self-test is stdlib-only and in memory.
+          PYTHONDONTWRITEBYTECODE=1 python3 \
+            skills/deepworkplan/shared/addon_sync.py self-test
           # The v5 -> v6 migration helper as well: preview synthesis, the
           # guarded phase sequence and rollback; its self-test builds
           # throwaway v5 plans in a temp directory and touches no
