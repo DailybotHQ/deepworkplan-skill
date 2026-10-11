@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v6 opt-in benchmark field metrics and learnings (spec/BENCHMARK.md).
+"""v6 and v7 opt-in benchmark field metrics and learnings (spec/BENCHMARK.md).
 
 Derives, never imputes: the per-plan record is computed entirely from records
 the plan already owns — ``journal.ndjson`` events, ``manifest.json``,
@@ -28,7 +28,7 @@ Contract highlights (all normative in spec/BENCHMARK.md):
     wall clock, sorted keys; two runs over identical plan bytes produce
     identical bytes for ``benchmark.json``, the derived learnings content
     and ``DWP_REPORT.md``, while curated learnings are preserved (10.5-10.6).
-  * **v6 only.** v5-generation plans are refused with one line and exit 0;
+  * **v6 and v7.** v5-generation plans are refused with one line and exit 0;
     the v5 line is frozen.
   * **Never a conformance gate.** ``verify`` does not read these artifacts.
 
@@ -67,6 +67,7 @@ except ImportError:  # pragma: no cover - executed from another cwd
 SCHEMA_URL = 'https://deepworkplan.com/schema/benchmark-record/v1.json'
 LEARNINGS_URL = 'https://deepworkplan.com/schema/learnings-record/v1.json'
 MANIFEST_V6_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
+GENERATIONS = ('v6', 'v7')
 MANIFEST_V7_URL = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
 
 RECORD_FIELDS = ('schema', 'plan', 'title', 'generation', 'contract_id',
@@ -396,7 +397,7 @@ def _latest_sample(events: List[Dict[str, Any]], unit: Optional[str] = None,
     return best
 
 
-def derive_record(plan_dir: str) -> Dict[str, Any]:
+def derive_record(plan_dir: str, generation: str = 'v6') -> Dict[str, Any]:
     """Derive the closed benchmark record from the plan's own records."""
     manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
     contract = _load_json(os.path.join(plan_dir, 'contract.json'))
@@ -531,7 +532,7 @@ def derive_record(plan_dir: str) -> Dict[str, Any]:
         'schema': SCHEMA_URL,
         'plan': plan_name,
         'title': str(contract.get('title') or plan_name),
-        'generation': 'v6',
+        'generation': generation,
         'contract_id': str(contract.get('contract_id') or ''),
         'status': status,
         'versions': {
@@ -584,7 +585,8 @@ def _derived_reason(event: Dict[str, Any]) -> str:
 
 
 def derive_learnings(contract: Dict[str, Any],
-                     events: List[Dict[str, Any]]) -> Dict[str, Any]:
+                     events: List[Dict[str, Any]],
+                     generation: str = 'v6') -> Dict[str, Any]:
     """Derive the learnings record's identity + derived half (spec 10.2).
 
     The curated half is NOT derived — it is written once at file creation
@@ -605,7 +607,7 @@ def derive_learnings(contract: Dict[str, Any],
     return {
         'schema': LEARNINGS_URL,
         'plan': plan_name,
-        'generation': 'v6',
+        'generation': generation,
         'contract_id': str(contract.get('contract_id') or ''),
         'derived': derived,
     }
@@ -631,8 +633,8 @@ def validate_record(record: Any) -> List[str]:
     if not re.match(r'^PLAN_([0-9]{3,}_)?[a-z0-9]+(_[a-z0-9]+){1,4}$',
                     str(record.get('plan') or '')):
         problems.append('plan name grammar')
-    if record.get('generation') != 'v6':
-        problems.append('generation must be v6')
+    if record.get('generation') not in GENERATIONS:
+        problems.append('generation must be v6 or v7')
     if not re.match(r'^[0-9a-f]{64}$', str(record.get('contract_id') or '')):
         problems.append('contract_id shape')
     if record.get('status') not in ('ready', 'in_progress', 'blocked', 'completed'):
@@ -724,8 +726,8 @@ def validate_learnings(record: Any) -> List[str]:
     if not re.match(r'^PLAN_([0-9]{3,}_)?[a-z0-9]+(_[a-z0-9]+){1,4}$',
                     str(record.get('plan') or '')):
         problems.append('plan name grammar')
-    if record.get('generation') != 'v6':
-        problems.append('generation must be v6')
+    if record.get('generation') not in GENERATIONS:
+        problems.append('generation must be v6 or v7')
     if not re.match(r'^[0-9a-f]{64}$', str(record.get('contract_id') or '')):
         problems.append('contract_id shape')
     for half in ('derived', 'curated'):
@@ -1096,16 +1098,13 @@ def cmd_report(plan_dir: str) -> int:
         print('benchmark: disabled for this repository; nothing emitted')
         return 0
     manifest = _load_json(os.path.join(plan_dir, 'manifest.json'))
-    if isinstance(manifest, dict) and manifest.get('schema') == MANIFEST_V7_URL:
-        # benchmark-record v1 pins generation "v6" (published, frozen bytes):
-        # a v7 plan is not mislabelled — it is not measured yet.
-        print('benchmark: plan is v7-generation; benchmark-record v1 measures '
-              'v6 plans only - not measured (a v7 record shape is a later '
-              'release)')
-        return 0
-    if not isinstance(manifest, dict) or manifest.get('schema') != MANIFEST_V6_URL:
-        print('benchmark: plan is not v6-generation (no v6 manifest contract '
-              'pointer); not measured — the v5 line is frozen')
+    generation = None
+    if isinstance(manifest, dict):
+        generation = {MANIFEST_V6_URL: 'v6',
+                      MANIFEST_V7_URL: 'v7'}.get(manifest.get('schema'))
+    if generation is None:
+        print('benchmark: plan is not v6- or v7-generation (no v6/v7 manifest '
+              'contract pointer); not measured — the v5 line is frozen')
         return 0
     if '-' in pack_version():
         # benchmark-record v1 pins versions.dwp_skill to X.Y.Z: a pre-release
@@ -1114,7 +1113,7 @@ def cmd_report(plan_dir: str) -> int:
               'carries release versions only - not measured' % pack_version())
         return 0
     try:
-        record = derive_record(plan_dir)
+        record = derive_record(plan_dir, generation)
         problems = validate_record(record)
         if problems:
             print('benchmark: derived record failed closed-field validation: %s'
@@ -1127,7 +1126,7 @@ def cmd_report(plan_dir: str) -> int:
             events, _torn = parse_journal(plan_dir)
             contract = _load_json(os.path.join(plan_dir, 'contract.json'))
             if isinstance(contract, dict):
-                derived_doc = derive_learnings(contract, events)
+                derived_doc = derive_learnings(contract, events, generation)
                 if not validate_learnings(dict(derived_doc, curated=[])):
                     learnings_payload, first = _learnings_payload(plan_dir, derived_doc)
                     if learnings_payload is not None:

@@ -147,6 +147,7 @@ PY
 }
 
 @test "published schema snapshots are unchanged and still validate their fixtures" {
+  python3 -c 'import jsonschema' 2>/dev/null || skip "jsonschema not installed (CI installs it)"
     # The schemas are a public contract: a plan written against v1 or v2 must
     # keep validating. Compare the exported copies against the committed ones
     # byte for byte, then run the repo's own schema regression.

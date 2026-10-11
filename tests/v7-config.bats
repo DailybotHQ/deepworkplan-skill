@@ -176,7 +176,10 @@ PY
   python3 "$CFG" enable agentkit --note "install deferred: \$HOME excluded" --repo "$REPO" >/dev/null
   python3 "$CFG" enable herdr --repo "$REPO" >/dev/null
   plan="$REPO/.dwp/plans/PLAN_x"
-  run python3 - "$SK/shared" "$REPO/.dwp" <<'PY'
+  # hermetic: a machine-wide ak / herdr-peers must not make the addons detected
+  mkdir -p "$WORK/isolated-bin"
+  ln -sf "$(command -v python3)" "$WORK/isolated-bin/python3"
+  run env PATH="$WORK/isolated-bin" python3 - "$SK/shared" "$REPO/.dwp" <<'PY'
 import json, sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, sys.argv[1])
@@ -236,4 +239,44 @@ assert any("herdr" in w for w in d["warnings"]), d' "$output"
   [[ "$output" == *"[ ] .dwp/ plans gitignored"* ]] || return 1
   grep -qF '`.dwp/*` and `!.dwp/config.json`' "$SK/onboard/SKILL.md" || return 1
   grep -qF '!.dwp/config.json' "$SK/shared/dwp-paths.md" "$SK/spec/CONFIG.md"
+}
+
+@test "config.py benchmark sets enabled and learnings, preserving every other key (X-2)" {
+  mkdir -p "$REPO/.dwp"
+  printf '%s\n' '{"addons": {"vim": {"enabled": true, "version": "v0.5.1"}}}' > "$REPO/.dwp/config.json"
+  run python3 "$CFG" benchmark enabled true --repo "$REPO"
+  [ "$status" -eq 0 ]
+  run python3 "$CFG" benchmark learnings true --repo "$REPO"
+  [ "$status" -eq 0 ]
+  run python3 "$CFG" show --repo "$REPO"
+  [ "$status" -eq 0 ]
+  python3 - "$REPO/.dwp/config.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d['benchmark'] == {'enabled': True, 'learnings': True}, d
+assert d['addons'] == {'vim': {'enabled': True, 'version': 'v0.5.1'}}, d
+PY
+  run python3 "$CFG" benchmark learnings false --repo "$REPO"
+  [ "$status" -eq 0 ]
+  run python3 "$CFG" show --repo "$REPO"
+  printf '%s' "$output" | python3 -c 'import json,sys; b=json.load(sys.stdin)["benchmark"]; assert b == {"enabled": True, "learnings": False}, b'
+}
+
+@test "config.py benchmark refuses an unknown key, a non-boolean and an unreadable file (X-2)" {
+  mkdir -p "$REPO/.dwp"
+  run python3 "$CFG" benchmark verbose true --repo "$REPO"
+  [ "$status" -ne 0 ]
+  run python3 "$CFG" benchmark enabled maybe --repo "$REPO"
+  [ "$status" -ne 0 ]
+  printf '%s' '{not json' > "$REPO/.dwp/config.json"
+  run python3 "$CFG" benchmark enabled true --repo "$REPO"
+  [ "$status" -eq 2 ]
+  [ "$(cat "$REPO/.dwp/config.json")" = '{not json' ]
+}
+
+@test "enabling benchmark.learnings as an addon names the benchmark command (X-2)" {
+  mkdir -p "$REPO/.dwp"
+  run python3 "$CFG" enable benchmark.learnings --repo "$REPO"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"config.py benchmark"* ]] || return 1
 }

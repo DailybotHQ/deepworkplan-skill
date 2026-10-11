@@ -170,6 +170,7 @@ _decide() { # _decide <head message> — run auto-release's decision step in $R
 }
 
 @test "stable releases ignore pre-release tags when finding the last release" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     _repo 6.1.0 v6.1.0 v7.0.0-beta.1
     out="$(_decide 'feat(skill)!: something new')"
     printf '%s\n' "$out" | grep -qx 'last_tag=v6.1.0'
@@ -178,6 +179,7 @@ _decide() { # _decide <head message> — run auto-release's decision step in $R
 }
 
 @test "a pre-release in flight blocks stable releases unless the merge says [graduate]" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     _repo 7.0.0-beta.1 v6.1.0 v7.0.0-beta.1
     out="$(_decide 'fix(docs): typo')"
     printf '%s\n' "$out" | grep -qx 'skip=true'
@@ -190,6 +192,7 @@ _decide() { # _decide <head message> — run auto-release's decision step in $R
 }
 
 @test "prerelease.yml validates the version, refuses an existing tag, never publishes latest" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     WF="$REPO_ROOT/.github/workflows/prerelease.yml"
     grep -q '^  workflow_dispatch:' "$WF"
     ! grep -qE '^  (push|pull_request|schedule):' "$WF"
@@ -246,6 +249,7 @@ PY
 }
 
 @test "a commit subject cannot inject step outputs through the multi-line delimiter" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     _repo 6.1.0 v6.1.0
     git -C "$R" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "EOF"
     git -C "$R" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "new_version=6.6.6"
@@ -262,6 +266,7 @@ PY
 }
 
 @test "a pre-release must preview a version above the last stable release" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     _repo 6.1.0 v6.1.0
     _step "$REPO_ROOT/.github/workflows/prerelease.yml" "Validate the requested version" > "$R/validate.sh"
     for bad in 6.1.0-beta.1 6.0.9-rc.1; do
@@ -272,6 +277,7 @@ PY
 }
 
 @test "releases publish the CHANGELOG section as notes, with SHA256SUMS and annotated tags" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     python3 - "$REPO_ROOT/.github/workflows" <<'PY'
 import os, sys, yaml
 wf = yaml.safe_load(open(os.path.join(sys.argv[1], 'auto-release.yml')))
@@ -313,6 +319,7 @@ _stamp_and_refresh() {
 }
 
 @test "releases refresh the dogfood mirror and its lockfile inside the release commit" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
     command -v node >/dev/null || skip "node is required by the lockfile refresh"
     for spec in 'auto-release.yml|Bump version in ALL SKILL.md files|9.9.9' \
                 'prerelease.yml|Stamp the version in ALL SKILL.md files|9.9.9-beta.1'; do

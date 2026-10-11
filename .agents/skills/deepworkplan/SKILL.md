@@ -194,11 +194,11 @@ rendered version lives at https://deepworkplan.com/spec.
   something is already wrong**: discovery failure, stale installation, missing
   test command, unsupported host capability, inconsistent state.
 
-### Addons — one required local review, four opt-in
+### Addons — one required local review, seven opt-in
 
 The [`addons/`](addons/README.md) area holds the capabilities the `onboard`
 flow layers onto a repo. The **AI Diff Reviewer local review** is part of the
 baseline since standard 2.3.0 (installed by `onboard` Phase 7a, run by every
-Final Review; its CI surface stays optional). The other four addons are
+Final Review; its CI surface stays optional). The other seven addons are
 **opt-in** and never part of the AI-first baseline — a repo is fully conformant
 with zero optional addons. The first optional addon is devcontainer support.

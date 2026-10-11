@@ -22,8 +22,8 @@
       "description": "Plan folder name, same grammar as the journal's plan field."
     },
     "generation": {
-      "const": "v6",
-      "description": "Only v6-generation plans produce learnings; the v5 line is frozen."
+      "enum": ["v6", "v7"],
+      "description": "Only v6- and v7-generation plans produce learnings; the v5 line is frozen."
     },
     "contract_id": {
       "type": "string",

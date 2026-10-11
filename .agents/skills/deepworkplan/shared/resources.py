@@ -461,6 +461,15 @@ def _observed_version(det, stdout, repo_root=None):
                 match = re.search(r'(?m)^version:\s*["\']?([^"\'\s]+)', head)
                 text = match.group(1) if match else ''
                 break
+    # A JSON document names its own version: take the ``version`` field, never
+    # the first semver found anywhere in it (``ak doctor --json`` lists other
+    # tools' versions before its own).
+    try:
+        doc = json.loads(text)
+    except ValueError:
+        doc = None
+    if isinstance(doc, dict):
+        text = doc.get('version') if isinstance(doc.get('version'), str) else ''
     found = VERSION_IN_TEXT.search(text)
     return 'v' + found.group(1) if found else None
 

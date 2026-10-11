@@ -40,6 +40,7 @@ doc = json.load(open(sys.argv[1])); doc.pop('contract_id', None); doc['invariant
 doc['scope']['allowed_command_classes'] = ['python3']
 for t in doc['tasks']:
     t['touched_surface'] = ['src/']
+    t['prerequisites'] = []  # ordering is covered by tests/v7-contract.bats (X-3)
 json.dump(doc, open(sys.argv[2], 'w'))
 PY
   python3 "$LEDGER" --plan "$PLAN" materialize --contract "$PLAN/draft.json" --authority bats >/dev/null
@@ -238,6 +239,7 @@ print("ok")' "$SHARED"
 }
 
 @test "third-party installers run only in a job without a write token" {
+  python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
   python3 - "$REPO_ROOT/.github/workflows" <<'PY'
 import sys, yaml, os
 for name, publisher in (('auto-release.yml', 'release'), ('prerelease.yml', 'prerelease')):

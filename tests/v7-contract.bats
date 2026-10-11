@@ -118,7 +118,8 @@ PY
 }
 
 @test "gate: an unstarted task, an unmarked task, an unenabled or mismatched addon refuse" {
-  _draft v7; _materialize >/dev/null
+  _draft v7 "doc['tasks'][1]['prerequisites'] = []"  # ordering is covered by the X-3 tests below
+  _materialize >/dev/null
   run _launch T-publish-schemas
   [ "$status" -eq 5 ]; [[ "$output" == *"has not started"* ]] || return 1
   python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
@@ -139,7 +140,8 @@ PY
 }
 
 @test "a read-only delegate (worktree null) may run on an unmarked task" {
-  _draft v7; _materialize >/dev/null
+  _draft v7 "doc['tasks'][1]['prerequisites'] = []"  # ordering is covered by the X-3 tests below
+  _materialize >/dev/null
   python3 "$CFG" enable agentkit --repo "$REPO" >/dev/null
   python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator >/dev/null
   run _launch T-ship-validator '"worktree": null'
@@ -211,13 +213,46 @@ PY
   [ "$status" -eq 0 ]
 }
 
-@test "benchmark reports a v7 plan as not measured, never mislabelled as v6 or v5" {
+@test "benchmark measures a v7 plan as generation v7, with learnings derived from its journal (X-1)" {
+  _draft v7; _materialize >/dev/null
+  mkdir -p "$REPO/.dwp"
+  printf '%s\n' '{"benchmark": {"enabled": true, "learnings": true}}' > "$REPO/.dwp/config.json"
+  python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
+  # a refused completion is a recorded refusal: the derived learnings half copies its reason
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -ne 0 ]
+  run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"not measured"* ]] || return 1
+  python3 - "$PLAN" <<'PY'
+import json, sys
+plan = sys.argv[1]
+rec = json.load(open(plan + '/analysis_results/benchmark.json'))
+lrn = json.load(open(plan + '/analysis_results/learnings.json'))
+assert rec['generation'] == 'v7', rec['generation']
+assert lrn['generation'] == 'v7', lrn['generation']
+assert any(d['event_type'] == 'refusal' for d in lrn['derived']), lrn['derived']
+assert lrn['curated'] == []
+PY
+  [ -s "$PLAN/analysis_results/DWP_REPORT.md" ]
+  # rerun is byte-identical (determinism contract)
+  cp "$PLAN/analysis_results/benchmark.json" "$BATS_TEST_TMPDIR/b1.json"
+  run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
+  cmp "$BATS_TEST_TMPDIR/b1.json" "$PLAN/analysis_results/benchmark.json"
+}
+
+@test "benchmark still refuses a plan that is neither v6 nor v7 (v5 line frozen)" {
   _draft v7; _materialize >/dev/null
   mkdir -p "$REPO/.dwp"
   printf '%s\n' '{"benchmark": {"enabled": true}}' > "$REPO/.dwp/config.json"
+  python3 - "$PLAN/manifest.json" <<'PY'
+import json, sys
+m = json.load(open(sys.argv[1])); m['schema'] = 'https://deepworkplan.com/schema/plan-manifest/v5.json'
+json.dump(m, open(sys.argv[1], 'w'))
+PY
   run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"plan is v7-generation"*"not measured"* ]] || return 1
+  [[ "$output" == *"not measured"* ]] || return 1
   [ ! -f "$PLAN/analysis_results/benchmark.json" ]
 }
 
@@ -322,4 +357,29 @@ PY
   python3 "$SHARED/outcomes.py" --plan "$PLAN" receipt > "$WORK/body.json" 2> "$WORK/summary.txt" || return 1
   python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["totals"]["criteria"] == 3' "$WORK/body.json" || return 1
   grep -qF 'OK: receipt stdout' "$WORK/summary.txt"
+}
+
+@test "ledger start refuses a task whose prerequisites are not complete: exit 3, recorded (X-3)" {
+  _draft v7; _materialize >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"prerequisite"*"T-publish-schemas"* ]] || return 1
+  grep -q '"type": *"refusal"' "$PLAN/journal.ndjson"
+  grep -q 'prerequisite(s) not complete: T-publish-schemas' "$PLAN/journal.ndjson"
+  # no task_start was recorded for the refused task
+  ! grep -q '"type": *"task_start"' "$PLAN/journal.ndjson"
+  # the task without prerequisites still starts
+  run python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas
+  [ "$status" -eq 0 ]
+}
+
+@test "ledger start accepts a task once its prerequisite is complete (X-3)" {
+  _draft v7; _materialize >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
+  run python3 "$LEDGER" --plan "$PLAN" gate --task T-publish-schemas --criterion AC-valid-contract-shape --json '"python3 --version"'
+  [ "$status" -eq 0 ]
+  run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
+  [ "$status" -eq 0 ]
+  run python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator
+  [ "$status" -eq 0 ]
 }

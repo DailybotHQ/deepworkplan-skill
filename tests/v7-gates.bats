@@ -51,6 +51,7 @@ doc['scope']['allowed_command_classes'] = json.loads(sys.argv[3])
 doc['scope']['allowed_paths'] = ['src/']
 for t in doc['tasks']:
     t['touched_surface'] = ['src/product.py']
+    t['prerequisites'] = []  # ordering is covered by tests/v7-contract.bats (X-3)
     for i in t['gate_intent']:
         i['check'] = sys.argv[4] if i['criterion'] == 'AC-valid-contract-shape' else 'python3 -V'
 json.dump(doc, open(sys.argv[2], 'w'), indent=2)

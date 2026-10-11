@@ -31,6 +31,7 @@ Usage::
     config.py enable  KEY [--version vX.Y.Z] [--note TEXT] --repo DIR   # onboarding writer
     config.py backfill --repo DIR [--write]        # upgrade: record present addons
     config.py host CAPABILITY true|false --repo DIR  # host capability record
+    config.py benchmark enabled|learnings true|false --repo DIR  # benchmark switches
     config.py disable KEY --repo DIR
     config.py keys                                 # in-pack addon keys
     config.py descriptors                          # audit every addon.json (opens them)
@@ -249,6 +250,7 @@ def resolve_addons(files, keys: Optional[List[str]] = None
     return view, warnings
 
 
+BENCHMARK_KEYS = ('enabled', 'learnings')
 HOST_KEYS = ('stop_agent', 'meter_spend', 'meter_tokens', 'meter_wall_clock',
              'cancel_children', 'model_routing', 'subagents', 'telemetry')
 
@@ -304,6 +306,34 @@ def write_host(dwp_root: str, name: str, value: bool) -> Dict[str, Any]:
                           % path)
     rec[name] = value
     data['host'] = rec
+    _write_config(dwp_root, path, data)
+    return rec
+
+
+def write_benchmark(dwp_root: str, name: str, value: bool) -> Dict[str, Any]:
+    """Set ``benchmark.<name>`` (``enabled`` or ``learnings``) in the repository file.
+
+    Reconciling and atomic like the other writers: other top-level keys and
+    the other benchmark key are preserved, and a file that cannot be read is
+    refused, never replaced.
+    """
+    if name not in BENCHMARK_KEYS:
+        raise ConfigError('%r is not a benchmark key (%s)'
+                          % (name, ', '.join(BENCHMARK_KEYS)))
+    path = os.path.join(dwp_root, 'config.json')
+    data: Dict[str, Any] = {}
+    if os.path.exists(path):
+        parsed, reason = read_config(path)
+        if parsed is None:
+            raise ConfigError('%s %s — the writer never overwrites a file it '
+                              'cannot read' % (path, reason or 'unreadable'))
+        data = parsed
+    rec = data.get('benchmark', {})
+    if not isinstance(rec, dict):
+        raise ConfigError('%s "benchmark" is not an object — refusing to '
+                          'replace it' % path)
+    rec[name] = value
+    data['benchmark'] = rec
     _write_config(dwp_root, path, data)
     return rec
 
@@ -465,8 +495,11 @@ def write_addon(dwp_root: str, key: str, enabled: bool,
     """
     known = list(keys) if keys is not None else addon_keys()
     if key not in known:
-        raise ConfigError('%r is not an addon this pack ships (%s)'
-                          % (key, ', '.join(known)))
+        hint = (' — benchmark keys are set with: config.py benchmark '
+                'enabled|learnings true|false --repo <repo>'
+                if key.startswith('benchmark') else '')
+        raise ConfigError('%r is not an addon this pack ships (%s)%s'
+                          % (key, ', '.join(known), hint))
     if version is not None and not VERSION_RE.match(version):
         raise ConfigError('version %r is not a tag like v1.2.3' % version)
     if note is not None and not _note_ok(note):
@@ -613,6 +646,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument('capability')
     p.add_argument('value', choices=['true', 'false'])
     p.add_argument('--repo', required=True)
+    p = sub.add_parser('benchmark')
+    p.add_argument('key', choices=['enabled', 'learnings'])
+    p.add_argument('value', choices=['true', 'false'])
+    p.add_argument('--repo', required=True)
     p = sub.add_parser('backfill')
     p.add_argument('--repo', required=True)
     p.add_argument('--write', action='store_true')
@@ -650,6 +687,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             print('ERROR: %s' % exc, file=sys.stderr)
             return 2
         print('OK: host = %s' % json.dumps(rec, sort_keys=True))
+        return 0
+    if args.command == 'benchmark':
+        try:
+            rec = write_benchmark(_root_from_args(args), args.key,
+                                  args.value == 'true')
+        except ConfigError as exc:
+            print('ERROR: %s' % exc, file=sys.stderr)
+            return 2
+        print('OK: benchmark = %s' % json.dumps(rec, sort_keys=True))
         return 0
     if args.command == 'backfill':
         try:
@@ -694,7 +740,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 # self-test
 
 
-SELF_TEST_PROBES = 33
+SELF_TEST_PROBES = 36
 
 
 def self_test() -> int:
@@ -861,6 +907,27 @@ def self_test() -> int:
         check('no root', find_dwp_root(tmp) is None)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    # benchmark writer (X-2): sets one key, keeps the others, refuses junk
+    tmp_b = tempfile.mkdtemp(prefix='dwp-config-bench-')
+    try:
+        bdir = os.path.join(tmp_b, '.dwp')
+        os.makedirs(bdir)
+        with open(os.path.join(bdir, 'config.json'), 'w', encoding='utf-8') as fh:
+            fh.write('{"addons": {"vim": {"enabled": true}}}')
+        write_benchmark(bdir, 'enabled', True)
+        rec = write_benchmark(bdir, 'learnings', True)
+        check('benchmark writer sets both keys', rec == {'enabled': True, 'learnings': True})
+        with open(os.path.join(bdir, 'config.json'), encoding='utf-8') as fh:
+            kept = json.load(fh)
+        check('benchmark writer keeps other keys', kept.get('addons') == {'vim': {'enabled': True}})
+        refused = False
+        try:
+            write_benchmark(bdir, 'verbose', True)
+        except ConfigError:
+            refused = True
+        check('benchmark writer refuses unknown key', refused)
+    finally:
+        shutil.rmtree(tmp_b, ignore_errors=True)
     if probes != SELF_TEST_PROBES:
         failures.append('probe count %d != pinned %d' % (probes, SELF_TEST_PROBES))
     for line in failures:

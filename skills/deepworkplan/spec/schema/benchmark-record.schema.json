@@ -35,8 +35,8 @@
       "description": "Human plan title from the manifest."
     },
     "generation": {
-      "const": "v6",
-      "description": "Only v6-generation plans are measured; the v5 line is frozen."
+      "enum": ["v6", "v7"],
+      "description": "Only v6- and v7-generation plans are measured; the v5 line is frozen."
     },
     "contract_id": {
       "type": "string",
