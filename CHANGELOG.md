@@ -11,6 +11,33 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [Unreleased]
+
+### Fixes
+
+- `swarm.py` hysteresis keys on a real identity: a caller whose pane is
+  unknown fails closed (`handoff` while a packet is pending), `handoff write`
+  refuses a packet without `from.pane`, and `handoff accept` refuses the
+  packet's own author and an unknown caller (`--pane`, else `$HERDR_PANE_ID`,
+  else the pane in `--by`).
+- CI's bats step runs with `pipefail`; it had stayed green through failing
+  tests. The two it hid are fixed: the ai-diff-reviewer and Dailybot pins now
+  match their vendored copies (v3.3.12, v3.23.15), and the evaluation
+  scorer's `--dump-oracle-commitments` no longer requires a lab directory that
+  exists only in a git-ignored `.dwp/`.
+
+### Learnings
+
+- **A gate that cannot fail is not a gate.** `bats tests/ | tee` ran in a
+  shell without `pipefail`, so the pipeline's status was `tee`'s and failing
+  tests left CI green; a guard test now fails if `pipefail` is removed.
+  Evidence: CI on main printed `not ok` lines and passed (the quality bar's
+  "gates are hypotheses", learning F1).
+- **Run the suite from a fresh clone.** A test passed only in the author's
+  checkout because it read state from the git-ignored `.dwp/`; every fresh
+  clone failed it. Evidence: reproduced in a fresh clone at 782e1e7; now
+  covered by a regression that runs from a copy with no `.dwp/`.
+
 ## [7.7.0] — 2026-10-12
 
 ### Changes

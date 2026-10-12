@@ -238,3 +238,22 @@ PY
   [ "$status" -eq 1 ]
   echo "$output" | grep -q "missing from the live registry"
 }
+
+@test "score_pilot: the commitments dump needs no lab root — runs from a clean checkout (7.7.1)" {
+  # Regression: the dump exited 2 ("lab root not found") wherever the default
+  # lab under the git-ignored .dwp/ was absent — every fresh clone and CI —
+  # and a CI step without pipefail hid it. Run it from a copy with no .dwp/.
+  CLEAN="$BATS_TEST_TMPDIR/clean-checkout"
+  mkdir -p "$CLEAN/tests"
+  cp -R "$REPO/tests/evaluation" "$CLEAN/tests/"
+  [ ! -e "$CLEAN/.dwp" ]
+  run python3 "$CLEAN/tests/evaluation/v6/oracles/score_pilot.py" \
+    --dump-oracle-commitments "$BATS_TEST_TMPDIR/commitments.json"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "oracle commitments written"
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["oracles"], d' "$BATS_TEST_TMPDIR/commitments.json"
+  # scoring still requires a lab root and says so
+  run python3 "$CLEAN/tests/evaluation/v6/oracles/score_pilot.py" --families service
+  [ "$status" -eq 2 ]
+  echo "$output" | grep -q "lab root not found"
+}

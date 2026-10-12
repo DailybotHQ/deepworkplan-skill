@@ -455,10 +455,6 @@ def main() -> int:
         print(f"unknown family/families: {', '.join(unknown)} (known: {', '.join(FAMILIES)})",
               file=sys.stderr)
         return 2
-    if not args.lab_root.is_dir():
-        print(f"lab root not found: {args.lab_root}", file=sys.stderr)
-        return 2
-
     registry, problems = load_registry()
     print("oracle registry:")
     for token in sorted(registry):
@@ -479,6 +475,12 @@ def main() -> int:
         print(f"oracle commitments written: {args.dump_oracle_commitments} "
               f"({len(live)} oracles)")
         return 0
+
+    # Only scoring reads a lab: the dump above derives the commitments from
+    # the shipped oracles alone, so it works in any checkout (7.7.1).
+    if not args.lab_root.is_dir():
+        print(f"lab root not found: {args.lab_root}", file=sys.stderr)
+        return 2
 
     commitments = None
     if args.oracle_commitments is not None:
