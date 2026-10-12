@@ -346,6 +346,10 @@ import sys, yaml
 wf = yaml.safe_load(open(sys.argv[1]))
 run = next(s['run'] for s in wf['jobs']['bats-tests']['steps'] if s.get('name') == 'Run bats tests')
 assert '| tee' in run, run
-assert 'set -o pipefail' in run.split('| tee')[0] or 'pipefail' in (wf['jobs']['bats-tests'].get('defaults') or {}).get('run', {}).get('shell', ''), run
+import re
+before_tee = run.split('| tee')[0]
+shell = ((wf['jobs']['bats-tests'].get('defaults') or {}).get('run') or {}).get('shell', '')
+# `set -o pipefail`, `set -euo pipefail` or a pipefail default shell all count
+assert re.search(r'^\s*set\s+-\w*o\s+pipefail\b', before_tee, re.M) or 'pipefail' in shell, run
 PY
 }

@@ -18,8 +18,10 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - `swarm.py` hysteresis keys on a real identity: a caller whose pane is
   unknown fails closed (`handoff` while a packet is pending), `handoff write`
   refuses a packet without `from.pane`, and `handoff accept` refuses the
-  packet's own author and an unknown caller (`--pane`, else `$HERDR_PANE_ID`,
-  else the pane in `--by`).
+  packet's own author and an unknown caller (`--pane`, else `$HERDR_PANE_ID`;
+  `--by` only records who accepted). A full address is compared as its pane,
+  and a packet written without `from.pane` is refused at accept and holds
+  every caller at `handoff`.
 - CI's bats step runs with `pipefail`; it had stayed green through failing
   tests. The two it hid are fixed: the ai-diff-reviewer and Dailybot pins now
   match their vendored copies (v3.3.12, v3.23.15), and the evaluation

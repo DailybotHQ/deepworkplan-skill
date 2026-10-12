@@ -139,7 +139,7 @@ write_packet() { packet_input | python3 "$SWARM" handoff write --plan "$PLAN" --
     [[ "$output" == "continue: capacity ok: 95% headroom"*"a handoff packet from another pane is pending"* ]] || false
     run python3 "$SWARM" capacity --plan "$PLAN" --pane w9:p1 --json
     [[ "$output" == *'"decision": "continue"'*'"pending_packet": "analysis_results/handoff/'* ]] || false
-    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1 --pane w9:p1
     [ "$status" -eq 0 ]
     run python3 "$SWARM" capacity --plan "$PLAN" --pane w15:p1
     [[ "$output" == "continue: capacity ok: 95% headroom (5h window, resets 2026-10-12T18:00:00Z)" ]] || false
@@ -261,7 +261,7 @@ PY
     run python3 "$SWARM" handoff show --plan "$PLAN" --pending
     [ "$status" -eq 0 ]
     [[ "$output" == *'(pending)'* ]] || false
-    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1 --pane w9:p1
     [ "$status" -eq 0 ]
     [[ "$output" == *'- commit the helper'* ]] || false
     side="${packet%.json}.accepted.json"
@@ -399,8 +399,11 @@ PY
     [[ "$output" == *"own author (w15:p1)"* ]] || false
     HERDR_PANE_ID=w15:p1 run python3 "$SWARM" handoff accept --plan "$PLAN"
     [ "$status" -eq 3 ]
-    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w15:p1
+    # --by is a record of who accepted, never an identity: an author naming a
+    # successor's address is still an unknown caller (review of 390ec0a)
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1
     [ "$status" -eq 3 ]
+    [[ "$output" == *'pass --pane'* ]] || false
     run python3 "$SWARM" handoff accept --plan "$PLAN"
     [ "$status" -eq 3 ]
     [[ "$output" == *'pass --pane'* ]] || false
@@ -423,7 +426,7 @@ PY
     run python3 "$SWARM" handoff accept --plan "$PLAN" --pane local:w15:p1
     [ "$status" -eq 3 ]
     [[ "$output" == *"own author (w15:p1)"* ]] || false
-    run python3 "$SWARM" handoff accept --plan "$PLAN" --by w15:p1
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane ' w15:p1 '
     [ "$status" -eq 3 ]
     [[ "$output" == *"own author (w15:p1)"* ]] || false
     [ ! -e "${packet%.json}.accepted.json" ]

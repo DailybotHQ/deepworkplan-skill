@@ -288,11 +288,11 @@ def norm_pane(value):
     return value
 
 
-def caller_pane(explicit=None, address=None):
-    """This session's pane: --pane, else $HERDR_PANE_ID, else the pane part of
-    --by, each normalized the same way. Empty when unknown — callers fail
+def caller_pane(explicit=None):
+    """This session's pane: --pane, else $HERDR_PANE_ID, normalized. Never
+    --by, which only records who accepted. Empty when unknown — callers fail
     closed."""
-    for value in (explicit, os.environ.get('HERDR_PANE_ID'), address):
+    for value in (explicit, os.environ.get('HERDR_PANE_ID')):
         if norm_pane(value):
             return norm_pane(value)
     return ''
@@ -549,7 +549,7 @@ def handoff_accept(args):
                          'told apart — the author writes a new packet (it '
                          'supersedes) and a successor accepts that'
                       % os.path.relpath(path))
-    me = caller_pane(args.pane, args.by)
+    me = caller_pane(args.pane)
     if not me:
         raise Refusal(3, 'refused: this caller\'s pane is unknown — pass '
                          '--pane so the packet\'s author cannot accept it')
@@ -616,7 +616,7 @@ def main(argv=None):
     accept.add_argument('--packet')
     accept.add_argument('--by')
     accept.add_argument('--pane', help='this session\'s pane (default: '
-                        '$HERDR_PANE_ID, else the pane in --by)')
+                        '$HERDR_PANE_ID); --by only records who accepted')
     show = verbs.add_parser('show')
     show.add_argument('--plan', required=True)
     show.add_argument('--packet')
