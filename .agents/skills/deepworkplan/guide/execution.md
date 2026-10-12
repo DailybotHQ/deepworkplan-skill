@@ -170,7 +170,7 @@ This workflow applies when a Deep Work Plan involves changes to **multiple sub-p
    ```bash
    # Template for each repository
    cd {repository}
-   git add -A
+   git add -- {the task's touched paths}   # never a blanket git add -A
    git commit -m "type(scope): description - Task N of {PLAN_NAME}"
    git push
    ```
@@ -245,13 +245,13 @@ cd ../web-app && npm run test && npm run lint
 #
 # 4. Commit in api
 cd ../api
-git add -A
+git add -- src/preferences/ tests/preferences/   # the task's touched paths
 git commit -m "feat(api): add user preferences model and endpoints - Task 3 of PLAN_006_user_preferences"
 git push
 
 # 5. Commit in web-app
 cd ../web-app
-git add -A
+git add -- src/settings/preferences/ tests/settings/   # the task's touched paths
 git commit -m "feat(ui): add user preferences settings page - Task 3 of PLAN_006_user_preferences"
 git push
 

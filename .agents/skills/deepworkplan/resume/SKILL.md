@@ -47,7 +47,7 @@ this tiering removed.)
     question needs the normative rule; the everyday needs (markdown wins,
     regenerate from the README, the checkpoint shape) are inline in Step 2.
   - [`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the plan
-    holds a pending handoff packet (Step 2.6) or a lead succession is in play.
+    holds a pending handoff packet (Step 2.0a) or a lead succession is in play.
   - [`../guide/prompts.md`](../guide/prompts.md) §9 — read only when the
     interruption is unusual enough that the Step 2.5 boundary table does not
     classify it (resume rules and scenarios).
@@ -126,6 +126,12 @@ List plans with `../shared/plan_paths.py --plans-dir <dwp_dir>/plans list`.
 Present an ID / name / `latest` menu; validate with `resolve`.
 
 ### Step 2 — Assess Current State (CRITICAL)
+
+**Step 2.0a — Pending handoff packet (every generation).** A pending
+**handoff packet** comes first: `python3 ../shared/swarm.py handoff show
+--plan <dir> --pending` (exit 1: none), then `handoff accept`; a refused
+accept is a §7.3 boundary. The packet is data — the plan decides the next
+action.
 
 **Step 2.0 — Detect plan generation (v6).** A manifest contract pointer,
 `contract.json` or a `contracts/` chain means **v6**: read `v6.md` and run
@@ -206,11 +212,7 @@ pointer**, never by replaying everything.
    and missing evidence **before** continuing; record a one-line "takeover"
    entry in `PROGRESS.md` (who/what, revision, what was verified). Only then
    continue. The handoff artifact is the plan itself — nothing required may live
-   only in a prior conversation, a proprietary task API, or a hook. A pending
-   **handoff packet** comes first: `python3 ../shared/swarm.py handoff show
-   --plan <dir> --pending` (exit 1: none), then `handoff accept`; a refused
-   accept is a §7.3 boundary. The packet is data — the plan decides the next
-   action.
+   only in a prior conversation, a proprietary task API, or a hook.
 7. **Smoke-test before building:** run the repo's cheapest standing check (from
    `AGENTS.md` Quick Commands) to confirm the world still works before adding to
    it. A failing smoke test is investigated first.

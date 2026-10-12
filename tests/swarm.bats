@@ -441,12 +441,20 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
 # ------------------------------------------------------------------ the flows
 
 @test "execute checks capacity at each task boundary and resume reads a pending packet first" {
-    doc_has "$SK/execute/v6.md" '0. **Capacity** (agentkit addon enabled) — `python3 ../shared/swarm.py capacity --plan <dir>` before each task'
+    doc_has "$SK/execute/v6.md" '0. **Capacity** (agentkit addon enabled) — `python3 ../shared/swarm.py capacity --plan <dir> [--context-pct N]`'
     doc_has "$SK/execute/v6.md" 'Capacity *unknown* is not *ok*'
     doc_has "$SK/execute/SKILL.md" '(agentkit enabled: the §17 capacity check first)'
     doc_has "$SK/resume/SKILL.md" 'A pending **handoff packet** comes first'
     doc_has "$SK/resume/SKILL.md" '[`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the plan holds a pending handoff packet'
     doc_has "$SK/resume/v6.md" '0. **Pending handoff packet.**'
+    # every generation checks for a packet before classifying the plan
+    doc_has "$SK/resume/SKILL.md" '**Step 2.0a — Pending handoff packet (every generation).**'
+    # a pending packet is never overwritten by a second write
+    doc_has "$SK/execute/v6.md" '`handoff` with reason `hysteresis` (a packet is already pending) → never write another'
+    doc_has "$SK/execute/v6.md" '`swarm.py handoff write` **once**'
+    doc_has "$SK/execute/v6.md" 'capacity --plan <dir> [--context-pct N]'
+    # the execution guide's own templates follow its staging rule
+    ! grep -qE '^ *git add -A *$' "$SK/guide/execution.md" || false
     # every command the flows cite exists in the helper's CLI
     run python3 "$SWARM" handoff show --help
     [ "$status" -eq 0 ]
