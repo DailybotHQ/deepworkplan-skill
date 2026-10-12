@@ -209,7 +209,7 @@ explicit Executive Report request.
 `manifest.json` whose `contract` pointer resolves, a `contract.json`, or a
 `contracts/` revision chain, this is a **v6 plan**: **read
 [`v6.md`](v6.md)** (this directory) and run its loop for the whole execution;
-the v5 steps below never apply to it. A v5 plan is never migrated mid-flight;
+the v5 steps below never apply to it. A v5 plan is never migrated to v6 mid-flight;
 a v5-only runner that meets a v6 plan reports it unsupported and stops.
 
 **Step 2.1 — Detect plan type.** Set `plan_type = "orchestrator"` if the README
@@ -251,7 +251,7 @@ a revised criterion, which belongs in an appended amendment record
 (`../refine/SKILL.md` 3.7) with its reason and authority.
 
 ### Step 4 — Ask for Execution Preferences (optional)
-**Interactive:** ask for any specific requirements (defaults: the plan
+**Interactive:** ask for specific requirements (defaults: the plan
 README). In **unattended** mode (`trust`/`auto`, a "run
 to the end" instruction, or a README that records pre-approval), **skip this
 step** — the plan's guidelines are the preferences.

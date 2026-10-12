@@ -522,6 +522,42 @@ for t in doc["tasks"]:
   grep -q 'bats operator' "$PLAN/journal.ndjson"
 }
 
+@test "an untouched earlier render is machine output after a render elsewhere; no false reconciliation" {
+  # Regression (pack 7.7.0, LEARNINGS item 13): the divergence check compared
+  # the file only with the LAST recorded digest for that view, so a render to
+  # another --out directory made the untouched views/ file look human-edited
+  # (exit 5) and pushed agents into --reconcile, filling journals with
+  # reconciliation events attributed to a human.
+  python3 "$LEDGER" --plan "$PLAN" append --type approval \
+    --json '{"authority": "bats", "mechanism": "plan_authorship",
+             "plan_digest": "1111111111111111111111111111111111111111111111111111111111111111"}' \
+    --actor-kind human --human-note "$BATS_TEST_DIRNAME/fixtures/v6/human-note.md" --actor-identity bats --idempotent
+  python3 "$VIEWS" --plan "$PLAN" render --view tasks >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" append --type task_start \
+    --json '{"task": "T-publish-schemas"}' --idempotent
+  python3 "$VIEWS" --plan "$PLAN" render --view tasks --out "$TEST_REPO/elsewhere" >/dev/null
+  run python3 "$VIEWS" --plan "$PLAN" render --view tasks
+  [ "$status" -eq 0 ]
+  grep -q 'OK: rendered' <<<"$output"
+  run grep -q '"type":"reconciliation"' "$PLAN/journal.ndjson"
+  [ "$status" -eq 1 ]
+  # a real edit still refuses, and its reconciliation is recorded as the
+  # agent's action under the named authority — never as a human actor
+  printf '\nHUMAN NOTE\n' >> "$PLAN/views/tasks.md"
+  run python3 "$VIEWS" --plan "$PLAN" render --view tasks
+  [ "$status" -eq 5 ]
+  run python3 "$VIEWS" --plan "$PLAN" render --view tasks \
+    --reconcile generated-wins --authority "bats operator"
+  [ "$status" -eq 0 ]
+  python3 - "$PLAN/journal.ndjson" <<'PY'
+import json, sys
+recs = [json.loads(l) for l in open(sys.argv[1]) if '"reconciliation"' in l]
+assert len(recs) == 1, recs
+assert recs[0]['authority'] == 'bats operator', recs[0]
+assert recs[0]['actor']['kind'] == 'agent', recs[0]['actor']
+PY
+}
+
 @test "export copies journal, snapshot, contracts and the evidence chain (A10/M2)" {
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
