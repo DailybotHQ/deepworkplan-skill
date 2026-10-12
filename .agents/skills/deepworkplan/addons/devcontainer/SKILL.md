@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-devcontainer
-description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.3.2, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yaml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that gives a repository a reproducible dev container through devcontainer-kit (the `dck` command, DailybotHQ/devcontainer-kit pinned at v0.3.5, interface 2) - a vendor-neutral thin integrator that detects the kit with `dck doctor --json`, offers the kit and its tag-pinned `dck-dockerfile` skill, and lets them render the repository's own layout (.devcontainer/devcontainer.json, docker/local/<service>/Dockerfile, docker/local/docker-compose.yaml, dev.sh) from the official runtime image pinned by digest - no shared base image required. Reconciles an existing layout and never clobbers it, keeps loopback ports and agent forwarding, and validates the result with a real build. Opt-in, never required, never a conformance gate.
 version: "7.6.2"
 documentation_url: https://deepworkplan.com/kit/devcontainer
 user-invocable: true
@@ -28,7 +28,7 @@ file name.
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/devcontainer-kit` |
-| Tag | `v0.3.2` (per-repository Dockerfile, no shared base image; host accounts through `[agents] host_profiles` since `v0.3.0`) |
+| Tag | `v0.3.5` (per-repository Dockerfile, no shared base image; host accounts through `[agents] host_profiles` since `v0.3.0`) |
 | Interface | `2` (`dck doctor --json` → `"interface": 2`) |
 | Skill | `dck-dockerfile`, installed from the same tag |
 | Registry key | `devcontainer` (`.dwp/config.json` → `addons.devcontainer`) |
@@ -171,12 +171,89 @@ host and its peers with no hand `dck herdr mesh`. The image also carries
 coding-agents-kit's skills (`agentkit`, `agentkit-setup`,
 `agentkit-orchestrate`), linked into every agent at each start.
 
-**Codex panes inside a container.** With kit `v0.3.2`, a Codex lane inside
-the container sets `HERDR_PEERS_SELF=<the container's machine id as saved on
-the host>` before herdr-peers asks to the host or another machine; its
-commands run from a per-profile server, so herdr-peers cannot probe its own
-machine. The lead's brief names that value and the lane sets it; dck
-`v0.3.3` is expected to set it for the lane.
+**Codex panes inside a container (`v0.3.3`).** A Codex lane's commands run
+from a per-profile server, so herdr-peers cannot probe its own machine and
+needs `HERDR_PEERS_SELF` (the container's machine id as saved in the host's
+Herdr catalog) for asks to the host or another machine. Since `v0.3.3` dck
+records that id on the state volume (`dck up`, after every `dck herdr add`,
+and `dck herdr mesh`) and the login profile exports it, so no lane sets it
+by hand; `dck doctor` shows both ids (`herdr self`) and flags a mismatch.
+With an older kit, the lead's brief names the value and the lane sets it.
+Since `v0.3.4` the entrypoint also turns off Codex's startup update check
+and its app-server daemon auto-start in the container's own Codex configs
+(the kit pins every CLI version), never in the host's Codex home or a
+host-shared profile, keeping any value the developer set; Codex's hook
+trust stays the developer's consent.
+The image also carries herdr-peers `v0.2.3`, whose state is kept per Herdr
+server, so a checkout bind-mounted into the container no longer shares the
+host's state.
+
+**Shared compose stacks (`v0.3.3`, additive).** When the repository is one
+service of a product that runs as one compose project across several
+repositories (an API, a web app, workers, a database), reason these keys
+from the real stack — the kit's `docs/shared-stack.md` is the reference —
+instead of hand-editing what dck renders:
+
+- `[compose] project` (the same value in every repository of the stack),
+  one `state_volume` per service, `[compose] networks` (external) and
+  `[compose] volumes` with the top-level `user:volumes` / `user:networks`
+  sub-blocks for the other services' data.
+- **The user block** — `# >>> user:<svc> >>>` … `# <<< user:<svc> <<<`
+  inside the dck service, kept verbatim: plain keys for what dck does not
+  render (`depends_on`, `healthcheck`), `x-dck-merge:` for keys it does
+  (lists appended, maps merged with the user's entry winning, `command` and
+  `entrypoint` replaced). Repository additions go there, never inside dck's
+  own markers; a file with some of dck's markers but not all is refused.
+- **Port strings**: `ssh_port` and `ports` accept compose expressions such
+  as `"${API_HOST_PORT:-8000}:8000"`; they stay loopback-prefixed unless the
+  string names a host IP, which only the repository's own config may do.
+- `[build] context` / `[build] dockerfile` for a Dockerfile shared by several
+  services, `dev_sh = false` (`dck init --no-dev-sh`) for a repository that
+  keeps its own `dev.sh`, and `[agents] presets` for the ak alias presets.
+- `[agents] node_first = true` puts the agents' own Node (kept under
+  `/opt/dck/node` since `v0.3.3`, never over the image's) first on PATH; off
+  by default, set only when the repository's tooling needs it.
+
+A repository that sets none of these renders byte-identically to `v0.3.2`.
+
+**Workspace satellites (`v0.3.5`).** A repository whose scripts start a
+second instance of its dev service (`<svc>satellite`, in its own compose
+project with its own ports) starts it through dck, not plain
+`docker compose`, so the satellite gets every host step the main service
+gets (the authorized dck key, `[ssh] copy_keys`, host-profile accounts and
+`default_profile`, the git identity, `HERDR_PEERS_SELF`, its own Herdr
+machine `dck-<project>-<service>` on the mesh, the Codex/Claude container
+config):
+
+```
+dck --project <P> --compose-file <main> --compose-file <overlay> --service <svc>satellite up [--seed-state-from <VOLUME>] [--label "<label>"]
+dck --project <P> --compose-file <main> --compose-file <overlay> --service <svc>satellite down
+```
+
+Define the satellite after `# <<< dck:service <<<` in the main compose file
+(`extends: <svc>`), or in an overlay file, where `extends` must name the
+file (`extends: {file: docker-compose.yaml, service: <svc>}`); give it a
+`profiles: [satellite]` entry and its own ports and volumes, never the main
+state volume. `--seed-state-from` copies only the login state (`gh`,
+Dailybot) once into an empty satellite state volume — never history, keys
+or Herdr state. `down` removes only that service, its Herdr machine and
+its SSH alias. The recipe is the kit's `docs/shared-stack.md`
+(workspace satellites). Since `v0.3.5` a workspace inside a renamed user's
+home (`user` other than `dev`, `workspace` under `/home/<user>`) also builds.
+
+**Default account inside (`[agents] default_profile`, host profile).**
+`{ claude = "@work3" }` exports `AGENTKIT_DEFAULT_PROFILE_<CLI>` into the
+container when that profile is shared, so a bare `ak claude` inside uses
+that account (coding-agents-kit `v0.5.2` and later); a macOS `@default` Claude login
+lives in the Keychain and cannot be shared. It is the developer's host
+profile key — describe it, never set it. Since `v0.3.4`, when it is set
+and shared, the container's login shells also export `CLAUDE_CONFIG_DIR` /
+`CODEX_HOME` for that profile, so a pane Herdr restores with a plain
+`claude --resume` or `codex resume` opens on that account instead of a
+login screen (a value ak sets wins). `dev.sh` also prints dck's refusals
+(exit 5: a configuration that needs `--trust`, or markers to fix) on stdout. Since `v0.3.3` the host's git
+identity (name, email, SSH signing key reference) is pushed into the
+container at every start, with no `~/.gitconfig` mount.
 
 ## Trust boundary (write scope)
 
@@ -200,7 +277,7 @@ machine. The lead's brief names that value and the lane sets it; dck
   config says so; pass `--trust` on the developer's behalf; copy a private
   key into an image or container, or set `[ssh] copy_keys` for the developer; answer dck's `ssh-add` prompt or set
   `[ssh] host_extra` in the developer's host profile on their behalf; set
-  `[agents] host_profiles` or `host_env_keys` there for them, or print a
+  `[agents] host_profiles`, `host_env_keys` or `default_profile` there for them, or print a
   shared credential's value; run
   `dck herdr add` (it edits
   `~/.ssh/config`) without its own explicit approval; install anything on
@@ -230,9 +307,9 @@ are copied in. Declining is complete.
 ### Step 2 — Install the kit and its skill (pinned; point-don't-run by default)
 
 ```
-git clone --branch v0.3.2 https://github.com/DailybotHQ/devcontainer-kit
+git clone --branch v0.3.5 https://github.com/DailybotHQ/devcontainer-kit
 ./devcontainer-kit/install.sh
-npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.2 --skill dck-dockerfile -y
+npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.5 --skill dck-dockerfile -y
 ```
 
 Before running the installer, check the tag and the release's `SHA256SUMS`
@@ -256,7 +333,7 @@ then `dck init …` after acceptance.
 
 ### Step 4 — Record and validate
 
-`python3 ../../shared/config.py enable devcontainer --version v0.3.2 --repo <repo>`,
+`python3 ../../shared/config.py enable devcontainer --version v0.3.5 --repo <repo>`,
 then validate what was rendered:
 
 - `dck doctor --json` — interface 2, repo config valid, no drift;
@@ -299,7 +376,7 @@ plan simply declares the host command instead.
 ## Validation checklist (component 4 — mirrored from SPEC §8)
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist; the
-   descriptor pins `DailybotHQ/devcontainer-kit` `v0.3.2`, interface 2; no
+   descriptor pins `DailybotHQ/devcontainer-kit` `v0.3.5`, interface 2; no
    template, Dockerfile, compose file, entrypoint or `dev.sh` copy ships here.
 2. `dck doctor --json` reports interface 2, a valid repo config and no drift.
 3. Existing files were changed only through accepted render diffs, each

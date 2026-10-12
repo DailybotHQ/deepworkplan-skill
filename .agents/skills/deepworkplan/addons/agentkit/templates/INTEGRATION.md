@@ -31,10 +31,10 @@ repository itself would approve writes to the developer's checkout).
 ```bash
 python3 <pack>/shared/ledger.py --plan <dir> delegate launch --task <T-id> \
   --json '{"delegation_id": "<id>", "transport": "headless", "via": "agentkit",
-           "kind": "<kind>", "profile": "<@profile or omit>", "target": "<worktree>",
+           "kind": "<kind>", "profile": "<@profile, @default when the plan names none>", "target": "<worktree>",
            "worktree": "<worktree>", "prompt_digest": "sha256:<hex>"}'
 mkdir -p <dir>/analysis_results/delegations/<id>
-ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json [--ask] \
+ak run <kind> @<profile> --cwd <worktree> --timeout <seconds> --output-format json [--ask] \
   -- "<prompt>" > <dir>/analysis_results/delegations/<id>/result.json &
 ```
 
@@ -43,7 +43,7 @@ and `"worktree": null` (and `"target"` the repository) in the launch
 record — read-only intent means ask:
 
 ```bash
-ak run <kind> [@profile] --cwd <repo> --timeout <seconds> --output-format json --ask \
+ak run <kind> @<profile> --cwd <repo> --timeout <seconds> --output-format json --ask \
   -- "<prompt>" > <dir>/analysis_results/delegations/<id>/result.json &
 ```
 

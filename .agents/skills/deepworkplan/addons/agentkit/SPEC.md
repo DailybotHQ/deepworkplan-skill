@@ -17,7 +17,7 @@ registry record and the mapping of the four delegation operations onto
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable — autonomy by default (coding-agents-kit `v0.2.0` and later) |
-| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.5.1`, interface `1` |
+| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.5.3`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/V7_ABILITIES.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -53,12 +53,12 @@ kit** is coding-agents-kit; **the addon** is this folder.
   complete and writes nothing.
 - The documented install is the pinned tagged clone plus the kit's
   installer:
-  `git clone --branch v0.5.1 https://github.com/DailybotHQ/coding-agents-kit` then
+  `git clone --branch v0.5.3 https://github.com/DailybotHQ/coding-agents-kit` then
   `./coding-agents-kit/install.sh` (Windows: `install.ps1`). A
   fetch-and-execute pipeline **MUST NOT** appear anywhere in this pack's
   text. The addon **MUST NOT** install coding-agent CLIs on its own.
 - On acceptance the addon **MUST** record `addons.agentkit` =
-  `{"enabled": true, "version": "v0.5.1"}` through `shared/config.py
+  `{"enabled": true, "version": "v0.5.3"}` through `shared/config.py
   enable`. Enabling grants no plan any authority.
 
 ## 5. The Transport (v7 delegation)
@@ -68,7 +68,7 @@ worktree:
 
 | Operation | Behaviour |
 |---|---|
-| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json [--ask] -- "<prompt>"` (`--ask` when the plan records the opt-out; always for a read-only delegate, whose `--cwd` is the repository), stdout redirected to the delegation's result file. |
+| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> @<profile> --cwd <worktree> --timeout <seconds> --output-format json [--ask] -- "<prompt>"` (`--ask` when the plan records the opt-out; always for a read-only delegate, whose `--cwd` is the repository), stdout redirected to the delegation's result file. |
 | **observe** | Read-only: `delegate observe` and whether the process is alive. |
 | **collect** | Parse the single JSON object; `exit` 0 → `completed`, any other → `failed`; record `delegate collect` with `result_path`. Integration of the worktree diff and the task's gates happen in the parent session. |
 | **cancel** | SIGTERM to `ak run` (the kit kills the process tree and exits 5); record `delegate cancel`. |
@@ -142,7 +142,7 @@ here blocks `onboard`, `create`, `execute` or `verify`.
 
 This SPEC versions independently. Compatibility is decided by the kit's
 interface integer (`1`); the installed release by the pinned tag
-(`v0.5.1`), moved only by a parity-tested pack change. The default
+(`v0.5.3`), moved only by a parity-tested pack change. The default
 permission posture is behaviour, not interface: the kit carries it in its
 minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
@@ -150,7 +150,7 @@ minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist;
    `addon.json` validates with key `agentkit`, product
-   `DailybotHQ/coding-agents-kit` `v0.5.1`, interface 1, transport
+   `DailybotHQ/coding-agents-kit` `v0.5.3`, interface 1, transport
    `headless`.
 2. Detection is read-only; interface 1 or one warning.
 3. Install used the pinned tagged clone; no pipeline anywhere in the text.
