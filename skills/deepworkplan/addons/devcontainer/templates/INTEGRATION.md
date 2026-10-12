@@ -40,13 +40,19 @@ digest in the kit's pin file. No shared base image is needed.
 Want the container as a Herdr machine? Turn on the kit's Herdr machine
 option; `bash dev.sh up` registers it. Running `dck herdr add` edits
 `~/.ssh/config` (a guarded include) — ask for that separately. Git and SSH
-inside use the host's agent, never a mounted `~/.ssh`; the kit picks the
+inside use the host's agent, never a mounted `~/.ssh` unless the developer
+turns on `[ssh] copy_keys` (below); the kit picks the
 agent socket by Docker provider. Your own `~/.ssh/config` aliases for git
 hosting services work inside too (`ssh_host_config`, default on: public keys
 and trusted host keys only, no private key copied); `dck up` may offer
 `ssh-add` for a missing key — the developer answers. Hosts beyond the git
 services are the developer's own opt-in through `[ssh] host_extra` in their
 host profile (never the repository's `dck.toml`); never set it for them.
+The same holds for `[ssh] copy_keys` (kit `v0.3.2`): the developer's host
+profile only, for tools that read key files; while on, the whole host
+`~/.ssh` is readable inside and private keys rest in the state volume.
+Several services in one compose project? Give each its own
+`[compose] state_volume` (`dck init --state-volume NAME`).
 Inside, peers use the pinned herdr-peers skill (`../../herdr/install.md`). `[herdr] mesh` (default `true`, Docker
 Desktop only) connects the repository's container to the other dck
 containers; it widens trust between them, so name that cost, and set
@@ -62,6 +68,6 @@ bash dev.sh build && bash dev.sh up         # a real build; a failure is a faile
 dck exec <service> -- <the repo's real test command>
 ```
 
-Use the option names the kit's `v0.3.1` documentation gives (`dck init
+Use the option names the kit's `v0.3.2` documentation gives (`dck init
 --help`). Record each outcome. A failure is a finding about the environment,
 never a repository conformance failure.
