@@ -316,3 +316,20 @@ declared() {
 doc_has() {
     sed 's/^[[:space:]]*>[[:space:]]\{0,1\}//' "$1" | tr '\n' ' ' | tr -s ' ' | grep -qF -- "$2"
 }
+
+@test "the measurement survives a large pack: no early pipe close under pipefail" {
+    # Regression: `sort -rn | head -12` under `set -o pipefail` failed (sort:
+    # broken pipe, exit 2) once the file list outgrew one write — CI flaked on
+    # it. A pack with thousands of extra Markdown files makes it deterministic.
+    local work
+    work="$(cd "$(mktemp -d)" && pwd -P)"
+    mkdir -p "$work/repo/tests"
+    cp -R "$REPO_ROOT/skills" "$work/repo/"
+    cp -R "$REPO_ROOT/tests/efficiency" "$work/repo/tests/"
+    mkdir -p "$work/repo/skills/deepworkplan/guide/bulk"
+    for i in $(seq 1 3000); do printf 'x\n' > "$work/repo/skills/deepworkplan/guide/bulk/f$i.md"; done
+    run bash "$work/repo/tests/efficiency/measure-instruction-load.sh" "$work/repo"
+    rm -rf "$work"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'## Compulsory read set per flow'* ]] || false
+}
