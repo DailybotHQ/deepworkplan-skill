@@ -175,6 +175,15 @@ def checkout_state(start):
     code, top = git(start, 'rev-parse', '--show-toplevel')
     if code != 0:
         raise Refusal(2, 'not inside a git checkout: %s' % start)
+    # The repository is named by its common git directory, so a linked
+    # worktree reports the repository, not the worktree folder.
+    _, common = git(top, 'rev-parse', '--git-common-dir')
+    common = os.path.normpath(os.path.join(top, common))
+    name = os.path.basename(common)
+    if name == '.git':
+        repo = os.path.basename(os.path.dirname(common))
+    else:  # a bare repository: <name>.git
+        repo = name[:-len('.git')] if name.endswith('.git') else name
     _, branch = git(top, 'rev-parse', '--abbrev-ref', 'HEAD')
     _, head = git(top, 'rev-parse', 'HEAD')
     up_code, _ = git(top, 'rev-parse', '--abbrev-ref', '@{u}')
@@ -197,7 +206,7 @@ def checkout_state(start):
         path = entry[3:]
         if not (path == '.dwp' or path.startswith('.dwp/')):
             dirty.add(path)
-    return {'repo': os.path.basename(top), 'checkout': top, 'branch': branch,
+    return {'repo': repo, 'checkout': top, 'branch': branch,
             'head': head, 'pushed': pushed, 'dirty': sorted(dirty)}
 
 

@@ -604,7 +604,9 @@ apply to every plan and every agent that continues one:
    is a structural guard, **not** observed evidence of behavior. A task with an
    input contract names its edge-case inputs (empty, multi-line, leading or
    trailing whitespace) in its acceptance criteria — passing every example
-   does not prove the rule.
+   does not prove the rule. A test of exact output checks it with a sentinel
+   (`[ "$(f x; printf s)" = $'y\ns' ]`): `$(…)` strips trailing newlines, so
+   output that drops or doubles its final newline would otherwise pass.
 2. **Compare to the base.** Performance, coverage and size are compared
    against the base branch (or the plan's starting revision), not only against
    a threshold; a regression against the base is reported even when the

@@ -63,9 +63,24 @@ Six rules shape everything here:
   successor reads.
 - **Every herdr-peers call names the lane's own pane.** `ask`, `reply`, `notify`, `wait`,
   `cancel`, `lanes` — and `check`, which records a received reply or ask — each pass
-  `--pane <pane>` (`status` accepts it from herdr-peers `v0.3.1`; on `v0.3.0` omit it there).
-  A `check` without it can record the message for another pane, so the ask never closes and
-  the fan-out cap fills with answered asks.
+  `--pane <pane>` (`status` accepts it from herdr-peers `v0.3.1` and `lead show` from
+  `v0.3.2`; on older releases omit it there). A `check` without it can record the message for
+  another pane, so the ask never closes and the fan-out cap fills with answered asks.
+- **`DWP_PLAN` holds the plan directory** (`.dwp/plans/PLAN_…`), not its id: herdr-peers
+  mirrors records into that folder and takes its basename as the default `--plan`
+  (herdr-peers `v0.3.2` also accepts a bare id).
+- **Read `check` by its classification, not its exit status:**
+
+  | Message | `check` says | Exit |
+  |---|---|---|
+  | an ask to you | `ANSWER` — reply exactly once | `0` |
+  | the reply to your ask | `NEVER ANSWER` — recorded, use as data | `3` |
+  | a notice | `NOTICE` — recorded, never reply | `3` |
+  | a lead notice already current | `LEAD NOTICE … current` | `0` |
+  | a lead notice fenced out | rejected and recorded | `3` |
+  | anything else, or not a protocol message | `NEVER` / `NONE` | `3` / `7` |
+
+  `--json` carries the `decision`; a script branches on it, never on `$?` alone.
 - **A lane is not depth-marked.** A long-lived swarm lane is launched without
   `HERDR_PEERS_DEPTH=1`, so it can ask its siblings (§17.8); only a one-shot delegate (a
   bounded `parallel_safe` task, `../execute/delegation.md`) carries the depth mark that forbids
@@ -83,7 +98,9 @@ Six rules shape everything here:
   ```
 - **Edge-case inputs are part of the brief.** When a lane's task has an input contract, the
   brief names the edge cases its tests must cover — empty input, multi-line input, leading or
-  trailing whitespace — so "proves every example" is not mistaken for "proves the rule".
+  trailing whitespace — so "proves every example" is not mistaken for "proves the rule". A
+  test of exact output uses a sentinel (spec §5.1.4), so a dropped or doubled final newline
+  fails.
 
 ### 17.3. The capacity loop
 
@@ -132,6 +149,9 @@ lane `v0.6.1`, whose daemon would otherwise hide the account) and prints the dec
   (`ak lease release …` on handoff acceptance); a Codex profile takes one lease (one writer per
   auth file). `ak pick <kind> --owner <lead> --count N` skips accounts leased to others and
   ranks the rest by `headroom / (1 + other leases)`.
+- **Never give a lane the lead's own account.** Instances on one profile share its capacity, so
+  a lane on the lead's account goes `critical` with the lead; exclude it
+  (`ak pick <kind> --owner <lane> --exclude @<lead profile>`).
 - **Policy, per ready task:** candidates are idle lanes of the needed vendor plus fresh launches
   from `ak pick --owner <lead>`; take the highest ranked; prefer known-capacity accounts for
   long tasks; prefer a different vendor for reviewers; keep writers ≤ qualifying accounts; keep
@@ -212,6 +232,10 @@ never hard-codes the lead's pane.
   "take over `<plan>` as lead, epoch N+1; read the last lead packet if any". The new lead
   rebuilds state from the plan; missing in-flight intent is recorded as missing, never
   invented.
+- **Epoch bookkeeping.** Every record change raises the epoch: a claim of a fresh plan is epoch
+  `N` (1 for a new record), each handover or takeover `N+1`, and the release `N+2` (lead none).
+  A record reused under the same plan id continues from its last epoch — name plans uniquely
+  across repositories, or the record carries over.
 - **Fencing.** Only the holder of the highest epoch acts as lead. A receiving `check` accepts
   a lead notice only from the agent that briefed it (first claim), from the current lead at
   epoch + 1 (handover or release), or from a succession entry at epoch + 1 naming itself when
@@ -229,6 +253,10 @@ never hard-codes the lead's pane.
 - **Lane ↔ lane** asks are allowed for information and coordination — an interface, an exact
   flag name, a branch state. Work is assigned only by the lead; depth 1 and the fan-out cap
   hold; a lane tells the lead (a notice) when a sibling exchange changes the plan.
+- **Never poll for a message.** An ask or notice is typed into the receiving pane and reaches
+  the agent only when its turn ends; a lane that loops "waiting for the ask" keeps it queued.
+  When the next step depends on a message, end the turn and let it arrive (`wait` is for the
+  reply to your own ask).
 - **Notices** (`herdr-peers notify <addr|lead> "<text>" --pane <pane>`, herdr-peers
   `v0.3.0`) are one-way: `check` classifies them `notice`; the receiver records them as data
   and never replies. They cost no fan-out slot and may be sent while an ask is open. Use them for handoff announcements, lead

@@ -173,6 +173,21 @@ PY
     grep -q 'This file is data' "$PLAN/analysis_results/handoff/HANDOFF.md"
 }
 
+@test "write: a packet from a linked worktree names the repository, not the worktree (R2-F8)" {
+    git worktree add -q "$WORK/wt-a" -b lane-a
+    mkdir -p "$WORK/wt-a/.dwp/plans" && cp -R "$PLAN" "$WORK/wt-a/.dwp/plans/"
+    cd "$WORK/wt-a"
+    run bash -c "printf '{\"next\": [\"go on\"]}' | python3 '$SWARM' handoff write --plan '$WORK/wt-a/.dwp/plans/PLAN_001_swarm_fixture' --task T --reason usage_limit --json -"
+    [ "$status" -eq 0 ]
+    python3 - "$WORK/wt-a/$output" "$WORK/wt-a" <<'PY'
+import json, os, sys
+p = json.load(open(sys.argv[1]))
+assert p['repo'] == 'repo', p['repo']                 # the repository, not "wt-a"
+assert os.path.realpath(p['checkout']) == os.path.realpath(sys.argv[2]), p['checkout']
+assert p['branch'] == 'lane-a', p['branch']
+PY
+}
+
 @test "write: a secret-shaped value is refused and nothing is written" {
     key="sk-ant-$(printf 'b%.0s' $(seq 1 24))"   # built at runtime: a fake
     run bash -c "printf '{\"next\": [\"export it\"], \"decisions\": [\"used %s\"]}' '$key' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
@@ -397,6 +412,21 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     doc_has "$SK/spec/DWP_SPECIFICATION.md" 'names its edge-case inputs (empty, multi-line, leading or trailing whitespace)'
     doc_has "$G" '**Known limitation:** the v7 journal has no event shape of its own for a handoff or a succession.'   # F8/F11
     doc_has "$G" 'the lane'"'"'s address owns its lease'                       # F4 (docs)
+}
+
+@test "§17, the spec and the guides carry the live-drill fixes (round 2)" {
+    G="$SK/guide/swarm.md"
+    doc_has "$G" '**Never poll for a message.**'                                   # R2-F5
+    doc_has "$G" "**Never give a lane the lead's own account.**"                   # R2-F7
+    doc_has "$G" '| a notice | `NOTICE` — recorded, never reply | `3` |'            # R2-F4/F14
+    doc_has "$G" '| a lead notice already current | `LEAD NOTICE … current` | `0` |'
+    doc_has "$G" '**`DWP_PLAN` holds the plan directory**'                          # R2-F10
+    doc_has "$G" '**Epoch bookkeeping.**'                                          # R2-F13
+    doc_has "$G" 'the release `N+2` (lead none)'
+    doc_has "$G" '`lead show` from `v0.3.2`'                                       # R2-F3
+    doc_has "$SK/guide/execution.md" 're-gate the fixed task'                      # R2-F11
+    doc_has "$SK/spec/DWP_SPECIFICATION.md" 'A test of exact output checks it with a sentinel'   # R2-F15
+    doc_has "$SK/guide/authoring.md" '**Exact output needs a sentinel.**'
 }
 
 @test "§16 lets lanes coordinate with each other and keeps the reactive path as the safety net" {

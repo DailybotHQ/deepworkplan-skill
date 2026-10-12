@@ -412,6 +412,9 @@ A gate is a hypothesis about the change until it has been seen to fail
   `set -o pipefail` (or check each status). In Bats on macOS's bash 3.2 a
   failed `[[ … ]]` or a negated `! cmd` does not fail the test by itself:
   end it with `|| false` or use `[ … ]`.
+- **Exact output needs a sentinel.** `$(…)` strips trailing newlines, so compare
+  `"$(f x; printf s)"` with `$'y\ns'`: a function that drops or doubles its last
+  newline then fails.
 - **Observed, not self-quoted.** A gate that greps text the agent wrote in the
   same task is a structural guard; behavior needs a gate that runs the
   behavior.

@@ -558,6 +558,15 @@ assert recs[0]['actor']['kind'] == 'agent', recs[0]['actor']
 PY
 }
 
+@test "the usage line shows that export needs --dest (drill R2-F12)" {
+  run python3 "$LEDGER" --help
+  [ "$status" -eq 0 ]
+  grep -qF '| export --dest DIR |' <<<"$output"
+  run python3 "$LEDGER" --plan "$PLAN" export
+  [ "$status" -ne 0 ]
+  grep -qF 'export requires --dest' <<<"$output"
+}
+
 @test "export copies journal, snapshot, contracts and the evidence chain (A10/M2)" {
   python3 "$LEDGER" --plan "$PLAN" append --type approval \
     --json '{"authority": "bats", "mechanism": "plan_authorship",
