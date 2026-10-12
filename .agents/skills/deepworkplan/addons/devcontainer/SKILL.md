@@ -242,7 +242,7 @@ container at every start, with no `~/.gitconfig` mount.
   config says so; pass `--trust` on the developer's behalf; copy a private
   key into an image or container, or set `[ssh] copy_keys` for the developer; answer dck's `ssh-add` prompt or set
   `[ssh] host_extra` in the developer's host profile on their behalf; set
-  `[agents] host_profiles` or `host_env_keys` there for them, or print a
+  `[agents] host_profiles`, `host_env_keys` or `default_profile` there for them, or print a
   shared credential's value; run
   `dck herdr add` (it edits
   `~/.ssh/config`) without its own explicit approval; install anything on

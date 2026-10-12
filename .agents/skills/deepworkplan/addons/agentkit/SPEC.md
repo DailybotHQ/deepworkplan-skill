@@ -68,7 +68,7 @@ worktree:
 
 | Operation | Behaviour |
 |---|---|
-| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> [@profile] --cwd <worktree> --timeout <seconds> --output-format json [--ask] -- "<prompt>"` (`--ask` when the plan records the opt-out; always for a read-only delegate, whose `--cwd` is the repository), stdout redirected to the delegation's result file. |
+| **launch** | Create the worktree on a dedicated branch; record `delegate launch` (prompt digest) **before** starting; start `ak run <kind> @<profile> --cwd <worktree> --timeout <seconds> --output-format json [--ask] -- "<prompt>"` (`--ask` when the plan records the opt-out; always for a read-only delegate, whose `--cwd` is the repository), stdout redirected to the delegation's result file. |
 | **observe** | Read-only: `delegate observe` and whether the process is alive. |
 | **collect** | Parse the single JSON object; `exit` 0 → `completed`, any other → `failed`; record `delegate collect` with `result_path`. Integration of the worktree diff and the task's gates happen in the parent session. |
 | **cancel** | SIGTERM to `ak run` (the kit kills the process tree and exits 5); record `delegate cancel`. |

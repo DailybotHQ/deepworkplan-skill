@@ -142,7 +142,7 @@ One delegate = one `ak run` in one dedicated worktree
 
 | Operation | Mapping |
 |-----------|---------|
-| launch | `git worktree add <wt> -b dwp/<plan>/<delegation_id>`; record `ledger.py delegate launch` (with `prompt_digest`); start `ak run <kind> [@profile] --cwd <wt> --timeout <s> --output-format json [--ask] -- "<prompt>"` in the background, stdout to the result file (`--ask` when the plan records the opt-out; always for a read-only delegate, `--cwd` the repository) |
+| launch | `git worktree add <wt> -b dwp/<plan>/<delegation_id>`; record `ledger.py delegate launch` (with `prompt_digest`); start `ak run <kind> @<profile> --cwd <wt> --timeout <s> --output-format json [--ask] -- "<prompt>"` in the background, stdout to the result file (`--ask` when the plan records the opt-out; always for a read-only delegate, `--cwd` the repository) |
 | observe | `ledger.py delegate observe`; the background process is alive or has exited |
 | collect | on exit read the one JSON object (`exit` 0 → `completed`, otherwise `failed`); `ledger.py delegate collect` with `result_path`; integrate the worktree's diff; run the task's gates here |
 | cancel | send SIGTERM to `ak run` (the kit kills the whole process tree, exit 5); `ledger.py delegate cancel` |
@@ -167,8 +167,11 @@ developer's accounts (`../../guide/orchestration-at-scale.md` §16):
   <cli>` and `ak env <cli>` use; a positional `@profile`, `AGENTKIT_PROFILE`
   or an explicit `@default` wins, and the profile must exist. In a dev
   container it comes from devcontainer-kit's host-profile
-  `[agents] default_profile`. The addon still names the profile on every
-  delegate launch it records.
+  `[agents] default_profile`. The addon never relies on it for a delegate:
+  every `ak run` it launches names the chosen `@<profile>` explicitly
+  (`@default` for the CLI's own home), so the
+  account recorded in the lane table and in `delegate launch` is the one
+  that ran.
 - **Quota.** `ak usage --json` reports every account's windows and status —
   once per batch, never in a loop (each call contacts the vendors).
 - **Choice.** `ak pick <kind> --count N` returns up to N accounts with room,

@@ -85,7 +85,7 @@ repository and branch (§16.7).
 - **Every lane names its own pane.** The lead puts the lane's address
   (`<machine>:<pane>`) in its brief, and the lane passes `--pane <pane>` on
   every `herdr-peers` call (`ask`, `reply`, `check`, `wait`, `lanes`,
-  `cancel`; herdr-peers `v0.2.3` and later). A Codex lane cannot do without
+  `cancel`; herdr-peers `v0.2.2` and later). A Codex lane cannot do without
   it: Codex runs its commands from one background server per profile, whose
   `HERDR_PANE_ID` names the pane that first started that server, so every
   Codex lane on a profile after the first inherits the wrong id and
