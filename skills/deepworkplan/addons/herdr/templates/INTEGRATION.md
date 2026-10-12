@@ -33,6 +33,12 @@ DWP_PLAN=<dir> DWP_TASK=<T-id> herdr-peers ask [--worktree <path>] <machine_id>:
 
 Keep the ask id the helper prints; note it next to `<id>`.
 
+The brief names the peer's own pane and tells it to pass `--pane <pane_id>`
+on its `herdr-peers` calls: a Codex peer runs its commands from a shared
+per-profile server whose `HERDR_PANE_ID` names another pane, and without the
+flag its reply is refused. When this session itself is a Codex lane, pass
+`--pane` with its own pane on `ask`, `wait` and `check` too.
+
 ## 4. Observe and collect
 
 - `ledger.py … delegate observe`; `herdr-peers check <ask-id>`.

@@ -170,10 +170,10 @@ dailybot            repo          -           v3.23.12    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected
-devcontainer        machine+repo  -           v0.3.0      reconcile
+devcontainer        machine+repo  -           v0.3.1      reconcile
                     a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
-herdr               machine       v0.2.1      v0.2.1      available
-                    on this machine (v0.2.1, pin v0.2.1); not enabled for this repository
+herdr               machine       v0.2.2      v0.2.2      available
+                    on this machine (v0.2.2, pin v0.2.2); not enabled for this repository
 vim                 machine       -           v0.7.0      install
 pending: agentkit, ai-diff-reviewer, dependency-upgrade, devcontainer
 offers: dailybot, herdr, vim (only where they fit; a decline writes nothing)
