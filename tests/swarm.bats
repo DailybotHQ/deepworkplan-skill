@@ -22,6 +22,7 @@ setup() {
     printf '#!/bin/sh\nexec "%s" "$@"\n' "$(command -v git)" > "$WORK/bin/git"
     chmod +x "$WORK/bin/python3" "$WORK/bin/git"
     export PATH="$WORK/bin:/usr/bin:/bin"
+    unset HERDR_PANE_ID   # caller identity comes only from each test's --pane
     rm -f "$WORK/bin/ak"
     REPO="$WORK/repo"
     PLAN="$REPO/.dwp/plans/PLAN_001_swarm_fixture"
@@ -132,11 +133,11 @@ write_packet() { packet_input | python3 "$SWARM" handoff write --plan "$PLAN" --
     [[ "$output" == "handoff: hysteresis: your handoff packet is pending"* ]] || false
     HERDR_PANE_ID=w15:p1 run python3 "$SWARM" capacity --plan "$PLAN"
     [[ "$output" == handoff:* ]] || false
-    # a successor in another pane (drill F7/F18) — or a caller with no pane —
-    # gets its real verdict, with the pending packet named
+    # a successor in another pane (drill F7/F18) gets its real verdict, with
+    # the pending packet named (a caller with no pane fails closed: 7.7.1)
     run python3 "$SWARM" capacity --plan "$PLAN" --pane w9:p1
     [[ "$output" == "continue: capacity ok: 95% headroom"*"a handoff packet from another pane is pending"* ]] || false
-    run python3 "$SWARM" capacity --plan "$PLAN" --json
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane w9:p1 --json
     [[ "$output" == *'"decision": "continue"'*'"pending_packet": "analysis_results/handoff/'* ]] || false
     run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1
     [ "$status" -eq 0 ]
@@ -177,7 +178,7 @@ PY
     git worktree add -q "$WORK/wt-a" -b lane-a
     mkdir -p "$WORK/wt-a/.dwp/plans" && cp -R "$PLAN" "$WORK/wt-a/.dwp/plans/"
     cd "$WORK/wt-a"
-    run bash -c "printf '{\"next\": [\"go on\"]}' | python3 '$SWARM' handoff write --plan '$WORK/wt-a/.dwp/plans/PLAN_001_swarm_fixture' --task T --reason usage_limit --json -"
+    run bash -c "printf '{\"next\": [\"go on\"], \"from\": {\"pane\": \"w15:p1\"}}' | python3 '$SWARM' handoff write --plan '$WORK/wt-a/.dwp/plans/PLAN_001_swarm_fixture' --task T --reason usage_limit --json -"
     [ "$status" -eq 0 ]
     python3 - "$WORK/wt-a/$output" "$WORK/wt-a" <<'PY'
 import json, os, sys
@@ -190,16 +191,16 @@ PY
 
 @test "write: a secret-shaped value is refused and nothing is written" {
     key="sk-ant-$(printf 'b%.0s' $(seq 1 24))"   # built at runtime: a fake
-    run bash -c "printf '{\"next\": [\"export it\"], \"decisions\": [\"used %s\"]}' '$key' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    run bash -c "printf '{\"next\": [\"export it\"], \"decisions\": [\"used %s\"], \"from\": {\"pane\": \"w15:p1\"}}' '$key' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
     [ "$status" -eq 3 ]
     [[ "$output" == *'packet.decisions[0] carries an Anthropic key'* ]] || false
     [ ! -d "$PLAN/analysis_results/handoff" ]
     tok="$(printf 'z%.0s' $(seq 1 12))"
-    run bash -c "printf '{\"next\": [\"GITHUB_TOKEN=%s\"]}' '$tok' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    run bash -c "printf '{\"next\": [\"GITHUB_TOKEN=%s\"], \"from\": {\"pane\": \"w15:p1\"}}' '$tok' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
     [ "$status" -eq 3 ]
     [[ "$output" == *'a secret assignment'* ]] || false
     # naming a credential is fine
-    run bash -c "printf '{\"next\": [\"set XAI_API_KEY in CI\"]}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    run bash -c "printf '{\"next\": [\"set XAI_API_KEY in CI\"], \"from\": {\"pane\": \"w15:p1\"}}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
     [ "$status" -eq 0 ]
 }
 
@@ -268,7 +269,7 @@ PY
     python3 -c 'import json,sys,hashlib; s=json.load(open(sys.argv[1])); assert s["by"]=="local:w9:p1" and s["packet_sha256"]==hashlib.sha256(open(sys.argv[2],"rb").read()).hexdigest()' "$side" "$packet"
     run python3 "$SWARM" handoff show --plan "$PLAN" --pending
     [ "$status" -eq 1 ]
-    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$packet"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$packet" --pane w9:p1
     [ "$status" -eq 3 ]
     [[ "$output" == *'already accepted'* ]] || false
 }
@@ -277,19 +278,19 @@ PY
     run write_packet
     packet="$REPO/$output"
     printf 'z\n' > src/new.py
-    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
     [ "$status" -eq 3 ]
     [[ "$output" == *'dirty set differs'* ]] || false
     git add -A && git -c user.email=t@t -c user.name=t commit -qm moved
-    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
     [ "$status" -eq 3 ]
     [[ "$output" == *"head '"* ]] || false
     git checkout -q -b other
-    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
     [[ "$output" == *"branch 'main' is not the checkout's 'other'"* ]] || false
     git checkout -q main && git reset -q --hard HEAD~1
     printf '{"contract_id": "c2", "revision": 2}\n' > "$PLAN/contract.json"
-    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
     [ "$status" -eq 3 ]
     [[ "$output" == *'contract c1 is not the live contract c2'* ]] || false
     [ ! -e "${packet%.json}.accepted.json" ]
@@ -301,7 +302,7 @@ PY
     other="$REPO/.dwp/plans/PLAN_002_other"
     mkdir -p "$other/analysis_results/handoff" && cp "$PLAN/contract.json" "$other/"
     cp "$packet" "$other/analysis_results/handoff/"
-    run python3 "$SWARM" handoff accept --plan "$other"
+    run python3 "$SWARM" handoff accept --plan "$other" --pane w9:p1
     [ "$status" -eq 3 ]
     [[ "$output" == *"plan 'PLAN_001_swarm_fixture' is not this plan (PLAN_002_other)"* ]] || false
 }
@@ -317,12 +318,12 @@ PY
     [ -e "${first%.json}.superseded.json" ]
     run python3 "$SWARM" handoff show --plan "$PLAN" --pending
     [[ "$output" == *"$(basename "$second")"* ]] || false
-    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
     [ "$status" -eq 0 ]
     [ -e "${second%.json}.accepted.json" ]
     run python3 "$SWARM" capacity --plan "$PLAN"
     [[ "$output" == continue:* ]] || false
-    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$first"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$first" --pane w9:p1
     [ "$status" -eq 3 ]
     [[ "$output" == *'superseded by a later packet'* ]] || false
 }
@@ -337,7 +338,7 @@ PY
 
 @test "inputs are validated: packet path, input file, field types" {
     printf '{}\n' > "$WORK/elsewhere.json"
-    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$WORK/elsewhere.json"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$WORK/elsewhere.json" --pane w9:p1
     [ "$status" -eq 2 ]
     [[ "$output" == *'a packet is a .json file in'* ]] || false
     run python3 "$SWARM" handoff write --plan "$PLAN" --task T --reason usage_limit --json "$WORK/missing.json"
@@ -354,6 +355,57 @@ PY
     printf '{"contract_id": "c2", "revision": 2, "scheduling": {"handoff": {"fresh_context": "context pressure at 40%%"}}}\n' > "$PLAN/contracts/r2.json"
     run python3 "$SWARM" capacity --plan "$PLAN" --context-pct 45
     [[ "$output" == "handoff: context_pressure: 45% of context used (handoff at 40%)" ]] || false
+}
+
+# ------------------------------------------------------------------ identity (7.7.1)
+
+@test "capacity: an unknown caller identity fails closed while a packet is pending" {
+    fake_ak 0.6.1 "$(cap 95 ok)"
+    run write_packet
+    [ "$status" -eq 0 ]
+    # no --pane and no HERDR_PANE_ID: the caller may be the author, so it
+    # must not be told to continue
+    run python3 "$SWARM" capacity --plan "$PLAN"
+    [[ "$output" == "handoff: hysteresis: a handoff packet is pending and this caller's pane is unknown"* ]] || false
+    run python3 "$SWARM" capacity --plan "$PLAN" --json
+    [[ "$output" == *'"decision": "handoff"'* ]] || false
+    # a known successor pane still gets its real verdict — from --pane or
+    # from $HERDR_PANE_ID
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane w9:p1
+    [[ "$output" == continue:* ]] || false
+    HERDR_PANE_ID=w9:p1 run python3 "$SWARM" capacity --plan "$PLAN"
+    [[ "$output" == continue:* ]] || false
+}
+
+@test "write: a packet without a usable from.pane is refused (no identity, no hysteresis)" {
+    for body in '{"next": ["a"]}' '{"next": ["a"], "from": {}}' '{"next": ["a"], "from": {"pane": ""}}' \
+                '{"next": ["a"], "from": {"agent": "claude"}}'; do
+        run bash -c "printf '%s' '$body' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+        [ "$status" -eq 2 ] || { echo "accepted: $body"; return 1; }
+        [[ "$output" == *'from.pane'* ]] || false
+    done
+    [ ! -d "$PLAN/analysis_results/handoff" ]
+}
+
+@test "accept: the packet's own author cannot accept it; an unknown caller cannot either" {
+    run write_packet          # from.pane is w15:p1
+    packet="$REPO/$output"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w15:p1
+    [ "$status" -eq 3 ]
+    [[ "$output" == *"own author (w15:p1)"* ]] || false
+    HERDR_PANE_ID=w15:p1 run python3 "$SWARM" handoff accept --plan "$PLAN"
+    [ "$status" -eq 3 ]
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w15:p1
+    [ "$status" -eq 3 ]
+    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'pass --pane'* ]] || false
+    [ ! -e "${packet%.json}.accepted.json" ]
+    # the author's hysteresis still holds after the refused accepts
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane w15:p1
+    [[ "$output" == handoff:* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
+    [ "$status" -eq 0 ]
 }
 
 @test "show: no packet is a quiet zero; --pending with none exits 1" {
@@ -428,6 +480,16 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     doc_has "$SK/guide/execution.md" 're-gate the fixed task'                      # R2-F11
     doc_has "$SK/spec/DWP_SPECIFICATION.md" 'A test of exact output checks it with a sentinel'   # R2-F15
     doc_has "$SK/guide/authoring.md" '**Exact output needs a sentinel.**'
+}
+
+@test "the guide and the resume flow carry the 7.7.1 identity rules" {
+    G="$SK/guide/swarm.md"
+    doc_has "$G" 'A caller whose pane is unknown fails closed'
+    doc_has "$G" '`from.pane` is required'
+    doc_has "$G" '`swarm.py handoff accept --plan <dir> --pane <pane>`'
+    doc_has "$G" 'refuses the packet'"'"'s own author and a caller whose pane is unknown'
+    doc_has "$SK/resume/SKILL.md" 'then `handoff accept --pane <pane>`'
+    doc_has "$SK/resume/v6.md" '`handoff accept --plan <dir> --pane <pane>`'
 }
 
 @test "§16 lets lanes coordinate with each other and keeps the reactive path as the safety net" {
