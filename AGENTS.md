@@ -288,7 +288,10 @@ What this means for you:
   `.dwp/` convention → MAJOR (use `feat(...)!:` and explain in the PR body).
 - **Don't touch `CHANGELOG.md` or `version:` fields manually.** The bot owns
   them. If you do, the next auto-release overwrites the version line and
-  prepends a duplicate changelog section.
+  prepends a duplicate changelog section. The one exception: release notes
+  a PR wants in the next release (for example a `### Learnings` section) go in
+  a `## [Unreleased]` block above the newest version, which the next stable
+  release folds into its own section.
 - Bump-level guide for this skill specifically:
   - **MAJOR** = breaking the public surface (see rule 5).
   - **MINOR** = additive (new sub-skill, new addon, new preset, new flag).

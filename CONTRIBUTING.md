@@ -268,7 +268,7 @@ a minor release is not.
 ### What you should *never* edit by hand
 
 - `version:` fields in any `SKILL.md` frontmatter
-- `CHANGELOG.md` entries (the release section is generated)
+- `CHANGELOG.md` entries (the release section is generated; hand-written notes go only in a `## [Unreleased]` block, folded into the next release)
 - Git tags
 
 If you do edit them by hand, the next auto-release will overwrite the version

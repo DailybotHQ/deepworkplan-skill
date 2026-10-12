@@ -202,6 +202,14 @@ jobs:
         run: |
           DATE=$(date -u +%Y-%m-%d)
 
+          # A PR may carry hand-written release notes (for example a
+          # "### Learnings" section) in a "## [Unreleased]" block. Fold its
+          # body into this release's section and drop the block; without
+          # one, both files come out exactly as before.
+          awk '/^## \[Unreleased\]/ {u=1; next} u && /^## \[/ {u=0} u' CHANGELOG.md > /tmp/unreleased.md
+          awk '/^## \[Unreleased\]/ {u=1; next} u && /^## \[/ {u=0} !u' CHANGELOG.md > CHANGELOG.md.tmp
+          mv CHANGELOG.md.tmp CHANGELOG.md
+
           # Build the new section.
           {
             echo "## [${NEW_VERSION}] — ${DATE}"
@@ -212,6 +220,11 @@ jobs:
               [ -n "$line" ] && echo "- ${line}"
             done <<< "$COMMITS"
             echo ""
+            if grep -q '[^[:space:]]' /tmp/unreleased.md; then
+              # the block's body without its leading and trailing blank lines
+              awk 'NF {p=1} p {a[++n]=$0; if (NF) last=n} END {for (i=1; i<=last; i++) print a[i]}' /tmp/unreleased.md
+              echo ""
+            fi
           } > /tmp/new_section.md
 
           # Insert the new section after the leading "# Changelog" header
