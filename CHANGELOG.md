@@ -23,6 +23,9 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   `dwp-handoff-v1` schema.
 - AGENT_PROTOCOL §7.5 escalation taxonomy (C1–C7) and the quality bar
   (DWP_SPECIFICATION §5.1.4).
+- Pins: coding-agents-kit `v0.6.0` (`ak capacity`, usage cache, `ak lease`)
+  and herdr-peers `v0.3.0` (notices, the per-plan lead record, `usage_limit`
+  screens), each with its release `SHA256SUMS` digest.
 
 ### Learnings
 
