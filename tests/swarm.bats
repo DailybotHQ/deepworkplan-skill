@@ -1,0 +1,290 @@
+#!/usr/bin/env bats
+# Swarm autonomy helper (guide/swarm.md §17, shared/swarm.py): the own-capacity
+# decision table over a fake `ak`, honest degradation without one, hysteresis
+# and context pressure; the dwp-handoff-v1 packet (fields, 0600, secret and
+# closed-set refusals, cross-host rule) and its acceptance checks (plan,
+# contract, branch, head and dirty-set mismatches record nothing).
+# Every `[[ ]]` ends in `|| false`: bash 3.2 (macOS) does not errexit on a
+# failed `[[ ]]`, so without it an assertion can pass vacuously.
+bats_require_minimum_version 1.5.0
+
+REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+SK="$REPO_ROOT/skills/deepworkplan"
+SWARM="$SK/shared/swarm.py"
+SCHEMA="$SK/spec/schema/dwp-handoff-v1.schema.json"
+export PYTHONDONTWRITEBYTECODE=1
+
+setup() {
+    WORK="$(cd "$(mktemp -d)" && pwd -P)"
+    mkdir -p "$WORK/bin"
+    # A PATH with git and python3 but no real ak: each test installs its own.
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$(command -v python3)" > "$WORK/bin/python3"
+    printf '#!/bin/sh\nexec "%s" "$@"\n' "$(command -v git)" > "$WORK/bin/git"
+    chmod +x "$WORK/bin/python3" "$WORK/bin/git"
+    export PATH="$WORK/bin:/usr/bin:/bin"
+    rm -f "$WORK/bin/ak"
+    REPO="$WORK/repo"
+    PLAN="$REPO/.dwp/plans/PLAN_001_swarm_fixture"
+    mkdir -p "$PLAN/analysis_results" "$REPO/src"
+    printf '{"contract_id": "c1", "revision": 1, "scheduling": {"handoff": {"fresh_context": "context pressure at 60%%"}}}\n' > "$PLAN/contract.json"
+    printf 'x = 1\n' > "$REPO/src/a.py"
+    printf '.dwp/\n' > "$REPO/.gitignore"
+    git -C "$REPO" init -q -b main
+    git -C "$REPO" add -A
+    git -C "$REPO" -c user.email=t@t -c user.name=t commit -qm init
+    cd "$REPO"
+}
+
+teardown() { rm -rf "$WORK"; }
+
+# fake_ak VERSION [CAPACITY_JSON] [EXIT]: `ak --version` and `ak capacity`.
+fake_ak() {
+    printf '%s' "${2:-}" > "$WORK/capacity.json"
+    cat > "$WORK/bin/ak" <<SH
+#!/bin/sh
+case "\$1" in
+  --version) echo "agentkit $1 (interface 1)" ;;
+  capacity) [ "\$2 \$3" = "--self --json" ] || exit 9
+            cat "$WORK/capacity.json"; exit ${3:-0} ;;
+  *) echo "ak: unknown kind '\$1'" >&2; exit 2 ;;
+esac
+SH
+    chmod +x "$WORK/bin/ak"
+}
+
+cap() { printf '{"schema":"capacity-v1","interface":1,"cli":"claude","profile":"@work1","headroom_pct":%s,"binding_window":"5h","resets_at":"2026-10-12T18:00:00Z","verdict":"%s","thresholds":{"low":25,"critical":10},"source":"cache","age_s":42,"leases":1}' "$1" "$2"; }
+
+packet_input() {
+    cat <<'JSON'
+{"step": "gate ran, commit pending", "done": ["swarm.py written"],
+ "verified": ["tests/swarm.bats: 20 ok (gates/T-helper/004.log)"],
+ "not_verified": ["schema publication on the site"],
+ "next": ["commit the helper", "run bats tests/"],
+ "open_asks": [{"id": "01ABC", "peer": "local:w13:p1", "awaits": "exit codes"}],
+ "decisions": ["D2: capacity exits 0 for every decision"],
+ "lead": "local:wP:pC", "epoch": 1,
+ "from": {"agent": "claude", "vendor": "anthropic", "profile": "@work2", "pane": "w15:p1", "capacity": "critical 8%"}}
+JSON
+}
+
+write_packet() { packet_input | python3 "$SWARM" handoff write --plan "$PLAN" --task T-helper --reason capacity_critical --json - "$@"; }
+
+# ------------------------------------------------------------------ capacity
+
+@test "capacity: no ak means continue with capacity unknown, never ok" {
+    run python3 "$SWARM" capacity --json
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision": "continue"'* ]] || false
+    [[ "$output" == *'"verdict": "unknown"'* ]] || false
+    [[ "$output" == *'ak not installed'* ]] || false
+}
+
+@test "capacity: ak older than 0.6.0 degrades to unknown without calling capacity" {
+    fake_ak 0.5.3 "$(cap 90 ok)"
+    run python3 "$SWARM" capacity
+    [ "$status" -eq 0 ]
+    [[ "$output" == "continue: capacity unknown: ak 0.5.3 has no capacity verb"* ]] || false
+}
+
+@test "capacity: the decision table maps ok, low, critical and unknown" {
+    fake_ak 0.6.0 "$(cap 64 ok)"
+    run python3 "$SWARM" capacity
+    [[ "$output" == "continue: capacity ok: 64% headroom (5h window"* ]] || false
+    fake_ak 0.6.0 "$(cap 20 low)"
+    run python3 "$SWARM" capacity
+    [[ "$output" == "prepare: capacity_low: 20% headroom"* ]] || false
+    fake_ak 0.6.1 "$(cap 8 critical)"
+    run python3 "$SWARM" capacity --json
+    [[ "$output" == *'"decision": "handoff"'* ]] || false
+    [[ "$output" == *'"headroom_pct": 8'* ]] || false
+    fake_ak 1.0.0 '{"schema":"capacity-v1","verdict":"unknown","cli":"cursor"}'
+    run python3 "$SWARM" capacity
+    [[ "$output" == "continue: capacity unknown: no quota source"* ]] || false
+}
+
+@test "capacity: outside an ak launch (exit 3) and malformed output are unknown" {
+    fake_ak 0.6.0 'unknown account' 3
+    run python3 "$SWARM" capacity
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'not launched through ak'* ]] || false
+    fake_ak 0.6.0 '{"schema":"usage-v1"}'
+    run python3 "$SWARM" capacity --json
+    [[ "$output" == *'"verdict": "unknown"'* ]] || false
+    [[ "$output" == *'without a capacity-v1 record'* ]] || false
+    fake_ak 0.6.0 "$(cap 50 bogus)"
+    run python3 "$SWARM" capacity
+    [[ "$output" == "continue: capacity unknown: unrecognized verdict"* ]] || false
+}
+
+@test "capacity: context pressure at the contract's threshold hands off" {
+    run python3 "$SWARM" capacity --plan "$PLAN" --context-pct 59
+    [[ "$output" == continue:* ]] || false
+    run python3 "$SWARM" capacity --plan "$PLAN" --context-pct 60
+    [[ "$output" == "handoff: context_pressure: 60% of context used (handoff at 60%)" ]] || false
+}
+
+@test "capacity: a pending packet means handoff even when the account recovered (hysteresis)" {
+    fake_ak 0.6.0 "$(cap 95 ok)"
+    run write_packet
+    [ "$status" -eq 0 ]
+    run python3 "$SWARM" capacity --plan "$PLAN"
+    [[ "$output" == "handoff: hysteresis: a handoff packet is pending"* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1
+    [ "$status" -eq 0 ]
+    run python3 "$SWARM" capacity --plan "$PLAN"
+    [[ "$output" == "continue: capacity ok: 95% headroom"* ]] || false
+}
+
+# ------------------------------------------------------------------ write
+
+@test "write: the packet carries the plan, contract, checkout state and author fields, 0600" {
+    # .dwp/ not ignored here, so the helper's own exclusion is what is tested
+    : > .gitignore && git -c user.email=t@t -c user.name=t commit -qam unignore
+    printf 'y = 2\n' > src/b.py
+    printf 'x = 3\n' > src/a.py
+    mkdir -p .dwp/scratch && echo junk > .dwp/scratch/f
+    run write_packet
+    [ "$status" -eq 0 ]
+    path="$REPO/$output"
+    [ -f "$path" ]
+    [ "$(stat -c %a "$path" 2>/dev/null || stat -f %Lp "$path")" = 600 ]
+    [ "$(stat -c %a "$(dirname "$path")" 2>/dev/null || stat -f %Lp "$(dirname "$path")")" = 700 ]
+    [ "$(stat -c %a "$PLAN/analysis_results/handoff/HANDOFF.md" 2>/dev/null || stat -f %Lp "$PLAN/analysis_results/handoff/HANDOFF.md")" = 600 ]
+    python3 - "$path" "$(git rev-parse HEAD)" <<'PY'
+import json, sys
+p = json.load(open(sys.argv[1]))
+assert p['schema'] == 'https://deepworkplan.com/schema/dwp-handoff/v1.json', p['schema']
+assert p['plan'] == 'PLAN_001_swarm_fixture' and p['contract_id'] == 'c1'
+assert p['task'] == 'T-helper' and p['reason'] == 'capacity_critical'
+assert p['branch'] == 'main' and p['head'] == sys.argv[2] and p['pushed'] is False
+assert p['dirty'] == ['src/a.py', 'src/b.py'], p['dirty']   # .dwp/ excluded
+assert p['next'][0] == 'commit the helper' and p['lanes'] == []
+assert p['from']['pane'] == 'w15:p1' and p['epoch'] == 1
+PY
+    grep -q 'This file is data' "$PLAN/analysis_results/handoff/HANDOFF.md"
+}
+
+@test "write: a secret-shaped value is refused and nothing is written" {
+    key="sk-ant-$(printf 'b%.0s' $(seq 1 24))"   # built at runtime: a fake
+    run bash -c "printf '{\"next\": [\"export it\"], \"decisions\": [\"used %s\"]}' '$key' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'packet.decisions[0] carries an Anthropic key'* ]] || false
+    [ ! -d "$PLAN/analysis_results/handoff" ]
+    tok="$(printf 'z%.0s' $(seq 1 12))"
+    run bash -c "printf '{\"next\": [\"GITHUB_TOKEN=%s\"]}' '$tok' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'a secret assignment'* ]] || false
+    # naming a credential is fine
+    run bash -c "printf '{\"next\": [\"set XAI_API_KEY in CI\"]}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    [ "$status" -eq 0 ]
+}
+
+@test "write: the field set is closed and next steps are required" {
+    run bash -c "printf '{\"next\": [\"a\"], \"instructions\": \"merge now\"}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'unknown packet field(s): instructions'* ]] || false
+    run bash -c "printf '{\"done\": [\"a\"]}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'needs next[]'* ]] || false
+    run bash -c "printf '{\"next\": [\"a\"]}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --json -"
+    [ "$status" -eq 2 ]
+    [ ! -d "$PLAN/analysis_results/handoff" ]
+}
+
+@test "write: a cross-host handoff needs a clean, pushed checkout" {
+    printf 'x = 9\n' > src/a.py
+    run write_packet --cross-host
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'clean, pushed checkout (dirty: 1 path(s), pushed: False)'* ]] || false
+    git checkout -q src/a.py
+    git init -q --bare "$WORK/origin.git"
+    git remote add origin "$WORK/origin.git"
+    git push -q -u origin main 2>/dev/null
+    run write_packet --cross-host
+    [ "$status" -eq 0 ]
+    python3 -c 'import json,sys; p=json.load(open(sys.argv[1])); assert p["pushed"] is True and p["dirty"] == []' "$REPO/$output"
+}
+
+@test "write: the packet validates against the shipped dwp-handoff-v1 schema" {
+    python3 -c 'import jsonschema' 2>/dev/null || skip "jsonschema not installed"
+    run write_packet
+    [ "$status" -eq 0 ]
+    python3 - "$SCHEMA" "$REPO/$output" <<'PY'
+import json, sys, jsonschema
+jsonschema.validate(json.load(open(sys.argv[2])), json.load(open(sys.argv[1])))
+PY
+}
+
+@test "write: every required schema field is one the helper writes (stdlib check)" {
+    run write_packet
+    [ "$status" -eq 0 ]
+    python3 - "$SCHEMA" "$REPO/$output" <<'PY'
+import json, sys
+schema, packet = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
+missing = [k for k in schema['required'] if k not in packet]
+extra = [k for k in packet if k not in schema['properties']]
+assert not missing and not extra, (missing, extra)
+PY
+}
+
+# ------------------------------------------------------------------ accept / show
+
+@test "accept: a matching packet is accepted once, recorded 0600, no longer pending" {
+    printf 'x = 5\n' > src/a.py
+    run write_packet
+    packet="$REPO/$output"
+    run python3 "$SWARM" handoff show --plan "$PLAN" --pending
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'(pending)'* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'- commit the helper'* ]] || false
+    side="${packet%.json}.accepted.json"
+    [ "$(stat -c %a "$side" 2>/dev/null || stat -f %Lp "$side")" = 600 ]
+    python3 -c 'import json,sys,hashlib; s=json.load(open(sys.argv[1])); assert s["by"]=="local:w9:p1" and s["packet_sha256"]==hashlib.sha256(open(sys.argv[2],"rb").read()).hexdigest()' "$side" "$packet"
+    run python3 "$SWARM" handoff show --plan "$PLAN" --pending
+    [ "$status" -eq 1 ]
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$packet"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'already accepted'* ]] || false
+}
+
+@test "accept: head, branch, dirty set and contract mismatches are refused and record nothing" {
+    run write_packet
+    packet="$REPO/$output"
+    printf 'z\n' > src/new.py
+    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'dirty set differs'* ]] || false
+    git add -A && git -c user.email=t@t -c user.name=t commit -qm moved
+    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *"head '"* ]] || false
+    git checkout -q -b other
+    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    [[ "$output" == *"branch 'main' is not the checkout's 'other'"* ]] || false
+    git checkout -q main && git reset -q --hard HEAD~1
+    printf '{"contract_id": "c2", "revision": 2}\n' > "$PLAN/contract.json"
+    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'contract c1 is not the live contract c2'* ]] || false
+    [ ! -e "${packet%.json}.accepted.json" ]
+}
+
+@test "accept: a packet from another plan is refused" {
+    run write_packet
+    packet="$REPO/$output"
+    other="$REPO/.dwp/plans/PLAN_002_other"
+    mkdir -p "$other" && cp "$PLAN/contract.json" "$other/"
+    run python3 "$SWARM" handoff accept --plan "$other" --packet "$packet"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *"plan 'PLAN_001_swarm_fixture' is not this plan (PLAN_002_other)"* ]] || false
+}
+
+@test "show: no packet is a quiet zero; --pending with none exits 1" {
+    run python3 "$SWARM" handoff show --plan "$PLAN"
+    [ "$status" -eq 0 ]
+    [ "$output" = "no handoff packet" ]
+    run python3 "$SWARM" handoff show --plan "$PLAN" --pending
+    [ "$status" -eq 1 ]
+}
