@@ -69,7 +69,7 @@ recipes — those drift; the pinned skill is the single source.
 |---|---|
 | **launch** | Record `delegate launch` (`transport: interactive`, `via: herdr`, `target: <machine_id>:<pane_id>`, `prompt_digest`) **before** asking; then `herdr-peers ask <machine_id>:<pane_id> "<brief>"` with `DWP_PLAN` and `DWP_TASK` set (a writing peer gets `--worktree <path>`). |
 | **observe** | Read-only: `delegate observe`; `herdr-peers check <id>` / `log`. |
-| **collect** | The single reply (`herdr-peers wait <id>` or delivered to this pane) is saved under `analysis_results/delegations/<id>/`; record `delegate collect` (`completed`, or `failed` on refusal/timeout). |
+| **collect** | The single reply (`herdr-peers wait <id>` or delivered to this pane) is saved under `analysis_results/delegations/<id>/`; record `delegate collect` (`completed`, or `failed` on refusal, timeout or an ask closed `unroutable`, with that reason). |
 | **cancel** | `herdr-peers cancel <id> --reason "<why>"`; record `delegate cancel`. |
 
 - The brief **MUST** be self-contained (objective, acceptance criteria
@@ -120,7 +120,8 @@ recipes — those drift; the pinned skill is the single source.
 ## 7. Never-Block Rule
 
 No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger
-refusal, a timeout or a refused reply: record and continue sequentially.
+refusal, a timeout, a refused reply or an ask closed `unroutable`: record and
+continue sequentially.
 Nothing blocks `onboard`, `create`, `execute` or `verify`.
 
 ## 8. Validation Checklist
