@@ -34,6 +34,9 @@ when their moment arrives. (This ordering is deliberate: reading companions
     v6 or v7 plan; it carries the whole task loop.
   - [`delegation.md`](delegation.md) — read only when a v7 plan granting
     `agent_delegation` delegates a task.
+  - [`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the
+    agentkit addon is enabled (capacity check at each task boundary:
+    `../shared/swarm.py capacity`) or a handoff or succession is in play.
   - [`../spec/LITE_PLANS.md`](../spec/LITE_PLANS.md) — read only when the
     plan README declares `Plan Format: Lite` or a v2 state line (anchored
     task records, approval axis, promotion recovery).
@@ -102,7 +105,6 @@ exist**, is a partial materialization — point to `refine` and stop.
 
 ## Ready-plan approval and Lite execution
 
-Read `spec/LITE_PLANS.md` when the plan declares v2 state or `Plan Format: Lite`.
 A Lite plan is valid without task files. Its canonical README task index and
 anchored `#task-N` records are the source of truth; completion logs and state
 are evidence, not competing task status. Ignore fenced example checkboxes.
@@ -204,11 +206,9 @@ explicit Executive Report request.
 **Step 2.0 — Detect plan generation (v6).** If the plan folder carries a
 `manifest.json` whose `contract` pointer resolves, a `contract.json`, or a
 `contracts/` revision chain, this is a **v6 plan**: **read
-[`v6.md`](v6.md)** (this directory) and run the v6 loop there for the whole
-execution — the steps below are the v5 loop and do not apply. A v6 plan is
-never executed through the v5 steps, and a v5 plan is never migrated to v6
-mid-flight; a v5-only runner that meets a v6 plan reports it as unsupported
-and stops rather than approximating it.
+[`v6.md`](v6.md)** (this directory) and run its loop for the whole execution;
+the v5 steps below never apply to it. A v5 plan is never migrated mid-flight;
+a v5-only runner that meets a v6 plan reports it unsupported and stops.
 
 **Step 2.1 — Detect plan type.** Set `plan_type = "orchestrator"` if the README
 has a "Child DWP Plans" section, or task files contain `create_child_dwp` /
@@ -392,10 +392,9 @@ Rules (strict):
 
    A gate record is a closed object — `{"command", "passes": true|false,
    "last_run": "<ISO-8601>", "exit_code": <int>, "evidence": "<= 500 chars"}`.
-   `passes` is a boolean, never the prose `"pass"` used in the status line
-   above, and no other field is accepted; the state schemas reject anything
-   else, so a plan whose gates carry an invented field fails verification even
-   though its work is done (`../spec/PLAN_STATE.md` §4.2).
+   `passes` is a boolean, never the prose `"pass"`; the state schemas reject
+   any other field, so an invented field fails verification even when the
+   work is done (`../spec/PLAN_STATE.md` §4.2).
 
    Prefer the shipped updater for this close step — it applies exactly the
    delta above (status, gates, outcome, commit, counts, checkpoint) atomically
@@ -419,10 +418,9 @@ Rules (strict):
    refactor), trigger the `dailybot` skill (e.g. "report this to Dailybot" or
    `/dailybot_report`) with a standup-style message — WHAT was accomplished + WHY
    it matters. Do NOT report intermediate setup tasks; the plan-completion report
-   (Step 7) covers those. Never use internal "Completed Task N" phrasing. If
-   reporting fails, or the session has no Dailybot authorization, continue
-   without blocking. Invoke the `dailybot` skill only when the optional addon is
-   installed and authorized; it is not bundled with DWP.
+   (Step 7) covers those. Never use internal "Completed Task N" phrasing. Only
+   with the optional addon installed and authorized; a failed report never
+   blocks.
 
 8. **Show the compact result (Step 6) and move to the next `[ ]` task.** Do not
    ask whether to continue after a successful task — inside the plan's

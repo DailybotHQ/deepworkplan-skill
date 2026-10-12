@@ -217,12 +217,13 @@ agent runs **lanes** — one agent per repository, each in its own
 |---------|-----|
 | Accounts and vendors | `ak usage --json` once per batch; `ak pick <kind> --count N` assigns the accounts with the most room; Claude, Codex and others mix by plan choice |
 | Launch | `ak <kind> @<profile> --trust-cwd "<lane brief>"` in a pane on the lane's checkout; in containers, the host's accounts through host profiles |
-| Coordination | only the lead and each lane, through herdr-peers asks and replies: plan ready, PR open, blocked, done; GO with the release tags |
+| Coordination | the lead assigns work through herdr-peers asks and replies (plan ready, PR open, blocked, handoff, done — each with a capacity line; GO with the release tags); lanes may ask each other for information, never assign work |
+| Staying alive | each agent checks its own capacity at task boundaries (`swarm.py capacity`, coding-agents-kit `v0.6.0`); at `critical` it writes a handoff packet and a successor resumes the plan; the lead hands over its leadership the same way, or the first reachable deputy takes over (herdr-peers `v0.3.0`); only critical items (C1–C7) go to you |
 | Branches and releases | one lane per repository on its base checkout: one branch, one PR, one release; worktrees only when two writers share a repository |
 | Unattended operation | under your standing authorization, lanes launch with no per-launch approval: folders are pre-trusted with `--trust-cwd`, Claude's bypass-permissions acknowledgement is a one-time step you take per profile, and any other prompt a lane meets is recorded and escalated to you — the one keystroke an agent may send is folder trust on a pane it launched when `--trust-cwd` is unavailable |
 | Verification and record | each repository's own gate decides; every delegation, intervention and account is recorded in the plan |
 
-Guide: [`guide/orchestration-at-scale.md`](skills/deepworkplan/guide/orchestration-at-scale.md).
+Guides: [`guide/orchestration-at-scale.md`](skills/deepworkplan/guide/orchestration-at-scale.md) and [`guide/swarm.md`](skills/deepworkplan/guide/swarm.md).
 
 ## Skills
 

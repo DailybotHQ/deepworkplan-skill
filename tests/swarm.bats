@@ -288,3 +288,46 @@ PY
     run python3 "$SWARM" handoff show --plan "$PLAN" --pending
     [ "$status" -eq 1 ]
 }
+
+# ------------------------------------------------------------------ the guide
+
+doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+
+@test "guide §17 teaches every swarm topic the design names" {
+    G="$SK/guide/swarm.md"
+    for heading in '## 17. Swarm Autonomy' '### 17.1. Roles' '### 17.2. The lane contract' \
+        '### 17.3. The capacity loop' '### 17.4. Scheduling and the declared pool' \
+        '### 17.5. The handoff packet' '### 17.6. Lane handoff (proactive)' '### 17.7. Lead succession' \
+        '### 17.8. Messaging' '### 17.9. Escalation in a swarm' '### 17.10. Release train' \
+        '### 17.11. The record' '### 17.12. Drilling it'; do
+        grep -qxF "$heading" "$G" || { echo "missing: $heading"; return 1; }
+    done
+    for phrase in '**Deputy**' '**Reviewer**' 'Several leads' 'Several instances of one kind' \
+        'Hysteresis.' 'Context pressure is capacity too.' 'The pool is the developer' \
+        'herdr-peers lead takeover --plan <P>' 'Fencing.' 'Lane ↔ lane' 'herdr-peers notify' \
+        'blocks its dependency chain, not the swarm' 'AGENTKIT_CAPACITY_CAP=@<profile>=8' \
+        'swarm.py capacity --plan' 'swarm.py handoff accept --plan' 'Never an admin merge'; do
+        doc_has "$G" "$phrase" || { echo "missing: $phrase"; return 1; }
+    done
+}
+
+@test "guide §17 is routed from GUIDE.md and §16, and loads only on its trigger" {
+    grep -qF '| ## 17. Swarm Autonomy | [`swarm.md`](./swarm.md) |' "$SK/guide/GUIDE.md"
+    doc_has "$SK/guide/GUIDE.md" '[`swarm.md`](./swarm.md) for capacity checks, handoff packets and lead succession'
+    doc_has "$SK/guide/orchestration-at-scale.md" 'read §17 ([`swarm.md`](swarm.md))'
+    doc_has "$SK/execute/SKILL.md" '[`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the agentkit addon is enabled'
+    # never part of any flow's compulsory read set
+    run bash "$REPO_ROOT/tests/efficiency/measure-instruction-load.sh" "$REPO_ROOT"
+    [ "$status" -eq 0 ]
+    ! printf '%s\n' "$output" | grep -E '^(create|execute|resume|refine|onboard|status|verify) ' | grep -q 'guide/swarm.md' || false
+}
+
+@test "§16 lets lanes coordinate with each other and keeps the reactive path as the safety net" {
+    O="$SK/guide/orchestration-at-scale.md"
+    ! doc_has "$O" 'Lanes never message each other' || false
+    doc_has "$O" 'Lane ↔ lane asks are for information and coordination'
+    doc_has "$O" 'never for assigning work'
+    doc_has "$O" 'Hand off before the limit'
+    doc_has "$O" 'What follows is the reactive safety net'
+    doc_has "$O" 'Work moves only among the accounts the developer declared for it'
+}
