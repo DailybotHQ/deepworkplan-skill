@@ -172,8 +172,8 @@ design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected
 devcontainer        machine+repo  -           v0.3.5      reconcile
                     a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
-herdr               machine       v0.3.1      v0.3.1      available
-                    on this machine (v0.3.1, pin v0.3.1); not enabled for this repository
+herdr               machine       v0.3.2      v0.3.2      available
+                    on this machine (v0.3.2, pin v0.3.2); not enabled for this repository
 vim                 machine       -           v0.7.0      install
 pending: agentkit, ai-diff-reviewer, dependency-upgrade, devcontainer
 offers: dailybot, herdr, vim (only where they fit; a decline writes nothing)

@@ -101,6 +101,6 @@ for f in sys.argv[1:]:
 
 @test "spec: ADDONS.md §7 documents the descriptor and the shipped table" {
   grep -q '^## 7\. Addon Descriptors (`addon.json`)$' "$SK/spec/ADDONS.md"
-  grep -qF '| `herdr` | `DailybotHQ/herdr-peers` `v0.3.1`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |' "$SK/spec/ADDONS.md"
+  grep -qF '| `herdr` | `DailybotHQ/herdr-peers` `v0.3.2`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |' "$SK/spec/ADDONS.md"
   grep -qF '"$id": "https://deepworkplan.com/schema/addon-descriptor/v1.json"' "$SK/spec/schema/addon-descriptor-v1.schema.json"
 }

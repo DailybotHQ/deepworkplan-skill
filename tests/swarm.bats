@@ -424,6 +424,7 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     doc_has "$G" '**Epoch bookkeeping.**'                                          # R2-F13
     doc_has "$G" 'the release `N+2` (lead none)'
     doc_has "$G" '`lead show` from `v0.3.2`'                                       # R2-F3
+    doc_has "$G" 'refuses a same-id claim from another repository: name the plan `--plan <repo>/<id>` there'
     doc_has "$SK/guide/execution.md" 're-gate the fixed task'                      # R2-F11
     doc_has "$SK/spec/DWP_SPECIFICATION.md" 'A test of exact output checks it with a sentinel'   # R2-F15
     doc_has "$SK/guide/authoring.md" '**Exact output needs a sentinel.**'

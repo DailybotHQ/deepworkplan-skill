@@ -234,8 +234,9 @@ never hard-codes the lead's pane.
   invented.
 - **Epoch bookkeeping.** Every record change raises the epoch: a claim of a fresh plan is epoch
   `N` (1 for a new record), each handover or takeover `N+1`, and the release `N+2` (lead none).
-  A record reused under the same plan id continues from its last epoch — name plans uniquely
-  across repositories, or the record carries over.
+  A record reused under the same plan id continues from its last epoch. From herdr-peers
+  `v0.3.2` the record keeps the claiming repository's root locally and refuses a same-id claim
+  from another repository: name the plan `--plan <repo>/<id>` there.
 - **Fencing.** Only the holder of the highest epoch acts as lead. A receiving `check` accepts
   a lead notice only from the agent that briefed it (first claim), from the current lead at
   epoch + 1 (handover or release), or from a succession entry at epoch + 1 naming itself when

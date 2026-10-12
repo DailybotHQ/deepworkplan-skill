@@ -25,10 +25,12 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   (DWP_SPECIFICATION §5.1.4).
 - Pins: coding-agents-kit `v0.6.1` (`ak capacity`, usage cache, `ak lease`;
   the patch fixes Codex lanes' `--self`, own-lease counting with `--reuse`
-  and account resolution found by the live drill) and herdr-peers `v0.3.1`
-  (notices, the per-plan lead record, `usage_limit` screens; the patch makes
-  lead changes succeed past closed panes and accepts `status --pane`), each
-  with its release `SHA256SUMS` digest.
+  and account resolution found by the live drill) and herdr-peers `v0.3.2`
+  (notices, the per-plan lead record, `usage_limit`
+  screens; the patches make lead changes succeed past closed panes, accept
+  `status --pane` and `lead show --pane`, resolve a `DWP_PLAN` plan id, and
+  keep a lead record's repository root local), each with its release
+  `SHA256SUMS` digest.
 - Known limitation: the v7 journal has no dedicated event for a lane handoff
   or a lead succession (recorded as a cancelled delegation plus an
   observation); dedicated shapes are a follow-up.

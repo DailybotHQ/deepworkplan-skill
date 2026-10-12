@@ -348,14 +348,14 @@ form**; only its CI surface is optional.
 ### 6.6 Herdr (sixth addon — interactive delegation transport, thin integrator)
 
 An optional addon integrating **herdr-peers** (`DailybotHQ/herdr-peers`,
-MIT, its own release cycle) pinned at `v0.3.1` (protocol/interface `1`), as
+MIT, its own release cycle) pinned at `v0.3.2` (protocol/interface `1`), as
 the **interactive** transport of v7 delegation
 ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `herdr-peers ask` to a peer agent
 in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
 the plan journal before the reply is relied on, the reply asserted until
 the plan's own gates observe the work. `onboard` Phase 7b offers it as an
 **explicit opt-in**; installs are the pinned skills
-(`herdr-peers@v0.3.1`, Herdr's official `herdr@v0.9.3`).
+(`herdr-peers@v0.3.2`, Herdr's official `herdr@v0.9.3`).
 
 Placement decision (revised for 7.0.0): the peer protocol — stamp, grant,
 reply, loop guard, depth limit 1, fan-out cap, scope — moved out of the
@@ -448,7 +448,7 @@ The shipped set:
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
 | `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.3.5`, interface 2 | — | — | — |
-| `herdr` | `DailybotHQ/herdr-peers` `v0.3.1`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
+| `herdr` | `DailybotHQ/herdr-peers` `v0.3.2`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
 | `vim` | `DailybotHQ/deepworkplan-vim` `v0.7.0`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
