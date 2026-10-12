@@ -11,7 +11,28 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
-## [Unreleased]
+## [7.7.0] — 2026-10-12
+
+### Changes
+
+- Merge pull request #82 from DailybotHQ/feat/swarm-autonomy
+- fix(addon): pin herdr-peers v0.3.2
+- fix(shared): drill round-2 hardening — packet repo, export usage, §17 rules
+- fix(test): measurement script no longer fails on sort's broken pipe
+- fix(addon): pin coding-agents-kit v0.6.1 and herdr-peers v0.3.1
+- fix(shared): hysteresis binds the packet's author; §17 drill round-1 fixes
+- fix(addon): pin coding-agents-kit v0.6.0 and herdr-peers v0.3.0
+- docs(skill): §17.2 — every herdr-peers call, check included, passes the lane's pane
+- fix(execute): never overwrite a pending packet; resume checks packets first
+- fix(shared): resolve the local review — stale packets, ordering, never-block wording
+- ci(release): fold an Unreleased block into the release section; Learnings for 7.7.0
+- fix(shared): an untouched earlier view render is machine output, not a human edit
+- feat(addon): agentkit capacity and leases; herdr notices and leadership
+- feat(execute): capacity check at each task boundary; resume reads a pending packet first
+- feat(skill): the quality bar — gates are hypotheses, verified not asserted
+- feat(skill): escalation taxonomy C1-C7 — decide and record everything else
+- feat(docs): add Guide §17 Swarm autonomy and route it on its trigger
+- feat(shared): add swarm.py — own-capacity decision and the handoff packet
 
 ### Swarm autonomy
 
@@ -95,6 +116,7 @@ measured share in the plans read):
   broadcast (no ACKs), named locks for shared resources, the non-blocking gap
   protocol. Evidence: ACK storms, stale freezes and two agents on one plan
   (3/6 audits).
+
 
 ## [7.6.3] — 2026-10-12
 
