@@ -9,6 +9,18 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.6.3] — 2026-10-12
+
+### Changes
+
+- Merge pull request #81 from DailybotHQ/fix/pins-ak-052-hp-023-dck-033
+- fix(addon): map unroutable asks onto collect and never-block
+- fix(addon): pin devcontainer-kit v0.3.5 and document workspace satellites
+- fix(addon): pin coding-agents-kit v0.5.3; document dck v0.3.4 and legacy herdr-peers replies
+- fix(addon): keep the --pane floor and name the profile on every ak run
+- fix(addon): pin coding-agents-kit v0.5.2, herdr-peers v0.2.3 and devcontainer-kit v0.3.3
+
+
 ## [7.6.2] — 2026-10-12
 
 ### Changes
