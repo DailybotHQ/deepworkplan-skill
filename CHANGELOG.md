@@ -9,6 +9,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.6.1] — 2026-10-12
+
+### Changes
+
+- Merge pull request #79 from DailybotHQ/fix/herdr-peers-0.2.2-dck-0.3.1
+- fix(addons): pin herdr-peers v0.2.2 and devcontainer-kit v0.3.1; Codex lanes pass --pane
+
+
 ## [7.6.0] — 2026-10-11
 
 ### Changes
