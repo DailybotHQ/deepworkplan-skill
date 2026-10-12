@@ -17,13 +17,16 @@ Every tool below is optional and a thin integration of its own product:
 `../addons/herdr/SKILL.md` (panes, herdr-peers, machines),
 `../addons/devcontainer/SKILL.md` (containers, host profiles). Without them the
 same shape works with hand-opened terminals and the developer relaying messages.
+To keep such a swarm running past one account's limit or one agent's loss —
+capacity checks, handoff packets, lead succession, escalation — read §17
+([`swarm.md`](swarm.md)).
 
 ### 16.1. Roles
 
 | Role | Is | Owns | Never |
 |------|----|------|-------|
 | **Lead** | one agent in the hub (or the plan's repository) | the orchestrator plan, the lane table, release order, integration checkpoints, the record | edits a lane's repository, merges or tags before its checkpoint |
-| **Lane** | one agent per repository or workstream, in its own Herdr pane — on the host, in a dev container, or on another machine | its repository's child plan, branch, PR and gate | edits another lane's repository, asks anyone but the lead |
+| **Lane** | one agent per repository or workstream, in its own Herdr pane — on the host, in a dev container, or on another machine | its repository's child plan, branch, PR and gate | edits another lane's repository, assigns work to another lane |
 
 A lane is the "separate agent session running inside the target repository"
 of the hand-off rule (§13.0): the lead's hand-off prompt becomes the lane's
@@ -44,6 +47,10 @@ marking the child complete.
 - **Release order follows dependencies:** products first, then what pins them
   (the pack), then what vendors the pack (the site), then consumers (test
   beds). The lead records the order in the orchestrator README.
+- **Integrate, then tag.** A release candidate is proven against its consumers
+  before the tag; merges follow the repository's declared merge authority
+  (its `AGENTS.md`: "owner merges" or "lead merges on green") — never an admin
+  merge (§17.7, §17.10).
 - **Integration checkpoint after each release** (§13.4): the lead verifies the
   tag and its `SHA256SUMS` digests read-only, then sends them to the
   downstream lanes, which pin them, re-run their gate and report.
@@ -70,13 +77,17 @@ the developer assigns the accounts):
 The lane table in the orchestrator README records lane, pane, account, vendor,
 repository and branch (§16.7).
 
-### 16.4. Coordination: lead and lanes only
+### 16.4. Coordination: the lead assigns, lanes coordinate
 
-- **Lead ↔ lane, nothing else.** Lanes never message each other; the lead
-  carries outputs between them (§13.9). herdr-peers is the transport when
-  Herdr is in use; without it, the developer relays the same messages.
-- **Milestone asks** from each lane: plan ready, PR open, blocked (with what
-  it needs), done. The lead answers with `herdr-peers reply`; a lane answers
+- **The lead assigns work; lanes may ask each other.** Lane ↔ lane asks are
+  for information and coordination (an interface, a flag name, a branch
+  state), never for assigning work; the lead still carries outputs between
+  children (§13.9) and hears, by a notice, when a sibling exchange changes the
+  plan (§17.8). herdr-peers is the transport when Herdr is in use; without
+  it, the developer relays the same messages.
+- **Milestone asks** from each lane: `plan ready`, `PR open <url>`,
+  `blocked <class> <what it needs>`, `handoff <packet>`, `done` — each ending
+  with a capacity line (§17.2). The lead answers with `herdr-peers reply`; a lane answers
   the lead's asks (GO, new pins, a changed requirement) the same way.
 - **Protocol limits hold at scale:** depth 1, at most 4 open asks per caller
   (`--fanout N --reason` when the developer asked for more lanes), scope set
@@ -139,13 +150,19 @@ escalation is recorded in the plan (§16.7).
 
 ### 16.6. Failover and verification
 
-- **An account hits its limit** (a limit message, `ak usage` showing
-  `rate_limited`, or `ak run` exit 4): the lane reports blocked; the lead
+- **Hand off before the limit** (§17.3–§17.6): a lane checks its own capacity
+  at task boundaries and, at `critical`, writes a handoff packet and stops;
+  the lead launches a successor that accepts the packet and resumes. What
+  follows is the reactive safety net when that did not happen.
+- **An account hits its limit** (a limit message, a `usage_limit` screen,
+  `ak usage` showing `rate_limited`, or `ak run` exit 4): the lane reports
+  blocked; the lead
   re-picks with `--exclude @<spent>`, starts the lane again on the new account
   in the same checkout and branch, and the agent resumes from the child plan
   (`/dwp-resume`). Two failures on one lane stop it and go to the developer.
-  Never use an account the developer does not hold, or rotate accounts to get
-  past a limit they are not entitled to exceed.
+  Work moves only among the accounts the developer declared for it (§17.4),
+  within each vendor's terms — never to an account the developer does not
+  hold, and never to get past a limit they are not entitled to exceed.
 - **Verification is each repository's own gate.** A lane's "done" is a claim
   until its gate passes in its checkout and its PR checks are green; the lead
   verifies that read-only from the hub before marking the child complete.

@@ -17,7 +17,7 @@ the pinned official skill).
 
 ```
 npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y
-npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.2.3 --skill herdr-peers -g -y
+npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.3.2 --skill herdr-peers -g -y
 ```
 
 Both `-y` flags are required in an agent's non-interactive shell (`npx
@@ -25,13 +25,13 @@ Both `-y` flags are required in an agent's non-interactive shell (`npx
 The first is Herdr's official skill (the authority for every `herdr`
 command; `herdr --skill` prints the copy matching the installed binary).
 The second installs the herdr-peers skill and its helper script. Verify:
-`herdr-peers --version` → `herdr-peers 0.2.3 (protocol 1)`.
+`herdr-peers --version` → `herdr-peers 0.3.2 (protocol 1)`.
 
 For a scoped trial in one repository without touching `$HOME` (F-10),
 install the helper skill repo-locally — drop `-g`:
 
 ```
-npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.2.3 --skill herdr-peers -y
+npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.3.2 --skill herdr-peers -y
 ```
 
 It lands under the repository's agent skills directory (e.g.
@@ -59,7 +59,7 @@ survives `dck rebuild`, and since `v0.2.6` is a copy of the host's own Herdr cat
 the host, so host agents answer with `herdr-peers reply` too. Since
 `v0.3.3` the container's login shells export `HERDR_PEERS_SELF` (its
 machine id as the host saves it), so a Codex pane inside reaches other
-machines with no hand step. herdr-peers `v0.2.3` keeps its state per Herdr
+machines with no hand step. Since herdr-peers `v0.2.3` the helper keeps its state per Herdr
 server under `$XDG_STATE_HOME/herdr-peers/<server>/`, so the host and a
 container sharing one checkout keep separate state. Enabling the
 listener, and listing extra keys (`[ssh] authorized_extra`) so non-dck
@@ -69,5 +69,5 @@ host profile — this addon describes them, never sets them.
 ## 4. Record the acceptance
 
 ```
-python3 <pack>/shared/config.py enable herdr --version v0.2.3 --repo <repo>
+python3 <pack>/shared/config.py enable herdr --version v0.3.2 --repo <repo>
 ```

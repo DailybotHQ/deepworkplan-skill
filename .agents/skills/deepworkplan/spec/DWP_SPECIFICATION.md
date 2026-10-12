@@ -589,6 +589,51 @@ weakened tests, and no missing tool reported as a pass remain in force.
 > full applicable suite (§5.1.b, §6.5). No previous testing or security
 > requirement is removed; rewordings preserve their substance.
 
+### 5.1.4. The Quality Bar — Verified, Not Asserted
+
+DWP's identity is verified excellence: correctness, clarity, simplicity,
+security, performance and scalability, **proven, not asserted**. These rules
+apply to every plan and every agent that continues one:
+
+1. **Gates are hypotheses.** A new or changed gate **MUST** be shown to fail
+   on a seeded defect (or on the pre-change tree) before it is trusted, and
+   that failing run is recorded. A vacuous pass — a missing binary, an empty
+   input, zero files or tests matched, an empty log, `|| true` on a final
+   gate — is a failure. Pipelines run with `pipefail` (or the exit status is
+   otherwise preserved). A gate that only searches text the agent itself wrote
+   is a structural guard, **not** observed evidence of behavior. A task with an
+   input contract names its edge-case inputs (empty, multi-line, leading or
+   trailing whitespace) in its acceptance criteria — passing every example
+   does not prove the rule. A test of exact output checks it with a sentinel
+   (`[ "$(f x; printf s)" = $'y\ns' ]`): `$(…)` strips trailing newlines, so
+   output that drops or doubles its final newline would otherwise pass.
+2. **Compare to the base.** Performance, coverage and size are compared
+   against the base branch (or the plan's starting revision), not only against
+   a threshold; a regression against the base is reported even when the
+   threshold still holds.
+3. **Measure first.** Task 1 of a fix, an audit or an optimization verifies
+   its premise and the measuring tool before anything is changed.
+4. **Design before build.** A non-trivial change writes down its interfaces,
+   failure modes, security posture and test plan before code.
+5. **Environment honesty.** A gate runs in a declared environment (a wrapper
+   command class for containers, an explicit working directory, a fixed
+   locale where output is compared). An environment failure is a blocker to
+   fix or report — never a pass, and never attributed to the change.
+6. **Review before the irreversible step.** The Final Review's local AI Diff
+   Review (§6.1) runs before any merge, tag or publish the plan performs,
+   against the plan's baseline. Plan completion keeps §6.1's never-block
+   contract (a missing reviewer is a recorded `local reviewer not installed`
+   finding); the merge, tag or publish step itself stays blocked on that
+   finding until the reviewer runs or the developer explicitly waives it —
+   never a silent skip. Methodology, protocol and security-relevant changes
+   **SHOULD** also get a reviewer of another vendor or agent.
+7. **Lean evidence.** `analysis_results/` holds reports, logs, digests and
+   pointers — never products, dependency trees or vendored copies; a product
+   gets its own repository or a declared touched surface.
+8. **Continuity never lowers the bar.** A successor agent inherits the same
+   gates; a handoff packet closes no criterion, relaxes no gate and skips no
+   review (`guide/swarm.md` §17).
+
 ### 5.2. Task Completion Protocol
 
 After passing validation and before advancing, the agent **MUST**, in order:

@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-agentkit
-description: Optional DeepWorkPlan addon that integrates coding-agents-kit (the `ak` command, DailybotHQ/coding-agents-kit pinned at v0.5.3, interface 1) as the headless delegation transport - a thin integrator that detects the kit through `ak doctor --json`, offers it (never imposes it) from onboard Phase 7b, documents the install from a clone of the pinned tag plus the kit's install.sh, records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations (launch, observe, collect, cancel) onto one `ak run` per delegate in a dedicated git worktree. Never required, never a conformance gate. The kit launches agents in autonomy by default and its opt-out (--ask or AGENTKIT_PERMISSIONS=ask) always wins; the pack spells no CLI autonomy flag, never passes --auto, and passes --ask always for a read-only delegate and for writing delegates when a plan records the opt-out.
+description: Optional DeepWorkPlan addon that integrates coding-agents-kit (the `ak` command, DailybotHQ/coding-agents-kit pinned at v0.6.1, interface 1) as the headless delegation transport - a thin integrator that detects the kit through `ak doctor --json`, offers it (never imposes it) from onboard Phase 7b, documents the install from a clone of the pinned tag plus the kit's install.sh, records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations (launch, observe, collect, cancel) onto one `ak run` per delegate in a dedicated git worktree. Never required, never a conformance gate. The kit launches agents in autonomy by default and its opt-out (--ask or AGENTKIT_PERMISSIONS=ask) always wins; the pack spells no CLI autonomy flag, never passes --auto, and passes --ask always for a read-only delegate and for writing delegates when a plan records the opt-out.
 version: "7.6.3"
 documentation_url: https://deepworkplan.com/kit/agentkit
 user-invocable: true
@@ -26,7 +26,7 @@ DWP); everything this addon relies on is the kit's frozen **interface 1**
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/coding-agents-kit` |
-| Tag | `v0.5.3` (autonomy by default since `v0.2.0`; accounts, `ak usage`, `ak pick`, `ak profiles --json`, `--trust-cwd` and the `agentkit-orchestrate` skill since `v0.5.0`; Cursor's Linux login and Claude's `keychain` login kind since `v0.5.1`; a default account per CLI, `AGENTKIT_DEFAULT_PROFILE_<CLI>`, since `v0.5.2`; Codex started with `--no-daemon` when a shared home records a daemon from another machine, since `v0.5.3`) |
+| Tag | `v0.6.1` (autonomy by default since `v0.2.0`; accounts, `ak usage`, `ak pick`, `ak profiles --json`, `--trust-cwd` and the `agentkit-orchestrate` skill since `v0.5.0`; Cursor's Linux login and Claude's `keychain` login kind since `v0.5.1`; a default account per CLI, `AGENTKIT_DEFAULT_PROFILE_<CLI>`, since `v0.5.2`; Codex started with `--no-daemon` when a shared home records a daemon from another machine, since `v0.5.3`; `ak capacity` with its usage cache, `ak lease` and `ak pick --owner` since `v0.6.0`; `ak capacity --self` inside Codex lanes, `ak pick --owner` counting the owner's own leases with `--reuse @profile` for a successor, one account per kind and profile, and Grok folder trust since `v0.6.1`) |
 | Interface | `1` (`ak doctor --json` → `"interface": 1`) |
 | Registry key | `agentkit` (`.dwp/config.json` → `addons.agentkit`) |
 | Transport | `headless` — provides `subagents`, `cancel_children`, `model_routing`; requires the `agent_delegation` grant |
@@ -116,7 +116,7 @@ Declining is a complete answer.
 ### Step 2 — Install (pinned; point-don't-run by default)
 
 ```
-git clone --branch v0.5.3 https://github.com/DailybotHQ/coding-agents-kit
+git clone --branch v0.6.1 https://github.com/DailybotHQ/coding-agents-kit
 ./coding-agents-kit/install.sh
 ```
 
@@ -131,7 +131,7 @@ re-detect afterwards.
 
 ### Step 3 — Record
 
-`python3 ../../shared/config.py enable agentkit --version v0.5.3 --repo <repo>`.
+`python3 ../../shared/config.py enable agentkit --version v0.6.1 --repo <repo>`.
 Delegation still needs each plan's contract to grant `agent_delegation` —
 enabling the addon grants nothing.
 
@@ -180,7 +180,8 @@ developer's accounts (`../../guide/orchestration-at-scale.md` §16):
   (`AGENTKIT_CODEX_NO_DAEMON=1` forces it); `ak doctor` reports each
   account's daemon state.
 - **Quota.** `ak usage --json` reports every account's windows and status —
-  once per batch, never in a loop (each call contacts the vendors).
+  once per batch, never in a loop (each call contacts the vendors). From
+  `v0.6.0`, an agent's own room comes from the cached `ak capacity` below.
 - **Choice.** `ak pick <kind> --count N` returns up to N accounts with room,
   best first (`--exclude @p`, `--model <m>`, `--need 5h:40`); exit 1 means
   none qualifies and names the soonest reset. The lead records each pick in
@@ -202,6 +203,39 @@ developer's accounts (`../../guide/orchestration-at-scale.md` §16):
 Using an account is never a reason to look past an opt-out: `--ask` and
 `AGENTKIT_PERMISSIONS=ask` win in every lane too.
 
+## Capacity and leases (coding-agents-kit `v0.6.0` and later)
+
+What lets a swarm hand work on before an account runs out
+(`../../guide/swarm.md` §17):
+
+- **Own capacity.** `ak capacity --self --json` (schema `capacity-v1`) gives
+  the running account's `headroom_pct`, `binding_window`, `resets_at` and a
+  `verdict` — `ok`, `low` (≤ 25 %), `critical` (≤ 10 % or rate-limited) or
+  `unknown` (no quota source: cursor, grok, antigravity) — with `pick`'s
+  arithmetic, read from a 300 s usage cache so a check at every task
+  boundary stays cheap. `--self` resolves the account `ak` launched; outside
+  an `ak` launch it exits 3 and never guesses. The pack never calls it
+  directly: `../../shared/swarm.py capacity` wraps it and turns the verdict
+  into `continue`, `prepare` or `handoff` (capacity *unknown*, never *ok*,
+  without the kit or with an older one).
+- **Thresholds and drills.** `AGENTKIT_CAPACITY_LOW` / `_CRITICAL` (or
+  `--low` / `--critical`) move the thresholds; `AGENTKIT_CAPACITY_CAP=@p=PCT`
+  can only lower a reading — it is how a drill makes an account look poor,
+  and it can never make one look richer.
+- **Leases.** `ak lease <kind> @<profile> --owner <addr> [--ttl …]` holds an
+  account for one lane (a Codex profile takes one lease: one writer per auth
+  file); `ak lease release …` frees it once a successor accepted the
+  handoff; `ak lease ls` lists them. `ak pick <kind> --owner <lead>` skips
+  accounts leased to others and ranks the rest by `headroom / (1 + leases)`.
+  Leases are advisory records — numbers, profile names and pane addresses,
+  never a credential.
+- **The pool.** Work moves only among the accounts the developer declared
+  for the plan, within each vendor's terms: no agent creates an account,
+  renews a login or spends a Codex reset.
+
+With an older kit, the developer assigns accounts and an agent reads its own
+room once per task boundary with `ak usage <kind> @<profile> --json`.
+
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** Not installed, not logged in, unknown
@@ -214,7 +248,7 @@ Using an account is never a reason to look past an opt-out: `--ask` and
 ## Validation checklist (component 4 — mirrored from SPEC §8)
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist;
-   the descriptor pins `DailybotHQ/coding-agents-kit` `v0.5.3`, interface 1,
+   the descriptor pins `DailybotHQ/coding-agents-kit` `v0.6.1`, interface 1,
    transport `headless`.
 2. Detection is read-only and reports `interface` 1, or one warning.
 3. Install used the pinned tagged clone + `install.sh`; nothing piped.

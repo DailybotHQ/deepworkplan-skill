@@ -21,7 +21,10 @@ When an agent is instructed to use this system, it must obey:
 
 4. **Logging & commits**
    - Always update the task's log.
-   - Always commit work before moving on.
+   - Always commit work before moving on. Stage the task's touched surface by
+     path — never a blanket `git add -A` that sweeps in another agent's work.
+     External test data (accounts, records, cloud resources) is created and
+     deleted by recorded ID only.
    - **Commit message format** — Include a reference to the plan and task:
      ```
      type(scope): description - Task N of {PLAN_NAME}
@@ -85,16 +88,19 @@ This task closes the plan, in this order:
 - Writes `analysis_results/SECURITY_REVIEW.md`, even when the conclusion is "no findings"
 - A critical finding (e.g. a committed secret) blocks plan completion until fixed or explicitly accepted by the user
 - Runs the required AI Diff Reviewer local review against the plan range (`--base <the plan's starting revision>`; `authoring.md` §5.4) and records a `local reviewer not installed` finding when the reviewer is missing; installation belongs to onboarding, while other installed addons that augment the pass run here under their never-block rules
+- Runs **before the irreversible step**: any merge, tag or publish the plan performs waits for this review. With the reviewer unavailable, that step stays blocked on the recorded finding until the reviewer runs or the developer explicitly waives it. Methodology, protocol and security-relevant changes also get a reviewer of another vendor or agent where one is available (`spec/DWP_SPECIFICATION.md` §5.1.4)
 
 Security is not a separate workstream bolted on at the end of a project — every plan leaves the repository's security documentation current and its own changes audited.
 
-**(b) Final-state validation** — the repository's complete applicable test, lint, type-check and format suites run and pass on the **final** state (`spec/DWP_SPECIFICATION.md` §5.1.3). Fixes made during the review invalidate affected results, which are rerun: review → fixes and mirror refresh → final gates → closure. Nothing ships after its last applicable validation.
+**(b) Final-state validation** — the repository's complete applicable test, lint, type-check and format suites run and pass on the **final** state (`spec/DWP_SPECIFICATION.md` §5.1.3). In a v6/v7 plan a criterion is observed only under a task whose `gate_intent` declares it: when the review fixes code, re-gate the fixed task (`ledger.py gate --task <that task> --criterion <AC> --no-reuse`), not the review task. Fixes made during the review invalidate affected results, which are rerun: review → fixes and mirror refresh → final gates → closure. Nothing ships after its last applicable validation.
 
-**(c) Skills reconciliation** — checks that every task's log carries a skills disposition and that every entry in `analysis_results/SKILLS_CANDIDATES.md` has one; finishes any warranted authoring still open (and validates it before (b) is final). It does **not** re-read the whole plan to rediscover patterns and writes **no** second discovery report — the ledger is the record.
+**(c) Skills reconciliation** — checks that every task's log carries a skills disposition and that every entry in `analysis_results/SKILLS_CANDIDATES.md` has one; finishes any warranted authoring still open (and validates it before (b) is final). **Promote load-bearing helpers on second use:** a script a gate or the lead depends on that still lives in scratch space or `analysis_results/` moves into the repository or a skill now; a plan that wrote such helpers and leaves the skills ledger empty fails this step. It does **not** re-read the whole plan to rediscover patterns and writes **no** second discovery report — the ledger is the record.
 
 **(d) Documentation reconciliation** — sweeps every behavior-changing task's reconciled surface against the docs that register it: the gate registry (`docs/TESTING_GUIDE.md`) first, then architecture, module and feature docs, then the `AGENTS.md` index for new top-level surface. Misses are fixed **inside the review** and affected validations rerun; the result lands in `analysis_results/SECURITY_REVIEW.md` as a "Documentation reconciliation" subsection (checked → current, or the fixed list). Bounded to the plan's touched surface — a whole-repo documentation audit belongs to `/dwp-verify`. The plan does not close with an undocumented behavior-changing surface unless the user explicitly accepted the miss.
 
 Documentation is not a follow-up project — the plan closes with every surface it touched still legible in the docs that register it. The step exists because its absence has shipped real misses: a released feature whose new validation gate was never registered in the gate registry.
+
+**Records coherence** — before (e), the README checkboxes, `PROGRESS.md`, `state.json` and any receipt agree with each other and, for a v6/v7 plan, with the journal (`ledger.py project` and `views.py render`, then compare). A disagreement is fixed here, never carried into the completion report. `analysis_results/` stays lean: reports, logs, digests and pointers, never products or dependency trees.
 
 **(e) Completion** — reports deliverables, validation evidence, limitations and PR links; offers the Executive Report **once**; when Dailybot (or another configured reporting channel) is installed and authorized, sends the completion report there (best-effort, never blocking). Absence of Dailybot does not block completion. The plan is complete at this point.
 
@@ -164,7 +170,7 @@ This workflow applies when a Deep Work Plan involves changes to **multiple sub-p
    ```bash
    # Template for each repository
    cd {repository}
-   git add -A
+   git add -- {the task's touched paths}   # never a blanket git add -A
    git commit -m "type(scope): description - Task N of {PLAN_NAME}"
    git push
    ```
@@ -239,13 +245,13 @@ cd ../web-app && npm run test && npm run lint
 #
 # 4. Commit in api
 cd ../api
-git add -A
+git add -- src/preferences/ tests/preferences/   # the task's touched paths
 git commit -m "feat(api): add user preferences model and endpoints - Task 3 of PLAN_006_user_preferences"
 git push
 
 # 5. Commit in web-app
 cd ../web-app
-git add -A
+git add -- src/settings/preferences/ tests/settings/   # the task's touched paths
 git commit -m "feat(ui): add user preferences settings page - Task 3 of PLAN_006_user_preferences"
 git push
 

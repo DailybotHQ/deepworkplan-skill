@@ -248,20 +248,19 @@ def render(plan_dir, names, out_dir=None, reconcile=None, authority=None,
 def _machine_written(events, name, existing):
     """N3: prove a marker-less view file is machine output.
 
-    The last view_render event records a per-view digest of exactly what
-    render wrote. A file whose bytes match that digest is machine
-    output; anything else (or no recorded digest at all) is treated as
-    a human edit.
+    Every view_render event records a per-view digest of exactly what
+    render wrote. A file whose bytes match ANY recorded digest for that
+    view is machine output — the untouched result of an earlier render,
+    possibly older than a later render to another ``--out`` directory —
+    so refreshing it loses nothing. Anything else (or no recorded digest
+    at all) is treated as an edit. Accepted trade-off: a deliberate
+    restore of an exact earlier render is refreshed without a
+    reconciliation record; its content stays reproducible from the journal.
     """
-    recorded = None
-    for event in events:
-        if event.get('type') == 'view_render' and \
-                isinstance(event.get('digests'), dict):
-            if name in event['digests']:
-                recorded = event['digests'][name]
-    if recorded is None:
-        return False
-    return hashlib.sha256(existing.encode('utf-8')).hexdigest() == recorded
+    actual = hashlib.sha256(existing.encode('utf-8')).hexdigest()
+    return any(event.get('type') == 'view_render' and
+               isinstance(event.get('digests'), dict) and
+               event['digests'].get(name) == actual for event in events)
 
 
 def _record_reconciliation(writer, name, authority, outcome):
@@ -278,7 +277,9 @@ def _record_reconciliation(writer, name, authority, outcome):
                   {'trigger': 'generated-view divergence',
                    'editor': 'human edit of views/%s.md' % name,
                    'authority': authority},
-                  actor={'kind': 'human', 'identity': authority},
+                  # the helper's caller acts under the named authority;
+                  # the record never claims a human actor it cannot prove
+                  actor={'kind': 'agent', 'identity': authority},
                   note=outcome)
 
 

@@ -16,7 +16,9 @@ fi
 echo "# Instruction load — $REVISION"
 echo
 echo "## Installed Markdown (bytes)"
-( cd "$PACK" && find . -name '*.md' -type f -print0 | xargs -0 wc -c | grep -v ' total$' | sort -rn | head -12 | sed 's/^ *//; s| \./| |' | awk '{printf "%-52s %8s\n",$2,$1}' )
+# awk keeps the first 12 lines but reads everything: `head` would exit early
+# and, under pipefail, sort's broken pipe would fail the whole script.
+( cd "$PACK" && find . -name '*.md' -type f -print0 | xargs -0 wc -c | grep -v ' total$' | sort -rn | awk 'NR <= 12' | sed 's/^ *//; s| \./| |' | awk '{printf "%-52s %8s\n",$2,$1}' )
 echo "total: $(find "$PACK" -name '*.md' -type f -print0 | xargs -0 cat | wc -c)"
 echo
 echo "## Compulsory read set per flow (router + SKILL.md + linked shared resources)"

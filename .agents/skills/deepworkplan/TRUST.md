@@ -13,7 +13,7 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Seventeen Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Eighteen Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check,
 `shared/plan_paths.py` for monotonic plan IDs and plan selection,
@@ -100,7 +100,12 @@ and `backfill --write`, run by an accepted upgrade) reconcile the repository
 file atomically and refuse rather than overwrite a file they cannot parse. It
 makes no network call and stores no secret. `shared/delegators.py` compares
 the repository's command delegators with the pack's templates and prints a
-drift report; it never writes.
+drift report; it never writes. `shared/swarm.py` (guide §17) reads the
+running account's capacity through `ak capacity --self --json` when
+coding-agents-kit is installed, and writes or verifies a handoff packet: a
+0600 file inside the plan's `analysis_results/handoff/`, refused when any
+value has a secret shape; it reads `git` state and never pushes, deletes or
+sends anything.
 They
 read and write only your repository and its `.dwp/`
 directory — with one honest exception that is CPython's behavior rather than
@@ -115,7 +120,8 @@ calls are `git` and — from 7.0.0, and only for an addon **you enabled**, or fo
 every addon when you ask for the all-addons plan — that addon's declared
 read-only detect command (for example `ak doctor --json`), run without a
 shell under a timeout (see `shared/resources.py` and `shared/addon_sync.py`
-above).
+above), and `ak --version` / `ak capacity --self --json` from
+`shared/swarm.py`, the same way.
 
 > **One honest caveat — addons.** The shipped tree includes eight addons
 > (`addons/dailybot`, `addons/devcontainer`, `addons/dependency-upgrade`,

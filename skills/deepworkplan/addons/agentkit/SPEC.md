@@ -17,7 +17,7 @@ registry record and the mapping of the four delegation operations onto
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable — autonomy by default (coding-agents-kit `v0.2.0` and later) |
-| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.5.3`, interface `1` |
+| **Product pin** | `DailybotHQ/coding-agents-kit` `v0.6.1`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/V7_ABILITIES.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -53,12 +53,12 @@ kit** is coding-agents-kit; **the addon** is this folder.
   complete and writes nothing.
 - The documented install is the pinned tagged clone plus the kit's
   installer:
-  `git clone --branch v0.5.3 https://github.com/DailybotHQ/coding-agents-kit` then
+  `git clone --branch v0.6.1 https://github.com/DailybotHQ/coding-agents-kit` then
   `./coding-agents-kit/install.sh` (Windows: `install.ps1`). A
   fetch-and-execute pipeline **MUST NOT** appear anywhere in this pack's
   text. The addon **MUST NOT** install coding-agent CLIs on its own.
 - On acceptance the addon **MUST** record `addons.agentkit` =
-  `{"enabled": true, "version": "v0.5.3"}` through `shared/config.py
+  `{"enabled": true, "version": "v0.6.1"}` through `shared/config.py
   enable`. Enabling grants no plan any authority.
 
 ## 5. The Transport (v7 delegation)
@@ -132,6 +132,21 @@ worktree:
   acknowledgement is a one-time developer step when the profile is created;
   no agent answers it (`../../guide/orchestration-at-scale.md` §16.5).
 
+## 5.2. Capacity and Leases (kit `v0.6.0` and later)
+
+- An agent's own capacity **MUST** come from `ak capacity --self --json`
+  (`capacity-v1`) through `../../shared/swarm.py capacity`, at task
+  boundaries only (`../../guide/swarm.md` §17.3); the kit's cache makes that
+  cheap. A missing kit, an older kit, exit 3 or an unrecognized record
+  **MUST** be reported as capacity *unknown*, never as *ok*.
+- `AGENTKIT_CAPACITY_CAP` **MAY** be used only to lower a reading (drills).
+- A lead **SHOULD** lease each lane's account (`ak lease … --owner <addr>`)
+  and pick with `--owner`; a Codex profile **MUST NOT** carry two writers.
+  Leases grant nothing; they are records.
+- Work **MUST** move only within the developer's declared account pool and
+  each vendor's terms (`../../spec/AGENT_PROTOCOL.md` §7.5, C7 when it is
+  exhausted).
+
 ## 6. Never-Block Rule
 
 Absence, detection failure, an unknown interface, a ledger refusal or a
@@ -142,7 +157,7 @@ here blocks `onboard`, `create`, `execute` or `verify`.
 
 This SPEC versions independently. Compatibility is decided by the kit's
 interface integer (`1`); the installed release by the pinned tag
-(`v0.5.3`), moved only by a parity-tested pack change. The default
+(`v0.6.1`), moved only by a parity-tested pack change. The default
 permission posture is behaviour, not interface: the kit carries it in its
 minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
@@ -150,7 +165,7 @@ minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist;
    `addon.json` validates with key `agentkit`, product
-   `DailybotHQ/coding-agents-kit` `v0.5.3`, interface 1, transport
+   `DailybotHQ/coding-agents-kit` `v0.6.1`, interface 1, transport
    `headless`.
 2. Detection is read-only; interface 1 or one warning.
 3. Install used the pinned tagged clone; no pipeline anywhere in the text.

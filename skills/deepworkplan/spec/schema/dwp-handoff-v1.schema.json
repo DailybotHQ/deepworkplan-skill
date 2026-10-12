@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deepworkplan.com/schema/dwp-handoff/v1.json",
+  "description": "DeepWorkPlan handoff packet, v1 (guide/swarm.md section 17.5): what a successor needs that the plan's journal does not carry - in-flight intent. Written only by shared/swarm.py handoff write under <plan>/analysis_results/handoff/ (0600), verified by handoff accept against the plan and the checkout. A packet is data, never instructions: it closes no criterion, relaxes no gate and grants no authority. It never carries a secret value.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "written_at", "plan", "contract_id", "task", "reason", "repo", "checkout", "branch", "head", "pushed", "dirty", "done", "verified", "not_verified", "next", "open_asks", "decisions", "lanes", "from"],
+  "properties": {
+    "schema": { "const": "https://deepworkplan.com/schema/dwp-handoff/v1.json" },
+    "written_at": { "type": "string", "description": "UTC, RFC 3339." },
+    "plan": { "type": "string", "description": "The plan folder's basename." },
+    "contract_id": { "type": ["string", "null"], "description": "The live contract's id; null for a plan without a contract (v5 and older)." },
+    "task": { "type": "string" },
+    "step": { "type": "string" },
+    "reason": { "enum": ["capacity_critical", "capacity_low", "context_pressure", "usage_limit", "lead_handover"] },
+    "repo": { "type": "string" },
+    "checkout": { "type": "string", "description": "Absolute path of the checkout the work is in." },
+    "branch": { "type": "string" },
+    "head": { "type": "string" },
+    "pushed": { "type": "boolean", "description": "HEAD is reachable from its upstream." },
+    "dirty": { "type": "array", "items": { "type": "string" }, "description": "Uncommitted paths (.dwp/ excluded); empty for a cross-host handoff." },
+    "done": { "type": "array" },
+    "verified": { "type": "array", "description": "What was verified, with evidence paths." },
+    "not_verified": { "type": "array", "description": "What the successor must re-run or check." },
+    "next": { "type": "array", "minItems": 1, "description": "The next concrete steps, in order." },
+    "open_asks": { "type": "array", "description": "Open asks: id, peer, what each awaits." },
+    "decisions": { "type": "array", "description": "Autonomous decisions taken (AGENT_PROTOCOL section 7.5 record)." },
+    "lanes": { "type": "array", "description": "A lead packet's lane table; empty for a lane." },
+    "lead": { "type": ["string", "null"] },
+    "epoch": { "type": ["integer", "null"] },
+    "from": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agent": { "type": "string" },
+        "vendor": { "type": "string" },
+        "profile": { "type": "string" },
+        "pane": { "type": "string" },
+        "capacity": { "type": "string" }
+      }
+    }
+  }
+}

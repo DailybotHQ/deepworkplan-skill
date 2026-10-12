@@ -121,3 +121,22 @@ onboard-v6	entry	t0 — router + onboard contract + the linked shared resources	
 onboard-v6	entry	t0 — router + onboard contract + the linked shared resources	shared/dwp-paths.md
 onboard-v6	v6-records	Phase 2c — the repository will run v6 plans (pack line 6+ or an explicit request)	onboard/v6.md
 onboard-v6	principles	Phase 0 or Phase 3 — agent rules are assessed or written	shared/working-principles.md
+
+# --- execute: a v7 lane in a swarm (agentkit enabled) -------------------------
+# The capacity check at each task boundary loads Guide §17 once; the helper is
+# run, not read. Measures what swarm autonomy adds to a v7 execution.
+execute-swarm	entry	t0 — router + execute contract	SKILL.md
+execute-swarm	entry	t0 — router + execute contract	execute/SKILL.md
+execute-swarm	v6-loop	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	execute/v6.md
+execute-swarm	swarm	the agentkit addon is enabled (capacity check at each task boundary) or a handoff or succession is in play	guide/swarm.md
+execute-swarm	final-review	the Final Review task begins	guide/execution.md
+execute-swarm	final-review	the Final Review task begins	create/addon-augmentations.md
+execute-swarm	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
+# --- resume: a successor accepts a handoff packet, then executes --------------
+resume-handoff	entry	t0 — router + resume contract; assessment loads no companion	SKILL.md
+resume-handoff	entry	t0 — router + resume contract; assessment loads no companion	resume/SKILL.md
+resume-handoff	v6-recovery	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	resume/v6.md
+resume-handoff	swarm	the plan holds a pending handoff packet (Step 2.0a) or a lead succession is in play	guide/swarm.md
+resume-handoff	execution-handoff	Step 5 resumes into the execution loop	execute/SKILL.md
+resume-handoff	v6-loop	Step 2.0 of execute — the plan is v6	execute/v6.md

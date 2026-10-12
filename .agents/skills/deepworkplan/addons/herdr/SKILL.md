@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-herdr
-description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v0.2.3, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v0.3.2, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
 version: "7.6.3"
 documentation_url: https://deepworkplan.com/kit/herdr
 user-invocable: true
@@ -26,7 +26,7 @@ the install lines, the transport mapping and the journaling rule.
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/herdr-peers` |
-| Tag | `v0.2.3` |
+| Tag | `v0.3.2` (per-server state since `v0.2.3`; notices, the per-plan lead record, `usage_limit` screens and lane-to-lane asks since `v0.3.0`; lead changes that succeed past a closed pane, `check` exit 0 for a current lead notice, `status --pane`, and `lead claim --lanes` refresh since `v0.3.1`; `lead show --pane`, a `DWP_PLAN` plan id, and lead records that keep their repository root locally (a same-id claim from another repository is refused; use `--plan <repo>/<id>`) since `v0.3.2`) |
 | Interface | `1` (`herdr-peers --version` → `(protocol 1)`; `metadata.protocol: 1` in its `SKILL.md`) |
 | Depends on | Herdr's official skill, pinned `herdrdev/herdr@v0.9.3` |
 | Registry key | `herdr` (`.dwp/config.json` → `addons.herdr`) |
@@ -89,7 +89,7 @@ its own documented paths, never a piped installer.
 
 ### Step 3 — Record
 
-`python3 ../../shared/config.py enable herdr --version v0.2.3 --repo <repo>`.
+`python3 ../../shared/config.py enable herdr --version v0.3.2 --repo <repo>`.
 Enabling grants nothing: delegation still needs the plan's grant.
 
 ### Step 4 — Transport (during execute)
@@ -123,11 +123,12 @@ repository or workstream, each in its own pane.
   `HERDR_PEERS_SELF` (the container's machine id on the host), which a
   Codex lane needs for asks to other machines; with an older kit the lead's
   brief names it.
-- **Coordination.** Lanes talk only to the lead: milestone asks (plan
-  ready, PR open, blocked, done) and the lead's asks (GO, new pins). The
-  fan-out cap (4 open asks per caller) still holds; the lead raises it per
-  call with `--fanout N --reason` only when the developer asked for more
-  lanes.
+- **Coordination.** The lead assigns work: milestone asks from lanes (plan
+  ready, PR open, blocked, handoff, done — each with a capacity line) and the
+  lead's asks (GO, new pins). Lanes may ask each other for information and
+  coordination, never to assign work. The fan-out cap (4 open asks per
+  caller) still holds; the lead raises it per call with `--fanout N --reason`
+  only when the developer asked for more lanes.
 - **State.** `herdr agent list` shows each lane working, idle, blocked or
   done; `herdr pane read` shows its screen. `herdr-peers lanes` lists the
   lanes with their agent, vendor, profile and state, and
@@ -144,6 +145,35 @@ repository or workstream, each in its own pane.
 - **Record.** The lead sets `DWP_PLAN` (and `DWP_TASK`) so every ask and
   reply is mirrored into the plan's `analysis_results/delegations.ndjson`.
 
+## Notices and leadership (herdr-peers `v0.3.0` and later)
+
+What lets a swarm survive its lead (`../../guide/swarm.md` §17.7–§17.8):
+
+- **Notices.** `herdr-peers notify <addr|lead> "<text>" --pane <pane>
+  [--plan P]` sends a one-way message (`reply=no`); the receiver's `check`
+  classifies it `notice`, records it as data and never answers. Notices cost
+  no fan-out slot and may be sent while an ask is open. A body line starting
+  `swarm-lead:` is reserved for lead notices.
+- **Lead record per plan.** `herdr-peers lead claim --plan P [--succession
+  A,B] [--lanes A,B]`, `lead show [--plan P] [--json]`
+  (`herdr-peers/lead-v1`: plan, lead, epoch, succession, lanes, updated_at),
+  `lead handover <addr> --plan P`, `lead takeover --plan P [--reason R]` and
+  `lead release --plan P`. Each change raises the epoch and notifies the
+  lanes; a receiver accepts it only through the fencing rules (briefer for a
+  first claim, current lead at epoch + 1, first reachable succession entry at
+  epoch + 1); a lead that adopts another lead's record steps down.
+- **The `lead` address.** `ask lead …` / `notify lead …` resolve to the
+  current lead of `--plan` (else `$DWP_PLAN`), so no brief hard-codes the
+  lead's pane.
+- **`usage_limit` screens.** `status` and `lanes` classify a CLI's
+  usage-limit message as `usage_limit` (action: hand off); it is never keyed.
+  `lanes --json` adds `plan`, `lead`, `epoch` and each lane's last reported
+  `capacity`.
+
+With `v0.2.x` there are no notices or lead records: lanes send asks to the
+lead's address from their brief, and a lead change is relayed by the
+developer.
+
 ## Failure-mode guardrails
 
 - **Never required, never blocking.** Not inside Herdr, helper missing,
@@ -155,7 +185,7 @@ repository or workstream, each in its own pane.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol copy ships here.
-2. The descriptor pins `DailybotHQ/herdr-peers` `v0.2.3`, interface 1,
+2. The descriptor pins `DailybotHQ/herdr-peers` `v0.3.2`, interface 1,
    transport `interactive`.
 3. Every install line names an exact tag.
 4. The registry entry exists only after acceptance.

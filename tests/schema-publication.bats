@@ -42,8 +42,9 @@ teardown() { rm -rf "$TMPDIR_TEST"; }
     # field metrics + learnings), plus dwp-config v1 (the configuration file,
     # spec/CONFIG.md), addon-descriptor v1 (spec/ADDONS.md §7) and the v7
     # contract generation (plan-contract, journal-event, plan-manifest v7;
-    # spec/V7_CONTRACT.md) = eighteen URLs, all shipped files.
-    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 18 ]
+    # spec/V7_CONTRACT.md), plus the dwp-handoff v1 packet (guide/swarm.md
+    # §17, shared/swarm.py) = nineteen URLs, all shipped files.
+    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 19 ]
     while IFS= read -r url; do
         label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"

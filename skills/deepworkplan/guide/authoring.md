@@ -399,6 +399,38 @@ applies on every plan, in addition to the per-task validation gates above:
 > in the Final Review's `SECURITY_REVIEW.md` and the completion report (and in the
 > Executive Report if one is requested) rather than hiding it.
 
+#### 5.3.1. Writing a gate that can fail
+
+A gate is a hypothesis about the change until it has been seen to fail
+(`spec/DWP_SPECIFICATION.md` §5.1.4):
+
+- **Prove it can fail.** For a new or changed gate, record one failing run
+  against a seeded defect or the pre-change tree in the task log, then the
+  passing run. A test that passed on its first run is unproven, not good news.
+- **No vacuous passes.** A missing binary, an empty input, zero files or tests
+  matched, an empty log or `|| true` is a failure. Write pipelines with
+  `set -o pipefail` (or check each status). In Bats on macOS's bash 3.2 a
+  failed `[[ … ]]` or a negated `! cmd` does not fail the test by itself:
+  end it with `|| false` or use `[ … ]`.
+- **Exact output needs a sentinel.** `$(…)` strips trailing newlines, so compare
+  `"$(f x; printf s)"` with `$'y\ns'`: a function that drops or doubles its last
+  newline then fails.
+- **Observed, not self-quoted.** A gate that greps text the agent wrote in the
+  same task is a structural guard; behavior needs a gate that runs the
+  behavior.
+- **Pins are data.** Criteria and gates reference a pin *source* — a pins
+  file, "the latest release", a lockfile — never a literal tag in the
+  criterion text, so a pin move re-runs the gate without amending the
+  contract.
+- **Declare the environment.** Name where the gate runs: a container wrapper
+  as a declared command class (`dck exec <service> -- <cmd>`), an explicit
+  working directory, `LC_ALL=C` where output is compared. A preflight checks
+  the environment before Task 1; an environment failure is a blocker, never a
+  pass and never blamed on the change.
+- **Measure first.** Task 1 of a fix, an audit or an optimization verifies the
+  premise and the measuring tool; later tasks compare against the base branch,
+  not only a threshold.
+
 ### 5.4. Security Discipline (MANDATORY)
 
 Security follows the same two-layer model as testing: woven into the tasks while

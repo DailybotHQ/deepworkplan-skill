@@ -36,18 +36,18 @@ setup() {
 
 # --- the manifest itself -----------------------------------------------------
 
-@test "paths.tsv declares the eleven named end-to-end paths" {
+@test "paths.tsv declares the thirteen named end-to-end paths" {
     [ -f "$PATHS" ]
     local ids
     ids="$(rows | cut -f1 | sort -u)"
     for want in create-lite create-full create-v6 execute-final-review \
                 execute-v6 resume-assessment resume-execution resume-v6 \
-                onboard-v6 conditional-escalation execute-v7-delegate; do
+                onboard-v6 conditional-escalation execute-v7-delegate execute-swarm resume-handoff; do
         printf '%s\n' "$ids" | grep -qx "$want" || {
             echo "missing path: $want"; echo "$ids"; return 1
         }
     done
-    [ "$(printf '%s\n' "$ids" | wc -l | tr -d ' ')" -eq 11 ]
+    [ "$(printf '%s\n' "$ids" | wc -l | tr -d ' ')" -eq 13 ]
 }
 
 @test "every manifest row has four tab-separated fields and a nonempty trigger" {
@@ -315,4 +315,21 @@ declared() {
 # Sentence-level assertion that tolerates the source file's own line wrapping.
 doc_has() {
     sed 's/^[[:space:]]*>[[:space:]]\{0,1\}//' "$1" | tr '\n' ' ' | tr -s ' ' | grep -qF -- "$2"
+}
+
+@test "the measurement survives a large pack: no early pipe close under pipefail" {
+    # Regression: `sort -rn | head -12` under `set -o pipefail` failed (sort:
+    # broken pipe, exit 2) once the file list outgrew one write — CI flaked on
+    # it. A pack with thousands of extra Markdown files makes it deterministic.
+    local work
+    work="$(cd "$(mktemp -d)" && pwd -P)"
+    mkdir -p "$work/repo/tests"
+    cp -R "$REPO_ROOT/skills" "$work/repo/"
+    cp -R "$REPO_ROOT/tests/efficiency" "$work/repo/tests/"
+    mkdir -p "$work/repo/skills/deepworkplan/guide/bulk"
+    for i in $(seq 1 3000); do printf 'x\n' > "$work/repo/skills/deepworkplan/guide/bulk/f$i.md"; done
+    run bash "$work/repo/tests/efficiency/measure-instruction-load.sh" "$work/repo"
+    rm -rf "$work"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'## Compulsory read set per flow'* ]] || false
 }

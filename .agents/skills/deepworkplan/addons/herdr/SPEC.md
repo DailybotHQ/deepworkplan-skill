@@ -18,7 +18,7 @@ rule.
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable (DeepWorkPlan 7.0.0) |
-| **Product pin** | `DailybotHQ/herdr-peers` `v0.2.3`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
+| **Product pin** | `DailybotHQ/herdr-peers` `v0.3.2`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
 | **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -46,7 +46,7 @@ recipes — those drift; the pinned skill is the single source.
 ## 4. Detection
 
 - Read-only: `command -v herdr`, `command -v herdr-peers`,
-  `herdr-peers --version` (expect `herdr-peers 0.2.3 (protocol 1)`).
+  `herdr-peers --version` (expect `herdr-peers 0.3.2 (protocol 1)`).
 - A protocol other than `1` **MUST** be one warning and "not available".
 - The transport is usable only inside Herdr (`HERDR_ENV=1`); outside it the
   addon is installed but not usable in that session — recorded, not an
@@ -56,11 +56,11 @@ recipes — those drift; the pinned skill is the single source.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Installs (`install.md`) **MUST** name exact tags:
-  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.2.3 --skill herdr-peers -g -y`
+  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.3.2 --skill herdr-peers -g -y`
   and `npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y`. Herdr
   itself is installed through its own documented paths; a fetch-and-execute
   pipeline **MUST NOT** appear in this pack's text.
-- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v0.2.3"}`
+- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v0.3.2"}`
   via `shared/config.py enable`. Enabling grants no plan any authority.
 
 ## 6. The Transport (v7 delegation)
@@ -87,8 +87,9 @@ recipes — those drift; the pinned skill is the single source.
 
 - A long-lived lane is one peer per repository or workstream, addressed
   `<machine>:<pane>` from a fresh `herdr-peers list`, on the host, in a
-  registered dev container or on another machine. Lanes **MUST** coordinate
-  only with the lead; the protocol limits (depth 1, fan-out cap, scope) are
+  registered dev container or on another machine. Work **MUST** be assigned
+  only by the lead; lanes **MAY** ask each other for information and
+  coordination. The protocol limits (depth 1, fan-out cap, scope) are
   unchanged at any scale.
 - No agent following this addon sends keystrokes to a pane, with one
   exception (`../../guide/orchestration-at-scale.md` §16.5): folder trust
@@ -117,6 +118,18 @@ recipes — those drift; the pinned skill is the single source.
 - The lead **SHOULD** set `DWP_PLAN` and `DWP_TASK` so the helper mirrors
   every ask and reply into the plan.
 
+## 6.2. Notices and Leadership (herdr-peers `v0.3.0` and later)
+
+- One-way messages **MUST** be sent as notices (`herdr-peers notify`), never
+  as asks; a notice **MUST NOT** be answered, and it grants nothing.
+- A lead **SHOULD** claim its plan (`herdr-peers lead claim --plan P
+  --succession …`) and change leadership only through `lead handover` or,
+  for a deputy, `lead takeover`; lanes address the lead as `lead`. A lead
+  notice is accepted only under the fencing rules of `../../guide/swarm.md`
+  §17.7; merges, tags and releases are performed only by the current-epoch
+  lead.
+- A `usage_limit` screen **MUST NOT** be keyed; it triggers a handoff.
+
 ## 7. Never-Block Rule
 
 No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger
@@ -128,7 +141,7 @@ Nothing blocks `onboard`, `create`, `execute` or `verify`.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol file ships in this folder.
-2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v0.2.3`,
+2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v0.3.2`,
    interface 1, transport `interactive`.
 3. Every install line pins a tag; no pipeline text.
 4. The registry entry exists only after acceptance.

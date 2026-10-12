@@ -159,7 +159,7 @@ up_has() {
 }
 
 @test "herdr-peers can be trialled repo-locally; the rest stay machine-level (F-10)" {
-  grep -qF 'skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.2.3 --skill herdr-peers -y' "$SK/addons/herdr/install.md"
+  grep -qF 'skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.3.2 --skill herdr-peers -y' "$SK/addons/herdr/install.md"
   grep -qF 'stay machine-level' "$SK/addons/herdr/install.md"
 }
 

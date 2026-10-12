@@ -7,7 +7,94 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > **This file is bot-owned after launch.** The `auto-release.yml` workflow
 > prepends a new section to this file on every release. Do not hand-edit version
 > sections or the `version:` fields in SKILL.md — write good conventional
-> commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
+> commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md). The one
+> hand-written part is an optional `## [Unreleased]` block above the newest
+> version: the next stable release folds its body into its own section.
+
+## [Unreleased]
+
+### Swarm autonomy
+
+- Guide §17 *Swarm autonomy* (`guide/swarm.md`): roles, the capacity loop,
+  handoff packets, lead succession with epochs and fencing, lane-to-lane asks,
+  escalation per chain, the release train, the record and how to drill it.
+- `shared/swarm.py`: `capacity` (continue / prepare / handoff over
+  coding-agents-kit `ak capacity`) and `handoff write|accept|show` with the
+  `dwp-handoff-v1` schema.
+- AGENT_PROTOCOL §7.5 escalation taxonomy (C1–C7) and the quality bar
+  (DWP_SPECIFICATION §5.1.4).
+- Pins: coding-agents-kit `v0.6.1` (`ak capacity`, usage cache, `ak lease`;
+  the patch fixes Codex lanes' `--self`, own-lease counting with `--reuse`
+  and account resolution found by the live drill) and herdr-peers `v0.3.2`
+  (notices, the per-plan lead record, `usage_limit`
+  screens; the patches make lead changes succeed past closed panes, accept
+  `status --pane` and `lead show --pane`, resolve a `DWP_PLAN` plan id, and
+  keep a lead record's repository root local), each with its release
+  `SHA256SUMS` digest.
+- Known limitation: the v7 journal has no dedicated event for a lane handoff
+  or a lead succession (recorded as a cancelled delegation plus an
+  observation); dedicated shapes are a follow-up.
+
+### Learnings
+
+What 313 executed plans in 23 repositories taught the methodology (evidence
+abstracted; the count is how many of six independent audits saw it, or the
+measured share in the plans read):
+
+- **Gates are hypotheses** — a new gate is shown to fail before it is trusted;
+  vacuous passes fail; compare with the base branch. Evidence: green gates over
+  broken deliverables in 6/6 audits (self-grep gates, `| tail` without
+  `pipefail`, tests that could not fail).
+- **Measure first** — task 1 of a fix or audit verifies the premise and the
+  measuring tool. Evidence: test-bed and service audits; one gate went from
+  990 s to 391 s by measuring before changing.
+- **Review before the irreversible step; prefer an independent reviewer.**
+  Evidence: 4/6 audits; seven post-review patch releases; an independent
+  reviewer found 2 critical and 4 high findings where the self-review found no
+  critical one.
+- **A live lead and a formal lane contract** (brief = common rules + per-lane
+  notes, a plan per lane, a fixed milestone vocabulary with a capacity line).
+  Evidence: orchestrators that paused for a human relay stalled (4 of 8 never
+  ran their finals); a live-lead swarm closed in a day.
+- **Hand off before the limit; succession with epochs and fencing; one executor
+  per plan.** Evidence: account limits and lead loss were the largest swarm
+  failures (most cells of one pilot invalidated by quota; asks to a dead lead
+  unanswered for hours; this release's own planning lead stopped on quota).
+- **Escalation taxonomy — decide and record everything else; batch the
+  questions.** Evidence: in one audit 19 stops were necessary, 8 avoidable and 2
+  missed.
+- **Autonomy never closes a human gate or overrides the developer's literal
+  words; authority is not transitive.** Evidence: a self-signed human review and
+  a decision taken against the request under "be autonomous"; lanes that asked
+  their own human after a relayed approval lost hours (3/6 audits).
+- **Record the swarm in the parent journal.** Evidence: one hub recorded 0
+  delegation events against 31 asks.
+- **Pins are data.** Evidence: 3/6 audits; seven pin-only amendments and a
+  two-hour refusal loop.
+- **Verbatim human authority in the plan folder; relayed authority marked.**
+  Evidence: 56 human notes found only in scratch space (3/6 audits).
+- **Generated-view reconciliation fixed** (`shared/views.py`): an untouched
+  earlier render is machine output, and a reconciliation is recorded as the
+  agent's action under the named authority. Evidence: 27–50 % of journal
+  events in v6 plans were reconciliations attributed to a human.
+- **Scoped staging and scoped external data** — stage by path, never a blanket
+  `git add -A`; external test data by recorded ID only. Evidence: one test-bed
+  audit.
+- **Declared gate environment; environment failures are blockers, never
+  passes or blamed on the change.** Evidence: 5/6 audits.
+- **Integrate, then tag.** Evidence: 3–7 releases per ecosystem plan, about 12
+  in one day, from tag → live failure → patch (3/6 audits).
+- **Promote load-bearing helpers on second use.** Evidence: 5/6 audits.
+- **Lean evidence** — reports and pointers, never products or dependency trees
+  in `analysis_results/`. Evidence: 4/6 audits, up to 9.4 GB in one lab.
+- **Records coherence at close.** Evidence: records disagreed in 6/6 audits
+  (9 of 13 hub ledgers, 31 of 70 product plans).
+- **Merge authority declared per repository; never an admin merge.** Evidence:
+  5 admin merges against the stated rule.
+- **Coordination hygiene** — the lead notice is the single current-state
+  broadcast (no ACKs), named locks for shared resources, the non-blocking gap
+  protocol. Evidence: ACK storms, stale freezes and two agents on one plan
+  (3/6 audits).
 
 ## [7.6.3] — 2026-10-12
 
