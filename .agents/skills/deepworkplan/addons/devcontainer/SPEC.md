@@ -16,8 +16,8 @@ the kit's options, the registry record and the validation.
 | Field | Value |
 |-------|-------|
 | **Version** | 3.0.0 |
-| **Status** | Stable — per-repository Dockerfile, no shared base image (devcontainer-kit `v0.3.2`, interface 2); supersedes 2.x (base-image flavours, interface 1) |
-| **Product pin** | `DailybotHQ/devcontainer-kit` `v0.3.2`, interface `2`; skill `dck-dockerfile` at the same tag |
+| **Status** | Stable — per-repository Dockerfile, no shared base image (devcontainer-kit `v0.3.3`, interface 2); supersedes 2.x (base-image flavours, interface 1) |
+| **Product pin** | `DailybotHQ/devcontainer-kit` `v0.3.3`, interface `2`; skill `dck-dockerfile` at the same tag |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md` |
 
 ## 1. Conventions
@@ -59,11 +59,11 @@ volume, CLI or profile file.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Install the kit:
-  `git clone --branch v0.3.2 https://github.com/DailybotHQ/devcontainer-kit` then
+  `git clone --branch v0.3.3 https://github.com/DailybotHQ/devcontainer-kit` then
   `./devcontainer-kit/install.sh`. A fetch-and-execute pipeline **MUST NOT**
   appear in this pack's text.
 - The addon **SHOULD** offer the skill with
-  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.2 --skill dck-dockerfile -y`
+  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.3 --skill dck-dockerfile -y`
   (repo-local, recorded in `skills-lock.json`); the install **MUST** name
   the exact tag in that tree-URL form.
 - **The layout.** The render produces exactly
@@ -93,7 +93,7 @@ volume, CLI or profile file.
   same verified release tarball, linked into every agent's skills directory
   at each start, so a recreate keeps them; the addon installs no second copy.
 - On acceptance: `addons.devcontainer` = `{"enabled": true, "version":
-  "v0.3.2"}` via `shared/config.py enable`.
+  "v0.3.3"}` via `shared/config.py enable`.
 
 ## 6. Security Defaults (inherited, never weakened)
 
@@ -176,6 +176,29 @@ this from the repository's compose setup and passes the name to the render;
 `dck doctor` flags a shared state volume. The mount point inside does not
 change, and an existing install keeps its `state` volume.
 
+## 6.4. Shared Compose Stacks (`v0.3.3`, additive)
+
+- When the repository is one service of a compose project shared across
+  repositories, the addon **SHOULD** reason `[compose] project`,
+  `state_volume` (one per service), `[compose] networks` / `volumes`,
+  `[build] context` / `dockerfile` and `dev_sh = false` from the real stack
+  (the kit's `docs/shared-stack.md`), and pass them to the render.
+- Repository additions to the dck service **MUST** go in the user block
+  (`# >>> user:<svc> >>>` … `# <<< user:<svc> <<<`; `x-dck-merge:` for keys
+  dck renders) and the top-level `user:volumes` / `user:networks`
+  sub-blocks — never inside dck's own markers. The kit refuses partial or
+  unbalanced markers; the addon **MUST NOT** work around that refusal.
+- Port strings (`ssh_port`, `ports`) **MAY** be compose expressions; they
+  bind loopback unless the string names a host IP, which only the
+  repository's own config may set (§6).
+- `[agents] node_first` (default `false`) **MAY** be set only when the
+  repository's tooling needs the agents' Node first on PATH.
+- `[agents] default_profile` is a **host** profile key (exported as
+  `AGENTKIT_DEFAULT_PROFILE_<CLI>` when that profile is shared;
+  coding-agents-kit `v0.5.2`); the addon **MUST NOT** set it.
+- A repository that sets none of these keys renders byte-identically to
+  `v0.3.2`.
+
 ## 7. Herdr Container Profile
 
 When the repository wants its container as a Herdr machine (the herdr
@@ -183,7 +206,7 @@ addon's container profile): enable the kit's Herdr machine option; `dck up`
 (or `bash dev.sh up`) registers it. `dck herdr add` writes the user's
 `~/.ssh/config` include and **MUST** be run only with its own explicit
 approval. Peers then run the pinned herdr-peers skill inside the container
-(`../herdr/install.md` §3); every `v0.3.2` image carries herdr-peers. The
+(`../herdr/install.md` §3); every `v0.3.3` image carries herdr-peers. The
 kit's `[herdr] layout` key (`"standard"`: App · Editor · Development ·
 Agents, created by `dck up`; `"none"` skips it) is the kit's choice, and the
 addon passes the person's preference without adding its own. The optional
@@ -201,17 +224,20 @@ Since `v0.3.2`, `dck rebuild`, `dck start` and `dck restart` run the same
 post-start steps as `dck up`: the Herdr machine is registered again (re-added
 when it was removed, its host key re-pinned), the mesh and the host-catalog
 mirror are pushed and the layout is created, so a container built from
-scratch reaches the host and its peers without a hand `dck herdr mesh`. With
-kit `v0.3.2`, the lead's brief names the value and a Codex pane inside a container **MUST** set
-`HERDR_PEERS_SELF=<the container's machine id as saved on the host>` for
-herdr-peers asks to other machines (its commands run from a per-profile
-server, so the self probe cannot find it); dck `v0.3.3` is expected to set it.
+scratch reaches the host and its peers without a hand `dck herdr mesh`.
+Since `v0.3.3` the kit records the container's machine id as the host's
+Herdr catalog saves it and exports `HERDR_PEERS_SELF` in login shells, so a
+Codex pane inside (whose commands run from a per-profile server, where the
+self probe cannot find it) reaches other machines with no hand step; the
+addon **MUST NOT** override it, and `dck doctor` flags a mismatch. With a
+kit older than `v0.3.3`, the lead's brief names the value and a Codex pane
+**MUST** set it.
 
 ## 8. Validation Checklist
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist; no
    layout, Dockerfile, compose, entrypoint, `dev.sh` or image copy ships in
-   this folder; `addon.json` pins `DailybotHQ/devcontainer-kit` `v0.3.2`,
+   this folder; `addon.json` pins `DailybotHQ/devcontainer-kit` `v0.3.3`,
    interface 2.
 2. `dck doctor --json`: interface 2; repo config valid; drift reported.
 3. Existing files changed only through accepted render diffs with
