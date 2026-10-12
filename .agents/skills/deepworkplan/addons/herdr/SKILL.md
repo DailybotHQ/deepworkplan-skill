@@ -123,11 +123,12 @@ repository or workstream, each in its own pane.
   `HERDR_PEERS_SELF` (the container's machine id on the host), which a
   Codex lane needs for asks to other machines; with an older kit the lead's
   brief names it.
-- **Coordination.** Lanes talk only to the lead: milestone asks (plan
-  ready, PR open, blocked, done) and the lead's asks (GO, new pins). The
-  fan-out cap (4 open asks per caller) still holds; the lead raises it per
-  call with `--fanout N --reason` only when the developer asked for more
-  lanes.
+- **Coordination.** The lead assigns work: milestone asks from lanes (plan
+  ready, PR open, blocked, handoff, done — each with a capacity line) and the
+  lead's asks (GO, new pins). Lanes may ask each other for information and
+  coordination, never to assign work. The fan-out cap (4 open asks per
+  caller) still holds; the lead raises it per call with `--fanout N --reason`
+  only when the developer asked for more lanes.
 - **State.** `herdr agent list` shows each lane working, idle, blocked or
   done; `herdr pane read` shows its screen. `herdr-peers lanes` lists the
   lanes with their agent, vendor, profile and state, and
@@ -143,6 +144,35 @@ repository or workstream, each in its own pane.
   unavailable; every other first-run screen is escalated to the developer.
 - **Record.** The lead sets `DWP_PLAN` (and `DWP_TASK`) so every ask and
   reply is mirrored into the plan's `analysis_results/delegations.ndjson`.
+
+## Notices and leadership (herdr-peers `v0.3.0` and later)
+
+What lets a swarm survive its lead (`../../guide/swarm.md` §17.7–§17.8):
+
+- **Notices.** `herdr-peers notify <addr|lead> "<text>" --pane <pane>
+  [--plan P]` sends a one-way message (`reply=no`); the receiver's `check`
+  classifies it `notice`, records it as data and never answers. Notices cost
+  no fan-out slot and may be sent while an ask is open. A body line starting
+  `swarm-lead:` is reserved for lead notices.
+- **Lead record per plan.** `herdr-peers lead claim --plan P [--succession
+  A,B] [--lanes A,B]`, `lead show [--plan P] [--json]`
+  (`herdr-peers/lead-v1`: plan, lead, epoch, succession, lanes, updated_at),
+  `lead handover <addr> --plan P`, `lead takeover --plan P [--reason R]` and
+  `lead release --plan P`. Each change raises the epoch and notifies the
+  lanes; a receiver accepts it only through the fencing rules (briefer for a
+  first claim, current lead at epoch + 1, first reachable succession entry at
+  epoch + 1); a lead that adopts another lead's record steps down.
+- **The `lead` address.** `ask lead …` / `notify lead …` resolve to the
+  current lead of `--plan` (else `$DWP_PLAN`), so no brief hard-codes the
+  lead's pane.
+- **`usage_limit` screens.** `status` and `lanes` classify a CLI's
+  usage-limit message as `usage_limit` (action: hand off); it is never keyed.
+  `lanes --json` adds `plan`, `lead`, `epoch` and each lane's last reported
+  `capacity`.
+
+With `v0.2.x` there are no notices or lead records: lanes send asks to the
+lead's address from their brief, and a lead change is relayed by the
+developer.
 
 ## Failure-mode guardrails
 

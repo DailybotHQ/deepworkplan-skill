@@ -401,3 +401,24 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     [ "$status" -eq 0 ]
     [[ "$output" == *'--pending'* ]] || false
 }
+
+# ------------------------------------------------------------------ the addons
+
+@test "the agentkit and herdr addons teach the new verbs, version-gated, pins unchanged" {
+    AK="$SK/addons/agentkit"; HP="$SK/addons/herdr"
+    grep -qxF '## Capacity and leases (coding-agents-kit `v0.6.0` and later)' "$AK/SKILL.md"
+    grep -qxF '## 5.2. Capacity and Leases (kit `v0.6.0` and later)' "$AK/SPEC.md"
+    for phrase in 'ak capacity --self --json' 'ak lease <kind> @<profile> --owner <addr>' \
+        'AGENTKIT_CAPACITY_CAP=@p=PCT' '../../shared/swarm.py capacity'; do
+        doc_has "$AK/SKILL.md" "$phrase" || { echo "agentkit missing: $phrase"; return 1; }
+    done
+    doc_has "$AK/SPEC.md" 'never as *ok*'
+    grep -qxF '## Notices and leadership (herdr-peers `v0.3.0` and later)' "$HP/SKILL.md"
+    grep -qxF '## 6.2. Notices and Leadership (herdr-peers `v0.3.0` and later)' "$HP/SPEC.md"
+    for phrase in 'herdr-peers notify <addr|lead>' 'herdr-peers lead claim --plan P' \
+        '`lead takeover --plan P [--reason R]`' '`usage_limit`' 'Lanes may ask each other'; do
+        doc_has "$HP/SKILL.md" "$phrase" || { echo "herdr missing: $phrase"; return 1; }
+    done
+    ! doc_has "$HP/SKILL.md" 'Lanes talk only to the lead' || false
+    ! doc_has "$HP/SPEC.md" 'coordinate only with the lead' || false
+}

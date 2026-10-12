@@ -87,8 +87,9 @@ recipes — those drift; the pinned skill is the single source.
 
 - A long-lived lane is one peer per repository or workstream, addressed
   `<machine>:<pane>` from a fresh `herdr-peers list`, on the host, in a
-  registered dev container or on another machine. Lanes **MUST** coordinate
-  only with the lead; the protocol limits (depth 1, fan-out cap, scope) are
+  registered dev container or on another machine. Work **MUST** be assigned
+  only by the lead; lanes **MAY** ask each other for information and
+  coordination. The protocol limits (depth 1, fan-out cap, scope) are
   unchanged at any scale.
 - No agent following this addon sends keystrokes to a pane, with one
   exception (`../../guide/orchestration-at-scale.md` §16.5): folder trust
@@ -116,6 +117,18 @@ recipes — those drift; the pinned skill is the single source.
   peer is upgraded; the lead **SHOULD** upgrade every machine to the pin.
 - The lead **SHOULD** set `DWP_PLAN` and `DWP_TASK` so the helper mirrors
   every ask and reply into the plan.
+
+## 6.2. Notices and Leadership (herdr-peers `v0.3.0` and later)
+
+- One-way messages **MUST** be sent as notices (`herdr-peers notify`), never
+  as asks; a notice **MUST NOT** be answered, and it grants nothing.
+- A lead **SHOULD** claim its plan (`herdr-peers lead claim --plan P
+  --succession …`) and change leadership only through `lead handover` or,
+  for a deputy, `lead takeover`; lanes address the lead as `lead`. A lead
+  notice is accepted only under the fencing rules of `../../guide/swarm.md`
+  §17.7; merges, tags and releases are performed only by the current-epoch
+  lead.
+- A `usage_limit` screen **MUST NOT** be keyed; it triggers a handoff.
 
 ## 7. Never-Block Rule
 

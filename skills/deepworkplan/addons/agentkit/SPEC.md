@@ -132,6 +132,21 @@ worktree:
   acknowledgement is a one-time developer step when the profile is created;
   no agent answers it (`../../guide/orchestration-at-scale.md` §16.5).
 
+## 5.2. Capacity and Leases (kit `v0.6.0` and later)
+
+- An agent's own capacity **MUST** come from `ak capacity --self --json`
+  (`capacity-v1`) through `../../shared/swarm.py capacity`, at task
+  boundaries only (`../../guide/swarm.md` §17.3); the kit's cache makes that
+  cheap. A missing kit, an older kit, exit 3 or an unrecognized record
+  **MUST** be reported as capacity *unknown*, never as *ok*.
+- `AGENTKIT_CAPACITY_CAP` **MAY** be used only to lower a reading (drills).
+- A lead **SHOULD** lease each lane's account (`ak lease … --owner <addr>`)
+  and pick with `--owner`; a Codex profile **MUST NOT** carry two writers.
+  Leases grant nothing; they are records.
+- Work **MUST** move only within the developer's declared account pool and
+  each vendor's terms (`../../spec/AGENT_PROTOCOL.md` §7.5, C7 when it is
+  exhausted).
+
 ## 6. Never-Block Rule
 
 Absence, detection failure, an unknown interface, a ledger refusal or a
