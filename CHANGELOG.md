@@ -9,6 +9,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > sections or the `version:` fields in SKILL.md — write good conventional
 > commits and let the workflow do the bump. See [AGENTS.md](AGENTS.md).
 
+## [7.6.2] — 2026-10-12
+
+### Changes
+
+- Merge pull request #80 from DailybotHQ/fix/pins-ak-051-dck-032
+- fix(addon): scope the no-host-ssh rules to what the devcontainer addon proposes
+- fix(addon): pin coding-agents-kit v0.5.1 and devcontainer-kit v0.3.2
+
+
 ## [7.6.1] — 2026-10-12
 
 ### Changes
