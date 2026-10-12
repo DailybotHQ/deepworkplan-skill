@@ -55,9 +55,9 @@ expected_sums() {  # expected_sums <key>: sha256 of the pinned release's SHA256S
     # Pinned here, per addon tag (the descriptor schema carries no digest):
     # bumping a tag in addon.json without updating its digest fails this smoke.
     case "$1" in
-        herdr)        echo 72b3ea5352ab3eb13045fb0ff901efddc5d8b860724daa3d75d4531df3ebfb3f ;;
+        herdr)        echo 9c4f94101a1b1b9765b71edc8ff96580543061a6291a811acb630b2468b7b682 ;;
         agentkit)     echo a90f45e44085370694a954a3578d037d0637d0eb4ec2f1b846a8d29556b1ec27 ;;
-        devcontainer) echo 02d4de086eeb010b42458dd131b690df36638b361033e5df6aa3d5ceba4a7eea ;;
+        devcontainer) echo 14920cc1c45a61e513e93d823ee777b6427fcf141482961bfaabbd252ccff5a9 ;;
         vim)          echo 24c0a036f8988d2c2a484c4153cddde7ffe563b12709df3f4b5a2150970e08d2 ;;
         *)            echo "" ;;
     esac

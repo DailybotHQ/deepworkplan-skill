@@ -143,7 +143,7 @@ Herdr workspace.
    | `bash dev.sh exec ak usage --json` | each shared account answers (only with host profiles on) |
    | `herdr workspace list` | the container's workspace with the four panes (only with the herdr addon) |
    | `bash dev.sh exec ssh -T git@github.com` | the greeting through the host agent (exit 1 with a greeting is success) |
-   | `bash dev.sh exec gh auth status` | logged in, when the repository uses `gh` |
+   | `bash dev.sh exec gh auth status` | logged in, when the repository uses `gh` (a fresh `state` volume needs one `gh auth login` by the developer) |
    | the repository's real test command, inside | passes, or the failure is recorded |
 
 Then `config.py enable devcontainer --version <pin> --repo <repo>`.

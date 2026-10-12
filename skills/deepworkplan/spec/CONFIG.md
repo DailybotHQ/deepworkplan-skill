@@ -34,9 +34,9 @@ Both files share one shape:
   "benchmark": { "enabled": true, "learnings": true },
   "addons": {
     "ai-diff-reviewer": { "enabled": true, "version": "v3.3.9" },
-    "herdr":            { "enabled": true, "version": "v0.2.1" },
+    "herdr":            { "enabled": true, "version": "v0.2.2" },
     "agentkit":         { "enabled": false },
-    "devcontainer":     { "enabled": true, "version": "v0.3.0" },
+    "devcontainer":     { "enabled": true, "version": "v0.3.1" },
     "vim":              { "enabled": true, "version": "v0.7.0" },
     "dailybot":         { "enabled": true, "version": "v3.23.12" }
   }
