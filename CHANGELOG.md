@@ -26,6 +26,10 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   scorer's `--dump-oracle-commitments` no longer requires a lab directory that
   exists only in a git-ignored `.dwp/`.
 
+- Pin coding-agents-kit `v0.7.0`: Antigravity quota in `ak usage` (and so in
+  `ak capacity` / `ak pick`) where its login file is readable, and every
+  account of every CLI listed in `ak usage`.
+
 ### Learnings
 
 - **A gate that cannot fail is not a gate.** `bats tests/ | tee` ran in a

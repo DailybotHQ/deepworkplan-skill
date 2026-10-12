@@ -164,7 +164,7 @@ python3 <pack>/shared/addon_sync.py plan --repo .
 ```text
 addon               scope         installed   pin         action
 ------------------  ------------  ----------  ----------  ----------
-agentkit            machine       v0.4.0      v0.6.1      upgrade
+agentkit            machine       v0.4.0      v0.7.0      upgrade
 ai-diff-reviewer    repo          v3.1.0      v3.3.12      upgrade
 dailybot            repo          -           v3.23.15    install
 dependency-upgrade  repo          yes         (in pack)   record
