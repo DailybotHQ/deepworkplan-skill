@@ -40,7 +40,8 @@ digest in the kit's pin file. No shared base image is needed.
 Want the container as a Herdr machine? Turn on the kit's Herdr machine
 option; `bash dev.sh up` registers it. Running `dck herdr add` edits
 `~/.ssh/config` (a guarded include) — ask for that separately. Git and SSH
-inside use the host's agent, never a mounted `~/.ssh`; the kit picks the
+inside use the host's agent, never a mounted `~/.ssh` unless the developer
+turns on `[ssh] copy_keys` (below); the kit picks the
 agent socket by Docker provider. Your own `~/.ssh/config` aliases for git
 hosting services work inside too (`ssh_host_config`, default on: public keys
 and trusted host keys only, no private key copied); `dck up` may offer

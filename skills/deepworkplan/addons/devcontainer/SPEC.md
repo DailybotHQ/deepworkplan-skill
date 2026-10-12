@@ -100,7 +100,9 @@ volume, CLI or profile file.
 Ports bind `127.0.0.1` unless the repository's config says otherwise; no
 `privileged`, `cap_add`, host namespaces, Docker socket or host bind mounts
 beyond the workspace and the SSH agent socket in what this addon proposes —
-in particular no host `~/.ssh`, `~/.gitconfig` or `${HOME}` mount; SSH and git inside the container use the host's
+in particular no host `~/.ssh`, `~/.gitconfig` or `${HOME}` mount (the kit's
+read-only `~/.ssh_host` bind under the developer's own `[ssh] copy_keys`,
+§6.2, is never proposed by the addon); SSH and git inside the container use the host's
 **agent** (forwarding, or the agent socket the kit picks by Docker
 provider — Docker Desktop and OrbStack share the host agent, a native
 Linux engine mounts `$SSH_AUTH_SOCK`, other runtimes get none in exec
@@ -200,7 +202,7 @@ post-start steps as `dck up`: the Herdr machine is registered again (re-added
 when it was removed, its host key re-pinned), the mesh and the host-catalog
 mirror are pushed and the layout is created, so a container built from
 scratch reaches the host and its peers without a hand `dck herdr mesh`. With
-kit `v0.3.2`, a Codex pane inside a container **MUST** set
+kit `v0.3.2`, the lead's brief names the value and a Codex pane inside a container **MUST** set
 `HERDR_PEERS_SELF=<the container's machine id as saved on the host>` for
 herdr-peers asks to other machines (its commands run from a per-profile
 server, so the self probe cannot find it); dck `v0.3.3` is expected to set it.

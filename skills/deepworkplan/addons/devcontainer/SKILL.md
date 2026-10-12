@@ -66,7 +66,8 @@ them survives every re-render. An existing `dev.sh` is kept.
 The options live in `.devcontainer/dck.toml` (interface 2; `dck init`
 migrates an interface-1 file). `dev.sh` is the one entry point
 (`bash dev.sh up` builds, starts and registers). `ssh_agent` (default on)
-gives git over SSH through the host's agent, so no private key enters the container.
+gives git over SSH through the host's agent, so no private key enters the container
+unless the developer turns on `[ssh] copy_keys` in their host profile (below).
 `[herdr] machine` registers the container as a Herdr machine, and
 `[herdr] layout = "standard"` opens it with the App · Editor · Development ·
 Agents sidebar (`"none"` skips it). Every image carries herdr-peers.
@@ -174,8 +175,8 @@ coding-agents-kit's skills (`agentkit`, `agentkit-setup`,
 the container sets `HERDR_PEERS_SELF=<the container's machine id as saved on
 the host>` before herdr-peers asks to the host or another machine; its
 commands run from a per-profile server, so herdr-peers cannot probe its own
-machine. dck `v0.3.3` is expected to set it; until then the lead's brief
-names it.
+machine. The lead's brief names that value and the lane sets it; dck
+`v0.3.3` is expected to set it for the lane.
 
 ## Trust boundary (write scope)
 
@@ -304,6 +305,8 @@ plan simply declares the host command instead.
 3. Existing files were changed only through accepted render diffs, each
    with a backup.
 4. Ports bind loopback; no privileged options; no host `~/.ssh`,
-   `~/.gitconfig` or `${HOME}` mount; no key material in the image.
+   `~/.gitconfig` or `${HOME}` mount proposed by the addon (the kit's
+   read-only `~/.ssh_host` bind exists only under the developer's own
+   `[ssh] copy_keys`); no key material in the image.
 5. The image builds for real, and the repository's real test command runs
    inside the container (or the failure is recorded).

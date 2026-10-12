@@ -153,11 +153,13 @@ form**; only its CI surface is optional.
   appears only when the `dailybot` addon asks for it.
 - Security defaults are the kit's and are never weakened by the addon:
   loopback-only ports, no privileged options or Docker socket, no host
-  `~/.ssh` or `~/.gitconfig` mounts, agent forwarding instead of key copies
-  (since `v0.2.2` the developer's own git-host SSH aliases work inside,
-  copied with public keys only; since `v0.3.2` the developer can opt in to
-  copying the host's `id_*` keys through `[ssh] copy_keys` in their host
-  profile, which the addon never sets), `0600` gitignored `.env` files.
+  `~/.ssh` or `~/.gitconfig` mounts and agent forwarding instead of key
+  copies in everything the addon proposes (since `v0.2.2` the developer's
+  own git-host SSH aliases work inside, copied with public keys only),
+  `0600` gitignored `.env` files. The one exception is the developer's own:
+  since `v0.3.2`, `[ssh] copy_keys` in their host profile binds the host
+  `~/.ssh` read-only and copies its `id_*` keys into the container; the
+  addon never proposes or sets it.
 - Full contract: [`SKILL.md`](../addons/devcontainer/SKILL.md),
   [`SPEC.md`](../addons/devcontainer/SPEC.md), `templates/INTEGRATION.md`.
 - It is **never required**; each child DWP **MAY** include one optional task
