@@ -386,3 +386,18 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     done
     doc_has "$SK/create/v6.md" '(`relayed by <agent>`)'
 }
+
+# ------------------------------------------------------------------ the flows
+
+@test "execute checks capacity at each task boundary and resume reads a pending packet first" {
+    doc_has "$SK/execute/v6.md" '0. **Capacity** (agentkit addon enabled) — `python3 ../shared/swarm.py capacity --plan <dir>` before each task'
+    doc_has "$SK/execute/v6.md" 'Capacity *unknown* is not *ok*'
+    doc_has "$SK/execute/SKILL.md" '(agentkit enabled: the §17 capacity check first)'
+    doc_has "$SK/resume/SKILL.md" 'A pending **handoff packet** comes first'
+    doc_has "$SK/resume/SKILL.md" '[`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the plan holds a pending handoff packet'
+    doc_has "$SK/resume/v6.md" '0. **Pending handoff packet.**'
+    # every command the flows cite exists in the helper's CLI
+    run python3 "$SWARM" handoff show --help
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'--pending'* ]] || false
+}

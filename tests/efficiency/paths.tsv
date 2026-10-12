@@ -132,3 +132,11 @@ execute-swarm	swarm	the agentkit addon is enabled (capacity check at each task b
 execute-swarm	final-review	the Final Review task begins	guide/execution.md
 execute-swarm	final-review	the Final Review task begins	create/addon-augmentations.md
 execute-swarm	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
+# --- resume: a successor accepts a handoff packet, then executes --------------
+resume-handoff	entry	t0 — router + resume contract; assessment loads no companion	SKILL.md
+resume-handoff	entry	t0 — router + resume contract; assessment loads no companion	resume/SKILL.md
+resume-handoff	v6-recovery	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	resume/v6.md
+resume-handoff	swarm	the plan holds a pending handoff packet (Step 2.6) or a lead succession is in play	guide/swarm.md
+resume-handoff	execution-handoff	Step 5 resumes into the execution loop	execute/SKILL.md
+resume-handoff	v6-loop	Step 2.0 of execute — the plan is v6	execute/v6.md

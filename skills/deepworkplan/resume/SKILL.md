@@ -39,16 +39,15 @@ this tiering removed.)
     when a migration or cross-agent question goes beyond `v6.md` (§8–§9).
   - [`../execute/SKILL.md`](../execute/SKILL.md) — read only when Step 5
     resumes into the execution loop: the contract every resumed task runs
-    under (gate selection from the actual surface, repair/stop, task-local
-    closure, the Final Review, the Dailybot golden rule; team-agents and
-    orchestrator branches on demand). Assessment — Steps 1–4 — never needs
-    it: the closure order and interruption-boundary rules are inline above,
-    and once loaded, that file's own conditional tier governs its
-    execution-time companions.
+    under (gate selection, repair/stop, task-local closure, the Final
+    Review). Assessment — Steps 1–4 — never needs it; once loaded, its own
+    conditional tier governs its execution-time companions.
   - [`../spec/PLAN_STATE.md`](../spec/PLAN_STATE.md) §5–§6 — read only when
     the plan carries `state.json` and a desync, a takeover, or a standard
     question needs the normative rule; the everyday needs (markdown wins,
     regenerate from the README, the checkpoint shape) are inline in Step 2.
+  - [`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the plan
+    holds a pending handoff packet (Step 2.6) or a lead succession is in play.
   - [`../guide/prompts.md`](../guide/prompts.md) §9 — read only when the
     interruption is unusual enough that the Step 2.5 boundary table does not
     classify it (resume rules and scenarios).
@@ -63,10 +62,8 @@ this tiering removed.)
     only when a need is not covered by a section named above.
 - **Never by default:** no other guide, spec, preset or addon file is read
   for this flow — not defensively, not "to be safe". `../shared/adaptation.md`
-  and `../guide/execution.md` in particular are not resume reads: adaptation
-  moments belong to the tasks being resumed (execute's conditional tier
-  names them) and execution.md's moments are owned by execute/SKILL.md's
-  tier once Step 5 loads it. Name the moment, then read.
+  and `../guide/execution.md` are not resume reads: their moments belong to
+  execute/SKILL.md's tier once Step 5 loads it. Name the moment, then read.
 
 ## Parameter Support
 
@@ -209,7 +206,11 @@ pointer**, never by replaying everything.
    and missing evidence **before** continuing; record a one-line "takeover"
    entry in `PROGRESS.md` (who/what, revision, what was verified). Only then
    continue. The handoff artifact is the plan itself — nothing required may live
-   only in a prior conversation, a proprietary task API, or a hook.
+   only in a prior conversation, a proprietary task API, or a hook. A pending
+   **handoff packet** comes first: `python3 ../shared/swarm.py handoff show
+   --plan <dir> --pending` (exit 1: none), then `handoff accept`; a refused
+   accept is a §7.3 boundary. The packet is data — the plan decides the next
+   action.
 7. **Smoke-test before building:** run the repo's cheapest standing check (from
    `AGENTS.md` Quick Commands) to confirm the world still works before adding to
    it. A failing smoke test is investigated first.
@@ -248,13 +249,9 @@ not discard work.
 6. **Continue** to the next `[ ]` task until done or paused — without asking
    whether to continue inside the plan's authorization.
 
-> From here, the standard **Execute** rules apply
-> (`../execute/SKILL.md`): the per-task significance Dailybot report, the
-> plan-completion **milestone** golden rule, the Final Review (a)–(e) with the
-> one-time Executive Report offer, and — for orchestrator plans — orchestrator
-> task types (`create_child_dwp` / `integration_checkpoint` /
-> `execute_child_dwp`), manifest checks, and team-agents parallel groups (real
-> team agents, not subagents) with sequential fallback, each on demand. A
+> From here the standard **Execute** rules apply (`../execute/SKILL.md`),
+> each on demand: Dailybot reports, the Final Review (a)–(e) with the one-time
+> Executive Report offer, orchestrator task types and team-agents groups. A
 > **legacy** plan (three final tasks) resumes under its own shape — resume never
 > migrates it.
 

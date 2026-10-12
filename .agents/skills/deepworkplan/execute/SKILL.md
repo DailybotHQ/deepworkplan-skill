@@ -251,8 +251,8 @@ a revised criterion, which belongs in an appended amendment record
 (`../refine/SKILL.md` 3.7) with its reason and authority.
 
 ### Step 4 — Ask for Execution Preferences (optional)
-In **interactive** mode, ask for any specific requirements (press Enter for
-defaults from the plan README). In **unattended** mode (`trust`/`auto`, a "run
+**Interactive:** ask for any specific requirements (defaults: the plan
+README). In **unattended** mode (`trust`/`auto`, a "run
 to the end" instruction, or a README that records pre-approval), **skip this
 step** — the plan's guidelines are the preferences.
 
@@ -424,7 +424,8 @@ Rules (strict):
    with the optional addon installed and authorized; a failed report never
    blocks.
 
-8. **Show the compact result (Step 6) and move to the next `[ ]` task.** Do not
+8. **Show the compact result (Step 6) and move to the next `[ ]` task** (agentkit
+   enabled: the §17 capacity check first). Do not
    ask whether to continue after a successful task — inside the plan's
    authorization the answer is already yes.
 
