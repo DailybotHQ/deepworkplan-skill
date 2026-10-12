@@ -15,11 +15,12 @@ Use this document whenever you need to generate a new deep-work plan.
 
 ---
 
-> **Address a section by its number, not by a heading level.** "Read §6.1"
-> means the section numbered 6.1 at whatever level the file uses (`## 6.1.`
-> sits beside `## 6.`). Extracting `### 6.1` would match nothing and exit
-> **zero** — a silent no-read. An empty extraction is a defect to report,
-> never a blank section.
+> **Addressing a section: by its number, not by a heading level.** "Read
+> §6.1" means the section numbered 6.1 at whatever level the file uses
+> (`## 6.1.` sits beside `## 6.`). Extracting `### 6.1` would match nothing,
+> exit **zero**, and read **empty** — a silent no-read. If a section
+> extraction comes back empty, that is a defect to report, never a blank
+> section.
 
 This file is the **routing index** of the methodology guide. The guide's content
 is unchanged; it is split into flow-scoped files so an agent loads only what its

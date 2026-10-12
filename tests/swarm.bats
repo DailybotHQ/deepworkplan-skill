@@ -363,3 +363,26 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     doc_has "$SK/execute/SKILL.md" 'They are classes C1–C2 of the escalation taxonomy'
     doc_has "$SK/execute/SKILL.md" 'is decided, recorded, never asked'
 }
+
+# ------------------------------------------------------------------ quality bar
+
+@test "the quality bar is normative in the spec and taught where gates are written and reviewed" {
+    S="$SK/spec/DWP_SPECIFICATION.md"
+    grep -qxF '### 5.1.4. The Quality Bar — Verified, Not Asserted' "$S"
+    for phrase in '**Gates are hypotheses.**' '**Compare to the base.**' '**Measure first.**' \
+        '**Design before build.**' '**Environment honesty.**' '**Review before the irreversible step.**' \
+        '**Lean evidence.**' '**Continuity never lowers the bar.**' 'A vacuous pass'; do
+        doc_has "$S" "$phrase" || { echo "spec missing: $phrase"; return 1; }
+    done
+    A="$SK/guide/authoring.md"
+    grep -qxF '#### 5.3.1. Writing a gate that can fail' "$A"
+    for phrase in '**Prove it can fail.**' '**Pins are data.**' '**Declare the environment.**' '|| false'; do
+        doc_has "$A" "$phrase" || { echo "authoring missing: $phrase"; return 1; }
+    done
+    E="$SK/guide/execution.md"
+    for phrase in 'Runs **before the irreversible step**' '**Promote load-bearing helpers on second use:**' \
+        '**Records coherence**' 'never a blanket `git add -A`'; do
+        doc_has "$E" "$phrase" || { echo "execution missing: $phrase"; return 1; }
+    done
+    doc_has "$SK/create/v6.md" '(`relayed by <agent>`)'
+}
