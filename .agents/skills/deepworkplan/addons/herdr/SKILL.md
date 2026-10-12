@@ -119,7 +119,7 @@ repository or workstream, each in its own pane.
   lane passes `--pane <pane>` on every helper call: a Codex lane's commands
   run from a per-profile background server whose `HERDR_PANE_ID` names
   another pane, so without the flag herdr-peers refuses to send (exit 6).
-  Inside a dev container, devcontainer-kit `v0.3.3` also exports
+  Inside a dev container, devcontainer-kit `v0.3.3` and later also exports
   `HERDR_PEERS_SELF` (the container's machine id on the host), which a
   Codex lane needs for asks to other machines; with an older kit the lead's
   brief names it.

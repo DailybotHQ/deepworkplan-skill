@@ -133,19 +133,19 @@ form**; only its CI surface is optional.
 - An optional addon at `skills/deepworkplan/addons/devcontainer/` that gives a
   repository a reproducible dev container through **devcontainer-kit**
   (`dck`; `https://github.com/DailybotHQ/devcontainer-kit`, MIT, its own
-  release cycle) pinned at `v0.3.3` (interface `2`). The kit owns the
+  release cycle) pinned at `v0.3.5` (interface `2`). The kit owns the
   Dockerfile template and its render (`dck init`, which reconciles and never
   clobbers), the pinned images and tools, the entrypoint, the launcher, SSH
   agent forwarding, Herdr registration and the `dck-dockerfile` skill; the
   addon owns detection, the offer, the stack → options reasoning, the
   registry record and validation.
 - **Per-repository layout, no shared base image (devcontainer-kit
-  `v0.3.3`):** the render produces `.devcontainer/devcontainer.json`,
+  `v0.3.5`):** the render produces `.devcontainer/devcontainer.json`,
   `docker/local/<service>/Dockerfile` (plus its entrypoint),
   `docker/local/docker-compose.yaml` and `dev.sh`. The Dockerfile starts from
   the official runtime image pinned by digest; the kit's GHCR base image is
   not required. The addon offers the skill through
-  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.3 --skill dck-dockerfile -y`
+  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.5 --skill dck-dockerfile -y`
   (repo-local), and the pack keeps no copy of the template.
 - **Vendor-neutral (7.0.0):** the 1.x in-pack templates and their
   company-specific requirements are retired; no network, volume, CLI or
@@ -447,7 +447,7 @@ The shipped set:
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.14` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
-| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.3.3`, interface 2 | — | — | — |
+| `devcontainer` | `DailybotHQ/devcontainer-kit` `v0.3.5`, interface 2 | — | — | — |
 | `herdr` | `DailybotHQ/herdr-peers` `v0.2.3`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
 | `vim` | `DailybotHQ/deepworkplan-vim` `v0.7.0`, interface 1 | — | — | — |
 

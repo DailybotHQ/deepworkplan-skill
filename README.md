@@ -170,7 +170,7 @@ dailybot            repo          -           v3.23.14    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected
-devcontainer        machine+repo  -           v0.3.3      reconcile
+devcontainer        machine+repo  -           v0.3.5      reconcile
                     a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
 herdr               machine       v0.2.3      v0.2.3      available
                     on this machine (v0.2.3, pin v0.2.3); not enabled for this repository
