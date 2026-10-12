@@ -601,7 +601,10 @@ apply to every plan and every agent that continues one:
    input, zero files or tests matched, an empty log, `|| true` on a final
    gate — is a failure. Pipelines run with `pipefail` (or the exit status is
    otherwise preserved). A gate that only searches text the agent itself wrote
-   is a structural guard, **not** observed evidence of behavior.
+   is a structural guard, **not** observed evidence of behavior. A task with an
+   input contract names its edge-case inputs (empty, multi-line, leading or
+   trailing whitespace) in its acceptance criteria — passing every example
+   does not prove the rule.
 2. **Compare to the base.** Performance, coverage and size are compared
    against the base branch (or the plan's starting revision), not only against
    a threshold; a regression against the base is reported even when the

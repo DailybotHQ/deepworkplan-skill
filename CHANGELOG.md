@@ -26,6 +26,9 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - Pins: coding-agents-kit `v0.6.0` (`ak capacity`, usage cache, `ak lease`)
   and herdr-peers `v0.3.0` (notices, the per-plan lead record, `usage_limit`
   screens), each with its release `SHA256SUMS` digest.
+- Known limitation: the v7 journal has no dedicated event for a lane handoff
+  or a lead succession (recorded as a cancelled delegation plus an
+  observation); dedicated shapes are a follow-up.
 
 ### Learnings
 

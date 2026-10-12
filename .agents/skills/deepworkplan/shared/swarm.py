@@ -3,7 +3,7 @@
 
 Guide §17 (``guide/swarm.md``) teaches when to call it. Four verbs:
 
-    swarm.py capacity [--plan DIR] [--context-pct N] [--json]
+    swarm.py capacity [--plan DIR] [--context-pct N] [--pane P] [--json]
     swarm.py handoff write  --plan DIR --task T --reason R --json FILE|- [--cross-host]
     swarm.py handoff accept --plan DIR [--packet PATH] [--by ADDR]
     swarm.py handoff show   --plan DIR [--packet PATH] [--pending] [--json]
@@ -12,8 +12,10 @@ Guide §17 (``guide/swarm.md``) teaches when to call it. Four verbs:
 and later) and prints one decision first — ``continue``, ``prepare`` or
 ``handoff`` — then its reason. Without ak, with an older ak, or outside an
 ak launch it says ``continue`` with the capacity reported **unknown**, never
-``ok``. A pending packet in ``--plan`` always means ``handoff``: a written
-packet is final (hysteresis). Exit 0 for every decision; 2 on usage errors.
+``ok``. A pending packet in ``--plan`` written from this pane (``--pane``,
+else ``$HERDR_PANE_ID``) means ``handoff``: a written packet is final for its
+author (hysteresis). A successor in another pane gets its real verdict and
+the pending packet named — ``handoff accept`` is its gate. Exit 0 for every decision; 2 on usage errors.
 
 ``handoff write`` builds a ``dwp-handoff-v1`` packet from the author's JSON
 (task state, next steps, open asks, decisions) plus what the helper reads
@@ -269,13 +271,26 @@ def read_capacity():
     return record
 
 
+def authored_by(packet_path, pane):
+    """True when the packet's from.pane names this caller's pane."""
+    if not pane:
+        return False
+    sender = read_json(packet_path).get('from') or {}
+    return isinstance(sender, dict) and sender.get('pane') == pane
+
+
 def capacity(args):
     pdir = plan_dir(args.plan) if args.plan else None
-    if pdir and pending(pdir):
+    waiting = pending(pdir) if pdir else []
+    # Hysteresis binds the packet's AUTHOR only: a successor (another pane)
+    # gets its real verdict — `handoff accept` is its gate, not capacity.
+    pane = args.pane or os.environ.get('HERDR_PANE_ID') or ''
+    own = [p for p in waiting if authored_by(p, pane)]
+    if own:
         record = {'decision': 'handoff', 'verdict': None,
-                  'reason': 'hysteresis: a handoff packet is pending (%s); the '
-                            'successor accepts it — never resume this task'
-                            % os.path.relpath(pending(pdir)[-1], pdir)}
+                  'reason': 'hysteresis: your handoff packet is pending (%s); '
+                            'the successor accepts it — never resume this task'
+                            % os.path.relpath(own[-1], pdir)}
     elif args.context_pct is not None and \
             args.context_pct >= context_threshold(pdir):
         record = {'decision': 'handoff', 'verdict': None,
@@ -283,6 +298,11 @@ def capacity(args):
                             '%d%%)' % (args.context_pct, context_threshold(pdir))}
     else:
         record = read_capacity()
+        if waiting:
+            record['pending_packet'] = os.path.relpath(waiting[-1], pdir)
+            record['reason'] += ('; a handoff packet from another pane is '
+                                 'pending — accept it (handoff accept) before '
+                                 'working')
     if args.json:
         print(json.dumps(record, sort_keys=True))
     else:
@@ -519,6 +539,8 @@ def main(argv=None):
     cap = sub.add_parser('capacity', help='continue, prepare or handoff')
     cap.add_argument('--plan')
     cap.add_argument('--context-pct', type=int)
+    cap.add_argument('--pane', help='this session\'s pane (default: '
+                     '$HERDR_PANE_ID); hysteresis binds the packet author only')
     cap.add_argument('--json', action='store_true')
     hand = sub.add_parser('handoff', help='write, accept or show a packet')
     verbs = hand.add_subparsers(dest='verb')

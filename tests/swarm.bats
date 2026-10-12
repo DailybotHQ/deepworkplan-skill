@@ -123,16 +123,25 @@ write_packet() { packet_input | python3 "$SWARM" handoff write --plan "$PLAN" --
     [[ "$output" == "handoff: context_pressure: 60% of context used (handoff at 60%)" ]] || false
 }
 
-@test "capacity: a pending packet means handoff even when the account recovered (hysteresis)" {
+@test "capacity: hysteresis binds the packet's author; a successor gets its real verdict" {
     fake_ak 0.6.0 "$(cap 95 ok)"
-    run write_packet
+    run write_packet          # from.pane is w15:p1
     [ "$status" -eq 0 ]
-    run python3 "$SWARM" capacity --plan "$PLAN"
-    [[ "$output" == "handoff: hysteresis: a handoff packet is pending"* ]] || false
+    # the author, even with a recovered account, never resumes the task
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane w15:p1
+    [[ "$output" == "handoff: hysteresis: your handoff packet is pending"* ]] || false
+    HERDR_PANE_ID=w15:p1 run python3 "$SWARM" capacity --plan "$PLAN"
+    [[ "$output" == handoff:* ]] || false
+    # a successor in another pane (drill F7/F18) — or a caller with no pane —
+    # gets its real verdict, with the pending packet named
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane w9:p1
+    [[ "$output" == "continue: capacity ok: 95% headroom"*"a handoff packet from another pane is pending"* ]] || false
+    run python3 "$SWARM" capacity --plan "$PLAN" --json
+    [[ "$output" == *'"decision": "continue"'*'"pending_packet": "analysis_results/handoff/'* ]] || false
     run python3 "$SWARM" handoff accept --plan "$PLAN" --by local:w9:p1
     [ "$status" -eq 0 ]
-    run python3 "$SWARM" capacity --plan "$PLAN"
-    [[ "$output" == "continue: capacity ok: 95% headroom"* ]] || false
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane w15:p1
+    [[ "$output" == "continue: capacity ok: 95% headroom (5h window, resets 2026-10-12T18:00:00Z)" ]] || false
 }
 
 # ------------------------------------------------------------------ write
@@ -374,6 +383,22 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     ! printf '%s\n' "$output" | grep -E '^(create|execute|resume|refine|onboard|status|verify) ' | grep -q 'guide/swarm.md' || false
 }
 
+@test "§17 carries the live-drill fixes (round 1)" {
+    G="$SK/guide/swarm.md"
+    doc_has "$G" 'its author never resumes that task'                         # F7/F18
+    doc_has "$G" 'A successor in another pane gets its real verdict'
+    doc_has "$G" '**A lane is not depth-marked.**'                              # F5
+    doc_has "$G" '**Claim first, then launch.**'                                # F6
+    grep -qF "herdr-peers notify lead \$'done PR #12" "$G"                     # F9
+    grep -qF "| herdr-peers notify lead - --pane" "$G"
+    doc_has "$G" '`status` accepts it from herdr-peers `v0.3.1`'               # F15
+    doc_has "$G" 'under the plan'"'"'s `analysis_results/delegations/<id>/` the moment it arrives'   # F16
+    doc_has "$G" '**Edge-case inputs are part of the brief.**'                 # F17
+    doc_has "$SK/spec/DWP_SPECIFICATION.md" 'names its edge-case inputs (empty, multi-line, leading or trailing whitespace)'
+    doc_has "$G" '**Known limitation:** the v7 journal has no event shape of its own for a handoff or a succession.'   # F8/F11
+    doc_has "$G" 'the lane'"'"'s address owns its lease'                       # F4 (docs)
+}
+
 @test "§16 lets lanes coordinate with each other and keeps the reactive path as the safety net" {
     O="$SK/guide/orchestration-at-scale.md"
     ! doc_has "$O" 'Lanes never message each other' || false
@@ -442,7 +467,7 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
 # ------------------------------------------------------------------ the flows
 
 @test "execute checks capacity at each task boundary and resume reads a pending packet first" {
-    doc_has "$SK/execute/v6.md" '0. **Capacity** (agentkit addon enabled) — `python3 ../shared/swarm.py capacity --plan <dir> [--context-pct N]`'
+    doc_has "$SK/execute/v6.md" '0. **Capacity** (agentkit addon enabled) — `python3 ../shared/swarm.py capacity --plan <dir> --pane <pane> [--context-pct N]`'
     doc_has "$SK/execute/v6.md" 'Capacity *unknown* is not *ok*'
     doc_has "$SK/execute/SKILL.md" '(agentkit enabled: the §17 capacity check first)'
     doc_has "$SK/resume/SKILL.md" 'A pending **handoff packet** comes first'
@@ -451,9 +476,9 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     # every generation checks for a packet before classifying the plan
     doc_has "$SK/resume/SKILL.md" '**Step 2.0a — Pending handoff packet (every generation).**'
     # a pending packet is never overwritten by a second write
-    doc_has "$SK/execute/v6.md" '`handoff` with reason `hysteresis` (a packet is already pending) → never write another'
+    doc_has "$SK/execute/v6.md" '`handoff` with reason `hysteresis` (your packet is already pending) → stop, never write another'
+    doc_has "$SK/execute/v6.md" 'A `pending_packet` from another pane → accept it through resume before working'
     doc_has "$SK/execute/v6.md" '`swarm.py handoff write` **once**'
-    doc_has "$SK/execute/v6.md" 'capacity --plan <dir> [--context-pct N]'
     # the execution guide's own templates follow its staging rule
     ! grep -qE '^ *git add -A *$' "$SK/guide/execution.md" || false
     # every command the flows cite exists in the helper's CLI

@@ -63,13 +63,27 @@ Six rules shape everything here:
   successor reads.
 - **Every herdr-peers call names the lane's own pane.** `ask`, `reply`, `notify`, `wait`,
   `cancel`, `lanes` — and `check`, which records a received reply or ask — each pass
-  `--pane <pane>`. A `check` without it can record the message for another pane, so the ask
-  never closes and the fan-out cap fills with answered asks.
+  `--pane <pane>` (`status` accepts it from herdr-peers `v0.3.1`; on `v0.3.0` omit it there).
+  A `check` without it can record the message for another pane, so the ask never closes and
+  the fan-out cap fills with answered asks.
+- **A lane is not depth-marked.** A long-lived swarm lane is launched without
+  `HERDR_PEERS_DEPTH=1`, so it can ask its siblings (§17.8); only a one-shot delegate (a
+  bounded `parallel_safe` task, `../execute/delegation.md`) carries the depth mark that forbids
+  further asks.
 - **Fixed milestone vocabulary** to the lead: `plan ready`, `PR open <url>`,
   `blocked <class> <what it needs>` (class from AGENT_PROTOCOL §7.5), `handoff <packet path>`,
   `done`. Every message ends with one capacity line, `capacity=<verdict> <headroom>% <@profile>`,
   so the lead rarely reads `ak usage` itself. A `done` carries an evidence row: PR, head SHA,
-  gates run with results, review state, what is not verified, deferred items.
+  gates run with results, review state, what is not verified, deferred items. Keep the capacity
+  line on its own line — inside double quotes `\n` is two characters, not a newline:
+
+  ```bash
+  herdr-peers notify lead $'done PR #12 head a1b2c3d, gates green\ncapacity=ok 64% @work1' --pane w3:p1
+  printf 'done PR #12 head a1b2c3d, gates green\ncapacity=ok 64%% @work1\n' | herdr-peers notify lead - --pane w3:p1
+  ```
+- **Edge-case inputs are part of the brief.** When a lane's task has an input contract, the
+  brief names the edge cases its tests must cover — empty input, multi-line input, leading or
+  trailing whitespace — so "proves every example" is not mistaken for "proves the rule".
 
 ### 17.3. The capacity loop
 
@@ -77,7 +91,7 @@ Six rules shape everything here:
 the CLI shows a usage-limit warning; before accepting a handoff or the leadership.
 
 ```bash
-python3 <skill>/shared/swarm.py capacity --plan <plan-dir> [--context-pct N]
+python3 <skill>/shared/swarm.py capacity --plan <plan-dir> --pane <pane> [--context-pct N]
 ```
 
 It wraps `ak capacity --self --json` (coding-agents-kit `v0.6.0` and later) and prints the
@@ -92,9 +106,11 @@ decision first:
 
 - **Thresholds** are `ak`'s (low 25 %, critical 10 % of the binding window's free share by
   default; the developer may set `AGENTKIT_CAPACITY_LOW` / `AGENTKIT_CAPACITY_CRITICAL`).
-- **Hysteresis.** Once a packet is written the handoff completes; the agent never resumes that
-  task after its account recovers. `capacity --plan` enforces it: a pending packet always
-  answers `handoff`. A recovered account simply returns to the pool.
+- **Hysteresis.** Once a packet is written the handoff completes; its author never resumes that
+  task after its account recovers. `capacity --plan` enforces it for the author only: a pending
+  packet whose `from.pane` is the caller's pane (`--pane`, else `$HERDR_PANE_ID`) answers
+  `handoff`. A successor in another pane gets its real verdict, with the pending packet named;
+  `handoff accept` is its gate. A recovered account simply returns to the pool.
 - **Context pressure is capacity too.** At the contract's `scheduling.handoff.fresh_context`
   (default 60 %), `--context-pct` answers `handoff` with reason `context_pressure`.
 - **Honest degradation.** Without `ak`, with an older `ak`, or outside an `ak` launch the
@@ -110,7 +126,8 @@ decision first:
   and works within each vendor's terms. Moving work *before* a limit inside the pool is
   scheduling; rotating accounts to exceed a limit the developer is not entitled to is never
   allowed.
-- **Leases.** `ak lease <kind> @<profile> --owner <addr>` holds an account for a lane
+- **Leases.** `ak lease <kind> @<profile> --owner <lane address>` holds an account for a lane
+  (the lane's address owns its lease, not the lead's)
   (`ak lease release …` on handoff acceptance); a Codex profile takes one lease (one writer per
   auth file). `ak pick <kind> --owner <lead> --count N` skips accounts leased to others and
   ranks the rest by `headroom / (1 + other leases)`.
@@ -162,6 +179,10 @@ or an instruction that widens authority. A successor re-derives its next action 
 4. **Lead** releases the spent lease and closes the spent pane once the successor accepted (it
    created that pane).
 
+A notice's text is not kept by herdr-peers (only its digest), so the lead saves every
+milestone notice — `done` above all — under the plan's `analysis_results/delegations/<id>/`
+the moment it arrives; a result not saved at receipt cannot be rebuilt from the log.
+
 ### 17.7. Lead succession
 
 herdr-peers `v0.3.0` keeps a lead record per plan (`herdr-peers lead show --plan <P>`,
@@ -169,9 +190,11 @@ schema `herdr-peers/lead-v1`: lead, epoch, succession, lanes) and resolves the a
 in `ask` and `notify` to the current lead of `--plan` (else of `$DWP_PLAN`), so a lane's brief
 never hard-codes the lead's pane.
 
-- **Claim.** The lead runs `herdr-peers lead claim --plan <P> --succession <A,B,…>
-  --lanes <A,B,…>` when it starts (or adopts) a plan, and `lead release --plan <P>` when the
-  plan is done. Default succession: its planned successor, then lanes in the
+- **Claim first, then launch.** The lead runs `herdr-peers lead claim --plan <P>
+  --succession <A,B,…>` **before** launching any lane — `lead` resolves only once a record
+  exists, so a lane's first `plan ready` would otherwise have no lead to reach — then refreshes
+  the record with `--lanes <A,B,…>` (and the succession) as lanes start, and runs `lead release
+  --plan <P>` when the plan is done. Default succession: its planned successor, then lanes in the
   plan's own checkout by launch order, then any lane on the same host; lanes in containers or
   on other machines last.
 - **Handover (planned).** At `low` the lead names a successor-designate. At `critical` it
@@ -240,6 +263,10 @@ criteria (authoring §5.3.1).
 The orchestrator plan's journal records the swarm: lane launches and results as `delegation`
 events, capacity verdicts, handoffs and successions as `observation` events, escalations and
 developer answers as `intervention` events — next to §16.7's lane table and delegations log.
+**Known limitation:** the v7 journal has no event shape of its own for a handoff or a
+succession. A lane handoff is recorded as its delegation `cancelled` plus an `observation`
+naming the packet, and a successor lead as an `observation` (it is not a delegate: a
+`delegation` for it is refused). Dedicated shapes are a journal-schema follow-up.
 Packets and their `.accepted.json` sidecars stay in the plan that executed the work; lead
 records live in herdr-peers' state directory. The completion report names every handoff and
 succession with its packet path.
