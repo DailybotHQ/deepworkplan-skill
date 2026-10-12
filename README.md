@@ -165,8 +165,8 @@ python3 <pack>/shared/addon_sync.py plan --repo .
 addon               scope         installed   pin         action
 ------------------  ------------  ----------  ----------  ----------
 agentkit            machine       v0.4.0      v0.6.1      upgrade
-ai-diff-reviewer    repo          v3.1.0      v3.3.11      upgrade
-dailybot            repo          -           v3.23.14    install
+ai-diff-reviewer    repo          v3.1.0      v3.3.12      upgrade
+dailybot            repo          -           v3.23.15    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected
