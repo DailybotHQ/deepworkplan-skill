@@ -61,6 +61,10 @@ Six rules shape everything here:
 - **Every lane has a plan.** At least a Lite plan folder in its repository, created with that
   repository's DWP skill; it is the lane's state file — the first thing a relaunched lane or a
   successor reads.
+- **Every herdr-peers call names the lane's own pane.** `ask`, `reply`, `notify`, `wait`,
+  `cancel`, `lanes` — and `check`, which records a received reply or ask — each pass
+  `--pane <pane>`. A `check` without it can record the message for another pane, so the ask
+  never closes and the fan-out cap fills with answered asks.
 - **Fixed milestone vocabulary** to the lead: `plan ready`, `PR open <url>`,
   `blocked <class> <what it needs>` (class from AGENT_PROTOCOL §7.5), `handoff <packet path>`,
   `done`. Every message ends with one capacity line, `capacity=<verdict> <headroom>% <@profile>`,

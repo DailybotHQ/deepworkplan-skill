@@ -357,7 +357,8 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
         'Hysteresis.' 'Context pressure is capacity too.' 'The pool is the developer' \
         'herdr-peers lead takeover --plan <P>' 'Fencing.' 'Lane ↔ lane' 'herdr-peers notify' \
         'blocks its dependency chain, not the swarm' 'AGENTKIT_CAPACITY_CAP=@<profile>=8' \
-        'swarm.py capacity --plan' 'swarm.py handoff accept --plan' 'Never an admin merge'; do
+        'swarm.py capacity --plan' 'swarm.py handoff accept --plan' 'Never an admin merge' \
+        'Every herdr-peers call names the lane'"'"'s own pane.' 'and `check`, which records a received reply or ask'; do
         doc_has "$G" "$phrase" || { echo "missing: $phrase"; return 1; }
     done
 }
