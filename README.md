@@ -164,7 +164,7 @@ python3 <pack>/shared/addon_sync.py plan --repo .
 ```text
 addon               scope         installed   pin         action
 ------------------  ------------  ----------  ----------  ----------
-agentkit            machine       v0.4.0      v0.6.0      upgrade
+agentkit            machine       v0.4.0      v0.6.1      upgrade
 ai-diff-reviewer    repo          v3.1.0      v3.3.11      upgrade
 dailybot            repo          -           v3.23.14    install
 dependency-upgrade  repo          yes         (in pack)   record
@@ -172,8 +172,8 @@ design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected
 devcontainer        machine+repo  -           v0.3.5      reconcile
                     a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
-herdr               machine       v0.3.0      v0.3.0      available
-                    on this machine (v0.3.0, pin v0.3.0); not enabled for this repository
+herdr               machine       v0.3.1      v0.3.1      available
+                    on this machine (v0.3.1, pin v0.3.1); not enabled for this repository
 vim                 machine       -           v0.7.0      install
 pending: agentkit, ai-diff-reviewer, dependency-upgrade, devcontainer
 offers: dailybot, herdr, vim (only where they fit; a decline writes nothing)
@@ -218,7 +218,7 @@ agent runs **lanes** — one agent per repository, each in its own
 | Accounts and vendors | `ak usage --json` once per batch; `ak pick <kind> --count N` assigns the accounts with the most room; Claude, Codex and others mix by plan choice |
 | Launch | `ak <kind> @<profile> --trust-cwd "<lane brief>"` in a pane on the lane's checkout; in containers, the host's accounts through host profiles |
 | Coordination | the lead assigns work through herdr-peers asks and replies (plan ready, PR open, blocked, handoff, done — each with a capacity line; GO with the release tags); lanes may ask each other for information, never assign work |
-| Staying alive | each agent checks its own capacity at task boundaries (`swarm.py capacity`, coding-agents-kit `v0.6.0`); at `critical` it writes a handoff packet and a successor resumes the plan; the lead hands over its leadership the same way, or the first reachable deputy takes over (herdr-peers `v0.3.0`); only critical items (C1–C7) go to you |
+| Staying alive | each agent checks its own capacity at task boundaries (`swarm.py capacity`, coding-agents-kit `v0.6.1`); at `critical` it writes a handoff packet and a successor resumes the plan; the lead hands over its leadership the same way, or the first reachable deputy takes over (herdr-peers `v0.3.0`); only critical items (C1–C7) go to you |
 | Branches and releases | one lane per repository on its base checkout: one branch, one PR, one release; worktrees only when two writers share a repository |
 | Unattended operation | under your standing authorization, lanes launch with no per-launch approval: folders are pre-trusted with `--trust-cwd`, Claude's bypass-permissions acknowledgement is a one-time step you take per profile, and any other prompt a lane meets is recorded and escalated to you — the one keystroke an agent may send is folder trust on a pane it launched when `--trust-cwd` is unavailable |
 | Verification and record | each repository's own gate decides; every delegation, intervention and account is recorded in the plan |

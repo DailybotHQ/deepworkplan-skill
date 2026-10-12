@@ -94,8 +94,8 @@ the CLI shows a usage-limit warning; before accepting a handoff or the leadershi
 python3 <skill>/shared/swarm.py capacity --plan <plan-dir> --pane <pane> [--context-pct N]
 ```
 
-It wraps `ak capacity --self --json` (coding-agents-kit `v0.6.0` and later) and prints the
-decision first:
+It wraps `ak capacity --self --json` (coding-agents-kit `v0.6.0` and later; inside a Codex
+lane `v0.6.1`, whose daemon would otherwise hide the account) and prints the decision first:
 
 | `ak` verdict | Decision | Lane does | Lead does (for itself) |
 |---|---|---|---|
@@ -127,7 +127,8 @@ decision first:
   scheduling; rotating accounts to exceed a limit the developer is not entitled to is never
   allowed.
 - **Leases.** `ak lease <kind> @<profile> --owner <lane address>` holds an account for a lane
-  (the lane's address owns its lease, not the lead's)
+  (the lane's address owns its lease, not the lead's; from `v0.6.1` `ak pick --owner` counts
+  the owner's own leases too, and `--reuse @<profile>` hands a lease on to a successor)
   (`ak lease release …` on handoff acceptance); a Codex profile takes one lease (one writer per
   auth file). `ak pick <kind> --owner <lead> --count N` skips accounts leased to others and
   ranks the rest by `headroom / (1 + other leases)`.

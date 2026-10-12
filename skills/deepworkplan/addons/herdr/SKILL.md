@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-herdr
-description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v0.3.0, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v0.3.1, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
 version: "7.6.3"
 documentation_url: https://deepworkplan.com/kit/herdr
 user-invocable: true
@@ -26,7 +26,7 @@ the install lines, the transport mapping and the journaling rule.
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/herdr-peers` |
-| Tag | `v0.3.0` (per-server state since `v0.2.3`; notices, the per-plan lead record, `usage_limit` screens and lane-to-lane asks since `v0.3.0`) |
+| Tag | `v0.3.1` (per-server state since `v0.2.3`; notices, the per-plan lead record, `usage_limit` screens and lane-to-lane asks since `v0.3.0`; lead changes that succeed past a closed pane, `check` exit 0 for a current lead notice, `status --pane`, and `lead claim --lanes` refresh since `v0.3.1`) |
 | Interface | `1` (`herdr-peers --version` → `(protocol 1)`; `metadata.protocol: 1` in its `SKILL.md`) |
 | Depends on | Herdr's official skill, pinned `herdrdev/herdr@v0.9.3` |
 | Registry key | `herdr` (`.dwp/config.json` → `addons.herdr`) |
@@ -89,7 +89,7 @@ its own documented paths, never a piped installer.
 
 ### Step 3 — Record
 
-`python3 ../../shared/config.py enable herdr --version v0.3.0 --repo <repo>`.
+`python3 ../../shared/config.py enable herdr --version v0.3.1 --repo <repo>`.
 Enabling grants nothing: delegation still needs the plan's grant.
 
 ### Step 4 — Transport (during execute)
@@ -185,7 +185,7 @@ developer.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol copy ships here.
-2. The descriptor pins `DailybotHQ/herdr-peers` `v0.3.0`, interface 1,
+2. The descriptor pins `DailybotHQ/herdr-peers` `v0.3.1`, interface 1,
    transport `interactive`.
 3. Every install line names an exact tag.
 4. The registry entry exists only after acceptance.
