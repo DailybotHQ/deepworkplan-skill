@@ -95,7 +95,7 @@ PY
   [ "$status" -ne 0 ]
   doc_has "$ADDON/SKILL.md" 'pass `dck init --yes` without the developer'"'"'s explicit acceptance'
   doc_has "$ADDON/SKILL.md" 'pass `--trust` on the developer'"'"'s behalf'
-  doc_has "$ADDON/SPEC.md" 'private keys are never copied into an image or container'
+  doc_has "$ADDON/SPEC.md" 'private keys are never copied into an image, and into a container only through the developer'"'"'s own `[ssh] copy_keys` opt-in (§6.2), which this addon never proposes or sets'
   doc_has "$ADDON/SPEC.md" 'in particular no host `~/.ssh`, `~/.gitconfig` or `${HOME}` mount'
   doc_has "$ADDON/SKILL.md" 'a failed build is a failed run, never a success'
   doc_has "$ADDON/SPEC.md" '`dck herdr add` writes the user'"'"'s `~/.ssh/config` include and **MUST** be run only with its own explicit approval.'
