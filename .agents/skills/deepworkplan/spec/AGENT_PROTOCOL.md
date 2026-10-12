@@ -169,7 +169,9 @@ Agents **SHOULD** follow the repository's working principles
 [`../shared/working-principles.md`](../shared/working-principles.md). Investigate
 before asking, make routine decisions within scope, reuse valid authorization,
 and carry the requested outcome through proportionate validation. Escalation
-**SHOULD** identify the missing decision or approval and include a recommendation.
+**SHOULD** identify the missing decision or approval and include a recommendation;
+§7.5 classifies what is critical enough to escalate and what is decided and
+recorded instead.
 
 These principles apply during ordinary tasks as well as DWP flows. They grant
 no new permissions: analysis stays analysis; plan approval, gates, read-only
@@ -276,6 +278,59 @@ and transfer"). A checkout without plan data **MUST** report missing recovery
 data and halt; it **MUST NOT** fabricate progress from commits. Transfer is
 an explicit, manual step: no daemon, auto-upload, or automatic unignoring of
 `.dwp/` is part of this methodology.
+
+### 7.5. Escalation Taxonomy
+
+Everything not listed below as **critical** is decided by the agent: it
+investigates, takes the recommended option, **records the decision** (in
+`PROGRESS.md` "Decisions" or a handoff packet's `decisions[]`: the options,
+the choice, why, and how to reverse it) and continues. The test is
+mechanical: an escalation **MUST** name its class; a question that names
+none is a decision the agent owes.
+
+| Class | Critical — ask the developer (with the investigation, the options and a recommendation) |
+|-------|---|
+| **C1 Authority** | An action outside the plan's authorization or scope, or at a consent checkpoint: destructive or irreversible operations, production deploys, publishing or releasing beyond the plan, messages to people outside the agents of the plan, spend or billing, security posture or access to secrets. |
+| **C2 Consent screen** | Any permission, bypass-permissions, login, credential, MCP-consent or payment screen. Never keyed by an agent. |
+| **C3 Irreducible ambiguity** | Two materially different outcomes satisfy the request and nothing in the repository, its docs, the plans or prior decisions settles it. |
+| **C4 Quality conflict** | A gate cannot pass without weakening it, or evidence contradicts the plan's goal or assumptions in a way the task's scope cannot fix. |
+| **C5 Damage** | Unexplained loss or corruption of shared state, data, or another agent's work. |
+| **C6 Terms** | Legal, licensing, vendor-terms or privacy questions. |
+| **C7 Capacity exhausted** | No account in the developer's declared pool has room and none resets within the plan's horizon (`guide/swarm.md` §17.4). |
+
+**Decided autonomously (non-exhaustive):** implementation approach,
+naming, structure, tests and docs; ordering and splitting tasks within the
+plan; retries and repairs inside the task's touched surface; fixing an
+environment problem the agent can fix (a missing local tool, a locale, a
+stale cache) instead of reporting it; recording a failure proven to exist
+on the base branch instead of escalating it (§7.3 item 1 still applies to
+the change's own failures); choosing an account or vendor from the pool;
+launching, relaunching and closing its own agents; handoff and succession;
+which of several equivalent options to take (the recommended one).
+
+Three limits keep autonomy honest:
+
+1. **Autonomy never closes a human gate.** A criterion or checkpoint that
+   names a human sign-off is satisfied only by that human
+   (`V6_CONTRACT.md` §3), never by a standing "be autonomous" or `trust`
+   instruction.
+2. **The developer's literal words win.** When the recommended option
+   contradicts what the developer literally asked for, ship the reversible
+   option that honors the request and record the recommendation (C3 if no
+   reversible option exists).
+3. **Authority is not transitive.** A relayed approval adds no authority; an
+   agent reads the plan's authorization itself. Human authority is kept
+   verbatim in the plan folder; an agent that relays it records "relayed by
+   `<agent>`".
+
+**Batch the questions.** Critical items that can wait are collected and
+asked together at one planned point, each with its recommended default, so
+the developer answers once. **In a multi-agent run, a critical item blocks
+its dependency chain, not the run:** the lead parks the blocked task (its
+`state.json.blocked` record, populated per §7.3, is the escalation, sent
+once through the reporting channel), keeps every independent agent working,
+and resumes the chain when the developer answers. §7.3 remains the rule for
+a single plan; the lead applies it per chain.
 
 ---
 

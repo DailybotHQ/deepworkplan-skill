@@ -331,3 +331,35 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     doc_has "$O" 'What follows is the reactive safety net'
     doc_has "$O" 'Work moves only among the accounts the developer declared for it'
 }
+
+# ------------------------------------------------------------------ escalation
+
+@test "AGENT_PROTOCOL §7.5 names C1-C7, decide-and-record, and per-chain blocking" {
+    A="$SK/spec/AGENT_PROTOCOL.md"
+    grep -qxF '### 7.5. Escalation Taxonomy' "$A"
+    for c in '**C1 Authority**' '**C2 Consent screen**' '**C3 Irreducible ambiguity**' \
+        '**C4 Quality conflict**' '**C5 Damage**' '**C6 Terms**' '**C7 Capacity exhausted**'; do
+        grep -qF "$c" "$A" || { echo "missing $c"; return 1; }
+    done
+    doc_has "$A" 'an escalation **MUST** name its class'
+    doc_has "$A" '**records the decision**'
+    doc_has "$A" 'a critical item blocks its dependency chain, not the run'
+    doc_has "$A" '**Autonomy never closes a human gate.**'
+    doc_has "$A" "**The developer's literal words win.**"
+    doc_has "$A" '**Authority is not transitive.**'
+    doc_has "$A" '**Batch the questions.**'
+    doc_has "$A" 'recording a failure proven to exist on the base branch'
+}
+
+@test "the working principles and execute checkpoints carry the taxonomy, ten behaviors intact" {
+    WP="$SK/shared/working-principles.md"
+    n="$(sed -n '/^```markdown$/,/^```$/p' "$WP" | grep -c '^- \*\*')"
+    [ "$n" -eq 10 ]
+    doc_has "$WP" 'take the recommended option, and record consequential decisions'
+    doc_has "$WP" 'Escalate only what is critical, and name its class'
+    doc_has "$WP" '`AGENT_PROTOCOL.md` §7.5'
+    # this repository's own AGENTS.md dogfoods the same two behaviors
+    doc_has "$REPO_ROOT/AGENTS.md" 'Escalate only what is critical, and name its class'
+    doc_has "$SK/execute/SKILL.md" 'They are classes C1–C2 of the escalation taxonomy'
+    doc_has "$SK/execute/SKILL.md" 'is decided, recorded, never asked'
+}

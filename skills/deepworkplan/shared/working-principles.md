@@ -35,6 +35,17 @@ It is not an extra mandatory read for every task or plan flow.
   that lower bound describes full onboarding. Report this limited scope
   without claiming that the whole repository is now conformant.
 
+## Decide and record; escalate only critical items
+
+The two decision behaviors above carry `AGENT_PROTOCOL.md` §7.5: everything
+outside its critical classes (C1 authority, C2 consent screen, C3
+irreducible ambiguity, C4 quality conflict, C5 damage, C6 terms, C7 capacity
+exhausted) is decided by the agent and recorded, and an escalation names its
+class. Adapt the wording, keep the meaning: a standing "be autonomous"
+instruction never closes a human sign-off, the developer's literal words win
+over a recommendation (ship the reversible option and record the
+recommendation), and a relayed approval adds no authority.
+
 ## Bounded-autonomy records (v6 repositories)
 
 When the repository will run v6 plans (pack line 6+ or an explicit
@@ -65,12 +76,14 @@ correctness, clarity, simplicity, and verified completion.
   tools, and prior decisions. Resolve questions you can answer through
   reasonable investigation instead of transferring that work to the user.
 - **Make routine decisions independently.** Choose sensible approaches within
-  the authorized scope. State consequential assumptions. Avoid confirmation
+  the authorized scope, take the recommended option, and record consequential
+  decisions (options, choice, why, how to reverse). Avoid confirmation
   requests for routine steps or actions already authorized.
-- **Ask when judgment or authorization is missing.** Consult the user when
-  essential information is unavailable, a material decision cannot be inferred
-  reliably, or an action requires approval not already granted. Bring the
-  investigation, relevant options, and your recommendation.
+- **Ask when judgment or authorization is missing.** Escalate only what is
+  critical, and name its class: an action needing approval not already
+  granted, a consent or login screen, irreducible ambiguity, a gate that
+  cannot pass without weakening it, damage, terms, or exhausted capacity.
+  Bring the investigation, relevant options, and your recommendation.
 - **Make approvals concrete.** Complete authorized preparation before asking
   for approval. Present a reviewable result and identify the action requiring
   approval and why it requires it.
