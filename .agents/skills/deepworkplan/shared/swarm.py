@@ -19,7 +19,9 @@ packet is final (hysteresis). Exit 0 for every decision; 2 on usage errors.
 (task state, next steps, open asks, decisions) plus what the helper reads
 itself (plan, contract id, branch, head, pushed, dirty paths), refuses
 secret-shaped values and unknown keys, and writes it 0600 under the plan's
-``analysis_results/handoff/``. ``handoff accept`` verifies a packet against
+``analysis_results/handoff/``; a new packet supersedes any earlier pending
+one (a sidecar), so a stale packet never pins the plan at ``handoff``.
+``handoff accept`` verifies a packet against
 the plan and the checkout (plan, contract, branch, head, dirty set) and
 records acceptance in a sidecar; any mismatch exits 3 and records nothing.
 A packet is data: a successor re-derives its next action from the plan.
@@ -88,9 +90,9 @@ def plan_dir(path):
     return path
 
 
-def live_contract_id(pdir):
-    """contract_id of the live contract (highest contracts/ revision, else
-    contract.json); None for a plan without a contract (v5 and older)."""
+def live_contract(pdir):
+    """The live contract (highest contracts/ revision, else contract.json),
+    as ledger.py resolves it; None for a plan without one (v5 and older)."""
     best = None
     chain = os.path.join(pdir, 'contracts')
     if os.path.isdir(chain):
@@ -104,18 +106,20 @@ def live_contract_id(pdir):
     single = os.path.join(pdir, 'contract.json')
     if best is None and os.path.isfile(single):
         best = read_json(single)
-    return best.get('contract_id') if best else None
+    return best
+
+
+def live_contract_id(pdir):
+    contract = live_contract(pdir)
+    return contract.get('contract_id') if contract else None
 
 
 def context_threshold(pdir):
-    """The contract's fresh_context handoff percentage, else the default."""
-    path = os.path.join(pdir, 'contract.json') if pdir else ''
-    if path and os.path.isfile(path):
-        handoff = (read_json(path).get('scheduling') or {}).get('handoff') or {}
-        match = re.search(r'(\d{1,3})\s*%', str(handoff.get('fresh_context', '')))
-        if match:
-            return int(match.group(1))
-    return DEFAULT_CONTEXT_PCT
+    """The live contract's fresh_context handoff percentage, else 60."""
+    contract = live_contract(pdir) if pdir else None
+    handoff = ((contract or {}).get('scheduling') or {}).get('handoff') or {}
+    match = re.search(r'(\d{1,3})\s*%', str(handoff.get('fresh_context', '')))
+    return int(match.group(1)) if match else DEFAULT_CONTEXT_PCT
 
 
 def read_json(path):
@@ -130,21 +134,31 @@ def handoff_dir(pdir):
     return os.path.join(pdir, 'analysis_results', 'handoff')
 
 
+SIDECARS = ('.accepted.json', '.superseded.json')
+
+
 def packets(pdir):
-    """Packet paths, oldest first (names start with a UTC stamp)."""
+    """Packet paths, oldest first: names start with a microsecond UTC stamp."""
     hdir = handoff_dir(pdir)
     if not os.path.isdir(hdir):
         return []
     return [os.path.join(hdir, n) for n in sorted(os.listdir(hdir))
-            if n.endswith('.json') and not n.endswith('.accepted.json')]
+            if n.endswith('.json') and not n.endswith(SIDECARS)]
+
+
+def sidecar(packet, kind):
+    return packet[:-len('.json')] + '.%s.json' % kind
 
 
 def accepted_path(packet):
-    return packet[:-len('.json')] + '.accepted.json'
+    return sidecar(packet, 'accepted')
 
 
 def pending(pdir):
-    return [p for p in packets(pdir) if not os.path.exists(accepted_path(p))]
+    """Packets neither accepted nor superseded by a later packet."""
+    return [p for p in packets(pdir)
+            if not os.path.exists(sidecar(p, 'accepted'))
+            and not os.path.exists(sidecar(p, 'superseded'))]
 
 
 # ------------------------------------------------------------------ git
@@ -304,8 +318,11 @@ def author_fields(doc, task, reason):
     out = dict(doc)
     out['task'] = task or doc.get('task')
     out['reason'] = reason or doc.get('reason')
-    if not out['task']:
-        raise Refusal(2, 'a packet needs --task')
+    if not isinstance(out['task'], str) or not out['task']:
+        raise Refusal(2, 'a packet needs --task (a string)')
+    for name in ('step', 'lead'):
+        if out.get(name) is not None and not isinstance(out[name], str):
+            raise Refusal(2, '%s must be a string' % name)
     if out['reason'] not in REASONS:
         raise Refusal(2, 'reason must be one of: %s' % ', '.join(REASONS))
     for name in LIST_FIELDS:
@@ -316,8 +333,9 @@ def author_fields(doc, task, reason):
         raise Refusal(2, 'a packet needs next[]: the successor\'s next steps, '
                          'in order')
     sender = out.setdefault('from', {})
-    if not isinstance(sender, dict) or set(sender) - FROM_FIELDS:
-        raise Refusal(2, 'from must be an object with: %s'
+    if not isinstance(sender, dict) or set(sender) - FROM_FIELDS or \
+            not all(isinstance(v, str) for v in sender.values()):
+        raise Refusal(2, 'from must be an object of strings with: %s'
                       % ', '.join(sorted(FROM_FIELDS)))
     if out.get('epoch') is not None and not isinstance(out['epoch'], int):
         raise Refusal(2, 'epoch must be an integer')
@@ -364,8 +382,14 @@ def view(packet, status):
 
 def handoff_write(args):
     pdir = plan_dir(args.plan)
-    raw = sys.stdin.read() if args.json == '-' else open(
-        args.json, encoding='utf-8').read()
+    try:
+        if args.json == '-':
+            raw = sys.stdin.read()
+        else:
+            with open(args.json, encoding='utf-8') as fh:
+                raw = fh.read()
+    except OSError as exc:
+        raise Refusal(2, 'cannot read the packet input: %s' % exc)
     try:
         doc = json.loads(raw)
     except ValueError as exc:
@@ -384,14 +408,23 @@ def handoff_write(args):
     hdir = handoff_dir(pdir)
     if not os.path.isdir(hdir):
         os.makedirs(hdir, 0o700)
-    stamp = packet['written_at'].replace('-', '').replace(':', '')
+    earlier = pending(pdir)
     slug = re.sub(r'[^A-Za-z0-9_.-]+', '_', packet['task'])[:60]
-    path = os.path.join(hdir, '%s-%s.json' % (stamp, slug))
-    suffix = 1
-    while os.path.exists(path):
-        suffix += 1
-        path = os.path.join(hdir, '%s-%s-%d.json' % (stamp, slug, suffix))
+    moment = datetime.datetime.now(datetime.timezone.utc)
+    path = None
+    while path is None or os.path.exists(path):
+        # a microsecond stamp keeps name order equal to write order
+        path = os.path.join(hdir, '%s-%s.json' % (
+            moment.strftime('%Y%m%dT%H%M%S%fZ'), slug))
+        moment += datetime.timedelta(microseconds=1)
     write_private(path, json.dumps(packet, indent=2, sort_keys=True) + '\n')
+    # The newest packet is the one a successor accepts; an earlier pending
+    # packet (one that no longer matches the checkout) is superseded so it
+    # can never pin capacity at handoff or block resume.
+    for old in earlier:
+        write_private(sidecar(old, 'superseded'), json.dumps(
+            {'superseded_at': packet['written_at'],
+             'by': os.path.basename(path)}, sort_keys=True) + '\n')
     replace_private(os.path.join(hdir, 'HANDOFF.md'), view(packet, 'pending'))
     print(os.path.relpath(path))
     return 0
@@ -399,9 +432,14 @@ def handoff_write(args):
 
 def select_packet(pdir, explicit, want_pending):
     if explicit:
-        if not os.path.isfile(explicit):
+        path = os.path.abspath(explicit)
+        if os.path.dirname(path) != os.path.abspath(handoff_dir(pdir)) or \
+                not path.endswith('.json') or path.endswith(SIDECARS):
+            raise Refusal(2, 'a packet is a .json file in %s'
+                          % handoff_dir(pdir))
+        if not os.path.isfile(path):
             raise Refusal(2, 'packet not found: %s' % explicit)
-        return os.path.abspath(explicit)
+        return path
     found = pending(pdir) if want_pending else packets(pdir)
     return found[-1] if found else None
 
@@ -434,6 +472,9 @@ def handoff_accept(args):
         raise Refusal(1, 'no pending handoff packet in %s' % pdir)
     if os.path.exists(accepted_path(path)):
         raise Refusal(3, 'refused: %s was already accepted' % os.path.relpath(path))
+    if os.path.exists(sidecar(path, 'superseded')):
+        raise Refusal(3, 'refused: %s was superseded by a later packet'
+                      % os.path.relpath(path))
     packet = read_json(path)
     found = mismatches(packet, pdir)
     if found:
@@ -460,7 +501,8 @@ def handoff_show(args):
         print('no %shandoff packet' % ('pending ' if args.pending else ''))
         return 1 if args.pending else 0
     packet = read_json(path)
-    status = 'accepted' if os.path.exists(accepted_path(path)) else 'pending'
+    status = 'accepted' if os.path.exists(accepted_path(path)) else \
+        'superseded' if os.path.exists(sidecar(path, 'superseded')) else 'pending'
     if args.json:
         print(json.dumps({'path': path, 'status': status, 'packet': packet},
                          indent=2, sort_keys=True))

@@ -82,9 +82,9 @@ PY
 }
 
 @test "with no Unreleased block the output is byte-identical to the pre-fold step" {
-    git -C "$REPO_ROOT" cat-file -e 782e1e7 2>/dev/null || skip "base revision 782e1e7 not in this clone"
-    git -C "$REPO_ROOT" show 782e1e7:.github/workflows/auto-release.yml > "$W/old.yml"
-    _step "$W/old.yml" > "$W/old.sh"
+    # The 7.6.3 step, frozen as a fixture (CI checkouts are shallow, so the
+    # base revision is not available to read from history).
+    cp "$REPO_ROOT/tests/fixtures/release/update-changelog-7.6.3.sh" "$W/old.sh"
     _step "$WF" > "$W/new.sh"
     for variant in old new; do
         rm -rf "$W/run" "$W/tmp" && mkdir -p "$W/run" "$W/tmp"
@@ -98,16 +98,16 @@ PY
 }
 
 @test "the fold adds no permission, secret or network call to the workflow" {
-    git -C "$REPO_ROOT" cat-file -e 782e1e7 2>/dev/null || skip "base revision 782e1e7 not in this clone"
-    python3 - "$WF" <(git -C "$REPO_ROOT" show 782e1e7:.github/workflows/auto-release.yml) <<'PY'
+    python3 - "$WF" <<'PY'
 import sys, yaml
-new, old = (yaml.safe_load(open(p)) for p in sys.argv[1:3])
-assert new.get('permissions') == old.get('permissions')
-for job in new['jobs']:
-    assert new['jobs'][job].get('permissions') == old['jobs'][job].get('permissions'), job
-step = lambda wf: next(s for j in wf['jobs'].values() for s in j['steps'] if s.get('name') == 'Update CHANGELOG.md')
-assert step(new).get('env') == step(old).get('env')
-run = step(new)['run']
+new = yaml.safe_load(open(sys.argv[1]))
+# the 7.6.3 values: the fold must not widen any of them
+assert new.get('permissions') == {'contents': 'write'}, new.get('permissions')
+assert {j: v.get('permissions') for j, v in new['jobs'].items()} == \
+    {'pin-smoke': {'contents': 'read'}, 'release': None}
+step = next(s for j in new['jobs'].values() for s in j['steps'] if s.get('name') == 'Update CHANGELOG.md')
+assert set(step.get('env')) == {'NEW_VERSION', 'COMMITS'}, step.get('env')
+run = step['run']
 assert 'secrets.' not in run and 'curl' not in run and 'wget' not in run and 'gh ' not in run
 PY
 }

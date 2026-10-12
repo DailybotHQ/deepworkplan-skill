@@ -615,11 +615,13 @@ apply to every plan and every agent that continues one:
    locale where output is compared). An environment failure is a blocker to
    fix or report — never a pass, and never attributed to the change.
 6. **Review before the irreversible step.** The Final Review's local AI Diff
-   Review (§6.1) runs before merge, tag or publish, against the plan's
-   baseline; an unavailable reviewer is a recorded blocker or an explicit
-   human waiver, never a silent skip. Methodology, protocol and
-   security-relevant changes **SHOULD** also get a reviewer of another vendor
-   or agent.
+   Review (§6.1) runs before any merge, tag or publish the plan performs,
+   against the plan's baseline. Plan completion keeps §6.1's never-block
+   contract (a missing reviewer is a recorded `local reviewer not installed`
+   finding); the merge, tag or publish step itself stays blocked on that
+   finding until the reviewer runs or the developer explicitly waives it —
+   never a silent skip. Methodology, protocol and security-relevant changes
+   **SHOULD** also get a reviewer of another vendor or agent.
 7. **Lean evidence.** `analysis_results/` holds reports, logs, digests and
    pointers — never products, dependency trees or vendored copies; a product
    gets its own repository or a declared touched surface.

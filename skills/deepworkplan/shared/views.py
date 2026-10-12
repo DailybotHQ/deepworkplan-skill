@@ -253,7 +253,9 @@ def _machine_written(events, name, existing):
     view is machine output — the untouched result of an earlier render,
     possibly older than a later render to another ``--out`` directory —
     so refreshing it loses nothing. Anything else (or no recorded digest
-    at all) is treated as an edit.
+    at all) is treated as an edit. Accepted trade-off: a deliberate
+    restore of an exact earlier render is refreshed without a
+    reconciliation record; its content stays reproducible from the journal.
     """
     actual = hashlib.sha256(existing.encode('utf-8')).hexdigest()
     return any(event.get('type') == 'view_render' and

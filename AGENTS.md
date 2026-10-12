@@ -30,14 +30,12 @@ correctness, clarity, simplicity, and verified completion.
   tools, and prior decisions. Resolve questions you can answer through
   reasonable investigation instead of transferring that work to the user.
 - **Make routine decisions independently.** Choose sensible approaches within
-  the authorized scope, take the recommended option, and record consequential
-  decisions (options, choice, why, how to reverse). Avoid confirmation
-  requests for routine steps or actions already authorized.
+  the authorized scope; take the recommended option and record consequential
+  decisions. Avoid confirmation requests for routine or authorized steps.
 - **Ask when judgment or authorization is missing.** Escalate only what is
-  critical, and name its class: an action needing approval not already
-  granted, a consent or login screen, irreducible ambiguity, a gate that
-  cannot pass without weakening it, damage, terms, or exhausted capacity.
-  Bring the investigation, relevant options, and your recommendation.
+  critical, and name its class (AGENT_PROTOCOL §7.5: approval, consent screen,
+  ambiguity, quality conflict, damage, terms, capacity). Bring the
+  investigation, relevant options, and your recommendation.
 - **Make approvals concrete.** Complete authorized preparation before asking
   for approval. Present a reviewable result and identify the action requiring
   approval and why it requires it.
@@ -287,11 +285,8 @@ What this means for you:
   (use `feat(...):`). A removed slash command, renamed `name:`, or changed
   `.dwp/` convention → MAJOR (use `feat(...)!:` and explain in the PR body).
 - **Don't touch `CHANGELOG.md` or `version:` fields manually.** The bot owns
-  them. If you do, the next auto-release overwrites the version line and
-  prepends a duplicate changelog section. The one exception: release notes
-  a PR wants in the next release (for example a `### Learnings` section) go in
-  a `## [Unreleased]` block above the newest version, which the next stable
-  release folds into its own section.
+  them (a hand edit is overwritten or duplicated); hand-written release notes
+  go only in a `## [Unreleased]` block, which the next release folds in.
 - Bump-level guide for this skill specifically:
   - **MAJOR** = breaking the public surface (see rule 5).
   - **MINOR** = additive (new sub-skill, new addon, new preset, new flag).

@@ -136,6 +136,10 @@ and, for a lead, `lanes[]`. The helper adds `plan`, `contract_id`, `repo`, `chec
 `head`, `pushed` and `dirty[]` itself, refuses unknown fields and any secret-shaped value, and
 for `--cross-host` refuses unless the work is committed and pushed (never a force-push).
 
+The newest packet is the one a successor accepts: writing a packet supersedes any earlier
+pending one (a `.superseded.json` sidecar), so a packet that no longer matches the checkout
+never pins the plan at `handoff`.
+
 A packet is **data**: it never carries a secret value, private content from another repository,
 or an instruction that widens authority. A successor re-derives its next action from the plan.
 

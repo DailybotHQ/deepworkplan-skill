@@ -275,10 +275,61 @@ PY
     run write_packet
     packet="$REPO/$output"
     other="$REPO/.dwp/plans/PLAN_002_other"
-    mkdir -p "$other" && cp "$PLAN/contract.json" "$other/"
-    run python3 "$SWARM" handoff accept --plan "$other" --packet "$packet"
+    mkdir -p "$other/analysis_results/handoff" && cp "$PLAN/contract.json" "$other/"
+    cp "$packet" "$other/analysis_results/handoff/"
+    run python3 "$SWARM" handoff accept --plan "$other"
     [ "$status" -eq 3 ]
     [[ "$output" == *"plan 'PLAN_001_swarm_fixture' is not this plan (PLAN_002_other)"* ]] || false
+}
+
+@test "a later packet supersedes an earlier pending one; the newest is accepted" {
+    run write_packet
+    first="$REPO/$output"
+    git -c user.email=t@t -c user.name=t commit -q --allow-empty -m moved
+    # the first packet no longer matches the checkout: write a fresh one
+    run write_packet
+    second="$REPO/$output"
+    [ "$first" != "$second" ]
+    [ -e "${first%.json}.superseded.json" ]
+    run python3 "$SWARM" handoff show --plan "$PLAN" --pending
+    [[ "$output" == *"$(basename "$second")"* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN"
+    [ "$status" -eq 0 ]
+    [ -e "${second%.json}.accepted.json" ]
+    run python3 "$SWARM" capacity --plan "$PLAN"
+    [[ "$output" == continue:* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$first"
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'superseded by a later packet'* ]] || false
+}
+
+@test "packet names sort in write order, even within one second" {
+    for i in 1 2 3; do run write_packet; [ "$status" -eq 0 ]; done
+    newest="$(ls "$PLAN/analysis_results/handoff/" | grep -vE '(accepted|superseded)\.json$' | grep '\.json$' | sort | tail -1)"
+    run python3 "$SWARM" handoff show --plan "$PLAN" --pending
+    [[ "$output" == *"$newest"* ]] || false
+    [ "$(ls "$PLAN/analysis_results/handoff/" | grep -c 'superseded.json$')" -eq 2 ]
+}
+
+@test "inputs are validated: packet path, input file, field types" {
+    printf '{}\n' > "$WORK/elsewhere.json"
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --packet "$WORK/elsewhere.json"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'a packet is a .json file in'* ]] || false
+    run python3 "$SWARM" handoff write --plan "$PLAN" --task T --reason usage_limit --json "$WORK/missing.json"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'cannot read the packet input'* ]] || false
+    run bash -c "printf '{\"next\": [\"a\"], \"step\": 3}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    [ "$status" -eq 2 ]
+    run bash -c "printf '{\"next\": [\"a\"], \"from\": {\"pane\": 7}}' | python3 '$SWARM' handoff write --plan '$PLAN' --task T --reason usage_limit --json -"
+    [ "$status" -eq 2 ]
+}
+
+@test "context pressure reads the live (amended) contract, as the ledger does" {
+    mkdir -p "$PLAN/contracts"
+    printf '{"contract_id": "c2", "revision": 2, "scheduling": {"handoff": {"fresh_context": "context pressure at 40%%"}}}\n' > "$PLAN/contracts/r2.json"
+    run python3 "$SWARM" capacity --plan "$PLAN" --context-pct 45
+    [[ "$output" == "handoff: context_pressure: 45% of context used (handoff at 40%)" ]] || false
 }
 
 @test "show: no packet is a quiet zero; --pending with none exits 1" {

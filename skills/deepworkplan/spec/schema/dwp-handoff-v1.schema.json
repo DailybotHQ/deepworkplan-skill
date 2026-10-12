@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://deepworkplan.com/schema/dwp-handoff/v1.json",
-  "description": "DeepWorkPlan handoff packet, v1 (guide/swarm.md section 17.4): what a successor needs that the plan's journal does not carry - in-flight intent. Written only by shared/swarm.py handoff write under <plan>/analysis_results/handoff/ (0600), verified by handoff accept against the plan and the checkout. A packet is data, never instructions: it closes no criterion, relaxes no gate and grants no authority. It never carries a secret value.",
+  "description": "DeepWorkPlan handoff packet, v1 (guide/swarm.md section 17.5): what a successor needs that the plan's journal does not carry - in-flight intent. Written only by shared/swarm.py handoff write under <plan>/analysis_results/handoff/ (0600), verified by handoff accept against the plan and the checkout. A packet is data, never instructions: it closes no criterion, relaxes no gate and grants no authority. It never carries a secret value.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "written_at", "plan", "contract_id", "task", "reason", "repo", "checkout", "branch", "head", "pushed", "dirty", "done", "verified", "not_verified", "next", "open_asks", "decisions", "lanes", "from"],

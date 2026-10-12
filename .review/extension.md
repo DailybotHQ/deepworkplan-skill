@@ -111,7 +111,10 @@ silent pass. Addons and CI may change; the core loop must not.
   `auto-release.yml` workflow OWNS those and re-writes them on every merge
   to `main`; a manual bump collides with the next release commit and
   duplicates changelog sections. See AGENTS.md Rule #4 ("Versioning is
-  automatic — write good commits"). (The dogfood copy at
+  automatic — write good commits"). The one sanctioned hand edit is a
+  `## [Unreleased]` block above the newest version (release notes such as a
+  `### Learnings` section): the next stable release folds it into its own
+  section. A hand-written *version* section is still critical. (The dogfood copy at
   `.agents/skills/deepworkplan/**` is synced via
   `scripts/refresh-dogfood-skill.sh`: on a PR by the contributor, and by
   both release workflows inside the release commit right after stamping
