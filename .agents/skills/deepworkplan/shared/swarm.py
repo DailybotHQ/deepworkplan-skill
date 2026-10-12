@@ -280,24 +280,33 @@ def read_capacity():
     return record
 
 
+def norm_pane(value):
+    """A pane id (w9:p1) from a pane id or a full address (local:w9:p1)."""
+    value = (value or '').strip() if isinstance(value, str) else ''
+    if value.count(':') >= 2:
+        value = ':'.join(value.split(':')[-2:])
+    return value
+
+
 def caller_pane(explicit=None, address=None):
     """This session's pane: --pane, else $HERDR_PANE_ID, else the pane part of
-    an address such as local:w9:p1. Empty when unknown — callers fail closed."""
-    if explicit:
-        return explicit
-    if os.environ.get('HERDR_PANE_ID'):
-        return os.environ['HERDR_PANE_ID']
-    if address and address.count(':') >= 2:
-        return ':'.join(address.split(':')[-2:])
+    --by, each normalized the same way. Empty when unknown — callers fail
+    closed."""
+    for value in (explicit, os.environ.get('HERDR_PANE_ID'), address):
+        if norm_pane(value):
+            return norm_pane(value)
     return ''
+
+
+def packet_pane(packet_path):
+    """The author's pane recorded in a packet, normalized; '' when absent."""
+    sender = read_json(packet_path).get('from') or {}
+    return norm_pane(sender.get('pane')) if isinstance(sender, dict) else ''
 
 
 def authored_by(packet_path, pane):
     """True when the packet's from.pane names this caller's pane."""
-    if not pane:
-        return False
-    sender = read_json(packet_path).get('from') or {}
-    return isinstance(sender, dict) and sender.get('pane') == pane
+    return bool(pane) and packet_pane(packet_path) == norm_pane(pane)
 
 
 def capacity(args):
@@ -307,7 +316,16 @@ def capacity(args):
     # gets its real verdict — `handoff accept` is its gate, not capacity.
     pane = caller_pane(args.pane)
     own = [p for p in waiting if authored_by(p, pane)]
-    if waiting and not pane:
+    anonymous = [p for p in waiting if not packet_pane(p)]
+    if anonymous:
+        # A packet with no author pane (written before 7.7.1) binds every
+        # caller: nobody can prove they are not its author.
+        record = {'decision': 'handoff', 'verdict': None,
+                  'reason': 'hysteresis: a pending handoff packet has no author '
+                            'pane (%s) — its author writes a new packet (it '
+                            'supersedes); never resume this task'
+                            % os.path.relpath(anonymous[-1], pdir)}
+    elif waiting and not pane:
         # Fail closed: an unknown caller may be the author of the packet.
         record = {'decision': 'handoff', 'verdict': None,
                   'reason': 'hysteresis: a handoff packet is pending and this '
@@ -525,6 +543,11 @@ def handoff_accept(args):
         raise Refusal(3, 'refused: %s was already accepted' % os.path.relpath(path))
     if os.path.exists(sidecar(path, 'superseded')):
         raise Refusal(3, 'refused: %s was superseded by a later packet'
+                      % os.path.relpath(path))
+    if not packet_pane(path):
+        raise Refusal(3, 'refused: %s has no from.pane, so its author cannot be '
+                         'told apart — the author writes a new packet (it '
+                         'supersedes) and a successor accepts that'
                       % os.path.relpath(path))
     me = caller_pane(args.pane, args.by)
     if not me:

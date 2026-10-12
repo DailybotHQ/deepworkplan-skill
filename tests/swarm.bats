@@ -329,11 +329,15 @@ PY
 }
 
 @test "packet names sort in write order, even within one second" {
-    for i in 1 2 3; do run write_packet; [ "$status" -eq 0 ]; done
+    # Six back-to-back writes: at least two share a second, so a seconds-only
+    # name (with a collision suffix) would sort out of write order.
+    : > "$WORK/order"
+    for i in 1 2 3 4 5 6; do run write_packet; [ "$status" -eq 0 ]; basename "$output" >> "$WORK/order"; done
+    sort "$WORK/order" | cmp - "$WORK/order"
     newest="$(ls "$PLAN/analysis_results/handoff/" | grep -vE '(accepted|superseded)\.json$' | grep '\.json$' | sort | tail -1)"
     run python3 "$SWARM" handoff show --plan "$PLAN" --pending
     [[ "$output" == *"$newest"* ]] || false
-    [ "$(ls "$PLAN/analysis_results/handoff/" | grep -c 'superseded.json$')" -eq 2 ]
+    [ "$(ls "$PLAN/analysis_results/handoff/" | grep -c 'superseded.json$')" -eq 5 ]
 }
 
 @test "inputs are validated: packet path, input file, field types" {
@@ -404,6 +408,45 @@ PY
     # the author's hysteresis still holds after the refused accepts
     run python3 "$SWARM" capacity --plan "$PLAN" --pane w15:p1
     [[ "$output" == handoff:* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
+    [ "$status" -eq 0 ]
+}
+
+@test "identity: a full address as --pane or HERDR_PANE_ID matches the packet's pane (review W1)" {
+    fake_ak 0.6.1 "$(cap 95 ok)"
+    run write_packet          # from.pane is w15:p1
+    packet="$REPO/$output"
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane local:w15:p1
+    [[ "$output" == "handoff: hysteresis: your handoff packet is pending"* ]] || false
+    HERDR_PANE_ID=' local:w15:p1 ' run python3 "$SWARM" capacity --plan "$PLAN"
+    [[ "$output" == handoff:* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane local:w15:p1
+    [ "$status" -eq 3 ]
+    [[ "$output" == *"own author (w15:p1)"* ]] || false
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --by w15:p1
+    [ "$status" -eq 3 ]
+    [[ "$output" == *"own author (w15:p1)"* ]] || false
+    [ ! -e "${packet%.json}.accepted.json" ]
+}
+
+@test "identity: a legacy packet with no from.pane is never accepted and binds every caller (review W2)" {
+    fake_ak 0.6.1 "$(cap 95 ok)"
+    run write_packet
+    packet="$REPO/$output"
+    # simulate a 7.7.0 packet written before from.pane was required
+    python3 - "$packet" <<'PY'
+import json, os, sys
+p = json.load(open(sys.argv[1])); p['from'] = {}
+os.chmod(sys.argv[1], 0o600); open(sys.argv[1], 'w').write(json.dumps(p))
+PY
+    run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
+    [ "$status" -eq 3 ]
+    [[ "$output" == *'has no from.pane'* ]] || false
+    [ ! -e "${packet%.json}.accepted.json" ]
+    run python3 "$SWARM" capacity --plan "$PLAN" --pane w15:p1
+    [[ "$output" == "handoff: hysteresis: a pending handoff packet has no author pane"* ]] || false
+    # the author writes a new packet: it supersedes, and a successor accepts that
+    run write_packet
     run python3 "$SWARM" handoff accept --plan "$PLAN" --pane w9:p1
     [ "$status" -eq 0 ]
 }
@@ -490,6 +533,8 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     doc_has "$G" 'refuses the packet'"'"'s own author and a caller whose pane is unknown'
     doc_has "$SK/resume/SKILL.md" 'then `handoff accept --pane <pane>`'
     doc_has "$SK/resume/v6.md" '`handoff accept --plan <dir> --pane <pane>`'
+    doc_has "$SK/resume/v6.md" 'the caller is the packet'"'"'s author, its pane is unknown, or the packet has no `from.pane`'
+    doc_has "$G" 'is compared as its pane `w3:p1`, wherever it comes from'
 }
 
 @test "§16 lets lanes coordinate with each other and keeps the reactive path as the safety net" {

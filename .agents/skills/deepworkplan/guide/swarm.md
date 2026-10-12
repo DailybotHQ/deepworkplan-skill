@@ -176,7 +176,8 @@ The author supplies `task`, `step`, `reason` (`capacity_critical`, `capacity_low
 `context_pressure`, `usage_limit`, `lead_handover`), `done[]`, `verified[]` and
 `not_verified[]` (with evidence paths), `next[]` (required: the next concrete steps, in order),
 `open_asks[]`, `decisions[]`, `lead`, `epoch`, `from` (agent, vendor, profile, pane, capacity;
-`from.pane` is required — it is the identity hysteresis and acceptance key on) and, for a lead,
+`from.pane` is required — it is the identity hysteresis and acceptance key on; a full address
+such as `local:w3:p1` is compared as its pane `w3:p1`, wherever it comes from) and, for a lead,
 `lanes[]`. The helper adds `plan`, `contract_id`, `repo`, `checkout`, `branch`,
 `head`, `pushed` and `dirty[]` itself, refuses unknown fields and any secret-shaped value, and
 for `--cross-host` refuses unless the work is committed and pushed (never a force-push).
