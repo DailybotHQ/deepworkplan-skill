@@ -136,7 +136,8 @@ repository or workstream, each in its own pane.
   Herdr server (`$XDG_STATE_HOME/herdr-peers/<server>/`), never in the
   checkout, so a checkout shared with a container no longer mixes the two
   machines' state; an undeliverable reply is recorded `unroutable` and
-  closes the ask. Launching lanes
+  closes the ask. A reply from a peer still on `v0.2.2` is accepted but
+  recorded as unverified, with a warning, until that machine is upgraded. Launching lanes
   unattended is §16.5 of the guide: no agent sends keys, except folder
   trust on a pane the lead launched itself when `--trust-cwd` was
   unavailable; every other first-run screen is escalated to the developer.

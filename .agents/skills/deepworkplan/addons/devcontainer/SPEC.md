@@ -195,7 +195,15 @@ change, and an existing install keeps its `state` volume.
   repository's tooling needs the agents' Node first on PATH.
 - `[agents] default_profile` is a **host** profile key (exported as
   `AGENTKIT_DEFAULT_PROFILE_<CLI>` when that profile is shared;
-  coding-agents-kit `v0.5.2`); the addon **MUST NOT** set it.
+  coding-agents-kit `v0.5.2` and later); the addon **MUST NOT** set it.
+  Since `v0.3.4`, when it is set and shared, login shells also export
+  `CLAUDE_CONFIG_DIR` / `CODEX_HOME` for that profile, so panes Herdr
+  restores without ak open on that account.
+- Since `v0.3.4` the kit writes `check_for_update_on_startup = false` and
+  `[features] daemon_auto_start = false` into the container's own Codex
+  configs only — never the host's Codex home or a host-shared profile — and
+  keeps a value the developer set. The addon **MUST NOT** pre-trust Codex
+  hooks; that consent is the developer's.
 - A repository that sets none of these keys renders byte-identically to
   `v0.3.2`.
 

@@ -179,6 +179,11 @@ records that id on the state volume (`dck up`, after every `dck herdr add`,
 and `dck herdr mesh`) and the login profile exports it, so no lane sets it
 by hand; `dck doctor` shows both ids (`herdr self`) and flags a mismatch.
 With an older kit, the lead's brief names the value and the lane sets it.
+Since `v0.3.4` the entrypoint also turns off Codex's startup update check
+and its app-server daemon auto-start in the container's own Codex configs
+(the kit pins every CLI version), never in the host's Codex home or a
+host-shared profile, keeping any value the developer set; Codex's hook
+trust stays the developer's consent.
 The image also carries herdr-peers `v0.2.3`, whose state is kept per Herdr
 server, so a checkout bind-mounted into the container no longer shares the
 host's state.
@@ -214,9 +219,14 @@ A repository that sets none of these renders byte-identically to `v0.3.2`.
 **Default account inside (`[agents] default_profile`, host profile).**
 `{ claude = "@work3" }` exports `AGENTKIT_DEFAULT_PROFILE_<CLI>` into the
 container when that profile is shared, so a bare `ak claude` inside uses
-that account (coding-agents-kit `v0.5.2`); a macOS `@default` Claude login
+that account (coding-agents-kit `v0.5.2` and later); a macOS `@default` Claude login
 lives in the Keychain and cannot be shared. It is the developer's host
-profile key — describe it, never set it. Since `v0.3.3` the host's git
+profile key — describe it, never set it. Since `v0.3.4`, when it is set
+and shared, the container's login shells also export `CLAUDE_CONFIG_DIR` /
+`CODEX_HOME` for that profile, so a pane Herdr restores with a plain
+`claude --resume` or `codex resume` opens on that account instead of a
+login screen (a value ak sets wins). `dev.sh` also prints dck's refusals
+(exit 5: a configuration that needs `--trust`, or markers to fix) on stdout. Since `v0.3.3` the host's git
 identity (name, email, SSH signing key reference) is pushed into the
 container at every start, with no `~/.gitconfig` mount.
 

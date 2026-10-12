@@ -111,6 +111,9 @@ recipes — those drift; the pinned skill is the single source.
   `log --all-machines` shows every server's in a shared log. A reply that
   cannot be delivered is recorded as `unroutable` and closes the ask with
   that reason; `wait` accepts only a reply from the peer that was asked.
+  During a mixed-version rollout `wait` still accepts a `v0.2.2` reply stamp
+  without `from`, records the sender as unverified and warns until that
+  peer is upgraded; the lead **SHOULD** upgrade every machine to the pin.
 - The lead **SHOULD** set `DWP_PLAN` and `DWP_TASK` so the helper mirrors
   every ask and reply into the plan.
 
