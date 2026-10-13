@@ -401,7 +401,7 @@ template).
 
 An optional addon integrating **coding-agents-kit** (`ak`;
 `https://github.com/DailybotHQ/coding-agents-kit`, MIT, its own release
-cycle) pinned at `v0.7.0` (interface `1`), as the **headless** transport of
+cycle) pinned at `v0.7.1` (interface `1`), as the **headless** transport of
 v7 delegation ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `ak run` per
 delegate, in a dedicated git worktree, recorded through `ledger.py
 delegate`, its result asserted until the plan's own gates observe it.
@@ -442,7 +442,7 @@ The shipped set:
 
 | key | product (pinned) | provides_abilities | requires_grants | transport |
 |---|---|---|---|---|
-| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.7.0`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
+| `agentkit` | `DailybotHQ/coding-agents-kit` `v0.7.1`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
 | `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.12` | — | — | — |
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.15` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |

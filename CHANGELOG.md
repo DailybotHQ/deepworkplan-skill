@@ -28,9 +28,10 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   scorer's `--dump-oracle-commitments` no longer requires a lab directory that
   exists only in a git-ignored `.dwp/`.
 
-- Pin coding-agents-kit `v0.7.0`: Antigravity quota in `ak usage` (and so in
-  `ak capacity` / `ak pick`) where its login file is readable, and every
-  account of every CLI listed in `ak usage`.
+- Pin coding-agents-kit `v0.7.1`: Antigravity quota in `ak usage` (and so in
+  `ak capacity` / `ak pick`) where its login file is readable, every account of
+  every CLI listed in `ak usage`, and a profile's suffixed credential variable
+  counted as its login.
 - Pin devcontainer-kit `v0.3.6`: coding-agents-kit `v0.7.0` baked in, the
   antigravity kind, a per-developer choice of CLIs, and non-shared profiles on
   the agents volume. Its image still carries herdr-peers `v0.2.3`, so lanes
