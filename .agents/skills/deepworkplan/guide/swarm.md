@@ -127,7 +127,9 @@ lane `v0.6.1`, whose daemon would otherwise hide the account) and prints the dec
   task after its account recovers. `capacity --plan` enforces it for the author only: a pending
   packet whose `from.pane` is the caller's pane (`--pane`, else `$HERDR_PANE_ID`) answers
   `handoff`. A successor in another pane gets its real verdict, with the pending packet named;
-  `handoff accept` is its gate. A recovered account simply returns to the pool.
+  `handoff accept` is its gate. A caller whose pane is unknown fails closed: while a packet is
+  pending it is told `handoff`, since it may be the author. A recovered account simply returns
+  to the pool.
 - **Context pressure is capacity too.** At the contract's `scheduling.handoff.fresh_context`
   (default 60 %), `--context-pct` answers `handoff` with reason `context_pressure`.
 - **Honest degradation.** Without `ak`, with an older `ak`, or outside an `ak` launch the
@@ -173,8 +175,10 @@ python3 <skill>/shared/swarm.py handoff write --plan <plan-dir> --task <T-id> \
 The author supplies `task`, `step`, `reason` (`capacity_critical`, `capacity_low`,
 `context_pressure`, `usage_limit`, `lead_handover`), `done[]`, `verified[]` and
 `not_verified[]` (with evidence paths), `next[]` (required: the next concrete steps, in order),
-`open_asks[]`, `decisions[]`, `lead`, `epoch`, `from` (agent, vendor, profile, pane, capacity)
-and, for a lead, `lanes[]`. The helper adds `plan`, `contract_id`, `repo`, `checkout`, `branch`,
+`open_asks[]`, `decisions[]`, `lead`, `epoch`, `from` (agent, vendor, profile, pane, capacity;
+`from.pane` is required — it is the identity hysteresis and acceptance key on; a full address
+such as `local:w3:p1` is compared as its pane `w3:p1`, wherever it comes from) and, for a lead,
+`lanes[]`. The helper adds `plan`, `contract_id`, `repo`, `checkout`, `branch`,
 `head`, `pushed` and `dirty[]` itself, refuses unknown fields and any secret-shaped value, and
 for `--cross-host` refuses unless the work is committed and pushed (never a force-push).
 
@@ -194,8 +198,9 @@ or an instruction that widens authority. A successor re-derives its next action 
    (`ak pick <kind> --owner <lead> --exclude @<spent>`; prefer another vendor when the task
    allows), lease it, launch the successor **in the same checkout** with the brief "resume
    `<plan>` from packet `<path>`; pass `--pane <pane>`", record the launch, update the lane table.
-3. **Successor:** `swarm.py handoff accept --plan <dir>` — it verifies plan, live contract,
-   branch, head and dirty set, and records nothing on a mismatch (report it to the lead) — then
+3. **Successor:** `swarm.py handoff accept --plan <dir> --pane <pane>` — it verifies plan,
+   live contract, branch, head and dirty set, refuses the packet's own author and a caller
+   whose pane is unknown, and records nothing on a refusal (report it to the lead) — then
    `/dwp-resume`. It re-runs every gate the packet lists as not verified.
 4. **Lead** releases the spent lease and closes the spent pane once the successor accepted (it
    created that pane).

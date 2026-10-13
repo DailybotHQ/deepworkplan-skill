@@ -2,7 +2,7 @@
 # The agentkit addon — a thin integrator of coding-agents-kit (`ak`) as the
 # headless delegation transport (spec/ADDONS.md §6.8, spec/V7_CONTRACT.md).
 # Policy under test: opt-in from onboard Phase 7b, never required; a single
-# pin (coding-agents-kit v0.6.1) across descriptor and docs; install by
+# pin (coding-agents-kit v0.7.1) across descriptor and docs; install by
 # tagged clone + install.sh only; permissions are the kit's — autonomy by
 # default, and the `--ask` / AGENTKIT_PERMISSIONS=ask opt-out always wins
 # (over `--auto` and over the env file; hub amendment A1) — while the pack
@@ -18,7 +18,7 @@ REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
 SK="$REPO_ROOT/skills/deepworkplan"
 ADDON="$SK/addons/agentkit"
 ONBOARD="$SK/onboard/addons.md"
-PIN="v0.6.1"
+PIN="v0.7.1"
 export PYTHONDONTWRITEBYTECODE=1
 
 doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
@@ -116,7 +116,7 @@ import resources
 off = resources.effective_abilities(None, sys.argv[2])
 assert not off["abilities"]["subagents"], off
 import config
-config.write_addon(sys.argv[2], "agentkit", True, "v0.6.1")
+config.write_addon(sys.argv[2], "agentkit", True, "v0.7.1")
 on = resources.effective_abilities(None, sys.argv[2])
 assert on["sources"]["model_routing"] == ["addon:agentkit"], on
 print("ok")' "$SK/shared" "$WORK/repo/.dwp"

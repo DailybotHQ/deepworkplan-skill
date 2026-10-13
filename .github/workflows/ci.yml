@@ -109,7 +109,11 @@ jobs:
       - name: Install bats-core
         run: sudo apt-get update && sudo apt-get install -y bats
       - name: Run bats tests
-        run: bats tests/ | tee /tmp/bats.tap
+        # pipefail: without it the pipeline's status is tee's, so a failing
+        # bats run (not ok lines) would leave the job green.
+        run: |
+          set -o pipefail
+          bats tests/ | tee /tmp/bats.tap
       - name: Enforce the declared skip policy and a nonempty selection
         run: |
           set -euo pipefail

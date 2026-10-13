@@ -5,7 +5,7 @@ Guide §17 (``guide/swarm.md``) teaches when to call it. Four verbs:
 
     swarm.py capacity [--plan DIR] [--context-pct N] [--pane P] [--json]
     swarm.py handoff write  --plan DIR --task T --reason R --json FILE|- [--cross-host]
-    swarm.py handoff accept --plan DIR [--packet PATH] [--by ADDR]
+    swarm.py handoff accept --plan DIR [--packet PATH] [--by ADDR] [--pane P]
     swarm.py handoff show   --plan DIR [--packet PATH] [--pending] [--json]
 
 ``capacity`` wraps ``ak capacity --self --json`` (coding-agents-kit 0.6.0
@@ -280,12 +280,33 @@ def read_capacity():
     return record
 
 
+def norm_pane(value):
+    """A pane id (w9:p1) from a pane id or a full address (local:w9:p1)."""
+    value = (value or '').strip() if isinstance(value, str) else ''
+    if value.count(':') >= 2:
+        value = ':'.join(value.split(':')[-2:])
+    return value
+
+
+def caller_pane(explicit=None):
+    """This session's pane: --pane, else $HERDR_PANE_ID, normalized. Never
+    --by, which only records who accepted. Empty when unknown — callers fail
+    closed."""
+    for value in (explicit, os.environ.get('HERDR_PANE_ID')):
+        if norm_pane(value):
+            return norm_pane(value)
+    return ''
+
+
+def packet_pane(packet_path):
+    """The author's pane recorded in a packet, normalized; '' when absent."""
+    sender = read_json(packet_path).get('from') or {}
+    return norm_pane(sender.get('pane')) if isinstance(sender, dict) else ''
+
+
 def authored_by(packet_path, pane):
     """True when the packet's from.pane names this caller's pane."""
-    if not pane:
-        return False
-    sender = read_json(packet_path).get('from') or {}
-    return isinstance(sender, dict) and sender.get('pane') == pane
+    return bool(pane) and packet_pane(packet_path) == norm_pane(pane)
 
 
 def capacity(args):
@@ -293,9 +314,24 @@ def capacity(args):
     waiting = pending(pdir) if pdir else []
     # Hysteresis binds the packet's AUTHOR only: a successor (another pane)
     # gets its real verdict — `handoff accept` is its gate, not capacity.
-    pane = args.pane or os.environ.get('HERDR_PANE_ID') or ''
+    pane = caller_pane(args.pane)
     own = [p for p in waiting if authored_by(p, pane)]
-    if own:
+    anonymous = [p for p in waiting if not packet_pane(p)]
+    if anonymous:
+        # A packet with no author pane (written before 7.7.1) binds every
+        # caller: nobody can prove they are not its author.
+        record = {'decision': 'handoff', 'verdict': None,
+                  'reason': 'hysteresis: a pending handoff packet has no author '
+                            'pane (%s) — its author writes a new packet (it '
+                            'supersedes); never resume this task'
+                            % os.path.relpath(anonymous[-1], pdir)}
+    elif waiting and not pane:
+        # Fail closed: an unknown caller may be the author of the packet.
+        record = {'decision': 'handoff', 'verdict': None,
+                  'reason': 'hysteresis: a handoff packet is pending and this '
+                            'caller\'s pane is unknown (pass --pane) — it may '
+                            'be yours: never resume this task'}
+    elif own:
         record = {'decision': 'handoff', 'verdict': None,
                   'reason': 'hysteresis: your handoff packet is pending (%s); '
                             'the successor accepts it — never resume this task'
@@ -366,6 +402,10 @@ def author_fields(doc, task, reason):
             not all(isinstance(v, str) for v in sender.values()):
         raise Refusal(2, 'from must be an object of strings with: %s'
                       % ', '.join(sorted(FROM_FIELDS)))
+    if not sender.get('pane', '').strip():
+        # Hysteresis and the self-accept guard key on the author's pane.
+        raise Refusal(2, 'a packet needs from.pane — the author\'s own pane '
+                         '(w3:p1); without it no identity can match')
     if out.get('epoch') is not None and not isinstance(out['epoch'], int):
         raise Refusal(2, 'epoch must be an integer')
     return out
@@ -504,6 +544,18 @@ def handoff_accept(args):
     if os.path.exists(sidecar(path, 'superseded')):
         raise Refusal(3, 'refused: %s was superseded by a later packet'
                       % os.path.relpath(path))
+    if not packet_pane(path):
+        raise Refusal(3, 'refused: %s has no from.pane, so its author cannot be '
+                         'told apart — the author writes a new packet (it '
+                         'supersedes) and a successor accepts that'
+                      % os.path.relpath(path))
+    me = caller_pane(args.pane)
+    if not me:
+        raise Refusal(3, 'refused: this caller\'s pane is unknown — pass '
+                         '--pane so the packet\'s author cannot accept it')
+    if authored_by(path, me):
+        raise Refusal(3, 'refused: the caller is the packet\'s own author '
+                         '(%s); a successor in another pane accepts it' % me)
     packet = read_json(path)
     found = mismatches(packet, pdir)
     if found:
@@ -563,6 +615,8 @@ def main(argv=None):
     accept.add_argument('--plan', required=True)
     accept.add_argument('--packet')
     accept.add_argument('--by')
+    accept.add_argument('--pane', help='this session\'s pane (default: '
+                        '$HERDR_PANE_ID); --by only records who accepted')
     show = verbs.add_parser('show')
     show.add_argument('--plan', required=True)
     show.add_argument('--packet')

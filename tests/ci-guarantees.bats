@@ -336,3 +336,20 @@ _stamp_and_refresh() {
     # auto-release commits everything it changed; the pre-release names the paths
     grep -qF 'git add -A' "$REPO_ROOT/.github/workflows/auto-release.yml"
 }
+
+@test "the bats job fails on a failing test: its tee pipeline runs with pipefail" {
+    # Without pipefail a step's status is tee's, so `bats tests/ | tee` stayed
+    # green with `not ok` lines (seen on main after a vendored-addon refresh).
+    python3 -c 'import yaml' 2>/dev/null || skip "PyYAML not installed (CI installs it)"
+    python3 - "$CI" <<'PY'
+import sys, yaml
+wf = yaml.safe_load(open(sys.argv[1]))
+run = next(s['run'] for s in wf['jobs']['bats-tests']['steps'] if s.get('name') == 'Run bats tests')
+assert '| tee' in run, run
+import re
+before_tee = run.split('| tee')[0]
+shell = ((wf['jobs']['bats-tests'].get('defaults') or {}).get('run') or {}).get('shell', '')
+# `set -o pipefail`, `set -euo pipefail` or a pipefail default shell all count
+assert re.search(r'^\s*set\s+-\w*o\s+pipefail\b', before_tee, re.M) or 'pipefail' in shell, run
+PY
+}

@@ -11,6 +11,44 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [Unreleased]
+
+### Fixes
+
+- `swarm.py` hysteresis keys on a real identity: a caller whose pane is
+  unknown fails closed (`handoff` while a packet is pending), `handoff write`
+  refuses a packet without `from.pane`, and `handoff accept` refuses the
+  packet's own author and an unknown caller (`--pane`, else `$HERDR_PANE_ID`;
+  `--by` only records who accepted). A full address is compared as its pane,
+  and a packet written without `from.pane` is refused at accept and holds
+  every caller at `handoff`.
+- CI's bats step runs with `pipefail`; it had stayed green through failing
+  tests. The two it hid are fixed: the ai-diff-reviewer and Dailybot pins now
+  match their vendored copies (v3.3.12, v3.23.15), and the evaluation
+  scorer's `--dump-oracle-commitments` no longer requires a lab directory that
+  exists only in a git-ignored `.dwp/`.
+
+- Pin coding-agents-kit `v0.7.1`: Antigravity quota in `ak usage` (and so in
+  `ak capacity` / `ak pick`) where its login file is readable, every account of
+  every CLI listed in `ak usage`, and a profile's suffixed credential variable
+  counted as its login.
+- Pin devcontainer-kit `v0.3.7`: coding-agents-kit `v0.7.1` and herdr-peers
+  `v0.3.2` baked in (lanes inside a container get notices and lead records),
+  the antigravity kind, a per-developer choice of CLIs, and non-shared
+  profiles on the agents volume.
+
+### Learnings
+
+- **A gate that cannot fail is not a gate.** `bats tests/ | tee` ran in a
+  shell without `pipefail`, so the pipeline's status was `tee`'s and failing
+  tests left CI green; a guard test now fails if `pipefail` is removed.
+  Evidence: CI on main printed `not ok` lines and passed (the quality bar's
+  "gates are hypotheses", learning F1).
+- **Run the suite from a fresh clone.** A test passed only in the author's
+  checkout because it read state from the git-ignored `.dwp/`; every fresh
+  clone failed it. Evidence: reproduced in a fresh clone at 782e1e7; now
+  covered by a regression that runs from a copy with no `.dwp/`.
+
 ## [7.7.0] — 2026-10-12
 
 ### Changes

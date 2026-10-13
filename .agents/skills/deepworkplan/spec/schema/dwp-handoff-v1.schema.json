@@ -31,11 +31,13 @@
     "from": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["pane"],
+      "description": "The author. from.pane is the identity hysteresis and acceptance key on (7.7.1): required and non-empty.",
       "properties": {
         "agent": { "type": "string" },
         "vendor": { "type": "string" },
         "profile": { "type": "string" },
-        "pane": { "type": "string" },
+        "pane": { "type": "string", "minLength": 1 },
         "capacity": { "type": "string" }
       }
     }
