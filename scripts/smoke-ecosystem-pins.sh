@@ -57,7 +57,7 @@ expected_sums() {  # expected_sums <key>: sha256 of the pinned release's SHA256S
     case "$1" in
         herdr)        echo 8a8112ee216598d85b4b3ef335c1beab3b02a258230b31aa9221cd3b6cd889a5 ;;
         agentkit)     echo ccf0919eed80bede48fba9b91539c9671b30e2dc0f017fe1d4bde7a7f044f7cc ;;
-        devcontainer) echo 281f85101739bb20e9e20a659e58bf81689e9c14a157c5b60413a036f76b53e1 ;;
+        devcontainer) echo 2961922dc3d8c0096dc85403d77665614873732fc45814dc534eadff7c294c4f ;;
         vim)          echo 24c0a036f8988d2c2a484c4153cddde7ffe563b12709df3f4b5a2150970e08d2 ;;
         *)            echo "" ;;
     esac
