@@ -261,3 +261,22 @@ for r in json.load(sys.stdin)["rows"]:
   grep -qF 'shasum -a 256 -c --ignore-missing' "$SK/addons/machine-installs.md"
   grep -qF 'describe --tags --exact-match' "$SK/addons/machine-installs.md"
 }
+
+@test "machine-installs.md verifies the descriptor's tag with the smoke script's pinned digest" {
+  # A pin move that updates the tag but not the digest makes the documented
+  # install fail closed; the smoke script's expected_sums is the digest pin.
+  local key repo tag sums prefix
+  for pair in agentkit:cak devcontainer:dck; do
+    key="${pair%%:*}"; prefix="${pair##*:}"
+    repo="$("$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))["product"]["repo"])' "$SK/addons/$key/addon.json")"
+    tag="$("$PY" -c 'import json,sys; print(json.load(open(sys.argv[1]))["product"]["tag"])' "$SK/addons/$key/addon.json")"
+    sums="$(sed -n "s/^ *$key) *echo \([0-9a-f]\{64\}\) ;;\$/\1/p" "$REPO_ROOT/scripts/smoke-ecosystem-pins.sh")"
+    [ -n "$sums" ] || { echo "no expected_sums for $key"; return 1; }
+    grep -qF "git clone --branch $tag --depth 1 https://github.com/$repo $prefix" "$SK/addons/machine-installs.md" \
+      || { echo "$key: clone line does not name $tag"; return 1; }
+    grep -qF "https://github.com/$repo/releases/download/$tag/SHA256SUMS -o $prefix.SHA256SUMS" "$SK/addons/machine-installs.md" \
+      || { echo "$key: SHA256SUMS download does not name $tag"; return 1; }
+    grep -qF "echo \"$sums  $prefix.SHA256SUMS\" | shasum -a 256 -c" "$SK/addons/machine-installs.md" \
+      || { echo "$key: digest is not the pinned $sums"; return 1; }
+  done
+}

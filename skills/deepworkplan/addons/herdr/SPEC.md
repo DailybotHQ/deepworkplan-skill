@@ -18,7 +18,7 @@ rule.
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable (DeepWorkPlan 7.0.0) |
-| **Product pin** | `DailybotHQ/herdr-peers` `v0.3.2`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
+| **Product pin** | `DailybotHQ/herdr-peers` `v1.0.0`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
 | **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -46,7 +46,7 @@ recipes — those drift; the pinned skill is the single source.
 ## 4. Detection
 
 - Read-only: `command -v herdr`, `command -v herdr-peers`,
-  `herdr-peers --version` (expect `herdr-peers 0.3.2 (protocol 1)`).
+  `herdr-peers --version` (expect `herdr-peers 1.0.0 (protocol 1)`).
 - A protocol other than `1` **MUST** be one warning and "not available".
 - The transport is usable only inside Herdr (`HERDR_ENV=1`); outside it the
   addon is installed but not usable in that session — recorded, not an
@@ -56,11 +56,11 @@ recipes — those drift; the pinned skill is the single source.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Installs (`install.md`) **MUST** name exact tags:
-  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v0.3.2 --skill herdr-peers -g -y`
+  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v1.0.0 --skill herdr-peers -g -y`
   and `npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y`. Herdr
   itself is installed through its own documented paths; a fetch-and-execute
   pipeline **MUST NOT** appear in this pack's text.
-- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v0.3.2"}`
+- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v1.0.0"}`
   via `shared/config.py enable`. Enabling grants no plan any authority.
 
 ## 6. The Transport (v7 delegation)
@@ -141,7 +141,7 @@ Nothing blocks `onboard`, `create`, `execute` or `verify`.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol file ships in this folder.
-2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v0.3.2`,
+2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v1.0.0`,
    interface 1, transport `interactive`.
 3. Every install line pins a tag; no pipeline text.
 4. The registry entry exists only after acceptance.

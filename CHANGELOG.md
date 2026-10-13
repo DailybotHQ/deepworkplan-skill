@@ -11,6 +11,30 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [Unreleased]
+
+### Ecosystem 1.0
+
+Every product the pack integrates has reached its first stable release, each
+committing its public interface to semantic versioning. The pack pins all of
+them at `v1.0.0`; no interface number changes, so no addon contract moves.
+
+- **agentkit** → coding-agents-kit `v1.0.0` (interface 1; `SHA256SUMS`
+  `8995e737…`, tag commit `57b82fa`).
+- **herdr** → herdr-peers `v1.0.0` (protocol 1; `SHA256SUMS` `11634ef2…`,
+  tag commit `3bf118d`); `herdr-peers --version` reports
+  `herdr-peers 1.0.0 (protocol 1)`.
+- **devcontainer** → devcontainer-kit `v1.0.0` (interface 2; `SHA256SUMS`
+  `060d16db…`, tag commit `29b9533`); its image bakes coding-agents-kit,
+  herdr-peers and deepworkplan-vim `v1.0.0`.
+- **vim** → deepworkplan-vim `v1.0.0` (surface interface 1; `SHA256SUMS`
+  `aa8e80f1…`, tag commit `f0929f9`).
+- **ai-diff-reviewer** → `v3.3.14` and **dailybot** → agent-skill `v3.23.17`:
+  the documented pins and the vendored dogfood copies (byte-identical to the
+  tags, `skills-lock.json` updated).
+
+`scripts/smoke-ecosystem-pins.sh` carries the four new `SHA256SUMS` digests.
+
 ## [7.7.1] — 2026-10-13
 
 ### Changes

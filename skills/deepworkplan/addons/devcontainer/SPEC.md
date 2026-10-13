@@ -16,8 +16,8 @@ the kit's options, the registry record and the validation.
 | Field | Value |
 |-------|-------|
 | **Version** | 3.0.0 |
-| **Status** | Stable — per-repository Dockerfile, no shared base image (devcontainer-kit `v0.3.7`, interface 2); supersedes 2.x (base-image flavours, interface 1) |
-| **Product pin** | `DailybotHQ/devcontainer-kit` `v0.3.7`, interface `2`; skill `dck-dockerfile` at the same tag |
+| **Status** | Stable — per-repository Dockerfile, no shared base image (devcontainer-kit `v1.0.0`, interface 2); supersedes 2.x (base-image flavours, interface 1) |
+| **Product pin** | `DailybotHQ/devcontainer-kit` `v1.0.0`, interface `2`; skill `dck-dockerfile` at the same tag |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md` |
 
 ## 1. Conventions
@@ -59,11 +59,11 @@ volume, CLI or profile file.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Install the kit:
-  `git clone --branch v0.3.7 https://github.com/DailybotHQ/devcontainer-kit` then
+  `git clone --branch v1.0.0 https://github.com/DailybotHQ/devcontainer-kit` then
   `./devcontainer-kit/install.sh`. A fetch-and-execute pipeline **MUST NOT**
   appear in this pack's text.
 - The addon **SHOULD** offer the skill with
-  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v0.3.7 --skill dck-dockerfile -y`
+  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v1.0.0 --skill dck-dockerfile -y`
   (repo-local, recorded in `skills-lock.json`); the install **MUST** name
   the exact tag in that tree-URL form.
 - **The layout.** The render produces exactly
@@ -93,7 +93,7 @@ volume, CLI or profile file.
   same verified release tarball, linked into every agent's skills directory
   at each start, so a recreate keeps them; the addon installs no second copy.
 - On acceptance: `addons.devcontainer` = `{"enabled": true, "version":
-  "v0.3.7"}` via `shared/config.py enable`.
+  "v1.0.0"}` via `shared/config.py enable`.
 
 ## 6. Security Defaults (inherited, never weakened)
 
@@ -224,7 +224,7 @@ addon's container profile): enable the kit's Herdr machine option; `dck up`
 (or `bash dev.sh up`) registers it. `dck herdr add` writes the user's
 `~/.ssh/config` include and **MUST** be run only with its own explicit
 approval. Peers then run the pinned herdr-peers skill inside the container
-(`../herdr/install.md` §3); every image since `v0.3.5` carries herdr-peers (`v0.3.7` bakes `v0.3.2`, the herdr addon's pin). The
+(`../herdr/install.md` §3); every image since `v0.3.5` carries herdr-peers (`v1.0.0` bakes `v1.0.0`, the herdr addon's pin). The
 kit's `[herdr] layout` key (`"standard"`: App · Editor · Development ·
 Agents, created by `dck up`; `"none"` skips it) is the kit's choice, and the
 addon passes the person's preference without adding its own. The optional
@@ -255,7 +255,7 @@ kit older than `v0.3.3`, the lead's brief names the value and a Codex pane
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist; no
    layout, Dockerfile, compose, entrypoint, `dev.sh` or image copy ships in
-   this folder; `addon.json` pins `DailybotHQ/devcontainer-kit` `v0.3.7`,
+   this folder; `addon.json` pins `DailybotHQ/devcontainer-kit` `v1.0.0`,
    interface 2.
 2. `dck doctor --json`: interface 2; repo config valid; drift reported.
 3. Existing files changed only through accepted render diffs with
