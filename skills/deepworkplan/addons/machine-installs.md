@@ -27,10 +27,10 @@ echo "c30da1bec6c89fcb96982d60c95989c94410be3f1aa7bedda328a36961ba5daf  cak.SHA2
 devcontainer-kit (`devcontainer`):
 
 ```bash
-git clone --branch v0.3.5 --depth 1 https://github.com/DailybotHQ/devcontainer-kit dck
-git -C dck describe --tags --exact-match            # must print v0.3.5
-curl -fsSL https://github.com/DailybotHQ/devcontainer-kit/releases/download/v0.3.5/SHA256SUMS -o dck.SHA256SUMS
-echo "efee9464a24ef78d50c8a470ace8afa4d75bb9aafd845e659839ab40e7ab69ee  dck.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
+git clone --branch v0.3.6 --depth 1 https://github.com/DailybotHQ/devcontainer-kit dck
+git -C dck describe --tags --exact-match            # must print v0.3.6
+curl -fsSL https://github.com/DailybotHQ/devcontainer-kit/releases/download/v0.3.6/SHA256SUMS -o dck.SHA256SUMS
+echo "281f85101739bb20e9e20a659e58bf81689e9c14a157c5b60413a036f76b53e1  dck.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
 (cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS)       # must exit 0
 (cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS | grep -c ': OK$')   # must print a number above 0
 ./dck/install.sh

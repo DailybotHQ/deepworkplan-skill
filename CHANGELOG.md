@@ -31,6 +31,10 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 - Pin coding-agents-kit `v0.7.0`: Antigravity quota in `ak usage` (and so in
   `ak capacity` / `ak pick`) where its login file is readable, and every
   account of every CLI listed in `ak usage`.
+- Pin devcontainer-kit `v0.3.6`: coding-agents-kit `v0.7.0` baked in, the
+  antigravity kind, a per-developer choice of CLIs, and non-shared profiles on
+  the agents volume. Its image still carries herdr-peers `v0.2.3`, so lanes
+  inside a container have no notices or lead records yet.
 
 ### Learnings
 
