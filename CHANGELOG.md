@@ -11,7 +11,20 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
-## [Unreleased]
+## [7.7.1] — 2026-10-13
+
+### Changes
+
+- Merge pull request #83 from DailybotHQ/fix/swarm-hysteresis-identity
+- fix(addon): pin devcontainer-kit v0.3.7 (herdr-peers v0.3.2, ak v0.7.1 baked in)
+- fix(addon): pin coding-agents-kit v0.7.1
+- fix(addon): pin devcontainer-kit v0.3.6
+- fix(shared): --by is a record, never an identity; pipefail guard accepts set -euo
+- fix(addon): pin coding-agents-kit v0.7.0
+- fix(shared): normalize pane identity; refuse packets with no author pane
+- fix(test): oracle commitments dump runs without a lab root; 7.7.1 learnings
+- ci: run the bats step with pipefail; align the reviewer and Dailybot pins
+- fix(shared): swarm hysteresis keys on a real caller identity
 
 ### Fixes
 
@@ -48,6 +61,7 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
   checkout because it read state from the git-ignored `.dwp/`; every fresh
   clone failed it. Evidence: reproduced in a fresh clone at 782e1e7; now
   covered by a regression that runs from a copy with no `.dwp/`.
+
 
 ## [7.7.0] — 2026-10-12
 
