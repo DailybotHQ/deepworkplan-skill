@@ -164,17 +164,17 @@ python3 <pack>/shared/addon_sync.py plan --repo .
 ```text
 addon               scope         installed   pin         action
 ------------------  ------------  ----------  ----------  ----------
-agentkit            machine       v0.4.0      v0.7.1      upgrade
-ai-diff-reviewer    repo          v3.1.0      v3.3.12      upgrade
-dailybot            repo          -           v3.23.15    install
+agentkit            machine       v0.4.0      v1.0.0      upgrade
+ai-diff-reviewer    repo          v3.1.0      v3.3.14      upgrade
+dailybot            repo          -           v3.23.17    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected
-devcontainer        machine+repo  -           v0.3.7      reconcile
+devcontainer        machine+repo  -           v1.0.0      reconcile
                     a docker setup without dck markers: dck init --dry-run shows each replace as a diff; …
-herdr               machine       v0.3.2      v0.3.2      available
-                    on this machine (v0.3.2, pin v0.3.2); not enabled for this repository
-vim                 machine       -           v0.7.0      install
+herdr               machine       v1.0.0      v1.0.0      available
+                    on this machine (v1.0.0, pin v1.0.0); not enabled for this repository
+vim                 machine       -           v1.0.0      install
 pending: agentkit, ai-diff-reviewer, dependency-upgrade, devcontainer
 offers: dailybot, herdr, vim (only where they fit; a decline writes nothing)
 evaluate: design-system (run its detection before reporting done)
