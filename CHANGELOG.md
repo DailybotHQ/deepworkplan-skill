@@ -11,7 +11,13 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
-## [Unreleased]
+## [7.8.0] — 2026-10-13
+
+### Changes
+
+- Merge pull request #84 from DailybotHQ/feat/ecosystem-1.0-pins
+- fix(addon): machine-installs verifies the v1.0.0 SHA256SUMS digests
+- feat(addon): pin the ecosystem 1.0 releases
 
 ### Ecosystem 1.0
 
@@ -34,6 +40,7 @@ them at `v1.0.0`; no interface number changes, so no addon contract moves.
   tags, `skills-lock.json` updated).
 
 `scripts/smoke-ecosystem-pins.sh` carries the four new `SHA256SUMS` digests.
+
 
 ## [7.7.1] — 2026-10-13
 
