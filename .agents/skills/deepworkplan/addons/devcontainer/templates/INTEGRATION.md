@@ -68,6 +68,6 @@ bash dev.sh build && bash dev.sh up         # a real build; a failure is a faile
 dck exec <service> -- <the repo's real test command>
 ```
 
-Use the option names the kit's `v1.0.0` documentation gives (`dck init
+Use the option names the kit's `v1.0.1` documentation gives (`dck init
 --help`). Record each outcome. A failure is a finding about the environment,
 never a repository conformance failure.
