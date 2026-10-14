@@ -780,7 +780,7 @@ downstream steps to consume.
 | `review-url` | URL of the posted PR review (empty when the run was skipped). |
 | `severity` | Highest severity flagged in this review: `none`, `info`, `warning`, or `critical`. |
 | `inline-attached` | Number of inline comments actually attached to the review. |
-| `inline-dropped` | Number of inline comments dropped because GitHub rejected the review with HTTP 422 (the action retries summary-only on 422). |
+| `inline-dropped` | Number of inline comments dropped because GitHub rejected the review with HTTP 422 (the action first retries with only the comments whose anchor is inside a diff hunk, then summary-only as a last resort). |
 | `blocked` | Whether the strictness gate decided to fail the check (`true`/`false`). When `true`, the action exits with code 2 so the GitHub check turns red. |
 | `skipped` | Whether the run was skipped without invoking the LLM (`true`/`false`) — label/author/`trigger-mode` gate **or** configured `skip-review-label` emergency bypass. |
 | `iteration-round` | IAR round number within the current generation. Populated on every successful IAR pipeline run. Empty string if the pipeline crashed (caught by the try/except safety net). |
