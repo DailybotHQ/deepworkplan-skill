@@ -11,6 +11,19 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [7.9.0] — 2026-10-25
+
+### Changes
+
+- Merge pull request #86 from DailybotHQ/feat/herdr-peers-1.1.0
+- docs(herdr): name v1.1.0 in the ADDONS.md herdr section opening
+- docs(herdr): describe the released herdr-peers v1.1.0 debates and verify its digest
+- fix(herdr): install herdr-peers v1.1.0 with the tree-URL pin
+- fix(addons): pin the AI Diff Reviewer at v3.3.16, the vendored release
+- ci: run the python 3.9 floor job on ubuntu-24.04
+- feat(herdr): pin herdr-peers v1.1.0 and document debates
+
+
 ## [7.8.1] — 2026-10-14
 
 ### Changes
