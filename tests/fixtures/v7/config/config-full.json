@@ -3,7 +3,7 @@
   "benchmark": { "enabled": true, "learnings": true },
   "addons": {
     "ai-diff-reviewer": { "enabled": true, "version": "v3.3.0" },
-    "herdr":            { "enabled": true, "version": "v1.0.0" },
+    "herdr":            { "enabled": true, "version": "v1.1.0" },
     "agentkit":         { "enabled": true, "version": "v0.3.0", "note": "accepted; machine-level install deferred" },
     "devcontainer":     { "enabled": true, "version": "v1.0.1" },
     "vim":              { "enabled": true, "version": "v1.0.0" },

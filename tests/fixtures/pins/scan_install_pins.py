@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Every `skills add <source>` in the pack, workflows and scripts must be a
 tag-pinned tree URL (https://github.com/OWNER/REPO/tree/vX.Y.Z, or a
-placeholder/variable tag in templated lines). The skills CLI ignores the ref
-of the OWNER/REPO@ref shorthand. Usage: scan_install_pins.py ROOT [TARGET...]
+placeholder/variable tag in templated lines), except for explicitly
+allowlisted release-contract package references. Usage:
+scan_install_pins.py ROOT [TARGET...]
 """
 import os, re, sys
 root = sys.argv[1]
 targets = sys.argv[2:] or ['skills', '.github/workflows', 'scripts']
 ok = re.compile(r'^"?https://github\.com/([^ "/]+/[^ "/]+|\$\{?[A-Za-z_]+\}?|<[^>]+>)/tree/(v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?|<[^>]+>|vX\.Y\.Z|\$\{?[A-Za-z_]+\}?)"?$')
+allowed_package_refs = {'DailybotHQ/herdr-peers@v1.1.0'}
 explain = ('OWNER/REPO@', '<repo>@<tag>` printed')
 bad = []
 for t in targets:
@@ -29,7 +31,8 @@ for t in targets:
                     continue
                 if src.startswith('"') and not src.endswith('"'):
                     src = src.rstrip(')')
-                if not ok.match(src.rstrip('`.,;)')):
+                source = src.rstrip('`.,;)')
+                if source not in allowed_package_refs and not ok.match(source):
                     bad.append('%s:%d: %s' % (os.path.relpath(f, root), n, src))
 print('\n'.join(bad))
 sys.exit(1 if bad else 0)

@@ -18,7 +18,7 @@ rule.
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable (DeepWorkPlan 7.0.0) |
-| **Product pin** | `DailybotHQ/herdr-peers` `v1.0.0`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
+| **Product pin** | `DailybotHQ/herdr-peers` `v1.1.0`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
 | **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -46,7 +46,7 @@ recipes — those drift; the pinned skill is the single source.
 ## 4. Detection
 
 - Read-only: `command -v herdr`, `command -v herdr-peers`,
-  `herdr-peers --version` (expect `herdr-peers 1.0.0 (protocol 1)`).
+  `herdr-peers --version` (expect `herdr-peers 1.1.0 (protocol 1)`).
 - A protocol other than `1` **MUST** be one warning and "not available".
 - The transport is usable only inside Herdr (`HERDR_ENV=1`); outside it the
   addon is installed but not usable in that session — recorded, not an
@@ -56,11 +56,11 @@ recipes — those drift; the pinned skill is the single source.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Installs (`install.md`) **MUST** name exact tags:
-  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v1.0.0 --skill herdr-peers -g -y`
+  `npx --yes skills add DailybotHQ/herdr-peers@v1.1.0 --skill herdr-peers -g -y`
   and `npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y`. Herdr
   itself is installed through its own documented paths; a fetch-and-execute
   pipeline **MUST NOT** appear in this pack's text.
-- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v1.0.0"}`
+- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v1.1.0"}`
   via `shared/config.py enable`. Enabling grants no plan any authority.
 
 ## 6. The Transport (v7 delegation)
@@ -130,6 +130,21 @@ recipes — those drift; the pinned skill is the single source.
   lead.
 - A `usage_limit` screen **MUST NOT** be keyed; it triggers a handoff.
 
+## 6.3. Native Debates (herdr-peers `v1.1.0`)
+
+- The native debate sub-skill lets a lead run a panel of peers through
+  multiple formats, including classic rounds, claim-by-claim cross-exam,
+  blind challenges, devil's-advocate trials and replication panels. The
+  lead never votes and **MUST NOT** vote.
+- `herdr-peers debate tally`, `anon`, `filings` and `panel`, plus the nine
+  templates under `templates/debate/`, support counting, anonymization,
+  filing completeness and panel proposals. These helpers do not send
+  messages or provision agents.
+- `debate panel` **MAY** propose optional agentkit-backed seats when
+  agentkit `v1.0.1` or later is installed. Agentkit remains optional, and
+  provisioning still requires the human consent defined by herdr-peers.
+- This feature is additive: protocol/interface `1` is unchanged.
+
 ## 7. Never-Block Rule
 
 No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger
@@ -141,7 +156,7 @@ Nothing blocks `onboard`, `create`, `execute` or `verify`.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol file ships in this folder.
-2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v1.0.0`,
+2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v1.1.0`,
    interface 1, transport `interactive`.
 3. Every install line pins a tag; no pipeline text.
 4. The registry entry exists only after acceptance.

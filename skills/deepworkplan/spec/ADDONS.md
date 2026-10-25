@@ -355,7 +355,7 @@ in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
 the plan journal before the reply is relied on, the reply asserted until
 the plan's own gates observe the work. `onboard` Phase 7b offers it as an
 **explicit opt-in**; installs are the pinned skills
-(`herdr-peers@v1.0.0`, Herdr's official `herdr@v0.9.3`).
+(`herdr-peers@v1.1.0`, Herdr's official `herdr@v0.9.3`).
 
 Placement decision (revised for 7.0.0): the peer protocol — stamp, grant,
 reply, loop guard, depth limit 1, fan-out cap, scope — moved out of the
@@ -448,7 +448,7 @@ The shipped set:
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
 | `devcontainer` | `DailybotHQ/devcontainer-kit` `v1.0.1`, interface 2 | — | — | — |
-| `herdr` | `DailybotHQ/herdr-peers` `v1.0.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
+| `herdr` | `DailybotHQ/herdr-peers` `v1.1.0`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
 | `vim` | `DailybotHQ/deepworkplan-vim` `v1.0.0`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
