@@ -132,17 +132,22 @@ recipes — those drift; the pinned skill is the single source.
 
 ## 6.3. Native Debates (herdr-peers `v1.1.0`)
 
-- The native debate sub-skill lets a lead run a panel of peers through
-  multiple formats, including classic rounds, claim-by-claim cross-exam,
-  blind challenges, devil's-advocate trials and replication panels. The
-  lead never votes and **MUST NOT** vote.
-- `herdr-peers debate tally`, `anon`, `filings` and `panel`, plus the nine
-  templates under `templates/debate/`, support counting, anonymization,
-  filing completeness and panel proposals. These helpers do not send
-  messages or provision agents.
-- `debate panel` **MAY** propose optional agentkit-backed seats when
-  agentkit `v1.0.1` or later is installed. Agentkit remains optional, and
-  provisioning still requires the human consent defined by herdr-peers.
+- The native debate sub-skill (`debate.md`) lets a lead run a panel of
+  peers for a chosen purpose (decide, research, stress-test, verify,
+  generate) through formats such as classic rounds, claim-by-claim
+  cross-exam, red team then defenders, a blind fresh-context challenge and
+  a replication panel. The lead never votes and **MUST NOT** vote.
+- `herdr-peers debate tally`, `claims`, `anon`, `filings` and `panel`, plus
+  the sixteen templates under `templates/debate/`, support counting, claim
+  ledgers (a quorum, not a verification), anonymization, filing
+  completeness and panel proposals. These helpers do not send messages or
+  provision agents.
+- `debate panel` **MAY** propose agentkit-backed seats, ranked by quota,
+  when agentkit `v1.0.1` or later is installed, and recommends it when it is
+  absent. Agentkit remains optional, and launching agents still requires
+  the human consent defined by herdr-peers.
+- `reply` and `notify` retry delivery to a blocked peer (`--wait-blocked`);
+  each ask still gets exactly one reply.
 - This feature is additive: protocol/interface `1` is unchanged.
 
 ## 7. Never-Block Rule

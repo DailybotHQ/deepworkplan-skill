@@ -176,15 +176,20 @@ developer.
 
 ## Native debates (herdr-peers `v1.1.0`)
 
-The pinned skill adds a native debate sub-skill: a lead runs a panel of
-peers through formats such as classic rounds, claim-by-claim cross-exam,
-blind challenges, devil's-advocate trials and replication panels, but the
-lead never votes. Its read-only helpers are `herdr-peers debate tally`,
-`anon`, `filings` and `panel`, with nine reusable files under
-`templates/debate/`. `panel` may propose optional agentkit-backed seats when
-agentkit `v1.0.1` or later is installed; agentkit remains optional, and the
-lead still obtains the required human consent before provisioning agents.
-The debate feature is additive: protocol/interface `1` is unchanged.
+The pinned skill adds a native debate sub-skill (`debate.md`): a lead runs a
+panel of peers through rounds and closes with one result. The lead picks the
+purpose first (decide, research, stress-test, verify, generate) and a
+format such as classic rounds, claim-by-claim cross-exam, red team then
+defenders, a blind fresh-context challenge or a replication panel; the lead
+never votes. Its tools are `herdr-peers debate tally`, `claims`, `anon`,
+`filings` and `panel`, with sixteen templates under `templates/debate/`.
+`panel` proposes seats and runs nothing: it mixes model providers and seats
+the most quota first, ranking agentkit accounts too when agentkit `v1.0.1`
+or later is installed, and recommends it otherwise; agentkit remains
+optional, and the lead still obtains the human's consent before launching
+agents. `reply` and `notify` also retry delivery to a peer blocked at a
+question (`--wait-blocked`), still exactly one reply. The release is
+additive: protocol/interface `1` is unchanged.
 
 ## Failure-mode guardrails
 

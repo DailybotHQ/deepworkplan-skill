@@ -59,12 +59,15 @@ PY
 @test "native debates: panel contract, helpers, templates, optional agentkit, protocol 1" {
   for doc in "$ADDON/SKILL.md" "$ADDON/SPEC.md"; do
     doc_has "$doc" 'native debate'
+    doc_has "$doc" 'decide, research, stress-test, verify'
+    doc_has "$doc" '--wait-blocked'
     doc_has "$doc" 'lead never votes'
     doc_has "$doc" '`herdr-peers debate tally`'
+    doc_has "$doc" '`claims`'
     doc_has "$doc" '`anon`'
     doc_has "$doc" '`filings`'
     doc_has "$doc" '`panel`'
-    doc_has "$doc" 'nine'
+    doc_has "$doc" 'sixteen templates'
     doc_has "$doc" 'agentkit `v1.0.1` or later'
     doc_has "$doc" 'protocol/interface `1` is unchanged'
   done
