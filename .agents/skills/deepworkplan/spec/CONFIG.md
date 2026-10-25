@@ -33,7 +33,7 @@ Both files share one shape:
 {
   "benchmark": { "enabled": true, "learnings": true },
   "addons": {
-    "ai-diff-reviewer": { "enabled": true, "version": "v3.3.14" },
+    "ai-diff-reviewer": { "enabled": true, "version": "v3.3.16" },
     "herdr":            { "enabled": true, "version": "v1.1.0" },
     "agentkit":         { "enabled": false },
     "devcontainer":     { "enabled": true, "version": "v1.0.1" },
