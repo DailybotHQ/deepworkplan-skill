@@ -348,7 +348,7 @@ form**; only its CI surface is optional.
 ### 6.6 Herdr (sixth addon — interactive delegation transport, thin integrator)
 
 An optional addon integrating **herdr-peers** (`DailybotHQ/herdr-peers`,
-MIT, its own release cycle) pinned at `v1.0.0` (protocol/interface `1`), as
+MIT, its own release cycle) pinned at `v1.1.0` (protocol/interface `1`), as
 the **interactive** transport of v7 delegation
 ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `herdr-peers ask` to a peer agent
 in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
