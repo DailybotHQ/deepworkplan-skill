@@ -56,7 +56,7 @@ recipes — those drift; the pinned skill is the single source.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Installs (`install.md`) **MUST** name exact tags:
-  `npx --yes skills add DailybotHQ/herdr-peers@v1.1.0 --skill herdr-peers -g -y`
+  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v1.1.0 --skill herdr-peers -g -y`
   and `npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y`. Herdr
   itself is installed through its own documented paths; a fetch-and-execute
   pipeline **MUST NOT** appear in this pack's text.

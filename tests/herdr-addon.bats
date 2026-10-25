@@ -45,7 +45,7 @@ d = json.load(open(sys.argv[1]))
 assert d['product'] == {'repo': 'DailybotHQ/herdr-peers', 'tag': 'v1.1.0', 'interface': 1}, d
 assert d['transport'] == 'interactive', d
 PY
-  grep -qF 'npx --yes skills add DailybotHQ/herdr-peers@v1.1.0 --skill herdr-peers -g -y' "$ADDON/install.md"
+  grep -qF 'npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v1.1.0 --skill herdr-peers -g -y' "$ADDON/install.md"
   grep -qF 'npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g' "$ADDON/install.md"
   # W012: no unpinned `skills add owner/repo ` anywhere in the addon
   run grep -rnE 'skills add [A-Za-z]+/[a-z-]+ ' "$ADDON"
