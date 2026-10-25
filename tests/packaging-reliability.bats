@@ -250,15 +250,13 @@ PY
     grep -qE '^ +devcontainer\) +smoke_kit devcontainer ' "$s"
 }
 
-@test "install lines pin with tree URLs except the herdr-peers release-contract package ref" {
+@test "install lines pin with the tree-URL form; the ignored @ref shorthand never ships" {
     # skills CLI 1.7.1 ignores the ref of `skills add OWNER/REPO@vX.Y.Z` and
     # installs the default branch (verified 2026-10-09: @v6.1.0 installed
-    # 7.0.0), so tree URLs remain the default. The herdr-peers command is the
-    # one explicitly allowlisted release-contract exception.
+    # 7.0.0). `skills add https://github.com/OWNER/REPO/tree/vX.Y.Z` pins.
     SCAN="$REPO_ROOT/tests/fixtures/pins/scan_install_pins.py"
     run python3 "$SCAN" "$REPO_ROOT"
     [ "$status" -eq 0 ] || { echo "$output"; return 1; }
-    grep -qF 'DailybotHQ/herdr-peers@v1.1.0' "$REPO_ROOT/tests/fixtures/pins/scan_install_pins.py"
     # the scanner itself refuses every unpinned shape
     probe="$(mktemp -d)"
     mkdir -p "$probe/skills"

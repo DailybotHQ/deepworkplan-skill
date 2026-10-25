@@ -188,7 +188,7 @@ jobs:
 
   python-floor:
     name: Runtime helpers on the Python 3.9 floor
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # setup-python ships no 3.9 for ubuntu-latest (26.04)
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
