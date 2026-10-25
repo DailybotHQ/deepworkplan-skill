@@ -224,7 +224,8 @@ addon's container profile): enable the kit's Herdr machine option; `dck up`
 (or `bash dev.sh up`) registers it. `dck herdr add` writes the user's
 `~/.ssh/config` include and **MUST** be run only with its own explicit
 approval. Peers then run the pinned herdr-peers skill inside the container
-(`../herdr/install.md` §3); every image since `v0.3.5` carries herdr-peers (`v1.0.1` bakes `v1.0.0`, the herdr addon's pin). The
+(`../herdr/install.md` §3); every image since `v0.3.5` carries herdr-peers
+(`v1.0.1` still bakes `v1.0.0`; the herdr addon itself pins `v1.1.0`). The
 kit's `[herdr] layout` key (`"standard"`: App · Editor · Development ·
 Agents, created by `dck up`; `"none"` skips it) is the kit's choice, and the
 addon passes the person's preference without adding its own. The optional
