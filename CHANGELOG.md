@@ -11,7 +11,21 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
-## [Unreleased]
+## [7.10.0] — 2026-10-26
+
+### Changes
+
+- Merge pull request #87 from DailybotHQ/feat/decision-debates
+- fix(addon): resolve the five self-review warnings on decision debates
+- fix(addon): close the decision-debates consent gap found in the local review
+- docs: document decision debates and refresh the dogfood copy
+- test: pin the decision-debates contract
+- docs(addon): describe decision debates in the herdr offer, skill and example
+- fix(addons): pin the Dailybot skill at v3.23.20, the vendored release
+- feat(execute): run a listed decision task as a herdr-peers decide debate
+- feat(create): plan consequential decisions as debate tasks when herdr is enabled
+- feat(addon): specify decision debates as the herdr addon's default decision mode
+- feat(shared): add the decisions.debate policy to the configuration file
 
 ### Decision debates by default (herdr addon)
 
@@ -32,6 +46,7 @@ one agent's judgment:
   Turn the default off with `config.py decisions debate off` (the new
   `decisions` key, `spec/CONFIG.md` §3b). Normative rule: herdr `SPEC.md`
   §6.4.
+
 
 ## [7.9.0] — 2026-10-25
 
