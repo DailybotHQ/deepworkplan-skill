@@ -366,6 +366,13 @@ session and stays fully conformant. Full contract:
 [`SKILL.md`](../addons/herdr/SKILL.md), [`SPEC.md`](../addons/herdr/SPEC.md),
 `install.md`, `templates/INTEGRATION.md`.
 
+**Decision debates.** With the addon in use and `decisions.debate` at
+`auto` ([`CONFIG.md`](CONFIG.md) §3b), a plan settles each consequential
+decision through a herdr-peers *decide* debate planned as a decision task
+and approved with the plan; without any of its preconditions the decision
+is the agent's own record, and a debate never blocks
+([`SPEC.md`](../addons/herdr/SPEC.md) §6.4).
+
 ### 6.7 DeepWorkPlan Vim (seventh addon — optional terminal editor, thin integrator)
 
 An optional addon offering **DeepWorkPlan Vim** — the terminal editor for
