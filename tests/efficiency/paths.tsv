@@ -119,6 +119,15 @@ execute-v7-delegate	final-review	the Final Review task begins	guide/execution.md
 execute-v7-delegate	final-review	the Final Review task begins	create/addon-augmentations.md
 execute-v7-delegate	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
 
+# --- execute: a v7 plan that runs one listed decision debate -----------------
+execute-v7-debate	entry	t0 — router + execute contract	SKILL.md
+execute-v7-debate	entry	t0 — router + execute contract	execute/SKILL.md
+execute-v7-debate	v6-loop	Step 2.0 — the plan folder carries a manifest contract pointer, contract.json or a contracts chain	execute/v6.md
+execute-v7-debate	decision-debate	the task in hand is a decision task the approved plan lists under "Decision debates"	execute/debate.md
+execute-v7-debate	final-review	the Final Review task begins	guide/execution.md
+execute-v7-debate	final-review	the Final Review task begins	create/addon-augmentations.md
+execute-v7-debate	final-review	the Final Review runs its required local-review pass	addons/ai-diff-reviewer/SKILL.md
+
 # --- resume: a v6 plan recovery ----------------------------------------------
 resume-v6	entry	t0 — router + resume contract; assessment loads no companion	SKILL.md
 resume-v6	entry	t0 — router + resume contract; assessment loads no companion	resume/SKILL.md

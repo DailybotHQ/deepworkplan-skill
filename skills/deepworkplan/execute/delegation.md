@@ -27,7 +27,8 @@ when one fails. A refusal is **not a blocker**: run the task sequentially.
   or must run on another machine: a `herdr-peers` peer in a pane.
 
 The transport's own steps live in its addon (`../addons/agentkit/SKILL.md`,
-`../addons/herdr/SKILL.md`); read the one you selected, only then.
+`../addons/herdr/SKILL.md`); read the one you selected, only then. A
+decision debate's seats are read-only herdr delegates: [`debate.md`](debate.md).
 
 ## The four operations
 
