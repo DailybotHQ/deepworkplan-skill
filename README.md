@@ -166,7 +166,7 @@ addon               scope         installed   pin         action
 ------------------  ------------  ----------  ----------  ----------
 agentkit            machine       v0.4.0      v1.0.1      upgrade
 ai-diff-reviewer    repo          v3.1.0      v3.3.14      upgrade
-dailybot            repo          -           v3.23.17    install
+dailybot            repo          -           v3.23.20    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected

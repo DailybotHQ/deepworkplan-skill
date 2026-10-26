@@ -10,10 +10,10 @@
     },
     "dailybot": {
       "source": "DailybotHQ/agent-skill",
-      "ref": "v3.23.19",
+      "ref": "v3.23.20",
       "sourceType": "github",
       "skillPath": "skills/dailybot/SKILL.md",
-      "computedHash": "e0b0fd90a5edfff2c9ce8d1a21518027768b12066dd1dfb33cd0e3d58f650ff9"
+      "computedHash": "2716bb57e317be53ae47a2fec22ebbab3bfad668fc85ab591704d7af3a0b081f"
     },
     "deepworkplan": {
       "source": "DailybotHQ/deepworkplan-skill",
