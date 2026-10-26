@@ -171,6 +171,17 @@ Dailybot and consents, and it must never block plan execution. We keep addons
 vendor-neutral and deferred so the core methodology stays useful to everyone and
 the skill never becomes a covert install vector for a vendor's tooling.
 
+**A default inside an opt-in.** An addon may change a plan's default once the
+developer has opted into it, never before. The herdr addon's decision debates
+(its `SPEC.md` §6.4) are the example: with Herdr enabled, a plan settles its
+consequential decisions through a herdr-peers debate by default, because that
+is what the developer adopted Herdr for, and asking again on every plan would
+be friction. The default still costs nothing silently: each debate is listed
+in the plan and approved with it (herdr-peers requires the human's consent
+before launching agents), `decisions.debate off` turns it off, any missing
+precondition falls back to the agent's own decision record, and a repository
+without Herdr sees no change at all.
+
 ## 12. Markdown-first: no network, no CLI, no auth, no consent prompts
 
 Unlike skills that call a vendor API, DeepWorkPlan makes **no network calls,

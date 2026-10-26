@@ -176,8 +176,8 @@ form**; only its CI surface is optional.
 
 - Scope: an **opt-in** connection to the developer's **Dailybot team**. When
   accepted, it offers (never forces) install of the **Dailybot agent skill**
-  (`npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.17 --skill dailybot -y`,
-  currently **3.23.17**; or OpenClaw `openclaw skills install dailybot`) and/or
+  (`npx --yes skills add https://github.com/DailybotHQ/agent-skill/tree/v3.23.20 --skill dailybot -y`,
+  currently **3.23.20**; or OpenClaw `openclaw skills install dailybot`) and/or
   the **Dailybot CLI** (`dailybot-cli >= 3.9.0`,
   via pip, Homebrew, or the Dailybot skill's SHA-256-verified installer flow —
   never a one-line remote-installer pipe); **defers all authentication** to the
@@ -366,6 +366,13 @@ session and stays fully conformant. Full contract:
 [`SKILL.md`](../addons/herdr/SKILL.md), [`SPEC.md`](../addons/herdr/SPEC.md),
 `install.md`, `templates/INTEGRATION.md`.
 
+**Decision debates.** With the addon in use and `decisions.debate` at
+`auto` ([`CONFIG.md`](CONFIG.md) §3b), a plan settles each consequential
+decision through a herdr-peers *decide* debate planned as a decision task
+and approved with the plan; without any of its preconditions the decision
+is the agent's own record, and a debate never blocks
+([`SPEC.md`](../addons/herdr/SPEC.md) §6.4).
+
 ### 6.7 DeepWorkPlan Vim (seventh addon — optional terminal editor, thin integrator)
 
 An optional addon offering **DeepWorkPlan Vim** — the terminal editor for
@@ -444,7 +451,7 @@ The shipped set:
 |---|---|---|---|---|
 | `agentkit` | `DailybotHQ/coding-agents-kit` `v1.0.1`, interface 1 | `subagents`, `cancel_children`, `model_routing` | `agent_delegation` | `headless` |
 | `ai-diff-reviewer` | `DailybotHQ/ai-diff-reviewer` `v3.3.16` | — | — | — |
-| `dailybot` | `DailybotHQ/agent-skill` `v3.23.17` | `telemetry` (reporting only, consent-gated) | — | — |
+| `dailybot` | `DailybotHQ/agent-skill` `v3.23.20` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
 | `devcontainer` | `DailybotHQ/devcontainer-kit` `v1.0.1`, interface 2 | — | — | — |

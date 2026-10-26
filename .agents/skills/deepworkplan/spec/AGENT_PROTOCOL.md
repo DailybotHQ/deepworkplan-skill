@@ -286,7 +286,11 @@ investigates, takes the recommended option, **records the decision** (in
 `PROGRESS.md` "Decisions" or a handoff packet's `decisions[]`: the options,
 the choice, why, and how to reverse it) and continues. The test is
 mechanical: an escalation **MUST** name its class; a question that names
-none is a decision the agent owes.
+none is a decision the agent owes. A **consequential** decision in a plan
+that lists a decision debate is reached by that debate's decision task
+(`addons/herdr/SPEC.md` §6.4); its verdict is a recommendation the agent
+records, never an authority, and a split on an outcome-changing question is
+still C3.
 
 | Class | Critical — ask the developer (with the investigation, the options and a recommendation) |
 |-------|---|

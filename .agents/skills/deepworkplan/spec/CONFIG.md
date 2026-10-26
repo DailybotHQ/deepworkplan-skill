@@ -2,9 +2,9 @@
 
 > Status: **7.0.0**. Defines `.dwp/config.json` and
 > `~/.dwp/config.json`: one file shape, one parser
-> ([`../shared/config.py`](../shared/config.py)), two keys — `benchmark`
-> ([`BENCHMARK.md`](BENCHMARK.md) §1) and `addons` (the addon registry,
-> §3 below). Published as
+> ([`../shared/config.py`](../shared/config.py)), four keys — `benchmark`
+> ([`BENCHMARK.md`](BENCHMARK.md) §1), `addons` (the addon registry,
+> §3 below), `host` (§3a) and `decisions` (§3b). Published as
 > [`schema/dwp-config-v1.schema.json`](schema/dwp-config-v1.schema.json)
 > (`https://deepworkplan.com/schema/dwp-config/v1.json`). RFC-2119 language.
 
@@ -38,7 +38,7 @@ Both files share one shape:
     "agentkit":         { "enabled": false },
     "devcontainer":     { "enabled": true, "version": "v1.0.1" },
     "vim":              { "enabled": true, "version": "v1.0.0" },
-    "dailybot":         { "enabled": true, "version": "v3.23.17" }
+    "dailybot":         { "enabled": true, "version": "v3.23.20" }
   }
 }
 ```
@@ -120,6 +120,27 @@ abilities` reads it and names where each declared capability came from
 `AGENTS.md` stays the human summary. `telemetry: true` still needs the
 developer's consent; the record states the host can, not that it may.
 
+## 3b. The decision-debate policy (`decisions`)
+
+`"decisions": {"debate": "auto" | "off"}` says whether a plan's
+consequential decisions are settled by a debate among agents when the means
+exist ([`../addons/herdr/SPEC.md`](../addons/herdr/SPEC.md) §6.4).
+
+- **Resolution.** Wholesale, like `benchmark`: a repository file that
+  carries the object overrides the user file. Absent everywhere — or an
+  object without `debate` — is **`auto`**.
+- **Fail-closed to `off`.** A `decisions` value that is not an object, or a
+  `debate` outside `auto`/`off`, resolves to `off` with one warning naming
+  the file: a typo never launches agents.
+- **`auto` authorizes nothing by itself.** A debate also needs the herdr
+  addon enabled, detected at herdr-peers `v1.1.0` or later and usable in the
+  session, the plan's `agent_delegation` grant, and the developer's approval
+  of the plan that lists the debate. Without any of them the decision is the
+  agent's own record (`AGENT_PROTOCOL.md` §7.5), exactly as with `off`.
+- **Writer:** `config.py decisions debate auto|off --repo <repo>` — the
+  developer, or an agent they asked. Readers: `create` and `execute`, only
+  when a delegation addon is enabled.
+
 ## 4. Writers and readers
 
 | Role | Who | How |
@@ -127,6 +148,7 @@ developer's consent; the record states the host can, not that it may.
 | Writer | `onboard` Phase 7b, on the developer's acceptance of one addon's offer | `python3 <pack>/shared/config.py enable <key> [--version <tag>] --repo <repo>` (a decline writes nothing; an explicit "turn it off" is `disable <key>`) |
 | Writer | an addon's own install step, or the human | the same command, or a hand edit |
 | Writer | the developer, or an agent they asked, turning field metrics on | `python3 <pack>/shared/config.py benchmark enabled\|learnings true\|false --repo <repo>` (7.1.5): sets one `benchmark` key, preserves the other and every other top-level key, refuses an unknown key or a file it cannot parse. `learnings` still rides on `enabled` (BENCHMARK.md §1). `enable`/`disable` stay addon-only |
+| Writer | the developer, or an agent they asked, setting the decision-debate policy | `python3 <pack>/shared/config.py decisions debate auto\|off --repo <repo>`: sets the one `decisions` key, preserves every other top-level key, refuses an unknown key or value or a file it cannot parse (§3b) |
 | Writer | `upgrade`, after the developer accepts the upgrade | `config.py backfill --repo <repo>` (dry run), then `--write`: every in-pack addon the repository file does not name and that is installed **in the repository** (a repo-relative detect path) is recorded `enabled` with its observed version and a back-fill note (F-15); a machine-level install is reported, never recorded — onboarding offers it. A recorded decision — enabled or disabled — is never changed |
 | Reader | `execute`, `create`, `verify`, `status` | `python3 <pack>/shared/config.py show` / `enabled` (`--plan <dir>` resolves the plan's repository) |
 | Reader | `shared/benchmark.py` | the `benchmark` key only, at its emission point |
@@ -137,7 +159,8 @@ written) an unknown key, a malformed version, or an existing file it cannot
 parse — it never overwrites what it cannot read.
 
 The `show` view is `{"benchmark": {...}, "addons": {key: {"enabled",
-"version", "source"}}}` with warnings on stderr; `enabled` prints the
+"version", "source"}}, "host": {...}, "decisions": {"debate", "source"}}`
+with warnings on stderr; `enabled` prints the
 enabled keys one per line. Both are read-only.
 
 ## 5. Conformance
