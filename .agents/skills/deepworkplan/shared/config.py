@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """DeepWorkPlan configuration reader and writer (spec/CONFIG.md).
 
-One parser for the two top-level keys of ``.dwp/config.json``:
+One parser for the top-level keys of ``.dwp/config.json``:
 
   * ``benchmark`` — the opt-in field-metrics switch (spec/BENCHMARK.md §1).
     Resolved wholesale: a repository file that carries the object overrides
@@ -9,6 +9,10 @@ One parser for the two top-level keys of ``.dwp/config.json``:
   * ``addons`` — the addon registry (spec/CONFIG.md §3). Resolved **per
     addon key**: the repository entry wins over the user entry for that
     key; a repository file that omits a key defers to the user file.
+  * ``host`` — the host capability record (spec/CONFIG.md §3a).
+  * ``decisions`` — the decision-debate policy (spec/CONFIG.md §3b).
+    Resolved wholesale like ``benchmark``; absent is ``auto``, a malformed
+    value is ``off`` (a typo never launches agents).
 
 Locations (highest precedence first): ``<repo>/.dwp/config.json`` — the
 repository that owns the plan or the directory given — then
@@ -32,6 +36,7 @@ Usage::
     config.py backfill --repo DIR [--write]        # upgrade: record present addons
     config.py host CAPABILITY true|false --repo DIR  # host capability record
     config.py benchmark enabled|learnings true|false --repo DIR  # benchmark switches
+    config.py decisions debate auto|off --repo DIR  # decision-debate policy
     config.py disable KEY --repo DIR
     config.py keys                                 # in-pack addon keys
     config.py descriptors                          # audit every addon.json (opens them)
@@ -338,16 +343,83 @@ def write_benchmark(dwp_root: str, name: str, value: bool) -> Dict[str, Any]:
     return rec
 
 
+# ---------------------------------------------------------------------------
+# decisions key (spec/CONFIG.md §3b)
+
+
+DECISION_KEYS = ('debate',)
+DEBATE_VALUES = ('auto', 'off')
+
+
+def resolve_decisions(files) -> Tuple[Dict[str, Any], List[str]]:
+    """The decision-debate policy: ({"debate": "auto"|"off", "source"}, warnings).
+
+    Wholesale, repo over user, like ``benchmark``. Nothing anywhere (or a
+    winning object without ``debate``) is ``auto``: debates still need the
+    herdr addon, the plan's grant and the developer's approval, so ``auto``
+    authorizes nothing by itself. A malformed object or value, or a file
+    that exists but cannot be read, fails closed to ``off`` with one
+    warning, so a typo never launches agents.
+    """
+    warnings: List[str] = []
+    for label, _path, data, reason in files:
+        if reason:
+            # an unreadable file may have said "off": never fall through to auto
+            warnings.append('decisions: %s %s; debates off' % (label, reason))
+            return {'debate': 'off', 'source': label}, warnings
+        if data is None or 'decisions' not in data:
+            continue
+        section = data['decisions']
+        if not isinstance(section, dict):
+            warnings.append('decisions: %s "decisions" is not an object; '
+                            'debates off' % label)
+            return {'debate': 'off', 'source': label}, warnings
+        value = section.get('debate', 'auto')
+        if value not in DEBATE_VALUES:
+            warnings.append('decisions: %s "decisions.debate" is not one of '
+                            '%s; debates off' % (label, '|'.join(DEBATE_VALUES)))
+            return {'debate': 'off', 'source': label}, warnings
+        return {'debate': value, 'source': label}, warnings
+    return {'debate': 'auto', 'source': None}, warnings
+
+
+def write_decisions(dwp_root: str, name: str, value: str) -> Dict[str, Any]:
+    """Set ``decisions.<name>`` in the repository file (reconciling, atomic)."""
+    if name not in DECISION_KEYS:
+        raise ConfigError('%r is not a decisions key (%s)'
+                          % (name, ', '.join(DECISION_KEYS)))
+    if value not in DEBATE_VALUES:
+        raise ConfigError('%r is not a debate policy (%s)'
+                          % (value, ', '.join(DEBATE_VALUES)))
+    path = os.path.join(dwp_root, 'config.json')
+    data: Dict[str, Any] = {}
+    if os.path.exists(path):
+        parsed, reason = read_config(path)
+        if parsed is None:
+            raise ConfigError('%s %s — the writer never overwrites a file it '
+                              'cannot read' % (path, reason or 'unreadable'))
+        data = parsed
+    rec = data.get('decisions', {})
+    if not isinstance(rec, dict):
+        raise ConfigError('%s "decisions" is not an object — refusing to '
+                          'replace it' % path)
+    rec[name] = value
+    data['decisions'] = rec
+    _write_config(dwp_root, path, data)
+    return rec
+
+
 def resolve(dwp_root: Optional[str], home: Optional[str] = None,
             keys: Optional[List[str]] = None) -> Dict[str, Any]:
-    """Both keys from one read of both files."""
+    """Every key from one read of both files."""
     files = load_files(dwp_root, home)
     bench_on, learn_on, bench_warn = resolve_benchmark(files)
     addons, addon_warn = resolve_addons(files, keys)
     host, host_warn = resolve_host(files)
+    decisions, dec_warn = resolve_decisions(files)
     return {'benchmark': {'enabled': bench_on, 'learnings': learn_on},
-            'addons': addons, 'host': host,
-            'warnings': bench_warn + addon_warn + host_warn}
+            'addons': addons, 'host': host, 'decisions': decisions,
+            'warnings': bench_warn + addon_warn + host_warn + dec_warn}
 
 
 def enabled_addons(dwp_root: Optional[str], home: Optional[str] = None,
@@ -650,6 +722,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument('key', choices=['enabled', 'learnings'])
     p.add_argument('value', choices=['true', 'false'])
     p.add_argument('--repo', required=True)
+    p = sub.add_parser('decisions')
+    p.add_argument('key', choices=list(DECISION_KEYS))
+    p.add_argument('value', choices=list(DEBATE_VALUES))
+    p.add_argument('--repo', required=True)
     p = sub.add_parser('backfill')
     p.add_argument('--repo', required=True)
     p.add_argument('--write', action='store_true')
@@ -697,6 +773,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 2
         print('OK: benchmark = %s' % json.dumps(rec, sort_keys=True))
         return 0
+    if args.command == 'decisions':
+        try:
+            rec = write_decisions(_root_from_args(args), args.key, args.value)
+        except ConfigError as exc:
+            print('ERROR: %s' % exc, file=sys.stderr)
+            return 2
+        print('OK: decisions = %s' % json.dumps(rec, sort_keys=True))
+        return 0
     if args.command == 'backfill':
         try:
             found = backfill(_root_from_args(args), write=args.write)
@@ -740,7 +824,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 # self-test
 
 
-SELF_TEST_PROBES = 36
+SELF_TEST_PROBES = 44
 
 
 def self_test() -> int:
@@ -928,6 +1012,65 @@ def self_test() -> int:
         check('benchmark writer refuses unknown key', refused)
     finally:
         shutil.rmtree(tmp_b, ignore_errors=True)
+    # decision-debate policy (§3b): absent auto, repo over user, fail-closed off
+    tmp_d = tempfile.mkdtemp(prefix='dwp-config-decisions-')
+    try:
+        ddir = os.path.join(tmp_d, 'repo', '.dwp')
+        dhome = os.path.join(tmp_d, 'home')
+        os.makedirs(ddir)
+        os.makedirs(os.path.join(dhome, '.dwp'))
+        duser = os.path.join(dhome, '.dwp', 'config.json')
+        dcfg = os.path.join(ddir, 'config.json')
+
+        def dput(path, text):
+            with open(path, 'w', encoding='utf-8') as fh:
+                fh.write(text)
+
+        def dres():
+            return resolve_decisions(load_files(ddir, dhome))
+
+        view, warn = dres()
+        check('decisions absent is auto', view['debate'] == 'auto' and not warn,
+              repr((view, warn)))
+        dput(duser, '{"decisions": {"debate": "auto"}}')
+        dput(dcfg, '{"decisions": {"debate": "off"}}')
+        view, warn = dres()
+        check('decisions repo off wins', view == {'debate': 'off', 'source': REPO_LABEL},
+              repr(view))
+        dput(dcfg, '{"decisions": {"debate": "always"}}')
+        view, warn = dres()
+        check('decisions malformed is off', view['debate'] == 'off' and len(warn) == 1,
+              repr((view, warn)))
+        dput(dcfg, '{"decisions": "auto"}')
+        view, warn = dres()
+        check('decisions non-object is off', view['debate'] == 'off' and len(warn) == 1,
+              repr((view, warn)))
+        dput(dcfg, '{"decisions": {"debate": "off"},}')
+        view, warn = dres()
+        check('decisions unreadable repo file is off, not the user auto',
+              view['debate'] == 'off' and len(warn) == 1, repr((view, warn)))
+        dput(dcfg, '{"addons": {"vim": {"enabled": true}}}')
+        rec = write_decisions(ddir, 'debate', 'off')
+        with open(dcfg, encoding='utf-8') as fh:
+            kept = json.load(fh)
+        check('decisions writer sets and keeps', rec == {'debate': 'off'}
+              and kept.get('addons') == {'vim': {'enabled': True}}, repr(kept))
+        refused = 0
+        for name, value in (('debate', 'always'), ('verbose', 'auto')):
+            try:
+                write_decisions(ddir, name, value)
+            except ConfigError:
+                refused += 1
+        check('decisions writer refuses junk', refused == 2, repr(refused))
+        dput(dcfg, '{not json')
+        try:
+            write_decisions(ddir, 'debate', 'auto')
+            unreadable_refused = False
+        except ConfigError:
+            unreadable_refused = True
+        check('decisions writer refuses unreadable file', unreadable_refused)
+    finally:
+        shutil.rmtree(tmp_d, ignore_errors=True)
     if probes != SELF_TEST_PROBES:
         failures.append('probe count %d != pinned %d' % (probes, SELF_TEST_PROBES))
     for line in failures:

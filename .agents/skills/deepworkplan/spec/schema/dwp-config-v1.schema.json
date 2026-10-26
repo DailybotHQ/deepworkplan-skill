@@ -33,6 +33,14 @@
         "telemetry": { "type": "boolean" }
       }
     },
+    "decisions": {
+      "type": "object",
+      "description": "Decision-debate policy (spec/CONFIG.md section 3b). Resolved wholesale: a repository file that carries this object overrides the user file. Absent is auto; the reader fails closed to off, with one warning, on a value outside the enum. auto authorizes nothing by itself: a debate also needs the herdr addon, the plan's agent_delegation grant and the developer's approval.",
+      "additionalProperties": true,
+      "properties": {
+        "debate": { "enum": ["auto", "off"] }
+      }
+    },
     "addons": {
       "type": "object",
       "description": "The addon registry. Keys are in-pack addon directory names (contract amendment A1); resolved per key, repository entry over user entry. Absent means not enabled.",

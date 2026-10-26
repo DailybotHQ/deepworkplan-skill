@@ -58,7 +58,10 @@ the install lines, the transport mapping and the journaling rule.
 - **Writes (only after explicit acceptance):** the two pinned skill
   installs, the `addons.herdr` registry entry, and — during a delegation —
   a dedicated worktree for a writing peer plus the collected reply under the
-  plan's `analysis_results/delegations/<id>/`.
+  plan's `analysis_results/delegations/<id>/`; and — only for a decision
+  task an approved plan lists — the debate folder
+  `analysis_results/debates/<topic>/` (`HUMAN_NOTE.md`, the seats' filings,
+  `DECISION.md`).
 - **It MUST NOT:** hand-build a peer message (the helper stamps it); answer
   a reply; delegate from a delegate (depth 1); exceed the helper's fan-out
   cap; close a pane it did not create; change SSH host trust, `~/.ssh` or
@@ -78,8 +81,13 @@ not usable in this session (record it, continue sequentially).
 
 What it adds: a plan can ask an agent in another pane — another provider,
 another machine — to take a task, and get one authorized reply back,
-recorded in the plan. What it costs: Herdr itself, the two skills, and
-per-plan consent (`agent_delegation`). Declining is a complete answer.
+recorded in the plan; and, by default, a plan settles each consequential
+decision through a small debate among agents instead of one agent's
+judgment (see "Decision debates" below). What it costs: Herdr itself, the
+two skills, per-plan consent (`agent_delegation`), and for each debate the
+turns of the agents seated on it. Debates can be turned off at any time:
+`config.py decisions debate off --repo <repo>`. Declining is a complete
+answer.
 
 ### Step 2 — Install (pinned; point-don't-run by default)
 
@@ -190,6 +198,29 @@ optional, and the lead still obtains the human's consent before launching
 agents. `reply` and `notify` also retry delivery to a peer blocked at a
 question (`--wait-blocked`), still exactly one reply. The release is
 additive: protocol/interface `1` is unchanged.
+
+## Decision debates (the default decision mode)
+
+With this addon in use, a plan settles each **consequential decision** —
+two viable options with materially different outcomes, hard to reverse or
+cross-cutting, settled by nothing in the repository — through a herdr-peers
+*decide* debate, not one agent's judgment (SPEC §6.4):
+
+- **Planned.** `create` makes each one a decision task, listed in the plan's
+  "Decision debates" section with its question, options, shape and seat cap
+  (`../../create/decisions.md`); approving the plan is the consent to seat
+  agents. Quick (3–4 seats, one round) by default.
+- **Run.** `execute` leads the debate and never votes; every seat is a
+  read-only delegation journaled before its ask; the count lands in
+  `analysis_results/debates/<topic>/DECISION.md` and the choice in
+  `PROGRESS.md` "Decisions" (`../../execute/debate.md`).
+- **Bounded.** Only with this addon enabled, herdr-peers `1.1.0`+, inside
+  Herdr, the plan's grant and `decisions.debate` at `auto` (absent is
+  `auto`; `config.py decisions debate off` turns it off). The verdict is a
+  recommendation, never an authority; a split on an outcome-changing
+  question goes to the developer as C3.
+- **Never blocking.** Without any precondition, or when a debate fails, the
+  decision is the agent's own record with `debate: not run — <reason>`.
 
 ## Failure-mode guardrails
 

@@ -166,7 +166,7 @@ addon               scope         installed   pin         action
 ------------------  ------------  ----------  ----------  ----------
 agentkit            machine       v0.4.0      v1.0.1      upgrade
 ai-diff-reviewer    repo          v3.1.0      v3.3.14      upgrade
-dailybot            repo          -           v3.23.17    install
+dailybot            repo          -           v3.23.20    install
 dependency-upgrade  repo          yes         (in pack)   record
 design-system       repo          -           (in pack)   evaluate
                     offer only when an interface surface is detected
@@ -251,7 +251,7 @@ optional and installed only where they fit. Each is recorded in the
 |-------|--------------|----------|
 | AI Diff Reviewer | the required local review in every Final Review; an optional CI Action | [/kit/ai-diff-reviewer](https://deepworkplan.com/kit/ai-diff-reviewer) |
 | agentkit | headless delegates, accounts and quota through coding-agents-kit (`ak`) | [/kit/agentkit](https://deepworkplan.com/kit/agentkit) |
-| Herdr | interactive delegates and lanes in Herdr panes through herdr-peers | [/kit/herdr](https://deepworkplan.com/kit/herdr) |
+| Herdr | interactive delegates and lanes in Herdr panes through herdr-peers; by default, a plan settles its consequential decisions through a small debate among agents (`decisions.debate off` turns it off) | [/kit/herdr](https://deepworkplan.com/kit/herdr) |
 | devcontainer | a reproducible dev container through devcontainer-kit (`dck`) | [/kit/devcontainer](https://deepworkplan.com/kit/devcontainer) |
 | DeepWorkPlan Vim | the terminal editor for plans | [/kit/vim](https://deepworkplan.com/kit/vim) |
 | Dailybot | progress reports at the plan lifecycle events | [/kit/dailybot](https://deepworkplan.com/kit/dailybot) |

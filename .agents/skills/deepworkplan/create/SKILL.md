@@ -73,8 +73,7 @@ Lite-first shape, the analysis steps, the test/security/documentation
 discipline, the resumable write order and the quality checks — are stated
 inline in the steps below. A Lite creation, the normal path, reads **no**
 guide file at all; the Full expansion loads the authoring and structure
-companions at Step 4.4, when it starts. (This ordering is deliberate:
-reading companions "to be safe" is the failure mode this tiering removed.)
+companions at Step 4.4, when it starts.
 
 - **Essential now (before composing anything):**
   [`../shared/context.sh`](../shared/context.sh) — **run** it
@@ -120,6 +119,8 @@ reading companions "to be safe" is the failure mode this tiering removed.)
   - [`../guide/structure.md`](../guide/structure.md) §1–§2 and §10 — read
     only when the Format Decision is Full, or the plan references promotion
     or tree anatomy; the Lite-first path writes its shape inline (Step 4.0).
+  - [`decisions.md`](decisions.md) — read only when the decision-debates
+    trigger in `v6.md` fires.
   - [`orchestrator.md`](orchestrator.md) (this directory) plus
     [`../guide/orchestrator.md`](../guide/orchestrator.md) §13 — read only
     when Step 2.6 detects an orchestrator plan.

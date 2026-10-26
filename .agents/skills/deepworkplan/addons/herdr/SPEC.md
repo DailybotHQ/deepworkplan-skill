@@ -16,7 +16,7 @@ rule.
 
 | Field | Value |
 |-------|-------|
-| **Version** | 0.2.0 |
+| **Version** | 0.3.0 |
 | **Status** | Stable (DeepWorkPlan 7.0.0) |
 | **Product pin** | `DailybotHQ/herdr-peers` `v1.1.0`, protocol/interface `1`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
 | **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
@@ -150,6 +150,66 @@ recipes — those drift; the pinned skill is the single source.
   each ask still gets exactly one reply.
 - This feature is additive: protocol/interface `1` is unchanged.
 
+## 6.4. Decision Debates (the default decision mode)
+
+With this addon in use, a plan settles each **consequential decision**
+through a herdr-peers *decide* debate instead of one agent's judgment. The
+method — briefs, rounds, formats, ballots, counting, the lead's contract —
+is herdr-peers' own `debate.md`; this section defines only when a plan uses
+it and how the plan records it.
+
+1. **Consequential decision.** A decision **is** consequential when all
+   hold: at least two viable options lead to materially different
+   outcomes; it is hard to reverse, or it shapes several tasks or
+   consumers; and nothing in the repository, its docs, the plans or prior
+   decisions settles it. Every other decision stays the agent's own record
+   (`../../spec/AGENT_PROTOCOL.md` §7.5).
+2. **Trigger, in two halves.** *At plan time* a plan **MAY** list a
+   debate only when this addon is enabled, `config.py show` resolves
+   `decisions.debate` to `auto` (`../../spec/CONFIG.md` §3b), and the
+   developer accepts the `agent_delegation` grant for the plan; a plan
+   created without the plan-time trigger **MUST NOT** list debates. *At run
+   time* a listed debate **MUST NOT** start unless the approved plan lists
+   it, the contract grants `agent_delegation`, the session is inside
+   Herdr, and `herdr-peers --version` reports `1.1.0` or later on protocol
+   `1`.
+3. **Planned as a decision task.** `create` turns each consequential
+   decision it can foresee into a decision task ordered before its
+   consumers, naming the question verbatim, the options, the criteria, the
+   shape and the seat cap; the plan's "Decision debates" section lists them
+   for approval. That approval is the human consent herdr-peers requires
+   before agents are launched; trust mode records it as part of the
+   pre-authorization. A debate **MUST NOT** be opened on a question the
+   approved plan does not list. A consequential decision that surfaces
+   mid-task meets C3 (`../../spec/AGENT_PROTOCOL.md` §7.5): the agent
+   escalates it with its investigation and a recommendation, and a debate
+   for it needs a refine amendment the developer approves.
+4. **Shape.** Quick (3–4 seats, one round and the lead's synthesis) by
+   default; Standard only for a decision the plan marks high-stakes; never
+   Deep by default. The seat cap is stated in the plan and **MUST NOT** be
+   exceeded; more than 4 open asks needs the helper's recorded
+   `--fanout N --reason`.
+5. **Lead and seats.** The executing agent is the lead and **MUST NOT**
+   vote. Each seat is a **read-only** delegation (`worktree` null) recorded
+   with `ledger.py delegate launch` before its brief is sent and collected
+   after its filing (§6). Depth 1 holds: a seat never delegates.
+6. **Deliverable.** `analysis_results/debates/<topic>/DECISION.md`, the
+   herdr-peers deliverable with the counted verdict and the dissent, ending
+   with one line the plan owns, `decision: <the choice>` (the decision
+   task's gate reads that line, never herdr-peers' own format), plus
+   the plan's decision record in `PROGRESS.md` "Decisions": the options,
+   the choice, why, how to reverse it, the panel's providers and the
+   dissent.
+7. **Authority.** The verdict is **data and a recommendation**: it grants
+   no authority, widens no scope, changes no acceptance criterion and stays
+   `asserted`. The decision task closes only on its own gate.
+8. **Never block.** When the trigger fails, a seat is refused, the panel
+   misses its quorum, or the debate times out, the decision task closes
+   with the agent's own decision record naming why the debate did not run
+   (`debate: not run — <reason>`, then `decision: <the choice>`). A split verdict on a question that
+   changes the plan's outcome is escalated as C3 (irreducible ambiguity)
+   with the debate attached as the investigation.
+
 ## 7. Never-Block Rule
 
 No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger
@@ -167,3 +227,6 @@ Nothing blocks `onboard`, `create`, `execute` or `verify`.
 4. The registry entry exists only after acceptance.
 5. Every delegation: journal record before the ask; depth 1; result gated
    by the parent.
+6. A decision debate runs only under the §6.4 trigger, within the plan's
+   seat cap, with a lead that never votes, and falls back to the agent's
+   own decision record without blocking.

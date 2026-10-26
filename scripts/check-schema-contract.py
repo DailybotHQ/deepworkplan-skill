@@ -542,8 +542,9 @@ def config_cases(schemas, problems, notes, pack):
         files = [(".dwp/config.json", path, doc, None)]
         _view, warns = config.resolve_addons(files, keys)
         _b = config.resolve_benchmark(files)
-        if warns or _b[2]:
-            problems.append(f"config fixture {name}: runtime warned ({(warns + _b[2])[:1]})")
+        _d = config.resolve_decisions(files)
+        if warns or _b[2] or _d[1]:
+            problems.append(f"config fixture {name}: runtime warned ({(warns + _b[2] + _d[1])[:1]})")
     entries = [
         ("enabled only", {"enabled": True}, True),
         ("enabled + version", {"enabled": False, "version": "v1.2.3"}, True),
@@ -568,13 +569,20 @@ def config_cases(schemas, problems, notes, pack):
                             f"jsonschema={j_ok} runtime={r_ok}")
     for label, doc in (("addons not an object", {"addons": ["vim"]}),
                        ("benchmark not an object", {"benchmark": "on"}),
-                       ("wrong-typed learnings", {"benchmark": {"enabled": True, "learnings": "y"}})):
+                       ("wrong-typed learnings", {"benchmark": {"enabled": True, "learnings": "y"}}),
+                       ("decisions not an object", {"decisions": "auto"}),
+                       ("unknown debate policy", {"decisions": {"debate": "always"}})):
         if not errors(cs, doc):
             problems.append(f"config mutant {label}: jsonschema accepted it")
+        files = [(".dwp/config.json", "<mutant>", doc, None)]
+        if label.startswith(("decisions", "unknown debate")):
+            view, warns = config.resolve_decisions(files)
+            if view["debate"] != "off" or len(warns) != 1:
+                problems.append(f"config mutant {label}: runtime did not fail closed to off")
     if len(problems) == before:
         notes.append("config: three fixtures valid under both halves; thirteen registry "
-                     "entries agree (jsonschema == shipped reader); three top-level "
-                     "mutants rejected")
+                     "entries agree (jsonschema == shipped reader); five top-level "
+                     "mutants rejected, the two decisions mutants fail closed to off")
 
 
 def descriptor_cases(schemas, problems, notes, pack):

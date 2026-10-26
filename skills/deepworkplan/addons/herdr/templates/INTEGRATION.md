@@ -58,3 +58,23 @@ delegate cancel --task <T-id> --json '{"delegation_id": "<id>"}'`.
 
 Never answer the reply; never delegate from the peer; close only panes you
 created.
+
+## 6. A decision task (the default decision mode)
+
+When a plan lists a decision debate (`../SPEC.md` §6.4), the task looks
+like any v7 task; the debate is how it is carried out
+(`../../../execute/debate.md`), and its gate only observes that the
+decision was recorded:
+
+```json
+{ "id": "T-decide-cache-store", "title": "Decide the cache store (Redis or SQLite)",
+  "prerequisites": [], "touched_surface": [".dwp/plans/<plan>/analysis_results/debates/cache-store/"],
+  "gate_intent": [
+    { "criterion": "AC-cache-store-decided",
+      "check": "bash -c 'grep -Eq \"^decision: [^<[:space:]]\" .dwp/plans/<plan>/analysis_results/debates/cache-store/DECISION.md'" } ] }
+```
+
+Its plan README row: *question* "Which cache store do we adopt for the
+session layer?", *options* A Redis, B SQLite, *shape* Quick, *seat cap* 4,
+*consumers* the tasks that build the session layer. Each seat follows §3
+above as a read-only delegate (`"worktree": null`).

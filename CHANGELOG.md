@@ -11,6 +11,28 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [Unreleased]
+
+### Decision debates by default (herdr addon)
+
+With the herdr addon enabled and herdr-peers 1.1.0 or later in use, a v7
+plan now settles each **consequential decision** — two viable options with
+materially different outcomes, hard to reverse or cross-cutting, settled by
+nothing in the repository — through a herdr-peers *decide* debate instead of
+one agent's judgment:
+
+- `create` plans each one as a decision task, listed in the plan for
+  approval with its question, options, shape (Quick by default) and seat cap
+  (`create/decisions.md`).
+- `execute` leads the debate without voting, journals every seat as a
+  read-only delegation before its ask, writes `DECISION.md` and records the
+  choice in `PROGRESS.md` (`execute/debate.md`).
+- Nothing changes without Herdr: every precondition missing, or a failed
+  debate, falls back to the agent's own decision record and never blocks.
+  Turn the default off with `config.py decisions debate off` (the new
+  `decisions` key, `spec/CONFIG.md` §3b). Normative rule: herdr `SPEC.md`
+  §6.4.
+
 ## [7.9.0] — 2026-10-25
 
 ### Changes

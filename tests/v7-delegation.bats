@@ -171,3 +171,28 @@ _refusals() { python3 -c 'import json,sys; print(sum(1 for l in open(sys.argv[1]
   c "$SK/guide/orchestrator.md" "**Not the same thing: delegating the plan's own tasks (v7).**"
   c "$SK/guide/orchestrator.md" "an orchestrator's > \`execute_child_dwp\` tasks remain hand-offs."
 }
+
+@test "decision debate: four read-only herdr seats on a non-parallel_safe task launch and collect; no grant, no seat" {
+  _plan
+  python3 "$CFG" enable herdr --version v0.1.0 --repo "$REPO" >/dev/null
+  python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator >/dev/null
+  for s in s1 s2 s3 s4; do
+    run _launch T-ship-validator "{\"delegation_id\": \"$s\", \"transport\": \"interactive\", \"via\": \"herdr\", \"target\": \"mac:$s\", \"worktree\": null, \"prompt_digest\": \"$DIGEST\"}"
+    [ "$status" -eq 0 ] || { echo "seat $s refused: $output"; return 1; }
+    mkdir -p "$PLAN/analysis_results/delegations/$s"
+    printf 'filing %s\n' "$s" > "$PLAN/analysis_results/delegations/$s/filing.md"
+    run python3 "$LEDGER" --plan "$PLAN" delegate collect --task T-ship-validator --json "{\"delegation_id\": \"$s\", \"state\": \"completed\", \"result_path\": \"analysis_results/delegations/$s/filing.md\"}"
+    [ "$status" -eq 0 ] || { echo "collect $s: $output"; return 1; }
+  done
+  run python3 "$LEDGER" --plan "$PLAN" delegate observe --task T-ship-validator
+  [ "$(printf '%s' "$output" | grep -c '"state": "completed"')" -eq 4 ]
+  [ "$(_refusals)" -eq 0 ]
+  # the same seat under a contract without the grant is refused and recorded
+  rm -rf "$REPO/.dwp/plans" && mkdir -p "$PLAN/analysis_results"
+  printf '# Goal\n\nDelegation.\n' > "$PLAN/README.md"
+  _plan "doc['permissions']['granted'].remove('agent_delegation'); doc['permissions']['not_granted'].append('agent_delegation')"
+  python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator >/dev/null
+  run _launch T-ship-validator "{\"delegation_id\": \"s1\", \"transport\": \"interactive\", \"via\": \"herdr\", \"target\": \"mac:s1\", \"worktree\": null, \"prompt_digest\": \"$DIGEST\"}"
+  [ "$status" -eq 5 ]
+  [ "$(_refusals)" -eq 1 ]
+}
