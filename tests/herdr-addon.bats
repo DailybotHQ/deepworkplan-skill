@@ -6,7 +6,8 @@
 # the pack (no stamp, grant or listing recipes; no `herdr-mesh` anywhere);
 # the transport maps launch/observe/collect/cancel onto the helper with the
 # journal written first; a detected helper contributes abilities only
-# through the registry.
+# through the registry; decision debates (SPEC §6.4) are the default
+# decision mode behind their trigger, with the method left to herdr-peers.
 bats_require_minimum_version 1.5.0
 
 REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
@@ -110,4 +111,74 @@ assert not on["abilities"]["model_routing"], on
 print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   rm -rf "$WORK"
   [ "$output" = "ok" ]
+}
+
+# --- decision debates: the default decision mode (SPEC §6.4) ------------------
+
+@test "decision debates: SPEC §6.4 states the definition, trigger, shape, lead, deliverable, authority and fallback" {
+  local spec="$ADDON/SPEC.md"
+  doc_has "$spec" '## 6.4. Decision Debates (the default decision mode)'
+  doc_has "$spec" 'at least two viable options lead to materially different outcomes'
+  doc_has "$spec" 'reports `1.1.0` or later on protocol `1`'
+  doc_has "$spec" 'resolves `decisions.debate` to `auto`'
+  doc_has "$spec" 'grants `agent_delegation`'
+  doc_has "$spec" 'A plan created without the trigger **MUST NOT** list debates.'
+  doc_has "$spec" 'Quick (3–4 seats, one round'
+  doc_has "$spec" 'never Deep by default'
+  doc_has "$spec" 'The executing agent is the lead and **MUST NOT** vote.'
+  doc_has "$spec" '**read-only** delegation (`worktree` null) recorded with `ledger.py delegate launch` before its brief is sent'
+  doc_has "$spec" '`analysis_results/debates/<topic>/DECISION.md`'
+  doc_has "$spec" 'it grants no authority'
+  doc_has "$spec" '(`debate: not run — <reason>`)'
+  doc_has "$spec" 'escalated as C3'
+  doc_has "$SK/spec/ADDONS.md" '[`SPEC.md`](../addons/herdr/SPEC.md) §6.4'
+  doc_has "$SK/spec/AGENT_PROTOCOL.md" '(`addons/herdr/SPEC.md` §6.4)'
+  doc_has "$SK/spec/CONFIG.md" '## 3b. The decision-debate policy (`decisions`)'
+}
+
+@test "decision debates: the flow files load only behind their triggers" {
+  [ -s "$SK/create/decisions.md" ] && [ -s "$SK/execute/debate.md" ]
+  doc_has "$SK/create/SKILL.md" '[`decisions.md`](decisions.md) — read only when the decision-debates trigger in `v6.md` fires.'
+  doc_has "$SK/create/v6.md" '**v7: decision debates.** When `config.py enabled` lists `herdr`, `config.py show` resolves `decisions.debate` to `auto`'
+  doc_has "$SK/create/v6.md" 'Otherwise read nothing more'
+  doc_has "$SK/execute/SKILL.md" '[`debate.md`](debate.md) — read only when a listed decision task runs.'
+  doc_has "$SK/execute/v6.md" 'A **decision task** the plan lists under "Decision debates" is run as a debate — read [`debate.md`](debate.md)'
+  # nothing else in the flows points at them
+  run bash -c "grep -rlF 'decisions.md' '$SK/create' '$SK/execute' | sort"
+  [ "$output" = "$(printf '%s\n' "$SK/create/SKILL.md" "$SK/create/v6.md" | sort)" ]
+  run bash -c "grep -rlF '](debate.md)' '$SK/create' '$SK/execute' | sort"
+  [ "$output" = "$(printf '%s\n' "$SK/execute/SKILL.md" "$SK/execute/delegation.md" "$SK/execute/v6.md" | sort)" ]
+}
+
+@test "decision debates: create plans, never runs; execute journals first, never votes, never blocks" {
+  local cr="$SK/create/decisions.md" ex="$SK/execute/debate.md"
+  doc_has "$cr" 'Never invent a decision to justify a debate'
+  doc_has "$cr" 'ordered **before** every task that consumes its result'
+  doc_has "$cr" 'The developer'"'"'s approval of the plan is the human consent herdr-peers requires'
+  doc_has "$cr" '`create` never runs a debate'
+  doc_has "$ex" '**Journal before every ask.**'
+  doc_has "$ex" '"worktree": null'
+  doc_has "$ex" '**Never vote**'
+  doc_has "$ex" '`1.0.x` has no debates'
+  doc_has "$ex" '`--fanout N --reason'
+  doc_has "$ex" '## 5. Fallback — never block'
+  doc_has "$ex" '`debate: not run — <reason>`'
+  doc_has "$ex" 'is C3'
+  doc_has "$ex" 'Never open a debate the plan did not price.'
+}
+
+@test "decision debates: the method stays herdr-peers' own — no format, ballot or counting copy" {
+  for f in "$SK/create/decisions.md" "$SK/execute/debate.md" "$ADDON/SPEC.md" "$ADDON/SKILL.md"; do
+    run grep -nE 'Borda|Condorcet|ACCEPT / AMEND / REJECT|devil.s-advocate|steelman|cross-exam(ination)?:' "$f"
+    [ "$status" -ne 0 ] || { echo "$f restates the debate method: $output"; return 1; }
+  done
+}
+
+@test "decision debates: the offer names the default, its cost and the off switch" {
+  for doc in "$ADDON/SKILL.md" "$ONBOARD"; do
+    doc_has "$doc" 'config.py decisions debate off'
+  done
+  doc_has "$ADDON/SKILL.md" 'for each debate the turns of the agents seated on it'
+  doc_has "$ONBOARD" 'each costing the seated agents'"'"' turns'
+  doc_has "$SK/addons/README.md" 'Its default decision mode'
 }
