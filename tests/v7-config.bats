@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The configuration file and the addon registry (spec/CONFIG.md): one
-# stdlib parser (shared/config.py) for two keys, per-key precedence for
+# stdlib parser (shared/config.py) for its keys, per-key precedence for
 # addons, fail-closed with exactly one warning, unknown keys ignored, a
 # reconciling consent-gated writer, and the readers/writers wired into
 # onboard and status. The benchmark key keeps its BENCHMARK.md behaviour
@@ -279,4 +279,43 @@ PY
   run python3 "$CFG" enable benchmark.learnings --repo "$REPO"
   [ "$status" -eq 2 ]
   [[ "$output" == *"config.py benchmark"* ]] || return 1
+}
+
+_debate() { # the resolved decisions.debate from show (warnings on stderr)
+  python3 "$CFG" show --repo "$REPO" 2>/dev/null | python3 -c 'import json,sys; print(json.load(sys.stdin)["decisions"]["debate"])'
+}
+
+@test "decisions.debate: absent is auto, repo overrides user, malformed fails closed to off (§3b)" {
+  [ "$(_debate)" = "auto" ]
+  printf '%s\n' '{"decisions": {"debate": "off"}}' > "$HOME/.dwp/config.json"
+  [ "$(_debate)" = "off" ]
+  printf '%s\n' '{"decisions": {"debate": "auto"}}' > "$REPO/.dwp/config.json"
+  [ "$(_debate)" = "auto" ]
+  printf '%s\n' '{"decisions": {"debate": "always"}}' > "$REPO/.dwp/config.json"
+  [ "$(_debate)" = "off" ]
+  run python3 "$CFG" show --repo "$REPO"
+  [[ "$output" == *'"decisions.debate" is not one of auto|off; debates off'* ]] || return 1
+  printf '%s\n' '{"decisions": "auto"}' > "$REPO/.dwp/config.json"
+  [ "$(_debate)" = "off" ]
+}
+
+@test "config.py decisions sets the policy, preserves other keys and refuses junk (§3b)" {
+  printf '%s\n' '{"addons": {"herdr": {"enabled": true, "version": "v1.1.0"}}}' > "$REPO/.dwp/config.json"
+  run python3 "$CFG" decisions debate off --repo "$REPO"
+  [ "$status" -eq 0 ]
+  python3 - "$REPO/.dwp/config.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d['decisions'] == {'debate': 'off'}, d
+assert d['addons'] == {'herdr': {'enabled': True, 'version': 'v1.1.0'}}, d
+PY
+  [ "$(_debate)" = "off" ]
+  run python3 "$CFG" decisions debate always --repo "$REPO"
+  [ "$status" -ne 0 ]
+  run python3 "$CFG" decisions verbose auto --repo "$REPO"
+  [ "$status" -ne 0 ]
+  printf '%s' '{not json' > "$REPO/.dwp/config.json"
+  run python3 "$CFG" decisions debate auto --repo "$REPO"
+  [ "$status" -eq 2 ]
+  [ "$(cat "$REPO/.dwp/config.json")" = '{not json' ]
 }

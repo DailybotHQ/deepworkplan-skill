@@ -1,6 +1,7 @@
 {
   "schema": "https://deepworkplan.com/schema/dwp-config/v1.json",
   "benchmark": { "enabled": true, "learnings": true },
+  "decisions": { "debate": "auto" },
   "addons": {
     "ai-diff-reviewer": { "enabled": true, "version": "v3.3.0" },
     "herdr":            { "enabled": true, "version": "v1.1.0" },
