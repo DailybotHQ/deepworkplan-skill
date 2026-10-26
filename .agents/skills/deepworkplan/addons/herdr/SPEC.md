@@ -164,22 +164,26 @@ it and how the plan records it.
    consumers; and nothing in the repository, its docs, the plans or prior
    decisions settles it. Every other decision stays the agent's own record
    (`../../spec/AGENT_PROTOCOL.md` §7.5).
-2. **Trigger.** A debate **MUST NOT** run unless all hold: this addon is
-   enabled; `herdr-peers --version` reports `1.1.0` or later on protocol
-   `1`; the session is inside Herdr; `config.py show` resolves
-   `decisions.debate` to `auto` (`../../spec/CONFIG.md` §3b); the plan's
-   contract grants `agent_delegation`; and the developer approved a plan
-   that lists the debate. A plan created without the trigger **MUST NOT**
-   list debates.
+2. **Trigger, in two halves.** *At plan time* a plan **MAY** list a
+   debate only when this addon is enabled, `config.py show` resolves
+   `decisions.debate` to `auto` (`../../spec/CONFIG.md` §3b), and the
+   developer accepts the `agent_delegation` grant for the plan; a plan
+   created without the plan-time trigger **MUST NOT** list debates. *At run
+   time* a listed debate **MUST NOT** start unless the approved plan lists
+   it, the contract grants `agent_delegation`, the session is inside
+   Herdr, and `herdr-peers --version` reports `1.1.0` or later on protocol
+   `1`.
 3. **Planned as a decision task.** `create` turns each consequential
    decision it can foresee into a decision task ordered before its
    consumers, naming the question verbatim, the options, the criteria, the
    shape and the seat cap; the plan's "Decision debates" section lists them
    for approval. That approval is the human consent herdr-peers requires
    before agents are launched; trust mode records it as part of the
-   pre-authorization. A decision that surfaces mid-task **MAY** be debated
-   in the Quick shape only when the trigger holds and the seats fit the
-   plan's approved cap; otherwise it is the agent's own record.
+   pre-authorization. A debate **MUST NOT** be opened on a question the
+   approved plan does not list: a consequential decision that surfaces
+   mid-task is the agent's own record, or C3 when it changes the plan's
+   outcome, and a debate for it needs a refine amendment the developer
+   approves.
 4. **Shape.** Quick (3–4 seats, one round and the lead's synthesis) by
    default; Standard only for a decision the plan marks high-stakes; never
    Deep by default. The seat cap is stated in the plan and **MUST NOT** be

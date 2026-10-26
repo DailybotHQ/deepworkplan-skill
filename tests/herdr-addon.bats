@@ -119,10 +119,13 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   local spec="$ADDON/SPEC.md"
   doc_has "$spec" '## 6.4. Decision Debates (the default decision mode)'
   doc_has "$spec" 'at least two viable options lead to materially different outcomes'
-  doc_has "$spec" 'reports `1.1.0` or later on protocol `1`'
+  doc_has "$spec" '*At plan time* a plan **MAY** list a debate only when'
   doc_has "$spec" 'resolves `decisions.debate` to `auto`'
-  doc_has "$spec" 'grants `agent_delegation`'
-  doc_has "$spec" 'A plan created without the trigger **MUST NOT** list debates.'
+  doc_has "$spec" 'a plan created without the plan-time trigger **MUST NOT** list debates'
+  doc_has "$spec" '*At run time* a listed debate **MUST NOT** start unless'
+  doc_has "$spec" 'reports `1.1.0` or later on protocol `1`'
+  doc_has "$spec" 'A debate **MUST NOT** be opened on a question the approved plan does not list'
+  doc_has "$SK/execute/debate.md" 'A debate for it needs a refine amendment that lists it and the developer'"'"'s approval.'
   doc_has "$spec" 'Quick (3–4 seats, one round'
   doc_has "$spec" 'never Deep by default'
   doc_has "$spec" 'The executing agent is the lead and **MUST NOT** vote.'
@@ -181,4 +184,21 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   doc_has "$ADDON/SKILL.md" 'for each debate the turns of the agents seated on it'
   doc_has "$ONBOARD" 'each costing the seated agents'"'"' turns'
   doc_has "$SK/addons/README.md" 'Its default decision mode'
+}
+
+@test "decision debates: the documented gate rejects an unfilled DECISION.md template" {
+  local d="$BATS_TEST_TMPDIR/.dwp/plans/P/analysis_results/debates/cache-store" check
+  mkdir -p "$d"
+  check="$(python3 -c 'import json,sys; md=open(sys.argv[1]).read(); t=json.loads(md.split("```json")[1].split("```")[0].replace("<plan>","P")); print(t["gate_intent"][0]["check"])' "$ADDON/templates/INTEGRATION.md")"
+  printf '## Decisions\n\n| Id | Decision |\n| --- | --- |\n| D-<id>-01 | <...> |\n' > "$d/DECISION.md"
+  run bash -c "cd '$BATS_TEST_TMPDIR' && $check"
+  [ "$status" -ne 0 ]
+  printf '## Decisions\n\n| D-cache-01 | Redis |\n' > "$d/DECISION.md"
+  run bash -c "cd '$BATS_TEST_TMPDIR' && $check"
+  [ "$status" -eq 0 ]
+  printf 'debate: not run — HERDR_ENV unset\n' > "$d/DECISION.md"
+  run bash -c "cd '$BATS_TEST_TMPDIR' && $check"
+  [ "$status" -eq 0 ]
+  # create/decisions.md documents the same pattern
+  doc_has "$SK/create/decisions.md" 'grep -Eq "^(\| D-[A-Za-z0-9-]+-[0-9]+ \||debate: not run)"'
 }

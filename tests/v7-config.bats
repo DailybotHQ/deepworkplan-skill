@@ -297,6 +297,10 @@ _debate() { # the resolved decisions.debate from show (warnings on stderr)
   [[ "$output" == *'"decisions.debate" is not one of auto|off; debates off'* ]] || return 1
   printf '%s\n' '{"decisions": "auto"}' > "$REPO/.dwp/config.json"
   [ "$(_debate)" = "off" ]
+  # an unreadable repository file never falls through to the user's auto
+  printf '%s\n' '{"decisions": {"debate": "auto"}}' > "$HOME/.dwp/config.json"
+  printf '%s' '{"decisions": {"debate": "off"},}' > "$REPO/.dwp/config.json"
+  [ "$(_debate)" = "off" ]
 }
 
 @test "config.py decisions sets the policy, preserves other keys and refuses junk (§3b)" {

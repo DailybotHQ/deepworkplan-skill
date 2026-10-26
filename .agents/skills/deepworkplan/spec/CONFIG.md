@@ -129,9 +129,10 @@ exist ([`../addons/herdr/SPEC.md`](../addons/herdr/SPEC.md) §6.4).
 - **Resolution.** Wholesale, like `benchmark`: a repository file that
   carries the object overrides the user file. Absent everywhere — or an
   object without `debate` — is **`auto`**.
-- **Fail-closed to `off`.** A `decisions` value that is not an object, or a
-  `debate` outside `auto`/`off`, resolves to `off` with one warning naming
-  the file: a typo never launches agents.
+- **Fail-closed to `off`.** A `decisions` value that is not an object, a
+  `debate` outside `auto`/`off`, or a configuration file that exists but
+  cannot be read resolves to `off` with one warning naming the file: a
+  typo never launches agents.
 - **`auto` authorizes nothing by itself.** A debate also needs the herdr
   addon enabled, detected at herdr-peers `v1.1.0` or later and usable in the
   session, the plan's `agent_delegation` grant, and the developer's approval

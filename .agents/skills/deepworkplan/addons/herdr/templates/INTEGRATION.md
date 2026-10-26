@@ -71,7 +71,7 @@ decision was recorded:
   "prerequisites": [], "touched_surface": [".dwp/plans/<plan>/analysis_results/debates/cache-store/"],
   "gate_intent": [
     { "criterion": "AC-cache-store-decided",
-      "check": "bash -c 'grep -Eq \"^(## Decisions|debate: not run)\" .dwp/plans/<plan>/analysis_results/debates/cache-store/DECISION.md'" } ] }
+      "check": "bash -c 'grep -Eq \"^(\\| D-[A-Za-z0-9-]+-[0-9]+ \\||debate: not run)\" .dwp/plans/<plan>/analysis_results/debates/cache-store/DECISION.md'" } ] }
 ```
 
 Its plan README row: *question* "Which cache store do we adopt for the

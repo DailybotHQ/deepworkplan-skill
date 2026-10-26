@@ -35,15 +35,16 @@ consumes its result (Step 3.4):
   Standard (up to 8 seats) only when you mark the decision high-stakes and
   say why. Never Deep by default.
 - **Acceptance criterion:** `analysis_results/debates/<topic>/DECISION.md`
-  exists and carries either the herdr-peers decision record (its
-  `## Decisions` table with the count) or a line
+  exists and carries either the herdr-peers decision record (a filled
+  decision row in its `## Decisions` table, with the count) or a line
   `debate: not run — <reason>` with the agent's own decision; and the
   `PROGRESS.md` "Decisions" entry names the choice.
 - **Gate:** a `bash -c` check on that file (gates run from the repository
   root; declare `bash`), for example
-  `bash -c 'grep -Eq "^(## Decisions|debate: not run)" .dwp/plans/<plan>/analysis_results/debates/<topic>/DECISION.md'`.
-  The verdict is asserted data; the gate observes only that the decision
-  was recorded.
+  `bash -c 'grep -Eq "^(\| D-[A-Za-z0-9-]+-[0-9]+ \||debate: not run)" .dwp/plans/<plan>/analysis_results/debates/<topic>/DECISION.md'`
+  — a filled decision row (the template's placeholder row never matches)
+  or the fallback line. The verdict is asserted data; the gate observes
+  only that the decision was recorded.
 - **Not `parallel_safe`:** the seats are read-only delegates; the task
   itself runs in this session.
 

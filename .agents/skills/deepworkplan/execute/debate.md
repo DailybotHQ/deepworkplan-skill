@@ -1,8 +1,7 @@
 # Execute — a decision debate (v7 decision tasks)
 
 Read this file only when the task in hand is a **decision task** that the
-approved plan lists under "Decision debates", or when a consequential
-decision surfaces mid-task in a plan that lists any. Normative source:
+approved plan lists under "Decision debates". Normative source:
 [`../addons/herdr/SPEC.md`](../addons/herdr/SPEC.md) §6.4. The method —
 briefs, rounds, ballots, counting, the lead's contract — is herdr-peers'
 `debate.md` (purpose **decide**); read it there, never restate it here.
@@ -33,10 +32,12 @@ task's question verbatim.
   --json '{"transport": "interactive", "via": "herdr", "target":
   "<machine>:<pane>", "worktree": null, "prompt_digest": "sha256:…"}'`,
   then send its brief with `DWP_PLAN` and `DWP_TASK` set. Seats are
-  read-only: their filings land under the debate folder, nowhere else.
+  read-only: they write their filings under the debate folder and touch
+  no repository file. That relies on `.dwp/` being gitignored — a filing
+  that shows up in `git status` makes the ledger record the seat `failed`.
 - **Never vote**, never file a claim. Briefs carry no secret value and
   forbid external actions.
-- **Collect every filing**: save it under
+- **Collect every filing**: copy it to
   `analysis_results/delegations/<id>/` and record `delegate collect`
   (`completed`, or `failed` with the reason). A refused launch is recorded
   by the ledger; continue with the seats you have or go to §5.
@@ -68,6 +69,6 @@ seat (`herdr-peers cancel`, then `delegate cancel`) first.
 
 ## 6. A decision that surfaces mid-task
 
-Debate it only when the preflight holds and the approved cap leaves room,
-in the Quick shape, under the task in hand; otherwise it is your own
-recorded decision. Never open a debate the plan did not price.
+It is your own recorded decision, or C3 when it changes the plan's
+outcome. A debate for it needs a refine amendment that lists it and the
+developer's approval. Never open a debate the plan did not price.

@@ -357,12 +357,17 @@ def resolve_decisions(files) -> Tuple[Dict[str, Any], List[str]]:
     Wholesale, repo over user, like ``benchmark``. Nothing anywhere (or a
     winning object without ``debate``) is ``auto``: debates still need the
     herdr addon, the plan's grant and the developer's approval, so ``auto``
-    authorizes nothing by itself. A malformed object or value fails closed
-    to ``off`` with one warning, so a typo never launches agents.
+    authorizes nothing by itself. A malformed object or value, or a file
+    that exists but cannot be read, fails closed to ``off`` with one
+    warning, so a typo never launches agents.
     """
     warnings: List[str] = []
     for label, _path, data, reason in files:
-        if reason or data is None or 'decisions' not in data:
+        if reason:
+            # an unreadable file may have said "off": never fall through to auto
+            warnings.append('decisions: %s %s; debates off' % (label, reason))
+            return {'debate': 'off', 'source': label}, warnings
+        if data is None or 'decisions' not in data:
             continue
         section = data['decisions']
         if not isinstance(section, dict):
@@ -819,7 +824,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 # self-test
 
 
-SELF_TEST_PROBES = 43
+SELF_TEST_PROBES = 44
 
 
 def self_test() -> int:
@@ -1040,6 +1045,10 @@ def self_test() -> int:
         view, warn = dres()
         check('decisions non-object is off', view['debate'] == 'off' and len(warn) == 1,
               repr((view, warn)))
+        dput(dcfg, '{"decisions": {"debate": "off"},}')
+        view, warn = dres()
+        check('decisions unreadable repo file is off, not the user auto',
+              view['debate'] == 'off' and len(warn) == 1, repr((view, warn)))
         dput(dcfg, '{"addons": {"vim": {"enabled": true}}}')
         rec = write_decisions(ddir, 'debate', 'off')
         with open(dcfg, encoding='utf-8') as fh:
