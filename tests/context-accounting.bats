@@ -36,18 +36,19 @@ setup() {
 
 # --- the manifest itself -----------------------------------------------------
 
-@test "paths.tsv declares the thirteen named end-to-end paths" {
+@test "paths.tsv declares the fourteen named end-to-end paths" {
     [ -f "$PATHS" ]
     local ids
     ids="$(rows | cut -f1 | sort -u)"
     for want in create-lite create-full create-v6 execute-final-review \
                 execute-v6 resume-assessment resume-execution resume-v6 \
-                onboard-v6 conditional-escalation execute-v7-delegate execute-swarm resume-handoff; do
+                onboard-v6 conditional-escalation execute-v7-delegate execute-swarm resume-handoff \
+                create-v7-debate; do
         printf '%s\n' "$ids" | grep -qx "$want" || {
             echo "missing path: $want"; echo "$ids"; return 1
         }
     done
-    [ "$(printf '%s\n' "$ids" | wc -l | tr -d ' ')" -eq 13 ]
+    [ "$(printf '%s\n' "$ids" | wc -l | tr -d ' ')" -eq 14 ]
 }
 
 @test "every manifest row has four tab-separated fields and a nonempty trigger" {

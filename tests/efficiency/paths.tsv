@@ -91,6 +91,17 @@ create-v6	contract-authorship	composing the outcome contract — closed field se
 create-v6	final-review	composing the Final Review — every plan carries one, so this trigger always fires	create/addon-augmentations.md
 create-v6	final-review	composing the Final Review — every plan carries one, so this trigger always fires	guide/execution.md
 
+# --- create: a v7 plan that plans a decision debate (herdr enabled) ---------
+create-v7-debate	entry	t0 — router + create contract + the template every plan writes	SKILL.md
+create-v7-debate	entry	t0 — router + create contract + the template every plan writes	create/SKILL.md
+create-v7-debate	entry	t0 — router + create contract + the template every plan writes	examples/PROMPTS_TEMPLATE.md
+create-v7-debate	entry	t0 — router + create contract + the template every plan writes	shared/adaptation.md
+create-v7-debate	v6-candidate	Step 0.3 — the pack line is 6+ or the developer explicitly asked for v6	create/v6.md
+create-v7-debate	contract-authorship	composing the outcome contract — closed field set and evidence classes	spec/V6_CONTRACT.md
+create-v7-debate	decision-debates	the v7 decision-debates trigger fires — herdr enabled, decisions.debate auto, a consequential decision found	create/decisions.md
+create-v7-debate	final-review	composing the Final Review — every plan carries one, so this trigger always fires	create/addon-augmentations.md
+create-v7-debate	final-review	composing the Final Review — every plan carries one, so this trigger always fires	guide/execution.md
+
 # --- execute: a v6 plan end to end --------------------------------------------
 execute-v6	entry	t0 — router + execute contract	SKILL.md
 execute-v6	entry	t0 — router + execute contract	execute/SKILL.md
