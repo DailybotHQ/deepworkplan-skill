@@ -83,7 +83,7 @@ records its Phase 7a status). Offer the seven optional ones independently:
 | **Dependency upgrade** | [`../addons/dependency-upgrade/`](../addons/dependency-upgrade/SKILL.md) | **near-default** — the repo has **declared dependencies** (any manifest or lockfile): offer **always**, and install the **inert** `/lib-upgrade` delegator under the onboarding consent **unless explicitly declined**. Installing the delegator runs **no** upgrade — upgrades are always explicit, gated work. |
 | **Design system** | [`../addons/design-system/`](../addons/design-system/SKILL.md) | the repo has a **user-facing interface surface**, detected per profile: when any surface is detected — even an ambiguous one — the evaluation and offer are **mandatory, not skippable**, with the detection rationale recorded. **visual-ui** (stylesheet with CSS custom properties, Tailwind config or `@theme` block, UI components, brand/style guide) is **strongly recommended**; **cli-output** (a CLI rendering library + a deliberate display layer) and **conversational** (a chat SDK or message-composition layer) are **recommended**. Every profile **requires explicit acceptance even in trust mode — none is auto-applied**. **Never offer for a repo with no interface surface** (pure library, headless service, infra-only). |
 | **agentkit** | [`../addons/agentkit/`](../addons/agentkit/SKILL.md) | the developer wants plans to hand bounded `parallel_safe` tasks to other coding agents (claude, codex, cursor, …) — a machine-level install (`git clone --branch v1.0.1` + `install.sh`), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. The kit runs agents in autonomy by default; the `--ask` / `AGENTKIT_PERMISSIONS=ask` opt-out always wins. |
-| **Herdr** | [`../addons/herdr/`](../addons/herdr/SKILL.md) | the developer runs coding agents in [Herdr](https://herdr.dev) panes (one machine or several) and wants plans to ask a peer agent to take a task or run a native debate panel — a machine-level install of `herdr-peers@v1.1.0` (+ Herdr's official skill, pinned), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. |
+| **Herdr** | [`../addons/herdr/`](../addons/herdr/SKILL.md) | the developer runs coding agents in [Herdr](https://herdr.dev) panes (one machine or several) and wants plans to ask a peer agent to take a task or run a native debate panel (by default, consequential plan decisions are debated; `decisions.debate off` turns it off) — a machine-level install of `herdr-peers@v1.1.0` (+ Herdr's official skill, pinned), never a repo requirement; delegation additionally needs each plan's `agent_delegation` grant. |
 | **DeepWorkPlan Vim** | [`../addons/vim/`](../addons/vim/SKILL.md) | a person on this machine uses Neovim ≥ 0.12 or asks for a terminal editor for plans — a **machine-level** install, never a repo requirement; the editor is never imposed and an existing Neovim config is **never** overwritten without explicit consent (non-interactive runs onto an existing config stop at instructions). Pinned `deepworkplan-vim@v1.0.0`, detected through the product's `addon/surface.json`. |
 | **AI Diff Reviewer** | [`../addons/ai-diff-reviewer/`](../addons/ai-diff-reviewer/SKILL.md) | **not offered here — installed in Phase 7a** (required local review, baseline since 2.3.0). In Phase 7b only confirm the Flow B (CI Action) opt-in decision if it was left open; never install the CI surface unrequested. |
 
@@ -220,8 +220,12 @@ The **Herdr** addon ([`../addons/herdr/SKILL.md`](../addons/herdr/SKILL.md) +
 `herdr-peers` read-only (`herdr-peers --version` → protocol `1`), offer it,
 and on acceptance show the pinned installs (`../addons/herdr/install.md`) and
 record `addons.herdr`. The peer protocol lives in herdr-peers, not in this
-pack. Enabling it authorizes nothing by itself. If declined, skip it — the
-repo stays baseline-conformant.
+pack. Enabling it authorizes nothing by itself. Say in the offer that, once
+enabled, plans settle consequential decisions through a small debate among
+agents by default (each listed in the plan for approval, each costing the
+seated agents' turns), and that `config.py decisions debate off --repo
+<repo>` turns that off. If declined, skip it — the repo stays
+baseline-conformant.
 
 The eighth addon, **AI Diff Reviewer**
 ([`../addons/ai-diff-reviewer/SKILL.md`](../addons/ai-diff-reviewer/SKILL.md) +
