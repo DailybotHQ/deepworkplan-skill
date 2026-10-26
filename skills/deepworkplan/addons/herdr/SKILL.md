@@ -58,7 +58,10 @@ the install lines, the transport mapping and the journaling rule.
 - **Writes (only after explicit acceptance):** the two pinned skill
   installs, the `addons.herdr` registry entry, and — during a delegation —
   a dedicated worktree for a writing peer plus the collected reply under the
-  plan's `analysis_results/delegations/<id>/`.
+  plan's `analysis_results/delegations/<id>/`; and — only for a decision
+  task an approved plan lists — the debate folder
+  `analysis_results/debates/<topic>/` (`HUMAN_NOTE.md`, the seats' filings,
+  `DECISION.md`).
 - **It MUST NOT:** hand-build a peer message (the helper stamps it); answer
   a reply; delegate from a delegate (depth 1); exceed the helper's fan-out
   cap; close a pane it did not create; change SSH host trust, `~/.ssh` or

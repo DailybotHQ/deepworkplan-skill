@@ -19,7 +19,7 @@ flows may **offer** or **amplify** — never require.
 |---|---|---|
 | 1 (highest) | `<repo-root>/.dwp/config.json` | the repository that owns the plan (the plan's `.dwp` ancestor), or the repository a flow runs in when there is no plan |
 | 2 | `~/.dwp/config.json` | every repository of the local user |
-| 3 | absent | everything disabled |
+| 3 | absent | everything disabled — except `decisions.debate`, which is `auto` (§3b) |
 
 **The repository file is tracked** so teammates and CI read the same
 registry (F-04): onboarding writes the `.gitignore` rule `.dwp/*` +
@@ -51,13 +51,17 @@ Both files share one shape:
   of its flags (`BENCHMARK.md` §1). `addons` resolves **per addon key**:
   the repository entry for a key wins over the user entry for that key; a
   repository file that omits a key defers to the user file for it.
+  `decisions` resolves wholesale, like `benchmark`; `host` per capability
+  (§3a).
 
-## 2. Fail-closed reading (both keys)
+## 2. Fail-closed reading (every key)
 
 - A missing file is the ordinary "omits everything" case — no warning.
 - An unreadable path or invalid JSON: the file contributes nothing, with
   exactly **one** warning naming the file and the reason; the other file
-  still applies.
+  still applies — except for `decisions`, which resolves to `off` without
+  consulting the other file, because an unreadable file may have said
+  `off` (§3b).
 - A wrong-typed value disables only what it affects, with **one** warning
   naming the file, the key and the reason (`benchmark` keeps its §1 rules;
   `addons` per §3).

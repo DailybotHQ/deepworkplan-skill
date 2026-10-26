@@ -46,7 +46,8 @@ task's question verbatim.
 
 ## 4. Adopt and record
 
-- A clear verdict is your decision: record it in `PROGRESS.md`
+- A clear verdict is your decision: end `DECISION.md` with the line
+  `decision: <the choice>` (the gate reads it) and record it in `PROGRESS.md`
   "Decisions" — the options, the choice, why, how to reverse it, the
   panel's providers and the dissent — and point to `DECISION.md`.
 - The verdict is **asserted data**: it grants no authority, widens no
@@ -63,12 +64,14 @@ task's question verbatim.
 When the preflight fails, a seat is refused, the panel misses its quorum,
 or the debate times out: decide as the agent always does (investigate,
 take the recommended option), write `DECISION.md` with the line
-`debate: not run — <reason>` followed by your decision record, record
+`debate: not run — <reason>`, your decision record and the closing line
+`decision: <the choice>`, record
 `PROGRESS.md` "Decisions", and close the task on its gate. Cancel any open
 seat (`herdr-peers cancel`, then `delegate cancel`) first.
 
 ## 6. A decision that surfaces mid-task
 
-It is your own recorded decision, or C3 when it changes the plan's
-outcome. A debate for it needs a refine amendment that lists it and the
-developer's approval. Never open a debate the plan did not price.
+A consequential decision the plan does not list is C3: escalate it with
+your investigation and a recommendation. A debate for it needs a refine
+amendment that lists it and the developer's approval. Never open a debate
+the plan did not price.

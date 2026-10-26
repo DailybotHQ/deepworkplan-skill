@@ -180,10 +180,10 @@ it and how the plan records it.
    for approval. That approval is the human consent herdr-peers requires
    before agents are launched; trust mode records it as part of the
    pre-authorization. A debate **MUST NOT** be opened on a question the
-   approved plan does not list: a consequential decision that surfaces
-   mid-task is the agent's own record, or C3 when it changes the plan's
-   outcome, and a debate for it needs a refine amendment the developer
-   approves.
+   approved plan does not list. A consequential decision that surfaces
+   mid-task meets C3 (`../../spec/AGENT_PROTOCOL.md` §7.5): the agent
+   escalates it with its investigation and a recommendation, and a debate
+   for it needs a refine amendment the developer approves.
 4. **Shape.** Quick (3–4 seats, one round and the lead's synthesis) by
    default; Standard only for a decision the plan marks high-stakes; never
    Deep by default. The seat cap is stated in the plan and **MUST NOT** be
@@ -194,7 +194,9 @@ it and how the plan records it.
    with `ledger.py delegate launch` before its brief is sent and collected
    after its filing (§6). Depth 1 holds: a seat never delegates.
 6. **Deliverable.** `analysis_results/debates/<topic>/DECISION.md`, the
-   herdr-peers deliverable with the counted verdict and the dissent, plus
+   herdr-peers deliverable with the counted verdict and the dissent, ending
+   with one line the plan owns, `decision: <the choice>` (the decision
+   task's gate reads that line, never herdr-peers' own format), plus
    the plan's decision record in `PROGRESS.md` "Decisions": the options,
    the choice, why, how to reverse it, the panel's providers and the
    dissent.
@@ -204,7 +206,7 @@ it and how the plan records it.
 8. **Never block.** When the trigger fails, a seat is refused, the panel
    misses its quorum, or the debate times out, the decision task closes
    with the agent's own decision record naming why the debate did not run
-   (`debate: not run — <reason>`). A split verdict on a question that
+   (`debate: not run — <reason>`, then `decision: <the choice>`). A split verdict on a question that
    changes the plan's outcome is escalated as C3 (irreducible ambiguity)
    with the debate attached as the investigation.
 

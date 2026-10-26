@@ -125,14 +125,20 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   doc_has "$spec" '*At run time* a listed debate **MUST NOT** start unless'
   doc_has "$spec" 'reports `1.1.0` or later on protocol `1`'
   doc_has "$spec" 'A debate **MUST NOT** be opened on a question the approved plan does not list'
-  doc_has "$SK/execute/debate.md" 'A debate for it needs a refine amendment that lists it and the developer'"'"'s approval.'
+  doc_has "$SK/execute/debate.md" 'A consequential decision the plan does not list is C3'
+  doc_has "$SK/spec/AGENT_PROTOCOL.md" 'A consequential decision the plan does not list is C3'
+  doc_has "$SK/create/v6.md" 'the developer accepts the `agent_delegation` grant for this plan'
+  doc_has "$SK/create/decisions.md" 'a plan without the grant lists no debates'
+  doc_has "$ADDON/SKILL.md" 'the debate folder `analysis_results/debates/<topic>/`'
+  doc_has "$SK/spec/CONFIG.md" 'except for `decisions`, which resolves to `off` without consulting the other file'
   doc_has "$spec" 'Quick (3–4 seats, one round'
   doc_has "$spec" 'never Deep by default'
   doc_has "$spec" 'The executing agent is the lead and **MUST NOT** vote.'
   doc_has "$spec" '**read-only** delegation (`worktree` null) recorded with `ledger.py delegate launch` before its brief is sent'
   doc_has "$spec" '`analysis_results/debates/<topic>/DECISION.md`'
   doc_has "$spec" 'it grants no authority'
-  doc_has "$spec" '(`debate: not run — <reason>`)'
+  doc_has "$spec" '(`debate: not run — <reason>`, then `decision: <the choice>`)'
+  doc_has "$spec" 'ending with one line the plan owns, `decision: <the choice>`'
   doc_has "$spec" 'escalated as C3'
   doc_has "$SK/spec/ADDONS.md" '[`SPEC.md`](../addons/herdr/SPEC.md) §6.4'
   doc_has "$SK/spec/AGENT_PROTOCOL.md" '(`addons/herdr/SPEC.md` §6.4)'
@@ -186,19 +192,19 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   doc_has "$SK/addons/README.md" 'Its default decision mode'
 }
 
-@test "decision debates: the documented gate rejects an unfilled DECISION.md template" {
+@test "decision debates: the documented gate reads the plan-owned decision line, never a placeholder" {
   local d="$BATS_TEST_TMPDIR/.dwp/plans/P/analysis_results/debates/cache-store" check
   mkdir -p "$d"
   check="$(python3 -c 'import json,sys; md=open(sys.argv[1]).read(); t=json.loads(md.split("```json")[1].split("```")[0].replace("<plan>","P")); print(t["gate_intent"][0]["check"])' "$ADDON/templates/INTEGRATION.md")"
-  printf '## Decisions\n\n| Id | Decision |\n| --- | --- |\n| D-<id>-01 | <...> |\n' > "$d/DECISION.md"
-  run bash -c "cd '$BATS_TEST_TMPDIR' && $check"
+  _gate() { printf '%b' "$1" > "$d/DECISION.md"; bash -c "cd '$BATS_TEST_TMPDIR' && $check"; }
+  run _gate '## Decisions\n\n| D-<id>-01 | <...> |\n'
   [ "$status" -ne 0 ]
-  printf '## Decisions\n\n| D-cache-01 | Redis |\n' > "$d/DECISION.md"
-  run bash -c "cd '$BATS_TEST_TMPDIR' && $check"
+  run _gate '## Decisions\n\n| D-1 | Redis |\n\ndecision: <the choice>\n'
+  [ "$status" -ne 0 ]
+  run _gate '## Decisions\n\n| DEC-001 | Redis |\n\ndecision: A (Redis)\n'
   [ "$status" -eq 0 ]
-  printf 'debate: not run — HERDR_ENV unset\n' > "$d/DECISION.md"
-  run bash -c "cd '$BATS_TEST_TMPDIR' && $check"
+  run _gate 'debate: not run — HERDR_ENV unset\n\ndecision: B (SQLite)\n'
   [ "$status" -eq 0 ]
-  # create/decisions.md documents the same pattern
-  doc_has "$SK/create/decisions.md" 'grep -Eq "^(\| D-[A-Za-z0-9-]+-[0-9]+ \||debate: not run)"'
+  doc_has "$SK/create/decisions.md" 'grep -Eq "^decision: [^<[:space:]]"'
+  doc_has "$SK/execute/debate.md" '`decision: <the choice>` (the gate reads it)'
 }
