@@ -320,6 +320,6 @@ doc_has() {
     # it now covers every request, and the binding text is named.
     doc_has "$SK/create/v6.md" "every plan keeps the human's request verbatim"
     doc_has "$SK/create/v6.md" "**the approved contract binds**"
-    doc_has "$SK/create/SKILL.md" "Keep the request itself verbatim"
+    doc_has "$SK/create/SKILL.md" "Keep the request verbatim"
     doc_has "$SK/spec/DWP_SPECIFICATION.md" "keep the human's request verbatim in a note inside the plan folder"
 }

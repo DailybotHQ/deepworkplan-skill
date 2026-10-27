@@ -29,10 +29,10 @@ doc_has() {
 }
 
 @test "create states the same micro rule for guided and trust modes" {
-    doc_has "$CREATE" "§11 is normative for it"
-    doc_has "$CREATE" "say that a plan is disproportionate and offer the inline form"
-    doc_has "$CREATE" "create a plan folder only if the developer, having been told, still asks"
-    doc_has "$CREATE" "record the micro judgment and the inline alternative in the README and materialize"
+    doc_has "$CREATE" "Proportional rigor (§11, normative)"
+    doc_has "$CREATE" "say a plan is disproportionate and offer the inline form"
+    doc_has "$CREATE" "a folder only if the developer, told, still asks"
+    doc_has "$CREATE" "record the micro judgment and inline alternative in the README and materialize"
 }
 
 @test "the contradicting micro wording does not return to create" {
@@ -42,5 +42,5 @@ doc_has() {
     run doc_has "$CREATE" "a first-class Lite plan: record a concise goal"
     [ "$status" -ne 0 ]
     # Small-but-real work keeps its protection; micro is the named §11 exception.
-    doc_has "$CREATE" "Micro-tier work (one atomic concern, no real planning) is the exception, and follows spec §11"
+    doc_has "$CREATE" "Micro work is the §11 exception"
 }

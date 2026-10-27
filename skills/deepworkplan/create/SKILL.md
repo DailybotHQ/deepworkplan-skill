@@ -56,11 +56,8 @@ pre-approved, and returns the execute command. An explicit Full preference wins;
 an explicit Lite preference is retained only if compact records can express every
 requirement and gate. Unknown scope triggers discovery, not an automatic Full
 classification. Small but real planning work is a valid Lite plan; never route it to an
-inline non-DWP alternative merely because it is small. Micro-tier work (one
-atomic concern, no real planning) is the exception, and follows spec §11: say a plan is disproportionate and
-offer the inline form; materialize a plan only when the developer, having been
-told, still asks — or, unattended, record the micro judgment and the inline
-alternative in the README and materialize.
+inline non-DWP alternative merely because it is small. Micro work is the §11
+exception (Step 3.1).
 
 ## Philosophy
 
@@ -188,11 +185,9 @@ materializes a **Lite plan folder** — no draft file is written.
 > **Name format:** users type names in any format; you auto-convert to
 > `snake_case` internally.
 
-> **Removed in 2.4.0:** `refined-draft`, `from-refined-draft` and its `from`
-> alias. There is no draft artifact and no `.dwp/drafts/` directory — the Lite
-> plan replaces them. If a repo still has a `.dwp/drafts/` folder from an earlier
-> version, DWP neither reads nor writes it; the developer may delete it. To build
-> a plan from an old draft's content, paste that content as the create context.
+> **Removed in 2.4.0:** `refined-draft`, `from-refined-draft` and `from`. A
+> leftover `.dwp/drafts/` is inert (spec §2); paste an old draft's content as
+> the create context.
 
 ## Modes
 
@@ -334,23 +329,16 @@ This step runs in **every** mode
 and is the substance of the plan; the mode only decides whether it is first
 reviewed before execution (guided) or handed off directly (trust).
 
-- **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
-  work warrants a plan. A trivial single-concern change is **micro** tier, and
-  §11 is normative for it. **Guided (interactive):** say that a plan is
-  disproportionate and offer the inline form — goal, acceptance criteria and
-  validation gate stated in conversation, then execute, validate, commit;
-  create a plan folder only if the developer, having been told, still asks
-  (then it is a one-task Lite plan plus the Final Review). **Trust
-  (unattended):** never stop to ask and never produce nothing — record the
-  micro judgment and the inline alternative in the README and materialize the
-  plan, which the developer can discard on sight. Otherwise choose `standard`
-  or `deep` and record why in the plan README. A borderline call is recorded,
-  never asked.
+- **3.1 Proportional rigor (§11, normative).** A trivial single-concern change
+  is **micro**: guided, say a plan is disproportionate and offer the inline
+  form (a folder only if the developer, told, still asks); trust, record the
+  micro judgment and inline alternative in the README and materialize.
+  Otherwise choose `standard` or `deep` and record why; borderline calls are
+  recorded, never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
-  task** and an **observable acceptance criterion**. Keep the request itself
-  verbatim in `analysis_results/HUMAN_NOTE.md` (never a paraphrase); the
-  approved plan or contract binds, and the verbatim text is its reference.
+  task** and an **observable acceptance criterion**. Keep the request
+  verbatim in `analysis_results/HUMAN_NOTE.md`; the approved plan binds.
 - **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** One task,
   one objective: a task may perform several steps that serve its single
   granular objective, and must never bundle several objectives — prefer N
@@ -684,9 +672,7 @@ Create:
    docs, then the `AGENTS.md` index for new top-level surface; fix misses in
    this review, rerun affected validations, and record the result in
    `SECURITY_REVIEW.md` as a "Documentation reconciliation" subsection
-   (checked → current, or the fixed list); stable behavior the plan
-   established is promoted into existing tests or docs, never into a second
-   living spec. Bounded to the plan's touched
+   (checked → current, or the fixed list). Bounded to the plan's touched
    surface — a whole-repo docs audit belongs to `/dwp-verify`; the plan does
    not close with an undocumented behavior-changing surface unless the user
    explicitly accepted the miss. **(e) Completion** — report deliverables,
@@ -790,11 +776,7 @@ real artifacts, and the receipt. Never let that final check depend on a
 fabricated success record of its own invocation.
 
 
-**Both formats — the how-smuggling question:** for each task, which
-implementation moves does the plan prescribe that the human did not ask for?
-Keep the ones a gate or an unattended executor genuinely needs (numbered steps
-stay legitimate for unattended work); record or drop the rest, so the plan
-fixes the observable result and its checks, not the human's unasked-for how.
+**How-smuggling:** drop unrequested implementation moves no gate needs.
 
 **For a Lite plan**, verify and fix before continuing:
 - **Requirements → tasks → gates** (Step 3.7) hold for the task records.
