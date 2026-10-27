@@ -15,13 +15,13 @@ A structured debate answered it. A ten-seat panel of coding agents from three pr
    - Keep "Deep Work Plan".
    - Coin no new "-driven development" term, adopt no ODD, and reject "Agentic Driven Development" (it names the actor, not the method).
    - **Demote SDD; do not retire it:** it survives as "spec-first, per episode" in comparisons and search text.
-   - The tagline "DeepWorkPlan is spec-driven development where the repository itself becomes the harness" is replaced. It came last on every ballot. The replacement keeps "the repository is the harness" and is chosen by a bilingual comprehension test.
+   - The former tagline, which defined DeepWorkPlan as spec-driven development with the repository becoming the harness, is replaced. It came last on every ballot. The replacement, "The repository is the harness. Agents plan first, verify every step, and pick up where another agent left off.", keeps "the repository is the harness" and was chosen by a blind bilingual comprehension test (10 readers from three providers; it answered every probe correctly in English and Spanish).
 3. **Durability, stated precisely.**
    - The **repository is the harness**: `AGENTS.md`, `docs/`, `.agents/` and the skill are versioned and travel with the code.
    - A **plan** lives in the repository's working copy. Any agent working there can resume it, including several agents on one plan.
    - Plans are working state, not committed files. **A fresh clone starts without them unless one is exported.**
 
-   The earlier wording ("durable source of truth", "version-controlled plans") was imprecise rather than false in intent. The spec glossary now names the three properties: session-durable, host-portable by export, not repo-durable.
+   The earlier wording (a "durable source of truth", plans described as kept under version control) was imprecise rather than false in intent. The spec glossary now names the three properties: session-durable, host-portable by export, not repo-durable.
 4. **Evolution.** No v8 for now. A 7.x hardening series makes text and code agree, with no new mandatory step, field or default:
    - micro-tier reconciliation;
    - a warning at task start that prevents dirty-start control voids, with the recovery named (D3-3 unchanged);

@@ -32,7 +32,7 @@ hand real work to coding agents (Claude Code, Codex, Cursor, Gemini CLI,
 Copilot, OpenClaw and others) and need that work to survive context resets,
 agent changes and long runs.
 
-> DeepWorkPlan is spec-driven development where the repository itself becomes the harness.
+> The repository is the harness. Agents plan first, verify every step, and pick up where another agent left off.
 
 The pack does three things:
 
