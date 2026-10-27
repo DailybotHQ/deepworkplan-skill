@@ -98,6 +98,7 @@ methodology, and each has its own write-up with its own stated limits:
 | An existing repository upgrades in place without losing handwritten rules, custom skills or in-flight plans | [`evaluations/adoption-pilot.md`](evaluations/adoption-pilot.md) — three fixtures, checksum-verified, idempotent | Constructed fixtures, not a third-party production repo; only the Python fixture has a runnable toolchain here |
 | Lite plans remain executable and may promote without weakening state contracts | [`evaluations/lite-plan-lifecycle.md`](evaluations/lite-plan-lifecycle.md) — conformance and schema fixtures | Structural coverage only; no cross-harness recommendation-quality claim |
 | The v5 reliability guarantees, their guard cost and the instruction accounting behind them | [`evaluations/v5-reliability.md`](evaluations/v5-reliability.md) — entry bundles and end-to-end paths against `6bf7830` | Static instruction surface only; no live-agent, token or cost claim |
+| Working with the DWP harness installed changes provider-token use | [`evaluations/three-arm-benchmark.md`](evaluations/three-arm-benchmark.md) — fresh agents, three arms (no DWP, v2.17.1, a v5 pre-release), harness-reported tokens | One workload (n = 1); the flows were never entered; per-feature direction mixed, all-in about 4.4–4.9× the control because onboarding never amortized |
 
 Neither is an efficiency claim, and neither may be cited as one. The handoff runs
 were executed concurrently on a shared host, so their timings are meaningless.
