@@ -13,9 +13,12 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Eighteen Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Nineteen Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check,
+`verify/compliance_audit.py` for the read-only compliance audit of finished
+v6/v7 plans (it reads their records through the ledger's read side and never
+writes),
 `shared/plan_paths.py` for monotonic plan IDs and plan selection,
 `shared/update-state.py`, `shared/state_contract.py` and
 `shared/finalize_plan.py` for the guarded state, evidence and completion

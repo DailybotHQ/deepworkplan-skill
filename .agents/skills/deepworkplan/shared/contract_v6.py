@@ -306,6 +306,72 @@ def contract_errors(doc, parents=None):
     return errors
 
 
+# Path fragments that mark a shared interface: two writers touching any of
+# them can collide semantically even when their files differ (R8, ADR 0006).
+SHARED_INTERFACE_MARKERS = ('schema', 'migration', 'generated', 'openapi',
+                            'proto', '.lock', 'lock.json', 'package.json',
+                            'pyproject.toml', 'go.mod', 'cargo.toml')
+
+
+def _prerequisite_closure(tasks):
+    """task id -> every task id it transitively depends on."""
+    direct = {t.get('id'): set(t.get('prerequisites') or []) for t in tasks}
+    closure = {}
+    for tid in direct:
+        seen, stack = set(), list(direct[tid])
+        while stack:
+            dep = stack.pop()
+            if dep not in seen:
+                seen.add(dep)
+                stack.extend(direct.get(dep, ()))
+        closure[tid] = seen
+    return closure
+
+
+def _surfaces_overlap(a, b):
+    a, b = a.rstrip('/'), b.rstrip('/')
+    return a == b or a.startswith(b + '/') or b.startswith(a + '/')
+
+
+def parallel_overlap_warnings(doc):
+    """Warn (never refuse) when two tasks that may run concurrently are both
+    marked parallel_safe yet share a touched surface or a shared interface.
+
+    File non-overlap is not semantic safety: schemas, migrations, generated
+    artifacts and lockfiles couple writers whose paths differ. Tasks ordered
+    by a prerequisite chain never run concurrently and are skipped.
+    """
+    tasks = [t for t in doc.get('tasks', []) if t.get('parallel_safe') is True]
+    deps = _prerequisite_closure(doc.get('tasks', []))
+    warnings = []
+    for i, first in enumerate(tasks):
+        for second in tasks[i + 1:]:
+            a, b = first.get('id'), second.get('id')
+            if a in deps.get(b, ()) or b in deps.get(a, ()):
+                continue
+            sa = first.get('touched_surface') or []
+            sb = second.get('touched_surface') or []
+            shared = sorted({x for x in sa for y in sb
+                             if _surfaces_overlap(x, y)})
+            if shared:
+                warnings.append(
+                    'parallel_safe tasks %s and %s share touched surface %s - '
+                    'they can collide when run concurrently; order them or '
+                    'split the surface' % (a, b, ', '.join(shared)))
+                continue
+            ia = [x for x in sa if any(m in x.lower()
+                                       for m in SHARED_INTERFACE_MARKERS)]
+            ib = [y for y in sb if any(m in y.lower()
+                                       for m in SHARED_INTERFACE_MARKERS)]
+            if ia and ib:
+                warnings.append(
+                    'parallel_safe tasks %s and %s both touch shared '
+                    'interfaces (%s / %s) - file non-overlap is not semantic '
+                    'safety; declare one owner or order them'
+                    % (a, b, ', '.join(ia), ', '.join(ib)))
+    return warnings
+
+
 def closure_errors(doc, warnings=None):
     """Criteria that no evidence can ever close (field report F-11).
 
@@ -1746,6 +1812,7 @@ def main(argv):
         warnings = []
         if not errors:
             draft = closure_errors(doc, warnings) + gate_command_errors(doc)
+            warnings += parallel_overlap_warnings(doc)
             if recorded:
                 # an already-materialized contract (e.g. a migration's
                 # records-only synthesis): draft checks are advisories
