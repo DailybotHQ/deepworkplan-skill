@@ -348,7 +348,9 @@ reviewed before execution (guided) or handed off directly (trust).
   never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
-  task** and an **observable acceptance criterion**.
+  task** and an **observable acceptance criterion**. Keep the request itself
+  verbatim in `analysis_results/HUMAN_NOTE.md` (never a paraphrase); the
+  approved plan or contract binds, and the verbatim text is its reference.
 - **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** One task,
   one objective: a task may perform several steps that serve its single
   granular objective, and must never bundle several objectives — prefer N

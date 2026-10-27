@@ -707,6 +707,13 @@ decisions move **into the task that produced the pattern** (§6.2), and the
 Executive Report becomes an **optional artifact generated on request** (§6.3).
 Nothing in the security pass is relaxed.
 
+A plan **SHOULD** keep the human's request verbatim in a note inside the plan
+folder (`analysis_results/HUMAN_NOTE.md`), and delegates **SHOULD** receive a
+pointer to it rather than a paraphrase. The approved plan (in v6/v7, the
+contract) **binds**; the verbatim request is its reference. A disagreement
+between them is resolved by an amendment, never by re-reading the request
+over the approved plan.
+
 ### 6.1. Task N — Final Review
 
 The Final Review **MUST**, in this order:
