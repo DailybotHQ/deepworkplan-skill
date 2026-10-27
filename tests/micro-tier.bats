@@ -40,5 +40,6 @@ doc_has() {
   a first-class Lite plan" "$CREATE"
     [ "$status" -ne 0 ]
     ! doc_has "$CREATE" "a first-class Lite plan: record a concise goal"
-    ! doc_has "$CREATE" "never route it to an inline non-DWP alternative merely because it is small"
+    # Small-but-real work keeps its protection; micro is the named §11 exception.
+    doc_has "$CREATE" "Micro-tier work (one atomic concern, no real planning) is the exception, and follows spec §11"
 }

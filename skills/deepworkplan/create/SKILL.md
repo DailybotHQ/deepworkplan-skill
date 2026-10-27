@@ -55,8 +55,9 @@ Trust records the same rationale, chooses Lite or Full, marks it ready and
 pre-approved, and returns the execute command. An explicit Full preference wins;
 an explicit Lite preference is retained only if compact records can express every
 requirement and gate. Unknown scope triggers discovery, not an automatic Full
-classification. Small but real planning work is a valid Lite plan. Micro-tier
-work (one atomic concern) follows spec §11: say a plan is disproportionate and
+classification. Small but real planning work is a valid Lite plan; never route it to an
+inline non-DWP alternative merely because it is small. Micro-tier work (one
+atomic concern, no real planning) is the exception, and follows spec §11: say a plan is disproportionate and
 offer the inline form; materialize a plan only when the developer, having been
 told, still asks — or, unattended, record the micro judgment and the inline
 alternative in the README and materialize.
