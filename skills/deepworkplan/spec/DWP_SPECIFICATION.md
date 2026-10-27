@@ -619,6 +619,11 @@ apply to every plan and every agent that continues one:
    does not prove the rule. A test of exact output checks it with a sentinel
    (`[ "$(f x; printf s)" = $'y\ns' ]`): `$(…)` strips trailing newlines, so
    output that drops or doubles its final newline would otherwise pass.
+   In a v6/v7 plan the ledger makes this rule visible without blocking: when a
+   gate-closed criterion that declares no `control` completes, `ledger.py
+   complete` warns and records a `§5.1.4 control missing` observation; a
+   declared control, including `exempt` with a rationale, is a decision and
+   draws no warning (ADR 0006).
 2. **Compare to the base.** Performance, coverage and size are compared
    against the base branch (or the plan's starting revision), not only against
    a threshold; a regression against the base is reported even when the

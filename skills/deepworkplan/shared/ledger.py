@@ -1822,7 +1822,45 @@ class Writer:
                 'completion of %s refused: %d criterion(s) lack in-window '
                 'accepted evidence (zero-test control)' %
                 (task_id, len(missing)))
+        self._warn_undecided_controls(task_id, states)
         return states
+
+    def _warn_undecided_controls(self, task_id, states):
+        """Spec §5.1.4, made visible without blocking (ADR 0006).
+
+        A criterion that declares no control closed on ordinary evidence:
+        nothing shows its gate failing on a seeded defect. Warn once per
+        criterion and attempt, and record the finding as an observation so
+        the compliance audit can count it. Controlled criteria already need
+        a control pair; 'exempt' is a decision with a rationale. Never
+        refuses: enforcement is a deferred v8 candidate.
+        """
+        declared = {c.get('id'): c for c in
+                    self.r.contract.get('acceptance', {}).get('criteria', [])}
+        start = self.task_start_seq(task_id) or 0
+        already = {e.get('statement') for e in self.events
+                   if e.get('type') == 'observation' and
+                   e.get('seq', 0) >= start}
+        for state in states:
+            crit = declared.get(state.get('criterion')) or {}
+            # only gate-closed criteria can show a seeded-defect failure;
+            # a decided control (incl. exempt) is not this finding
+            if crit.get('control') or \
+                    'observed' not in crit.get('accepted_evidence', []):
+                continue
+            statement = ('§5.1.4 control missing: %s closed on ordinary '
+                         'evidence with no declared control (declare '
+                         'regression/discrimination, or exempt with a '
+                         'rationale)' % crit.get('id'))
+            if statement in already:
+                continue
+            sys.stderr.write('WARNING: %s\n' % statement)
+            self._append_raw('observation', {'statement': statement},
+                             actor={'kind': 'helper',
+                                    'identity': LEDGER_IDENTITY},
+                             ts=_utc_now(), trust='observed',
+                             evidence_path='contract.json',
+                             note='completion of %s (non-blocking)' % task_id)
 
     # -- delegation (v7, spec/V7_CONTRACT.md section 3) ----------------------
 
