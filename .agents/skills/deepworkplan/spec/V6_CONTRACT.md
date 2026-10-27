@@ -176,9 +176,12 @@ outcome, never a synthesized old-tree result. The old leg carries exactly
 the declared `check_artifacts` paths back to the starting-fingerprint
 worktree; the declaration is the whitelist. Because a dirty start voids every
 control on the attempt, `ledger.py start` warns when a task that owns a
-controlled criterion starts on a dirty tree; the recovery is to commit the
-work in progress and restart the task, which opens a new attempt with a
-clean starting fingerprint. D3-3 itself is unchanged (ADR 0006).
+controlled criterion starts on a dirty tree. The recovery works only
+before the fix is written: commit or set aside the unrelated work in
+progress and restart the task, which opens a new attempt with a clean
+starting fingerprint. Once the fix is in the tree, a restart puts it in the
+old leg and the pair records `non_discriminating`. D3-3 itself is unchanged
+(ADR 0006).
 
 ## 4. Validation (two halves, one contract)
 

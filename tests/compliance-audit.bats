@@ -116,3 +116,26 @@ _field() { # _field KEY -> JSON value of plans[0][KEY]
   run python3 "$AUDIT" "$WORK/missing-plan"
   [ "$status" -eq 2 ]
 }
+
+@test "the Final Review is matched by name, not by any 'final' in a task id" {
+  run python3 -c 'import sys; sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+import compliance_audit as ca
+assert ca._FINAL_REVIEW.search("T-final-review")
+assert ca._FINAL_REVIEW.search("T-qa Final Review")
+assert not ca._FINAL_REVIEW.search("T-finalize-schema Finalize the schema")
+assert not ca._FINAL_REVIEW.search("T-review Review")' "$SK/verify"
+  [ "$status" -eq 0 ]
+}
+
+@test "one unreadable plan is reported as skipped and never hides the others" {
+  mkdir -p "$WORK/plans"
+  cp -R "$PLAN" "$WORK/plans/PLAN_good"
+  cp -R "$PLAN" "$WORK/plans/PLAN_torn"
+  printf '{"schema": "https://deepworkplan.com/schema/plan-manifest/v7.json"}' > "$WORK/plans/PLAN_torn/manifest.json"
+  rm -rf "$WORK/plans/PLAN_torn/contracts" "$WORK/plans/PLAN_torn/contract.json"
+  run --separate-stderr python3 "$AUDIT" --plans-dir "$WORK/plans" --json
+  [ "$status" -eq 2 ]
+  grep -q '"plan": "PLAN_good"' <<<"$output"
+  grep -q 'unreadable' <<<"$output"
+}

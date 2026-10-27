@@ -434,3 +434,11 @@ doc['scope']['allowed_paths'] = ['src/', 'db/']
   run grep -q 'parallel_safe tasks' <<<"$output"
   [ "$status" -ne 0 ]
 }
+
+@test "shared-interface markers match whole path tokens, not substrings" {
+  _two_parallel src/protocol.py docs/schema-guide.md
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ]
+  run grep -q 'both touch shared interfaces' <<<"$output"
+  [ "$status" -ne 0 ]
+}

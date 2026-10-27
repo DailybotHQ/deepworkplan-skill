@@ -306,11 +306,26 @@ def contract_errors(doc, parents=None):
     return errors
 
 
-# Path fragments that mark a shared interface: two writers touching any of
-# them can collide semantically even when their files differ (R8, ADR 0006).
-SHARED_INTERFACE_MARKERS = ('schema', 'migration', 'generated', 'openapi',
-                            'proto', '.lock', 'lock.json', 'package.json',
-                            'pyproject.toml', 'go.mod', 'cargo.toml')
+# Path words and file names that mark a shared interface: two writers
+# touching any of them can collide semantically even when their files differ
+# (R8, ADR 0006). Words match whole path tokens (split on / . _ -), so
+# "protocol/" is not "proto"; prose files (.md, .txt, .rst) never match.
+SHARED_INTERFACE_WORDS = ('schema', 'schemas', 'migration', 'migrations',
+                          'generated', 'openapi', 'proto', 'protos')
+SHARED_INTERFACE_FILES = ('package.json', 'pyproject.toml', 'go.mod',
+                          'cargo.toml')
+
+
+def _is_shared_interface(path):
+    lowered = path.lower().rstrip('/')
+    name = lowered.rsplit('/', 1)[-1]
+    if name in SHARED_INTERFACE_FILES or name.endswith('.lock') or \
+            name.endswith('lock.json') or name.endswith('.proto'):
+        return True
+    if name.endswith(('.md', '.txt', '.rst')):
+        return False        # prose about a schema is not the schema
+    tokens = set(t for t in re.split(r'[/._-]+', lowered) if t)
+    return bool(tokens & set(SHARED_INTERFACE_WORDS))
 
 
 def _prerequisite_closure(tasks):
@@ -359,10 +374,8 @@ def parallel_overlap_warnings(doc):
                     'they can collide when run concurrently; order them or '
                     'split the surface' % (a, b, ', '.join(shared)))
                 continue
-            ia = [x for x in sa if any(m in x.lower()
-                                       for m in SHARED_INTERFACE_MARKERS)]
-            ib = [y for y in sb if any(m in y.lower()
-                                       for m in SHARED_INTERFACE_MARKERS)]
+            ia = [x for x in sa if _is_shared_interface(x)]
+            ib = [y for y in sb if _is_shared_interface(y)]
             if ia and ib:
                 warnings.append(
                     'parallel_safe tasks %s and %s both touch shared '

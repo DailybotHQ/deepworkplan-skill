@@ -77,6 +77,8 @@ _missing_observations() {
   [ "$status" -eq 0 ]
   grep -q '§5.1.4 control missing: AC-plain' <<<"$stderr"
   [ "$(_missing_observations)" -eq 1 ]
+  # the ledger reads the contract; it executed nothing, so trust is asserted
+  grep 'control missing: AC-plain' "$PLAN/journal.ndjson" | grep -q '"trust":"asserted"'
 }
 
 @test "the finding is recorded once per attempt, not on every completion call" {

@@ -23,10 +23,12 @@ Usage:
   compliance_audit.py --plans-dir DWP_PLANS_DIR [--json]
 
 Exit 0 when the audit ran (findings are data, not failures); 2 on usage
-errors or an unreadable plan.
+errors, or when a plan was unreadable (reported as skipped; the other plans
+are still audited).
 """
 import json
 import os
+import re
 import sys
 
 sys.dont_write_bytecode = True
@@ -35,6 +37,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
 import ledger  # noqa: E402  (read-side helpers only: PlanRecords, snapshot)
 
 RECORD_SCHEMAS = ('plan-manifest/v6.json', 'plan-manifest/v7.json')
+_FINAL_REVIEW = re.compile(r'final[-_ ]?review', re.IGNORECASE)
 
 
 def _read_json(path):
@@ -91,23 +94,50 @@ def audit_plan(plan_dir):
         for intent in task.get('gate_intent', []):
             owner[intent.get('criterion')] = task.get('id')
 
-    closed_ok, closed_outside, unclosed = [], [], []
-    for crit in criteria:
-        cid = crit.get('id')
-        accepted = set(crit.get('accepted_evidence') or [])
-        passing = [e for e in events
-                   if e.get('criterion') == cid and
-                   ((e.get('type') == 'gate_run' and e.get('exit_code') == 0) or
-                    (e.get('type') == 'control_pair' and
-                     e.get('verdict') == 'discriminating') or
-                    e.get('type') == 'signoff')]
-        if not passing:
-            unclosed.append(cid)
+    # "Closed" is decided exactly as the ledger decides it at completion
+    # (ledger.criterion_states: in-window gate runs, amendment-invalidated
+    # evidence excluded). A criterion with an in-window passing gate run
+    # whose trust label the criterion does not accept is "outside".
+    invalid_before = ledger.invalidated_before(events)
+    accepted_by = {c.get('id'): set(c.get('accepted_evidence') or [])
+                   for c in criteria}
+    satisfied, outside = set(), set()
+    for task in contract.get('tasks', []):
+        tid = task.get('id')
+        try:
+            states = ledger.criterion_states(contract, events, tid)
+        except ledger.LedgerError:
             continue
-        trusts = {e.get('trust') for e in passing}
-        (closed_ok if trusts & accepted else closed_outside).append(cid)
+        start = ledger.task_start_seq_of(events, tid)
+        for state in states:
+            cid = state.get('criterion')
+            if state.get('satisfied'):
+                satisfied.add(cid)
+                continue
+            if start is None:
+                continue
+            for e in events:
+                if e.get('type') == 'gate_run' and \
+                        e.get('criterion') == cid and \
+                        e.get('task') == tid and \
+                        e.get('exit_code') == 0 and \
+                        e.get('seq', 0) >= start and \
+                        e.get('seq', 0) >= invalid_before.get(cid, 0) and \
+                        e.get('trust') not in accepted_by.get(cid, set()):
+                    outside.add(cid)
+    closed_ok = [c.get('id') for c in criteria if c.get('id') in satisfied]
+    closed_outside = [c.get('id') for c in criteria
+                      if c.get('id') in outside and
+                      c.get('id') not in satisfied]
+    unclosed = [c.get('id') for c in criteria
+                if c.get('id') not in satisfied and
+                c.get('id') not in outside]
 
-    final_tasks = [tid for tid in statuses if 'final' in (tid or '')]
+    # The Final Review is named, not flagged, in a contract: match the
+    # task id or title ("T-final-review", "Final Review"), not any "final".
+    final_tasks = [t.get('id') for t in contract.get('tasks', [])
+                   if _FINAL_REVIEW.search('%s %s' % (t.get('id') or '',
+                                                     t.get('title') or ''))]
     final_review = 'completed' if any(
         statuses.get(t) == 'completed' for t in final_tasks) else (
         'missing' if not final_tasks else 'not completed')
@@ -193,6 +223,7 @@ def main(argv):
         print(__doc__)
         return 0 if plans else 2
     records = []
+    unreadable = 0
     for plan in plans:
         if not os.path.isdir(plan):
             sys.stderr.write('not a plan directory: %s\n' % plan)
@@ -200,14 +231,18 @@ def main(argv):
         try:
             records.append(audit_plan(plan))
         except (OSError, ValueError, ledger.LedgerError) as exc:
+            # one unreadable plan never hides the others' results
             sys.stderr.write('cannot read %s: %s\n' % (plan, exc))
-            return 2
+            records.append({'plan': os.path.basename(plan.rstrip('/')),
+                            'generation': None,
+                            'skipped': 'unreadable: %s' % exc})
+            unreadable += 1
     if as_json:
         print(json.dumps({'schema': 'dwp-compliance-audit/1',
                           'plans': records}, indent=1, ensure_ascii=False))
     else:
         print(_markdown(records))
-    return 0
+    return 2 if unreadable else 0
 
 
 if __name__ == '__main__':

@@ -1389,9 +1389,12 @@ class Writer:
         elif dirty:
             why = ('starting fingerprint carries a dirty component - the '
                    'old leg cannot be faithfully materialized (D3-3); '
-                   'recover by committing the work in progress and '
-                   'restarting the task (ledger.py start), which opens a '
-                   'new attempt with a clean starting fingerprint')
+                   'recovery works only before the fix is written: commit '
+                   'or set aside the unrelated work in progress, then '
+                   'restarting the task (ledger.py start) opens a new '
+                   'attempt with a clean starting fingerprint - once the '
+                   'fix is in the tree, a restart puts it in the old leg '
+                   'and the pair records non_discriminating')
         else:
             worktree = os.path.join(tempfile.mkdtemp(
                 prefix='dwp-control-'), 'old-leg')
@@ -1858,9 +1861,11 @@ class Writer:
             self._append_raw('observation', {'statement': statement},
                              actor={'kind': 'helper',
                                     'identity': LEDGER_IDENTITY},
-                             ts=_utc_now(), trust='observed',
+                             ts=_utc_now(), trust='asserted',
                              evidence_path='contract.json',
-                             note='completion of %s (non-blocking)' % task_id)
+                             note='mediated by the ledger reading the '
+                                  'contract at completion of %s '
+                                  '(non-blocking)' % task_id)
 
     # -- delegation (v7, spec/V7_CONTRACT.md section 3) ----------------------
 
