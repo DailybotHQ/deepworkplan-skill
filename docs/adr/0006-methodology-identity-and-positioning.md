@@ -24,7 +24,7 @@ A structured debate answered it. A ten-seat panel of coding agents from three pr
    The earlier wording ("durable source of truth", "version-controlled plans") was imprecise rather than false in intent. The spec glossary now names the three properties: session-durable, host-portable by export, not repo-durable.
 4. **Evolution.** No v8 for now. A 7.x hardening series makes text and code agree, with no new mandatory step, field or default:
    - micro-tier reconciliation;
-   - a control pair that works on dirty trees;
+   - a warning at task start that prevents dirty-start control voids, with the recovery named (D3-3 unchanged);
    - non-breaking §5.1.4 and `parallel_safe` warnings;
    - verbatim intent;
    - review prompts;
@@ -48,6 +48,7 @@ None of these ships until its trigger fires in a separately approved plan. Each 
 | A validated portable checkpoint for interrupted plans (logs, revision, dirty state), resumable on another machine | Changes the `.dwp/` state convention | A cold-clone recovery test at journal boundaries fails today and the checkpoint makes it pass |
 | Lighter micro and Lite plans, without the v7 contract and journal | Changes default flow behavior | The study or an opt-in usage census shows ceremony cost dominating small plans, with no loss of the guarantees the audit checks |
 | Routing that intercepts goal-shaped prompts | Reverses the explicit-invocation design | A current-version routing test shows a high miss rate on explicit planning intents **and** a low false-positive rate on ordinary edits |
+| Replay a dirty starting state: record a start snapshot at `task_start` and materialize the old leg from it, so a dirty start no longer forces `control_unavailable` | Relaxes D3-3: journals with an available old leg on a dirty start fail earlier validators | The compliance audit shows dirty-start `control_unavailable` persisting after the 7.x start warning |
 | An opt-in local usage census | New data collection (opt-in, local) | Wanted to size the triggers above, after a privacy review |
 
 ## Evidence the decision rests on, and its limits

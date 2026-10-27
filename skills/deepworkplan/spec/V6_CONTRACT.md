@@ -174,7 +174,11 @@ semantics — that limit is stated here and MUST NOT be papered over.
 records `control_unavailable` — an unavailable old leg carries no
 outcome, never a synthesized old-tree result. The old leg carries exactly
 the declared `check_artifacts` paths back to the starting-fingerprint
-worktree; the declaration is the whitelist.
+worktree; the declaration is the whitelist. Because a dirty start voids every
+control on the attempt, `ledger.py start` warns when a task that owns a
+controlled criterion starts on a dirty tree; the recovery is to commit the
+work in progress and restart the task, which opens a new attempt with a
+clean starting fingerprint. D3-3 itself is unchanged (ADR 0006).
 
 ## 4. Validation (two halves, one contract)
 

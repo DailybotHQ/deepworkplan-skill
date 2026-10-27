@@ -1281,6 +1281,15 @@ class Writer:
         root = self.repo_root()
         revision, rev_ok = self._git(['rev-parse', 'HEAD'], root)
         dirty, _dirty_ok = self._git(['status', '--porcelain'], root)
+        if dirty and rev_ok and self._controlled_criteria(task):
+            # D3-3 makes every control on a dirty-start attempt unavailable.
+            # Say so now, while committing first still fixes it (ADR 0006).
+            sys.stderr.write(
+                'WARNING: %s starts on a dirty working tree and owns a '
+                'controlled criterion (%s): every control pair on this '
+                'attempt will be control_unavailable (D3-3). Commit the '
+                'work in progress before starting.\n'
+                % (task_id, ', '.join(self._controlled_criteria(task))))
         payload = {'task': task_id,
                    'fingerprint': {'revision': revision if rev_ok
                                                   and revision else 'none',
@@ -1289,6 +1298,16 @@ class Writer:
                            actor=actor or {'kind': 'agent',
                                            'identity': 'caller'},
                            idempotent=True)
+
+    def _controlled_criteria(self, task):
+        """Criteria in the task's gate intent that declare a control pair."""
+        owned = {i.get('criterion') for i in task.get('gate_intent', [])}
+        return sorted(
+            c.get('id') for c in
+            self.r.contract.get('acceptance', {}).get('criteria', [])
+            if c.get('id') in owned and
+            (c.get('control') or {}).get('kind') in ('regression',
+                                                     'discrimination'))
 
     def run_control(self, task_id, criterion, command, artifacts,
                     timeout=600):
@@ -1369,7 +1388,10 @@ class Writer:
                    'cannot be materialized from a fingerprint alone')
         elif dirty:
             why = ('starting fingerprint carries a dirty component - the '
-                   'old leg cannot be faithfully materialized (D3-3)')
+                   'old leg cannot be faithfully materialized (D3-3); '
+                   'recover by committing the work in progress and '
+                   'restarting the task (ledger.py start), which opens a '
+                   'new attempt with a clean starting fingerprint')
         else:
             worktree = os.path.join(tempfile.mkdtemp(
                 prefix='dwp-control-'), 'old-leg')
