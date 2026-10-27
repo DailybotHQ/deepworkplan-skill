@@ -55,8 +55,11 @@ Trust records the same rationale, chooses Lite or Full, marks it ready and
 pre-approved, and returns the execute command. An explicit Full preference wins;
 an explicit Lite preference is retained only if compact records can express every
 requirement and gate. Unknown scope triggers discovery, not an automatic Full
-classification. Small planning work is a valid Lite plan; never route it to an
-inline non-DWP alternative merely because it is small.
+classification. Small but real planning work is a valid Lite plan. Micro-tier
+work (one atomic concern) follows spec §11: say a plan is disproportionate and
+offer the inline form; materialize a plan only when the developer, having been
+told, still asks — or, unattended, record the micro judgment and the inline
+alternative in the README and materialize.
 
 ## Philosophy
 
@@ -331,10 +334,17 @@ and is the substance of the plan; the mode only decides whether it is first
 reviewed before execution (guided) or handed off directly (trust).
 
 - **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
-  work warrants a plan. A trivial single-concern change is **micro** tier and is
-  a first-class Lite plan: record a concise goal, gate and Final Review rather
-  than routing the developer out of DWP. Otherwise choose `standard` or
-  `deep` and record why in the plan README. A borderline call is recorded, never asked.
+  work warrants a plan. A trivial single-concern change is **micro** tier, and
+  §11 is normative for it. **Guided (interactive):** say that a plan is
+  disproportionate and offer the inline form — goal, acceptance criteria and
+  validation gate stated in conversation, then execute, validate, commit;
+  create a plan folder only if the developer, having been told, still asks
+  (then it is a one-task Lite plan plus the Final Review). **Trust
+  (unattended):** never stop to ask and never produce nothing — record the
+  micro judgment and the inline alternative in the README and materialize the
+  plan, which the developer can discard on sight. Otherwise choose `standard`
+  or `deep` and record why in the plan README. A borderline call is recorded,
+  never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
   task** and an **observable acceptance criterion**.
