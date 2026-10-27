@@ -39,7 +39,8 @@ doc_has() {
     run grep -nF "is **micro** tier and is
   a first-class Lite plan" "$CREATE"
     [ "$status" -ne 0 ]
-    ! doc_has "$CREATE" "a first-class Lite plan: record a concise goal"
+    run doc_has "$CREATE" "a first-class Lite plan: record a concise goal"
+    [ "$status" -ne 0 ]
     # Small-but-real work keeps its protection; micro is the named §11 exception.
     doc_has "$CREATE" "Micro-tier work (one atomic concern, no real planning) is the exception, and follows spec §11"
 }

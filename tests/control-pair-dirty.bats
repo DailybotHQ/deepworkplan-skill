@@ -73,7 +73,8 @@ _control() {
 @test "a clean start on a controlled task prints no dirty-start warning" {
   run --separate-stderr python3 "$LEDGER" --plan "$PLAN" start --task "$TASK" --actor-identity tester
   [ "$status" -eq 0 ]
-  ! grep -q 'dirty working tree' <<<"$stderr"
+  run grep -q 'dirty working tree' <<<"$stderr"
+  [ "$status" -ne 0 ]
 }
 
 @test "a dirty start on a controlled task warns before any control runs" {
@@ -106,7 +107,8 @@ _control() {
   git -C "$TEST_REPO" commit -qm 'commit work in progress'
   run --separate-stderr python3 "$LEDGER" --plan "$PLAN" start --task "$TASK" --actor-identity tester
   [ "$status" -eq 0 ]
-  ! grep -q 'dirty working tree' <<<"$stderr"
+  run grep -q 'dirty working tree' <<<"$stderr"
+  [ "$status" -ne 0 ]
   _fix_and_check
   _control
   [ "$status" -eq 0 ]
