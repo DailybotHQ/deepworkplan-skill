@@ -684,7 +684,9 @@ Create:
    docs, then the `AGENTS.md` index for new top-level surface; fix misses in
    this review, rerun affected validations, and record the result in
    `SECURITY_REVIEW.md` as a "Documentation reconciliation" subsection
-   (checked → current, or the fixed list). Bounded to the plan's touched
+   (checked → current, or the fixed list); stable behavior the plan
+   established is promoted into existing tests or docs, never into a second
+   living spec. Bounded to the plan's touched
    surface — a whole-repo docs audit belongs to `/dwp-verify`; the plan does
    not close with an undocumented behavior-changing surface unless the user
    explicitly accepted the miss. **(e) Completion** — report deliverables,
@@ -787,6 +789,12 @@ documentation decisions, earned gate records, candidate validation against the
 real artifacts, and the receipt. Never let that final check depend on a
 fabricated success record of its own invocation.
 
+
+**Both formats — the how-smuggling question:** for each task, which
+implementation moves does the plan prescribe that the human did not ask for?
+Keep the ones a gate or an unattended executor genuinely needs (numbered steps
+stay legitimate for unattended work); record or drop the rest, so the plan
+fixes the observable result and its checks, not the human's unasked-for how.
 
 **For a Lite plan**, verify and fix before continuing:
 - **Requirements → tasks → gates** (Step 3.7) hold for the task records.
