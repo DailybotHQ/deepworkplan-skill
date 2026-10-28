@@ -383,3 +383,62 @@ PY
   run python3 "$LEDGER" --plan "$PLAN" start --task T-ship-validator
   [ "$status" -eq 0 ]
 }
+
+# parallel_safe semantic-overlap warning (R8, ADR 0006): warn, never refuse.
+_two_parallel() { # _two_parallel SURFACE_A SURFACE_B [chained]
+  _draft v7 "
+first, second = doc['tasks'][0], doc['tasks'][1]
+for t in (first, second):
+    t['parallel_safe'] = True
+first['touched_surface'] = ['$1']
+second['touched_surface'] = ['$2']
+second['prerequisites'] = [first['id']] if '${3:-}' == 'chained' else []
+first['prerequisites'] = []
+doc['scope']['allowed_paths'] = ['src/', 'db/']
+"
+}
+
+@test "parallel_safe siblings sharing a surface draw a warning, and validation still passes" {
+  _two_parallel src/product.py src/product.py
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ]
+  grep -q '^WARN parallel_safe tasks .* share touched surface src/product.py' <<<"$output"
+}
+
+@test "a directory surface overlapping a file inside it is a shared surface" {
+  _two_parallel src/ src/product.py
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ]
+  grep -q 'share touched surface' <<<"$output"
+}
+
+@test "disjoint parallel_safe surfaces draw no warning" {
+  _two_parallel src/a.py src/b.py
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ]
+  run grep -q 'parallel_safe tasks' <<<"$output"
+  [ "$status" -ne 0 ]
+}
+
+@test "two writers of shared interfaces draw a warning even with distinct files" {
+  _two_parallel db/migrations/001.sql src/schema.json
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ]
+  grep -q 'both touch shared interfaces' <<<"$output"
+}
+
+@test "tasks ordered by a prerequisite never run concurrently and draw no warning" {
+  _two_parallel src/product.py src/product.py chained
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ]
+  run grep -q 'parallel_safe tasks' <<<"$output"
+  [ "$status" -ne 0 ]
+}
+
+@test "shared-interface markers match whole path tokens, not substrings" {
+  _two_parallel src/protocol.py docs/schema-guide.md
+  run python3 "$CV6" validate-contract "$PLAN/draft.json"
+  [ "$status" -eq 0 ]
+  run grep -q 'both touch shared interfaces' <<<"$output"
+  [ "$status" -ne 0 ]
+}

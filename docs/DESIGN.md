@@ -218,6 +218,24 @@ reverse conversion is deliberately absent: collapsing a detailed plan would make
 state recovery and audit history ambiguous. This lets DWP structure a small
 change without making long-horizon rigor optional.
 
+## 15. Flows are invoked, not intercepted
+
+**Decision:** the pack routes only explicit planning intents (`/dwp-create`,
+"create a plan", `/dwp-resume`) into its flows. An ordinary goal-shaped
+request ("add a stats page") is built directly; it is never silently turned
+into a plan.
+
+**Why:** intercepting every goal-shaped prompt would put ceremony on micro
+work (spec §11 calls that a methodology failure) and make a harness decide
+for the developer. The cost is real and recorded: in the fresh-agent
+benchmark no agent entered the flows unaided (n = 5,
+[`evaluations/three-arm-benchmark.md`](evaluations/three-arm-benchmark.md)),
+so DWP's value depends on the developer or a planning agent invoking them.
+
+**Revisit when:** a current-version routing test shows a high miss rate on
+explicit planning intents together with a low false-positive rate on
+ordinary edits (ADR 0006, "Deferred, with triggers").
+
 ## Vendored agent skills — three dogfood copies under `.agents/skills/`
 
 This repo vendors **three** agent skills under `.agents/skills/`, all tracked

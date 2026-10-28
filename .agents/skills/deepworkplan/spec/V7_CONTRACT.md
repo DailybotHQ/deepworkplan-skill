@@ -44,6 +44,13 @@
 - Marking a task changes no authority: delegation additionally needs the
   `agent_delegation` grant (§4). A contract without the grant may still
   carry markers; they authorize nothing.
+- File non-overlap is not semantic safety. `contract_v6.py
+  validate-contract` **warns** (never refuses) when two `parallel_safe`
+  tasks that no prerequisite chain orders share a touched surface (a
+  directory covers the files inside it) or both touch shared interfaces —
+  schemas, migrations, generated artifacts, lockfiles, package manifests.
+  Resolve the warning by ordering the tasks, splitting the surface, or
+  declaring one owner (ADR 0006).
 
 ## 3. The journal: the `delegation` event
 

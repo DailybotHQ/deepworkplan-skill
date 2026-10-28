@@ -6,8 +6,9 @@ its limits.
 
 ## Why it matters
 
-The methodology's central claim is that the plan lives in the repository, not in
-a session. If that is true, a *different* agent — different vendor, different
+The methodology's central claim is that the plan lives in the repository's
+working copy, not in a session (plans are git-ignored working state; a fresh
+clone starts without them unless one is exported). If that is true, a *different* agent — different vendor, different
 model, no shared context — must be able to read `.dwp/plans/…`, the README
 checkboxes, the task logs, `state.json` and the git history, and continue
 correctly. If it is not true, the plan is just session notes.

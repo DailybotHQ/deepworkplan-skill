@@ -1281,6 +1281,15 @@ class Writer:
         root = self.repo_root()
         revision, rev_ok = self._git(['rev-parse', 'HEAD'], root)
         dirty, _dirty_ok = self._git(['status', '--porcelain'], root)
+        if dirty and rev_ok and self._controlled_criteria(task):
+            # D3-3 makes every control on a dirty-start attempt unavailable.
+            # Say so now, while committing first still fixes it (ADR 0006).
+            sys.stderr.write(
+                'WARNING: %s starts on a dirty working tree and owns a '
+                'controlled criterion (%s): every control pair on this '
+                'attempt will be control_unavailable (D3-3). Commit the '
+                'work in progress before starting.\n'
+                % (task_id, ', '.join(self._controlled_criteria(task))))
         payload = {'task': task_id,
                    'fingerprint': {'revision': revision if rev_ok
                                                   and revision else 'none',
@@ -1289,6 +1298,16 @@ class Writer:
                            actor=actor or {'kind': 'agent',
                                            'identity': 'caller'},
                            idempotent=True)
+
+    def _controlled_criteria(self, task):
+        """Criteria in the task's gate intent that declare a control pair."""
+        owned = {i.get('criterion') for i in task.get('gate_intent', [])}
+        return sorted(
+            c.get('id') for c in
+            self.r.contract.get('acceptance', {}).get('criteria', [])
+            if c.get('id') in owned and
+            (c.get('control') or {}).get('kind') in ('regression',
+                                                     'discrimination'))
 
     def run_control(self, task_id, criterion, command, artifacts,
                     timeout=600):
@@ -1369,7 +1388,13 @@ class Writer:
                    'cannot be materialized from a fingerprint alone')
         elif dirty:
             why = ('starting fingerprint carries a dirty component - the '
-                   'old leg cannot be faithfully materialized (D3-3)')
+                   'old leg cannot be faithfully materialized (D3-3); '
+                   'recovery works only before the fix is written: commit '
+                   'or set aside the unrelated work in progress, then '
+                   'restarting the task (ledger.py start) opens a new '
+                   'attempt with a clean starting fingerprint - once the '
+                   'fix is in the tree, a restart puts it in the old leg '
+                   'and the pair records non_discriminating')
         else:
             worktree = os.path.join(tempfile.mkdtemp(
                 prefix='dwp-control-'), 'old-leg')
@@ -1800,7 +1825,47 @@ class Writer:
                 'completion of %s refused: %d criterion(s) lack in-window '
                 'accepted evidence (zero-test control)' %
                 (task_id, len(missing)))
+        self._warn_undecided_controls(task_id, states)
         return states
+
+    def _warn_undecided_controls(self, task_id, states):
+        """Spec §5.1.4, made visible without blocking (ADR 0006).
+
+        A criterion that declares no control closed on ordinary evidence:
+        nothing shows its gate failing on a seeded defect. Warn once per
+        criterion and attempt, and record the finding as an observation so
+        the compliance audit can count it. Controlled criteria already need
+        a control pair; 'exempt' is a decision with a rationale. Never
+        refuses: enforcement is a deferred v8 candidate.
+        """
+        declared = {c.get('id'): c for c in
+                    self.r.contract.get('acceptance', {}).get('criteria', [])}
+        start = self.task_start_seq(task_id) or 0
+        already = {e.get('statement') for e in self.events
+                   if e.get('type') == 'observation' and
+                   e.get('seq', 0) >= start}
+        for state in states:
+            crit = declared.get(state.get('criterion')) or {}
+            # only gate-closed criteria can show a seeded-defect failure;
+            # a decided control (incl. exempt) is not this finding
+            if crit.get('control') or \
+                    'observed' not in crit.get('accepted_evidence', []):
+                continue
+            statement = ('§5.1.4 control missing: %s closed on ordinary '
+                         'evidence with no declared control (declare '
+                         'regression/discrimination, or exempt with a '
+                         'rationale)' % crit.get('id'))
+            if statement in already:
+                continue
+            sys.stderr.write('WARNING: %s\n' % statement)
+            self._append_raw('observation', {'statement': statement},
+                             actor={'kind': 'helper',
+                                    'identity': LEDGER_IDENTITY},
+                             ts=_utc_now(), trust='asserted',
+                             evidence_path='contract.json',
+                             note='mediated by the ledger reading the '
+                                  'contract at completion of %s '
+                                  '(non-blocking)' % task_id)
 
     # -- delegation (v7, spec/V7_CONTRACT.md section 3) ----------------------
 

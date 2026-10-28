@@ -55,8 +55,9 @@ Trust records the same rationale, chooses Lite or Full, marks it ready and
 pre-approved, and returns the execute command. An explicit Full preference wins;
 an explicit Lite preference is retained only if compact records can express every
 requirement and gate. Unknown scope triggers discovery, not an automatic Full
-classification. Small planning work is a valid Lite plan; never route it to an
-inline non-DWP alternative merely because it is small.
+classification. Small but real planning work is a valid Lite plan; never route it to an
+inline non-DWP alternative merely because it is small. Micro work is the §11
+exception (Step 3.1).
 
 ## Philosophy
 
@@ -184,11 +185,9 @@ materializes a **Lite plan folder** — no draft file is written.
 > **Name format:** users type names in any format; you auto-convert to
 > `snake_case` internally.
 
-> **Removed in 2.4.0:** `refined-draft`, `from-refined-draft` and its `from`
-> alias. There is no draft artifact and no `.dwp/drafts/` directory — the Lite
-> plan replaces them. If a repo still has a `.dwp/drafts/` folder from an earlier
-> version, DWP neither reads nor writes it; the developer may delete it. To build
-> a plan from an old draft's content, paste that content as the create context.
+> **Removed in 2.4.0:** `refined-draft`, `from-refined-draft` and `from`. A
+> leftover `.dwp/drafts/` is inert (spec §2); paste an old draft's content as
+> the create context.
 
 ## Modes
 
@@ -330,14 +329,16 @@ This step runs in **every** mode
 and is the substance of the plan; the mode only decides whether it is first
 reviewed before execution (guided) or handed off directly (trust).
 
-- **3.1 Proportional rigor (`../spec/DWP_SPECIFICATION.md` §11).** Confirm the
-  work warrants a plan. A trivial single-concern change is **micro** tier and is
-  a first-class Lite plan: record a concise goal, gate and Final Review rather
-  than routing the developer out of DWP. Otherwise choose `standard` or
-  `deep` and record why in the plan README. A borderline call is recorded, never asked.
+- **3.1 Proportional rigor (§11, normative).** A trivial single-concern change
+  is **micro**: guided, say a plan is disproportionate and offer the inline
+  form (a folder only if the developer, told, still asks); trust, record the
+  micro judgment and inline alternative in the README and materialize.
+  Otherwise choose `standard` or `deep` and record why; borderline calls are
+  recorded, never asked.
 - **3.2 Requirement inventory.** List every user requirement and constraint
   (from Steps 2–2.5 or the full-context input). Each one will need an **owning
-  task** and an **observable acceptance criterion**.
+  task** and an **observable acceptance criterion**. Keep the request
+  verbatim in `analysis_results/HUMAN_NOTE.md`; the approved plan binds.
 - **3.3 Task decomposition (`../spec/DWP_SPECIFICATION.md` §6.4).** One task,
   one objective: a task may perform several steps that serve its single
   granular objective, and must never bundle several objectives — prefer N
@@ -774,6 +775,8 @@ documentation decisions, earned gate records, candidate validation against the
 real artifacts, and the receipt. Never let that final check depend on a
 fabricated success record of its own invocation.
 
+
+**How-smuggling:** drop unrequested implementation moves no gate needs.
 
 **For a Lite plan**, verify and fix before continuing:
 - **Requirements → tasks → gates** (Step 3.7) hold for the task records.
