@@ -1,7 +1,7 @@
 ---
 name: deepworkplan-addon-vim
-description: Optional DeepWorkPlan addon that offers DeepWorkPlan Vim, the terminal editor for Deep Work Plan (Neovim 0.12+, its own repository DailybotHQ/deepworkplan-vim pinned at v1.0.0), as a machine-level install for the person behind a repository - a thin integrator that reads the product's own addon/surface.json (interface 1) to detect the editor, offers it (never imposes it) from onboard Phase 7b, guides the product's documented, checksum-verified install under an absolute consent gate, and validates the installed surface. Two routes - the full editor today, the Neovim plugin in v7.1. Never required, never a conformance gate, and an existing Neovim config is never overwritten without explicit consent.
-version: "7.10.0"
+description: Optional DeepWorkPlan addon that offers DeepWorkPlan Vim, the terminal editor for Deep Work Plan (Neovim 0.12+, its own repository DailybotHQ/deepworkplan-vim pinned at v1.0.1), as a machine-level install for the person behind a repository - a thin integrator that reads the product's own addon/surface.json (interface 1) to detect the editor, offers it (never imposes it) from onboard Phase 7b, guides the product's documented, checksum-verified install under an absolute consent gate, and validates the installed surface. Two routes - the full editor today, the Neovim plugin in v7.1. Never required, never a conformance gate, and an existing Neovim config is never overwritten without explicit consent.
+version: "7.10.2"
 documentation_url: https://deepworkplan.com/kit/vim
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Edit, Write
@@ -26,7 +26,7 @@ product's machine-readable surface, `addon/surface.json`, at the pinned tag
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/deepworkplan-vim` |
-| Tag | `v1.0.0` |
+| Tag | `v1.0.1` |
 | Interface | `1` (read from `addon/surface.json` → `"interface"`) |
 | Registry key | `vim` (`.dwp/config.json` → `addons.vim`) |
 
@@ -52,7 +52,7 @@ product's machine-readable surface, `addon/surface.json`, at the pinned tag
 
 ## Two routes
 
-1. **The full editor (available now, v1.0.0).** The whole DeepWorkPlan Vim
+1. **The full editor (available now, v1.0.1).** The whole DeepWorkPlan Vim
    config: command index, VS Code gestures, the read-only plan browser, the
    markdown viewer, the consent-first installer. This is what the offer
    installs.
@@ -124,7 +124,7 @@ backstop is the installer's, never the agent's judgment.
 Show the person the product's documented install at the pinned tag
 (surface `install.steps`): download `install.sh` from the tag to a local
 file, verify its SHA-256 equals the pinned `install.script.sha256` (stop on
-a mismatch), then run it with the ref pinned (`DWP_VIM_REF=v1.0.0 bash
+a mismatch), then run it with the ref pinned (`DWP_VIM_REF=v1.0.1 bash
 install.sh`) — three separate steps, never a remote-installer pipe spelled
 in this pack's text. Windows and manual paths are a tagged `git clone` then
 `lua install.lua` (Windows first `winget install Neovim.Neovim`), never

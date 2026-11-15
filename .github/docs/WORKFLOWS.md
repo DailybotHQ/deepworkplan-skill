@@ -36,7 +36,7 @@ Sequenced steps (a-i below), all in one long-running job on `ubuntu-latest`:
 | c. Bump version in all SKILL.md | Router + every sub-skill + every addon stay in lock-step; then `scripts/refresh-dogfood-skill.sh` re-syncs `.agents/skills/deepworkplan/` and its `skills-lock.json` hash (requires node; fails the run without it) so the release commit keeps the mirror byte-identical |
 | d. Prepend CHANGELOG.md section | Merged commits since last tag become bullets; a leading `## [Unreleased]` block (hand-written notes, e.g. `### Learnings`) is folded in after them and removed — without one the output is unchanged (`tests/release-changelog.bats`). Pre-releases do not fold: their section lands above the block, which the next stable release folds |
 | e. Commit `chore(release): X.Y.Z [skip ci]` | The `[skip ci]` marker prevents CI from re-running on the release commit |
-| f. Tag `vX.Y.Z` and push | With `--follow-tags` so commit + tag land atomically |
+| f. Tag `vX.Y.Z` and push | Branch first (`git push origin HEAD:main`), then the annotated tag on its own — a rejected branch push fails **before** the tag exists, so no dangling tag can block future releases. The tag push retries 5× (15s apart): a tag pushed seconds after its commit lands on protected `main` can be rejected with a bare `(failed)` while GitHub processes the commit (observed cutting 7.10.1) |
 | g. **Smoke — published tag installs (temp dir)** | Runs `npx --yes skills add https://github.com/DailybotHQ/deepworkplan-skill/tree/vX.Y.Z --skill deepworkplan --force -y` into an isolated temp directory and asserts `version:` matches. Never installs the tag over `.agents/skills/deepworkplan/` (that mirror is re-synced from this revision in step c) |
 | h. **Dogfood — dailybot** | `DailybotHQ/agent-skill` → `.agents/skills/dailybot/`. Only commits if the upstream tag moved. Non-interactive contract (`--yes` + `-y`) is mandatory — dropping either flag hangs the workflow indefinitely on the CLI's agent-picker prompt |
 | i. **Dogfood — ai-diff-reviewer** | `DailybotHQ/ai-diff-reviewer` → `.agents/skills/ai-diff-reviewer/`. Same non-interactive contract |
@@ -51,6 +51,7 @@ Sequenced steps (a-i below), all in one long-running job on `ubuntu-latest`:
 | Any `npx skills add` fails during addon dogfood | **Fails** — a broken upstream tag must never quietly ship inside a release |
 | Version-invariant mismatch after addon install (installed `SKILL.md` `version:` != requested tag) | **Fails** — refuses to commit a misrepresented dogfood snapshot |
 | Upstream `gh release view` fails for one of the two external skills (rate limit, transient outage) | **Fails** — refuses to cut a release whose dogfood snapshot cannot resolve upstream |
+| Tag push rejected | **Retried** 5× every 15s (transient propagation race after the release commit lands on protected `main`; observed cutting 7.10.1, where the same code succeeded for 7.10.0). Still rejected after ~75s → **fails**, with pointers to tag-rulesets / tag-protection settings and the `AUTOMATION_GITHUB_TOKEN` actor's ref-creation rights — the repo holds no record of a tag rule, so a persistent rejection is server-side and needs an admin |
 | Head commit already `chore(release):` OR carries `[skip release]` | Whole workflow skips (loop guard) |
 
 ### The `--yes` + `-y` non-interactive contract (critical)

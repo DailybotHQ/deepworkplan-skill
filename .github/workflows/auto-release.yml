@@ -264,7 +264,27 @@ jobs:
           # main accepted the release commit — now tag that exact commit and
           # push the tag on its own.
           git tag -a "$NEW_TAG" -m "Release ${NEW_VERSION}"
-          git push origin "refs/tags/${NEW_TAG}"
+          # A tag push seconds after its commit lands on main can be rejected
+          # with a bare "! [remote rejected] ... (failed)" — no rule name, no
+          # explanation — while GitHub finishes processing the new commit on
+          # the protected branch (observed cutting 7.10.1; 7.10.0 went
+          # through the identical code). Retry with backoff before treating
+          # it as a persistent ruleset/tag-protection rejection.
+          i=1; ok=0
+          until [ "$i" -gt 5 ]; do
+            if git push origin "refs/tags/${NEW_TAG}"; then ok=1; break; fi
+            echo "::warning::tag push attempt ${i}/5 rejected; retrying in 15s"
+            sleep 15
+            i=$((i+1))
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::git push origin refs/tags/${NEW_TAG} rejected after 5 attempts (~75s)."
+            echo "::error::If this is not a transient propagation race, check:"
+            echo "::error::  * Settings > Rules > Rulesets: any ruleset targeting tag refs (v*)"
+            echo "::error::  * Settings > Tags: tag protection patterns (e.g. v*)"
+            echo "::error::  * whether the AUTOMATION_GITHUB_TOKEN actor can create refs or is bypass-listed for those rules"
+            exit 1
+          fi
 
       - name: Smoke — prove the just-published tag installs (temp dir only)
         # Live smoke test of the just-cut tag via `npx skills add`, but into

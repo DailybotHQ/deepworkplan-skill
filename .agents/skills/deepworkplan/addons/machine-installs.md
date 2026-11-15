@@ -15,10 +15,10 @@ actually verified (`--ignore-missing` alone would pass with none).
 coding-agents-kit (`agentkit`):
 
 ```bash
-git clone --branch v1.0.1 --depth 1 https://github.com/DailybotHQ/coding-agents-kit cak
-git -C cak describe --tags --exact-match            # must print v1.0.1
-curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v1.0.1/SHA256SUMS -o cak.SHA256SUMS
-echo "de17573e57de9eeb44914189cbc1fd0b1322797cc398c710dadfecc08758db6f  cak.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
+git clone --branch v1.2.0 --depth 1 https://github.com/DailybotHQ/coding-agents-kit cak
+git -C cak describe --tags --exact-match            # must print v1.2.0
+curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v1.2.0/SHA256SUMS -o cak.SHA256SUMS
+echo "424cd430846608bc5c4a8a6bfde535ddb9e8251373160ddb8257106c38acc8de  cak.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
 (cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS)       # must exit 0
 (cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS | grep -c ': OK$')   # must print a number above 0
 ./cak/install.sh
@@ -27,10 +27,10 @@ echo "de17573e57de9eeb44914189cbc1fd0b1322797cc398c710dadfecc08758db6f  cak.SHA2
 devcontainer-kit (`devcontainer`):
 
 ```bash
-git clone --branch v1.0.1 --depth 1 https://github.com/DailybotHQ/devcontainer-kit dck
-git -C dck describe --tags --exact-match            # must print v1.0.1
-curl -fsSL https://github.com/DailybotHQ/devcontainer-kit/releases/download/v1.0.1/SHA256SUMS -o dck.SHA256SUMS
-echo "90d8ff62281c3671b1f800dd8de06ac14404069e032876648500b066419393a2  dck.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
+git clone --branch v1.1.2 --depth 1 https://github.com/DailybotHQ/devcontainer-kit dck
+git -C dck describe --tags --exact-match            # must print v1.1.2
+curl -fsSL https://github.com/DailybotHQ/devcontainer-kit/releases/download/v1.1.2/SHA256SUMS -o dck.SHA256SUMS
+echo "c7a5ffb737777473f08932f9a2de153518d923f5d7edeb4ab97fdd7537bf2374  dck.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
 (cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS)       # must exit 0
 (cd dck && shasum -a 256 -c --ignore-missing ../dck.SHA256SUMS | grep -c ': OK$')   # must print a number above 0
 ./dck/install.sh
