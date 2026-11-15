@@ -210,6 +210,40 @@ it and how the plan records it.
    changes the plan's outcome is escalated as C3 (irreducible ambiguity)
    with the debate attached as the investigation.
 
+## 6.5. Plan Loop (herdr-peers `v1.3.0` and later)
+
+The `autopilot --loop` daemon (human-started, one per server, on the
+developer's machine) keeps open Deep Work Plans running to their end. The
+addon's contribution is **registration + notification**, nothing more:
+
+1. **Registration.** `deepworkplan-execute` runs `herdr-peers lead claim
+   --plan <id>` at plan start and `deepworkplan-resume` re-claims on resume,
+   when `HERDR_ENV=1` and the addon is enabled. Best-effort and never a
+   gate: a failed claim warns once and execution continues. The daemon
+   watches only plans that have a lead record and reads each machine's
+   plans through its own stdlib report module over SSH (no remote
+   herdr-peers install or version required).
+2. **Loop semantics (owned by herdr-peers).** Completed plans are dropped;
+   C1–C7-blocked plans are left; an idle lead (5+ minutes, no lane working,
+   no open ask) receives one fixed continue prompt; a gone lead names the
+   first reachable successor (`lead takeover`; successors only in 1.3.0);
+   no-progress-after-N-nudges marks `stalled`. Every action is recorded
+   (`plan_open`, `plan_blocked`, `plan_no_lead`, `plan_stalled`).
+3. **Notifications.** `autopilot --loop --notify <command>` runs a
+   human-chosen command with a `plan-event-v1` document on stdin for the
+   four terminal/attention events (`plan_stalled`, `plan_blocked`,
+   `plan_no_lead`, `plan_completed`; fields `schema`, `event`, `plan`,
+   `machine`, `lead`, `repo_root`, `blocker_class`, `at`). This addon ships
+   `scripts/notify-dailybot.py`: one Dailybot report via the installed CLI
+   (`dailybot agent update`, agent name `deepworkplan-loop`), exit `0`
+   silently when the CLI is absent, not logged in, or the send fails — the
+   daemon's notify path never breaks. herdr-peers itself names no product.
+
+**Invariants.** The daemon is started by a human only; no agent executing a
+plan starts it. A nudge adds no authority — gates, stop conditions and
+C1–C7 escalations bind as before. Without Herdr or with the addon disabled,
+the pack behaves exactly as without this section.
+
 ## 7. Never-Block Rule
 
 No Herdr, no helper, an unknown protocol, not inside Herdr, a ledger

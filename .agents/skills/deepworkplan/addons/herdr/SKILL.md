@@ -213,6 +213,43 @@ Italian.
 Reference:
 `https://github.com/DailybotHQ/herdr-peers/blob/v1.2.2/skills/herdr-peers/autopilot.md`.
 
+## Plan loop (herdr-peers `v1.3.0` and later)
+
+`autopilot --loop` extends the same human-started daemon so open Deep Work
+Plans run to their end without the developer polling each lead:
+
+- **Registration is the pack's half.** With this addon enabled and
+  `HERDR_ENV=1`, `deepworkplan-execute` claims the plan's lead record at
+  start and `deepworkplan-resume` re-claims on resume
+  (`herdr-peers lead claim --plan <id>`, best-effort, never a gate). The
+  daemon only watches plans that have a lead record; it reads each machine's
+  plans through its own report module over SSH, so no remote herdr-peers
+  install or version is required.
+- **Behavior.** Per pass: a completed plan is dropped; a plan blocked on a
+  human-only item (C1–C7) is left alone; a lead idle 5+ minutes with no lane
+  working and no open ask gets **one fixed prompt** — continue the plan to
+  its end, respecting its gates; a gone lead names the first reachable
+  successor for `lead takeover` (successors only in 1.3.0 — appointing
+  outside the succession is a later protocol revision); repeated nudges
+  without progress mark the plan `stalled`. Every action is recorded. A
+  nudge adds **no authority**: gates, stop conditions and C1–C7 escalations
+  bind exactly as before.
+- **Notifications (`--notify`).** The daemon runs a human-chosen command
+  with a `plan-event-v1` JSON document on stdin when a plan is stalled,
+  blocked, without a lead, or completed (fields: `schema`, `event`, `plan`,
+  `machine`, `lead`, `repo_root`, `blocker_class`, `at`). herdr-peers names
+  no product, so **this addon ships the Dailybot notifier**:
+  `scripts/notify-dailybot.py` — it sends one Dailybot report when the
+  Dailybot CLI is installed and logged in, and exits `0` silently otherwise.
+  Start it as (adjust the path to the installed pack):
+
+  ```
+  herdr-peers autopilot --loop --notify .agents/skills/deepworkplan/addons/herdr/scripts/notify-dailybot.py
+  ```
+
+  The daemon is still started by a human only; an agent executing a plan
+  never starts it.
+
 ## Decision debates (the default decision mode)
 
 With this addon in use, a plan settles each **consequential decision** —

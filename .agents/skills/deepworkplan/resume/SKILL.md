@@ -216,6 +216,15 @@ pointer**, never by replaying everything.
 7. **Smoke-test before building:** run the repo's cheapest standing check (from
    `AGENTS.md` Quick Commands) to confirm the world still works before adding to
    it. A failing smoke test is investigated first.
+8. **Re-register as the plan's lead (Herdr plan loop).** When `HERDR_ENV=1`
+   and the herdr addon is enabled in `.dwp/config.json`, refresh the plan's
+   lead record with `herdr-peers lead claim --plan <plan-id>` so a
+   human-started `autopilot --loop` daemon keeps watching the plan
+   (`../../addons/herdr/SKILL.md` — "Plan loop"). Best-effort: a failed
+   claim warns once and the resume continues — never a gate. If another
+   reachable pane already leads the plan, follow the herdr-peers protocol
+   (`lead show`, `lead takeover`) instead of forcing the claim. Without
+   Herdr, skip silently; nothing else changes.
 
 ### Step 3 — Report Resumption Status
 Report, compactly: the plan's standard and pre-approval; completed `[x]` /

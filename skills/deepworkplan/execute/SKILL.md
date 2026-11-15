@@ -232,6 +232,17 @@ parallel groups (in unattended mode: use them only if the plan's guidelines say
 so; otherwise sequential). **If selected:** read [`team-agents.md`](team-agents.md)
 (this directory). Store the decision for Step 5.
 
+### Step 2.3 — Register as the plan's lead (Herdr plan loop)
+When `HERDR_ENV=1` **and** the herdr addon is enabled in `.dwp/config.json`,
+register this session as the plan's lead so a human-started
+`herdr-peers autopilot --loop` daemon can watch the plan to its end
+(`../../addons/herdr/SKILL.md` — "Plan loop"): run
+`herdr-peers lead claim --plan <plan-id>` (best-effort: a missing helper or
+a failed claim warns once and execution continues — never a gate). Without
+Herdr, or with the addon off, skip silently; nothing about the plan or its
+validation changes. The claim adds no authority: the plan's gates, stop
+conditions and C1–C7 escalations bind exactly as before.
+
 ### Step 3 — Check Current Status
 Before the first task, record each repository's starting revision and pre-existing
 working-tree changes in the plan's durable log. Preserve that review baseline

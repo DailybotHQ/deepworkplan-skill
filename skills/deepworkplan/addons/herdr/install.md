@@ -27,6 +27,21 @@ command; `herdr --skill` prints the copy matching the installed binary).
 The second installs the herdr-peers skill and its helper script. Verify:
 `herdr-peers --version` → `herdr-peers 1.2.2 (protocol 1)`.
 
+**Plan loop (herdr-peers v1.3.0 and later).** To have open Deep Work Plans
+run to their end without polling each lead, a human starts the loop daemon
+with the pack's Dailybot notifier (agents never start it):
+
+```
+herdr-peers autopilot --loop --notify .agents/skills/deepworkplan/addons/herdr/scripts/notify-dailybot.py
+```
+
+The notifier sends one Dailybot report when a plan stalls, blocks on a
+human-only item, loses its lead, or completes — and stays silent when the
+Dailybot CLI is absent or not logged in. Plans become watchable the moment
+`deepworkplan-execute` / `deepworkplan-resume` claim their lead record
+(automatic with this addon enabled and `HERDR_ENV=1`; see `SKILL.md` —
+"Plan loop").
+
 For a scoped trial in one repository without touching `$HOME` (F-10),
 install the helper skill repo-locally — drop `-g`:
 
