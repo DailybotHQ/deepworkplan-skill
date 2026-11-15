@@ -11,6 +11,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [7.10.1] — 2026-11-15
+
+### Changes
+
+- Merge pull request #89 from DailybotHQ/chore/herdr-peers-1.2.1
+- chore(addon): pin the herdr addon to herdr-peers v1.2.1
+
+
 ## [7.10.0] — 2026-10-26
 
 ### Changes
