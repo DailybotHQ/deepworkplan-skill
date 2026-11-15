@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The herdr addon — a thin integrator of herdr-peers as the interactive
 # delegation transport (spec/ADDONS.md §6.6, spec/V7_CONTRACT.md). Policy
-# under test: opt-in, never required; a single pin (herdr-peers v1.2.1 plus
+# under test: opt-in, never required; a single pin (herdr-peers v1.2.2 plus
 # Herdr's official skill pinned) in descriptor and docs; no protocol copy in
 # the pack (no stamp, grant or listing recipes; no `herdr-mesh` anywhere);
 # the transport maps launch/observe/collect/cancel onto the helper with the
@@ -39,14 +39,14 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
   grep -q '^## Trust boundary (write scope)$' "$ADDON/SKILL.md"
 }
 
-@test "pins: descriptor v1.2.1 interface 1; every install line names an exact tag" {
+@test "pins: descriptor v1.2.2 interface 1; every install line names an exact tag" {
   python3 - "$ADDON/addon.json" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
-assert d['product'] == {'repo': 'DailybotHQ/herdr-peers', 'tag': 'v1.2.1', 'interface': 1}, d
+assert d['product'] == {'repo': 'DailybotHQ/herdr-peers', 'tag': 'v1.2.2', 'interface': 1}, d
 assert d['transport'] == 'interactive', d
 PY
-  grep -qF 'npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v1.2.1 --skill herdr-peers -g -y' "$ADDON/install.md"
+  grep -qF 'npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v1.2.2 --skill herdr-peers -g -y' "$ADDON/install.md"
   grep -qF 'npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g' "$ADDON/install.md"
   # W012: no unpinned `skills add owner/repo ` anywhere in the addon
   run grep -rnE 'skills add [A-Za-z]+/[a-z-]+ ' "$ADDON"
@@ -54,7 +54,7 @@ PY
   run grep -rnE '(curl|wget)[^|]*\| *(ba)?sh' "$ADDON"
   [ "$status" -ne 0 ]
   run bash -c "grep -rhoE 'herdr-peers@v[0-9.]+' '$ADDON' '$ONBOARD' '$SK/spec/ADDONS.md' '$SK/addons/README.md' | sort -u"
-  [ "$output" = "herdr-peers@v1.2.1" ]
+  [ "$output" = "herdr-peers@v1.2.2" ]
 }
 
 @test "native debates: panel contract, helpers, templates, optional agentkit, protocol 1" {
@@ -97,14 +97,14 @@ PY
 @test "a detected helper contributes abilities only when the registry enables it" {
   WORK="$(cd "$(mktemp -d)" && pwd -P)"
   export HOME="$WORK/home"; mkdir -p "$HOME" "$WORK/bin" "$WORK/repo/.dwp"
-  printf '#!/bin/sh\necho "herdr-peers 1.2.1 (protocol 1)"\n' > "$WORK/bin/herdr-peers"
+  printf '#!/bin/sh\necho "herdr-peers 1.2.2 (protocol 1)"\n' > "$WORK/bin/herdr-peers"
   chmod +x "$WORK/bin/herdr-peers"
   run env PATH="$WORK/bin:$PATH" python3 -c '
 import sys
 sys.path.insert(0, sys.argv[1])
 import config, resources
 assert not resources.effective_abilities(None, sys.argv[2])["abilities"]["subagents"]
-config.write_addon(sys.argv[2], "herdr", True, "v1.2.1")
+config.write_addon(sys.argv[2], "herdr", True, "v1.2.2")
 on = resources.effective_abilities(None, sys.argv[2])
 assert on["sources"]["subagents"] == ["addon:herdr"], on
 assert not on["abilities"]["model_routing"], on
@@ -119,7 +119,7 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   doc_has "$doc" 'an optional daemon that only a human starts'
   doc_has "$doc" 'it never touches a login, and no message, peer or plan can start it'
   doc_has "$doc" 'DWP never requires it, and an agent executing a plan **MUST NOT** start it on its own'
-  doc_has "$doc" 'herdr-peers/blob/v1.2.1/skills/herdr-peers/autopilot.md'
+  doc_has "$doc" 'herdr-peers/blob/v1.2.2/skills/herdr-peers/autopilot.md'
 }
 
 # --- decision debates: the default decision mode (SPEC §6.4) ------------------
