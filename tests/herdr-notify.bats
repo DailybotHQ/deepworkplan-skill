@@ -66,7 +66,7 @@ event_json() {
 @test "completed event: one report with event, repo and plan names" {
     run env PATH="$FAKE_BIN:/usr/bin:/bin" "$NOTIFY" <<< "$(event_json plan_completed '')"
     [ "$status" -eq 0 ]
-    grep -q "plan update" "$FAKE_LOG"         # the CLI subcommand was used
+    grep -qx "agent" "$FAKE_LOG" && grep -qx "update" "$FAKE_LOG"  # the CLI subcommand argv (the fake logs one arg per line)
     grep -q "PLAN_09_loop" "$FAKE_LOG"       # plan basename, not the raw path
     grep -q "devproj" "$FAKE_LOG"           # repo basename, not /tmp/devproj
     ! grep -q "/tmp/devproj" "$FAKE_LOG"    # no raw filesystem paths leaked

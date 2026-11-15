@@ -30,7 +30,9 @@ import sys
 
 SCHEMA = "plan-event-v1"
 AGENT_NAME = "deepworkplan-loop"
-SEND_TIMEOUT_SECONDS = 30
+# The daemon runs this command without a shell under a 20 s timeout; stay
+# below it so the script exits 0 by itself instead of being killed.
+SEND_TIMEOUT_SECONDS = 15
 
 # Human-readable summary per event class. Placeholders: plan, repo, machine,
 # lead, blocker. Kept short on purpose — this is a notification, not a report.

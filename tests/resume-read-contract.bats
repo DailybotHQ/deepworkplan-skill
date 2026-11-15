@@ -144,12 +144,14 @@ setup() {
     # migration detail all live in the gated resume/v6.md (loaded only for
     # v6 plans), and the entry's own duplication was compressed first
     # (~120 B). What remained was the gate itself, so the bound moved again;
-    # headroom stays small for the same tripwire.
+    # headroom stays small for the same tripwire. The v7.11 loop entry
+    # (lead re-claim with --succession) was likewise compressed to a
+    # pointer first; the bound moved 32,000 -> 32,200 for what remained.
     run bash "$REPO_ROOT/tests/efficiency/measure-instruction-load.sh" "$REPO_ROOT"
     [ "$status" -eq 0 ]
     bytes="$(printf '%s' "$output" | awk '/^resume /{print $2}')"
     [ -n "$bytes" ]
-    [ "$bytes" -le 32000 ]
+    [ "$bytes" -le 32200 ]
 }
 
 # Sentence-level assertion that tolerates the source file's own line wrapping:

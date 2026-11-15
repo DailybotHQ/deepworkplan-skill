@@ -217,12 +217,13 @@ developer's machine) keeps open Deep Work Plans running to their end. The
 addon's contribution is **registration + notification**, nothing more:
 
 1. **Registration.** `deepworkplan-execute` runs `herdr-peers lead claim
-   --plan <id>` at plan start and `deepworkplan-resume` re-claims on resume,
-   when `HERDR_ENV=1` and the addon is enabled. Best-effort and never a
-   gate: a failed claim warns once and execution continues. The daemon
-   watches only plans that have a lead record and reads each machine's
-   plans through its own stdlib report module over SSH (no remote
-   herdr-peers install or version required).
+   --plan <id>` at plan start and `deepworkplan-resume` re-claims on resume
+   — adding `--succession <…>` when the plan names successors (failover
+   works only for a recorded succession) — when `HERDR_ENV=1` and the addon
+   is enabled. Best-effort and never a gate: a failed claim warns once and
+   execution continues. The daemon watches only plans that have a lead
+   record and reads each machine's plans through its own stdlib report
+   module over SSH (no remote herdr-peers install or version required).
 2. **Loop semantics (owned by herdr-peers).** Completed plans are dropped;
    C1–C7-blocked plans are left; an idle lead (5+ minutes, no lane working,
    no open ask) receives one fixed continue prompt; a gone lead names the
@@ -233,7 +234,9 @@ addon's contribution is **registration + notification**, nothing more:
    human-chosen command with a `plan-event-v1` document on stdin for the
    four terminal/attention events (`plan_stalled`, `plan_blocked`,
    `plan_no_lead`, `plan_completed`; fields `schema`, `event`, `plan`,
-   `machine`, `lead`, `repo_root`, `blocker_class`, `at`). This addon ships
+   `machine`, `lead`, `repo_root`, `blocker_class`, `at`; the command runs
+   without a shell under a 20 s timeout and must exit 0 quietly when it
+   cannot report). This addon ships
    `scripts/notify-dailybot.py`: one Dailybot report via the installed CLI
    (`dailybot agent update`, agent name `deepworkplan-loop`), exit `0`
    silently when the CLI is absent, not logged in, or the send fails — the

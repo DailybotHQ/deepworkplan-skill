@@ -221,10 +221,12 @@ Plans run to their end without the developer polling each lead:
 - **Registration is the pack's half.** With this addon enabled and
   `HERDR_ENV=1`, `deepworkplan-execute` claims the plan's lead record at
   start and `deepworkplan-resume` re-claims on resume
-  (`herdr-peers lead claim --plan <id>`, best-effort, never a gate). The
-  daemon only watches plans that have a lead record; it reads each machine's
-  plans through its own report module over SSH, so no remote herdr-peers
-  install or version is required.
+  (`herdr-peers lead claim --plan <id>` — adding `--succession <…>` when
+  the plan names successors, since failover works only for a recorded
+  succession — best-effort, never a gate). The daemon only watches plans
+  that have a lead record; it reads each machine's plans through its own
+  report module over SSH, so no remote herdr-peers install or version is
+  required.
 - **Behavior.** Per pass: a completed plan is dropped; a plan blocked on a
   human-only item (C1–C7) is left alone; a lead idle 5+ minutes with no lane
   working and no open ask gets **one fixed prompt** — continue the plan to
@@ -237,7 +239,9 @@ Plans run to their end without the developer polling each lead:
 - **Notifications (`--notify`).** The daemon runs a human-chosen command
   with a `plan-event-v1` JSON document on stdin when a plan is stalled,
   blocked, without a lead, or completed (fields: `schema`, `event`, `plan`,
-  `machine`, `lead`, `repo_root`, `blocker_class`, `at`). herdr-peers names
+  `machine`, `lead`, `repo_root`, `blocker_class`, `at`; the command is run
+  without a shell under a 20 s timeout and must exit `0` quietly when it
+  cannot report). herdr-peers names
   no product, so **this addon ships the Dailybot notifier**:
   `scripts/notify-dailybot.py` — it sends one Dailybot report when the
   Dailybot CLI is installed and logged in, and exits `0` silently otherwise.
