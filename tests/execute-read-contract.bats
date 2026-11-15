@@ -109,12 +109,14 @@ setup() {
 @test "declared execute bundle is materially below v5.1.0 and v2.17.1" {
     # v5.1.0 declared 85,016 B; v2.17.1 declared 142,506 B. The bound has
     # headroom below the v5.1.0 number so an accidental re-added essential
-    # companion (any guide/spec .md) trips it.
+    # companion (any guide/spec .md) trips it. The v7.11 herdr plan-loop
+    # trigger bullet (one conditional resource entry, ~0.2 kB) moved the
+    # deliberate floor from 55,000 to 55,600 — still 34% below v5.1.0.
     run bash "$REPO_ROOT/tests/efficiency/measure-instruction-load.sh" "$REPO_ROOT"
     [ "$status" -eq 0 ]
     bytes="$(printf '%s' "$output" | awk '/^execute /{print $2}')"
     [ -n "$bytes" ]
-    [ "$bytes" -le 55000 ]
+    [ "$bytes" -le 55600 ]
 }
 
 # Sentence-level assertion that tolerates the source file's own line wrapping:

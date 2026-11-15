@@ -33,7 +33,7 @@ teardown() {
 }
 
 event_json() {
-    printf '%s' "{\"schema\":\"plan-event-v1\",\"event\":\"$1\",\"plan\":\"/x/proj/.dwp/plans/PLAN_09_loop\",\"machine\":\"local\",\"lead\":\"local:wP:p2J\",\"repo_root\":\"/Users/dev/proj\",\"blocker_class\":\"$2\",\"at\":\"2026-11-15T18:00:00Z\"}"
+    printf '%s' "{\"schema\":\"plan-event-v1\",\"event\":\"$1\",\"plan\":\"/x/proj/.dwp/plans/PLAN_09_loop\",\"machine\":\"local\",\"lead\":\"local:wP:p2J\",\"repo_root\":\"/tmp/devproj\",\"blocker_class\":\"$2\",\"at\":\"2026-11-15T18:00:00Z\"}"
 }
 
 @test "valid event with no dailybot CLI: exit 0, silent" {
@@ -68,8 +68,8 @@ event_json() {
     [ "$status" -eq 0 ]
     grep -q "plan update" "$FAKE_LOG"         # the CLI subcommand was used
     grep -q "PLAN_09_loop" "$FAKE_LOG"       # plan basename, not the raw path
-    grep -q "proj" "$FAKE_LOG"               # repo basename, not /Users/dev/proj
-    ! grep -q "/Users/dev/proj" "$FAKE_LOG"  # no raw filesystem paths leaked
+    grep -q "devproj" "$FAKE_LOG"           # repo basename, not /tmp/devproj
+    ! grep -q "/tmp/devproj" "$FAKE_LOG"    # no raw filesystem paths leaked
     grep -q "deepworkplan-loop" "$FAKE_LOG"  # agent name
 }
 
