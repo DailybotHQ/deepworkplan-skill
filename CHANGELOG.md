@@ -11,6 +11,17 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [7.10.2] — 2026-11-15
+
+### Changes
+
+- Merge pull request #90 from DailybotHQ/ci/auto-release-tag-push
+- chore(addon): bump the herdr pin to herdr-peers v1.2.2
+- fix(addon): move the addon test pin constants with the ecosystem bump
+- chore(addon): bump ecosystem pins (agentkit v1.2.0, vim v1.0.1, devcontainer v1.1.2)
+- fix(ci): retry the release tag push to absorb transient rejections
+
+
 ## [7.10.1] — 2026-11-15
 
 ### Changes
