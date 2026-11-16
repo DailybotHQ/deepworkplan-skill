@@ -37,11 +37,19 @@ JOURNAL_SCHEMA_URL = 'https://deepworkplan.com/schema/journal-event/v6.json'
 # carry exactly its generation's journal URL (mixed generations refused).
 CONTRACT_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/plan-contract/v7.json'
 JOURNAL_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/journal-event/v7.json'
-CONTRACT_GENERATIONS = {CONTRACT_SCHEMA_URL: 'v6', CONTRACT_SCHEMA_URL_V7: 'v7'}
+CONTRACT_SCHEMA_URL_V8 = 'https://deepworkplan.com/schema/plan-contract/v8.json'
+
+# The v8 generation (spec/LOOP_ENGINEERING.md) adds one optional top-level
+# `autonomy` block to v7 — the plan's recorded authority for the loop. The
+# journal-event set is unchanged: v8 events are v7 events.
+CONTRACT_GENERATIONS = {CONTRACT_SCHEMA_URL: 'v6', CONTRACT_SCHEMA_URL_V7: 'v7',
+                        CONTRACT_SCHEMA_URL_V8: 'v8'}
 JOURNAL_GENERATIONS = {JOURNAL_SCHEMA_URL: 'v6', JOURNAL_SCHEMA_URL_V7: 'v7'}
-JOURNAL_URL_BY_GENERATION = {'v6': JOURNAL_SCHEMA_URL, 'v7': JOURNAL_SCHEMA_URL_V7}
+JOURNAL_URL_BY_GENERATION = {'v6': JOURNAL_SCHEMA_URL, 'v7': JOURNAL_SCHEMA_URL_V7,
+                              'v8': JOURNAL_SCHEMA_URL_V7}
 CONTRACT_URL_BY_GENERATION = {'v6': CONTRACT_SCHEMA_URL,
-                              'v7': CONTRACT_SCHEMA_URL_V7}
+                              'v7': CONTRACT_SCHEMA_URL_V7,
+                              'v8': CONTRACT_SCHEMA_URL_V8}
 
 # v7 delegation (spec/V7_CONTRACT.md section 3; ecosystem contract 2.5).
 DELEGATION_TRANSPORTS = ('headless', 'interactive')
@@ -206,6 +214,52 @@ def _closed(obj, known, path, errors):
 
 # ---------------------------------------------------------------- contract
 
+# v8 autonomy block (spec/LOOP_ENGINEERING.md): the plan's recorded
+# authority for the loop. Closed keys; every default is the conservative one.
+AUTONOMY_KEYS = ('stall_budget', 'promptable', 'notify', 'brain', 'queue')
+AUTONOMY_NOTIFY_TARGETS = ('dailybot',)
+AUTONOMY_QUEUE_STARTS = ('prompt-lead', 'launch', 'none')
+PANE_ADDRESS = re.compile(r'^(local|[A-Za-z0-9._-]{1,64}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$')
+
+
+def autonomy_errors(doc):
+    """Errors in the optional v8 `autonomy` block; empty means valid (or
+    absent — the block is optional and its defaults are conservative)."""
+    block = doc.get('autonomy')
+    if block is None:
+        return []
+    if not isinstance(block, dict):
+        return ['autonomy: expected an object']
+    errors = []
+    _closed(block, set(AUTONOMY_KEYS), 'autonomy', errors)
+    budget = block.get('stall_budget')
+    if 'stall_budget' in block and (not isinstance(budget, int) or isinstance(budget, bool)
+                                    or not 1 <= budget <= 10):
+        errors.append('autonomy.stall_budget: an integer from 1 to 10 loop prompts')
+    promptable = block.get('promptable')
+    if 'promptable' in block:
+        if not isinstance(promptable, list) or not promptable:
+            errors.append('autonomy.promptable: a non-empty list of pane addresses')
+        else:
+            for addr in promptable:
+                if not isinstance(addr, str) or not PANE_ADDRESS.match(addr):
+                    errors.append('autonomy.promptable: %r is not a pane address' % (addr,))
+    notify = block.get('notify')
+    if 'notify' in block:
+        if not isinstance(notify, list) or not notify:
+            errors.append('autonomy.notify: a non-empty list of targets')
+        else:
+            for target in notify:
+                if target not in AUTONOMY_NOTIFY_TARGETS:
+                    errors.append('autonomy.notify: unknown target %r' % (target,))
+    if 'brain' in block and not isinstance(block['brain'], bool):
+        errors.append('autonomy.brain: a boolean (may a brain act on this plan)')
+    queue = block.get('queue')
+    if 'queue' in block and queue not in AUTONOMY_QUEUE_STARTS:
+        errors.append('autonomy.queue: one of %s' % ', '.join(AUTONOMY_QUEUE_STARTS))
+    return errors
+
+
 def contract_errors(doc, parents=None):
     """All validation errors for one v6 contract document.
 
@@ -216,12 +270,19 @@ def contract_errors(doc, parents=None):
     errors = []
     if not isinstance(doc, dict):
         return ['contract: expected a JSON object']
-    _closed(doc, {'schema', 'spec_version', 'plan', 'revision',
-                  'contract_id', 'parent_contract_id', 'created_at', 'title',
-                  'outcome', 'acceptance', 'invariants', 'scope',
-                  'authorization', 'permissions', 'dependencies',
-                  'resource_envelope', 'scheduling', 'tasks'}, 'contract',
-            errors)
+    generation = contract_generation(doc)
+    allowed = {'schema', 'spec_version', 'plan', 'revision',
+               'contract_id', 'parent_contract_id', 'created_at', 'title',
+               'outcome', 'acceptance', 'invariants', 'scope',
+               'authorization', 'permissions', 'dependencies',
+               'resource_envelope', 'scheduling', 'tasks'}
+    if generation == 'v8':
+        allowed.add('autonomy')
+    _closed(doc, allowed, 'contract', errors)
+    if 'autonomy' in doc and generation != 'v8':
+        errors.append('contract.autonomy: only the v8 generation carries the '
+                      'autonomy block (generations never mix)')
+    errors.extend(autonomy_errors(doc))
     declared = doc.get('schema')
     if declared not in CONTRACT_GENERATIONS:
         # Mixed-era refusal (section 9.1): v5 and older documents keep their
