@@ -179,3 +179,14 @@ PY
   run _valid "$WORK/nl.json"
   [ "$status" -ne 0 ]
 }
+
+@test "review of #99: appointment is consistent, the queue rule is readiness, links follow the pin, the router names Lite and Full" {
+  c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+  c "$SPEC" 'The daemon MUST NOT write the lead record. A peer outside the recorded succession MAY become lead only through Appointment below, by its own takeover, never by the daemon.'
+  ! c "$SPEC" 'or appoint a peer outside the recorded succession'
+  c "$SPEC" 'When a queued item is ready (its `after` plan is completed, or it has none)'
+  c "$SPEC" 'The daemon MAY read the queue and MUST NOT write it.'
+  tag="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["product"]["tag"])' "$SK/addons/herdr/addon.json")"
+  ! grep -o 'herdr-peers/blob/v[0-9.]*' "$SPEC" | grep -v "blob/$tag\$"
+  c "$SK/SKILL.md" 'Deep Work Plans are Lite (bounded work) or Full (task files, longer work).'
+}
