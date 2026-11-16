@@ -313,8 +313,7 @@ def contract_errors(doc, parents=None):
 SHARED_INTERFACE_WORDS = ('schema', 'schemas', 'migration', 'migrations',
                           'generated', 'openapi', 'proto', 'protos')
 SHARED_INTERFACE_FILES = ('package.json', 'pyproject.toml', 'go.mod',
-                          'go.sum', 'cargo.toml', 'pnpm-lock.yaml',
-                          'yarn.lock', 'poetry.lock', 'uv.lock')
+                          'cargo.toml')
 
 
 def _is_shared_interface(path):

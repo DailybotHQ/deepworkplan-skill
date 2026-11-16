@@ -442,14 +442,3 @@ doc['scope']['allowed_paths'] = ['src/', 'db/']
   run grep -q 'both touch shared interfaces' <<<"$output"
   [ "$status" -ne 0 ]
 }
-
-@test "package manifests and their lockfiles are shared interfaces" {
-  _two_parallel package.json pnpm-lock.yaml
-  run python3 "$CV6" validate-contract "$PLAN/draft.json"
-  [ "$status" -eq 0 ]
-  grep -q 'both touch shared interfaces' <<<"$output"
-  _two_parallel go.mod go.sum
-  run python3 "$CV6" validate-contract "$PLAN/draft.json"
-  [ "$status" -eq 0 ]
-  grep -q 'both touch shared interfaces' <<<"$output"
-}

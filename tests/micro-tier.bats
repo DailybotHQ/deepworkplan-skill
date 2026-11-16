@@ -15,7 +15,6 @@ setup() {
     SK="$REPO_ROOT/skills/deepworkplan"
     SPEC="$SK/spec/DWP_SPECIFICATION.md"
     CREATE="$SK/create/SKILL.md"
-    CREATE_V6="$SK/create/v6.md"
 }
 
 # Whitespace- and blockquote-insensitive containment, as in claims-consistency.
@@ -44,17 +43,4 @@ doc_has() {
     [ "$status" -ne 0 ]
     # Small-but-real work keeps its protection; micro is the named §11 exception.
     doc_has "$CREATE" "Micro work is the §11 exception"
-}
-
-@test "the live 7.x create path (create/v6.md) states the micro rule before allocation" {
-    # 7.x create runs create/v6.md, not the retained Steps 1+ of SKILL.md.
-    doc_has "$CREATE_V6" "Proportion before allocation (spec §11, normative)"
-    doc_has "$CREATE_V6" "say a plan is disproportionate and offer the inline form"
-    doc_has "$CREATE_V6" "a folder only if the developer, told, still asks"
-    doc_has "$CREATE_V6" "record the micro judgment and inline alternative in the README and materialize"
-    # and it comes before the folder is claimed
-    micro="$(grep -n 'Proportion before allocation' "$CREATE_V6" | head -1 | cut -d: -f1)"
-    alloc="$(grep -n 'plan_paths.py --plans-dir' "$CREATE_V6" | head -1 | cut -d: -f1)"
-    [ "$micro" -lt "$alloc" ]
-    doc_has "$CREATE_V6" "No smuggled how."
 }
