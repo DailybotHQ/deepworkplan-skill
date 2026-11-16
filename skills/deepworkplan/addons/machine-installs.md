@@ -44,7 +44,7 @@ repository-local `dck-dockerfile` skill at the same tag
 **herdr-peers** (host): the pinned skill installs in
 `herdr/install.md`; `dck setup` also installs a verified
 herdr-peers on the host. Verify with `herdr-peers --version`
-(`(protocol 1)`).
+(`(protocol N)` — the descriptor names the accepted majors).
 
 **DeepWorkPlan Vim:** the product's own checksum-verified installer under
 its consent gate (`vim/SKILL.md`); an existing Neovim config is

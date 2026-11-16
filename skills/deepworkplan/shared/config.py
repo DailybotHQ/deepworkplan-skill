@@ -481,9 +481,15 @@ def descriptor_errors(doc: Any, dirname: Optional[str] = None) -> List[str]:
                 errs.append('product.repo is not owner/name')
             if not isinstance(prod.get('tag'), str) or not VERSION_RE.match(prod['tag']):
                 errs.append('product.tag is not an exact tag')
-            if 'interface' in prod and (type(prod['interface']) is not int
-                                        or prod['interface'] < 1):
-                errs.append('product.interface is not an integer >= 1')
+            if 'interface' in prod:
+                iface = prod['interface']
+                ok = (type(iface) is int and iface >= 1) or (
+                    isinstance(iface, list) and iface
+                    and all(type(v) is int and v >= 1 for v in iface)
+                    and len(set(iface)) == len(iface))
+                if not ok:
+                    errs.append('product.interface is not an integer >= 1 or '
+                                'a list of them')
     if 'detect' in doc:
         det = doc['detect']
         if not isinstance(det, dict):

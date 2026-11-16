@@ -524,11 +524,13 @@ def addon_status(key, repo_root=None, addons_dir=None, timeout=DETECT_TIMEOUT_S)
     spec = det.get('interface_from')
     found = _read_interface(spec, stdout) if spec else None
     verdict['interface'] = found
+    accepted = pinned if isinstance(pinned, list) else [pinned]
     if found is None:
         verdict['reason'] = 'interface unreadable; treated as not available'
-    elif found != pinned:
-        verdict['reason'] = ('unknown interface major %d (pinned %d); treated '
-                             'as not available' % (found, pinned))
+    elif found not in accepted:
+        verdict['reason'] = ('unknown interface major %d (accepted %s); '
+                             'treated as not available'
+                             % (found, '/'.join(str(a) for a in accepted)))
     else:
         verdict['compatible'] = True
     return verdict

@@ -38,9 +38,22 @@
           "pattern": "^v\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.]+)?$"
         },
         "interface": {
-          "type": "integer",
-          "minimum": 1,
-          "description": "The product interface major the integrator speaks (ecosystem contract section 2.0). Omitted for products that publish no interface integer; their compatibility is decided by the pinned tag alone."
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          ],
+          "description": "The product interface major(s) this addon accepts. Protocol generations are additive: herdr-peers 2.0.0 (protocol 2) keeps the protocol-1 surface, so the herdr descriptor accepts [1, 2]."
         }
       }
     },

@@ -11,7 +11,7 @@ briefs, rounds, ballots, counting, the lead's contract — is herdr-peers'
 1. `python3 ../shared/config.py show --plan <dir>` resolves
    `decisions.debate` to `auto` and lists `herdr` enabled.
 2. `printenv HERDR_ENV` is `1`, and `herdr-peers --version` reports
-   `1.1.0` or later on `(protocol 1)` — `1.0.x` has no debates.
+   `1.1.0` or later on protocol 1 or 2 — `1.0.x` has no debates.
 3. The contract grants `agent_delegation`, and
    `python3 ../shared/resources.py --plan <dir> abilities` lists
    `addon:herdr` as a `subagents` source.

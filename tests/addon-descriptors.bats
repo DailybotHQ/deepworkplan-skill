@@ -70,10 +70,12 @@ for key in os.listdir(root):
         assert tag.match(doc['product']['tag']), (key, doc)
     else:
         assert 'product' not in doc, (key, doc)
-# the four ecosystem products publish an interface integer (contract
-# section 2.0): 1, except devcontainer-kit, which moved to 2 at v0.2.0
-# (per-repository Dockerfile, config schema v2)
-expected = {'agentkit': 1, 'herdr': 1, 'devcontainer': 2, 'vim': 1}
+# the four ecosystem products publish an interface: an integer (contract
+# section 2.0) or, when the product kept an older protocol's surface
+# additive, a list of accepted majors (herdr-peers 2.0.0 kept protocol 1,
+# so the herdr descriptor accepts [1, 2] — a repo with either release
+# contributes the abilities instead of silently losing them)
+expected = {'agentkit': 1, 'herdr': [1, 2], 'devcontainer': 2, 'vim': 1}
 for key, iface in expected.items():
     doc = json.load(open(os.path.join(root, key, 'addon.json')))
     assert doc['product'].get('interface') == iface, (key, doc)
@@ -101,6 +103,6 @@ for f in sys.argv[1:]:
 
 @test "spec: ADDONS.md §7 documents the descriptor and the shipped table" {
   grep -q '^## 7\. Addon Descriptors (`addon.json`)$' "$SK/spec/ADDONS.md"
-  grep -qF '| `herdr` | `DailybotHQ/herdr-peers` `v1.3.1`, interface 1 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |' "$SK/spec/ADDONS.md"
+  grep -qF '| `herdr` | `DailybotHQ/herdr-peers` `v2.0.0`, interface 1 or 2 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |' "$SK/spec/ADDONS.md"
   grep -qF '"$id": "https://deepworkplan.com/schema/addon-descriptor/v1.json"' "$SK/spec/schema/addon-descriptor-v1.schema.json"
 }

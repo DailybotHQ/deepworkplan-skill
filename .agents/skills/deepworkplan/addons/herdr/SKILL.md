@@ -1,6 +1,6 @@
 ---
 name: deepworkplan-addon-herdr
-description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v1.3.1, protocol 1) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
+description: Optional DeepWorkPlan addon that integrates herdr-peers (DailybotHQ/herdr-peers pinned at v2.0.0, protocol 1 or 2) as the interactive delegation transport - a thin integrator that detects the herdr-peers helper, offers it (never imposes it) from onboard Phase 7b, documents the pinned skill installs (herdr-peers and Herdr's official skill), records the acceptance in the .dwp/config.json addon registry, and maps a v7 plan's delegation operations onto one herdr-peers ask to a peer pane on any machine, with every delegation recorded in the plan journal. The message protocol lives in herdr-peers, never here. Never required, never a conformance gate.
 version: "7.12.1"
 documentation_url: https://deepworkplan.com/kit/herdr
 user-invocable: true
@@ -26,8 +26,8 @@ the install lines, the transport mapping and the journaling rule.
 | Pin | Value |
 |-----|-------|
 | Product | `DailybotHQ/herdr-peers` |
-| Tag | `v1.3.1` (protocol 1 unchanged; native debates since `v1.1.0`, the optional autopilot since `v1.2.0`; the first stable release, `v1.0.0`, committed the interface to semantic versioning) |
-| Interface | `1` (`herdr-peers --version` → `(protocol 1)`; `metadata.protocol: 1` in its `SKILL.md`) |
+| Tag | `v2.0.0` (protocols 1 and 2 accepted; the loop since `v1.3.0` and lead appointment, the brain and the plan-queue consumer since `v2.0.0`; native debates since `v1.1.0`, the optional autopilot since `v1.2.0`; the first stable release, `v1.0.0`, committed the interface to semantic versioning) |
+| Interface | `1` or `2` (`herdr-peers --version` → `(protocol N)`; `metadata.protocol: N` in its `SKILL.md`; protocol 2 is additive — every protocol-1 surface is intact) |
 | Depends on | Herdr's official skill, pinned `herdrdev/herdr@v0.9.3` |
 | Registry key | `herdr` (`.dwp/config.json` → `addons.herdr`) |
 | Transport | `interactive` — provides `subagents`, `cancel_children`; requires the `agent_delegation` grant |
@@ -73,7 +73,7 @@ the install lines, the transport mapping and the journaling rule.
 ### Step 0 — Detect (read-only)
 
 `command -v herdr` and `command -v herdr-peers`; `herdr-peers --version`
-must report `(protocol 1)` — anything else is one warning and "not
+must report `(protocol 1)` or `(protocol 2)` — anything else is one warning and "not
 available". Inside Herdr, `HERDR_ENV=1` is set; outside it, the transport is
 not usable in this session (record it, continue sequentially).
 
@@ -97,7 +97,7 @@ its own documented paths, never a piped installer.
 
 ### Step 3 — Record
 
-`python3 ../../shared/config.py enable herdr --version v1.3.1 --repo <repo>`.
+`python3 ../../shared/config.py enable herdr --version v2.0.0 --repo <repo>`.
 Enabling grants nothing: delegation still needs the plan's grant.
 
 ### Step 4 — Transport (during execute)
@@ -207,13 +207,13 @@ enabled Herdr machine, accepts the recommended option on a waiting question
 or approval screen, and tells an agent that stopped to ask to continue; it
 never touches a login, and no message, peer or plan can start it. DWP never
 requires it, and an agent executing a plan **MUST NOT** start it on its own.
-As of v1.3.1 it also answers a question shown with a preview beside its
+As of v1.2.2 it also answers a question shown with a preview beside its
 options, and recognises the recommended mark in Spanish, French, German and
 Italian.
 Reference:
-`https://github.com/DailybotHQ/herdr-peers/blob/v1.3.1/skills/herdr-peers/autopilot.md`.
+`https://github.com/DailybotHQ/herdr-peers/blob/v2.0.0/skills/herdr-peers/autopilot.md`.
 
-## Plan loop (herdr-peers `v1.3.1` and later)
+## Plan loop (herdr-peers `v1.3.0` and later)
 
 `autopilot --loop` extends the same human-started daemon so open Deep Work
 Plans run to their end without the developer polling each lead:
@@ -288,7 +288,7 @@ cross-cutting, settled by nothing in the repository — through a herdr-peers
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol copy ships here.
-2. The descriptor pins `DailybotHQ/herdr-peers` `v1.3.1`, interface 1,
+2. The descriptor pins `DailybotHQ/herdr-peers` `v2.0.0`, interface 1 or 2,
    transport `interactive`.
 3. Every install line names an exact tag.
 4. The registry entry exists only after acceptance.
