@@ -46,7 +46,7 @@ recipes — those drift; the pinned skill is the single source.
 ## 4. Detection
 
 - Read-only: `command -v herdr`, `command -v herdr-peers`,
-  `herdr-peers --version` (expect `herdr-peers 2.0.0 (protocol 2)`).
+  `herdr-peers --version` (expect `herdr-peers 2.0.0 (protocol 2)`; a protocol-1 release also satisfies the descriptor — the accepted set is [1, 2]).
 - A protocol other than `1` **MUST** be one warning and "not available".
 - The transport is usable only inside Herdr (`HERDR_ENV=1`); outside it the
   addon is installed but not usable in that session — recorded, not an
@@ -259,7 +259,7 @@ Nothing blocks `onboard`, `create`, `execute` or `verify`.
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol file ships in this folder.
 2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v2.0.0`,
-   interface 1, transport `interactive`.
+   interface 1 or 2 (the descriptor's accepted list), transport `interactive`.
 3. Every install line pins a tag; no pipeline text.
 4. The registry entry exists only after acceptance.
 5. Every delegation: journal record before the ask; depth 1; result gated

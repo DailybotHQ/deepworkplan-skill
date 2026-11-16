@@ -48,11 +48,13 @@ A descriptor's `detect` is read-only:
 
 ## 3. Interface compatibility
 
-When the descriptor pins `product.interface`, the integer the product
-reports MUST equal it. The value is read by `detect.interface_from`:
+When the descriptor pins `product.interface` — an integer, or a list of
+integers when the product kept an older protocol's surface additive
+(herdr-peers 2.0.0 kept protocol 1, so its descriptor accepts `[1, 2]`) —
+the major the product reports MUST be a member of the pinned set. The value is read by `detect.interface_from`:
 `json:<field>` (the command's stdout is one JSON object, e.g. `ak doctor
 --json` → `"interface": 1`), `regex:<pattern>` (first group, e.g.
-`herdr-peers --version` → `(protocol 1)`), or `file-json:<path>#<field>`
+`herdr-peers --version` → `(protocol N)`), or `file-json:<path>#<field>`
 (e.g. the editor's `addon/surface.json`). An unreadable value or a
 different major is "not available" with one warning — the integrator
 refuses a product it cannot speak to rather than guess. A product that

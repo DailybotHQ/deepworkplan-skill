@@ -27,7 +27,7 @@ the install lines, the transport mapping and the journaling rule.
 |-----|-------|
 | Product | `DailybotHQ/herdr-peers` |
 | Tag | `v2.0.0` (protocols 1 and 2 accepted; the loop since `v1.3.0` and lead appointment, the brain and the plan-queue consumer since `v2.0.0`; native debates since `v1.1.0`, the optional autopilot since `v1.2.0`; the first stable release, `v1.0.0`, committed the interface to semantic versioning) |
-| Interface | `1` (`herdr-peers --version` → `(protocol 1)`; `metadata.protocol: 1` in its `SKILL.md`) |
+| Interface | `1` or `2` (`herdr-peers --version` → `(protocol N)`; `metadata.protocol: N` in its `SKILL.md`; protocol 2 is additive — every protocol-1 surface is intact) |
 | Depends on | Herdr's official skill, pinned `herdrdev/herdr@v0.9.3` |
 | Registry key | `herdr` (`.dwp/config.json` → `addons.herdr`) |
 | Transport | `interactive` — provides `subagents`, `cancel_children`; requires the `agent_delegation` grant |
@@ -73,7 +73,7 @@ the install lines, the transport mapping and the journaling rule.
 ### Step 0 — Detect (read-only)
 
 `command -v herdr` and `command -v herdr-peers`; `herdr-peers --version`
-must report `(protocol 1)` — anything else is one warning and "not
+must report `(protocol 1)` or `(protocol 2)` — anything else is one warning and "not
 available". Inside Herdr, `HERDR_ENV=1` is set; outside it, the transport is
 not usable in this session (record it, continue sequentially).
 

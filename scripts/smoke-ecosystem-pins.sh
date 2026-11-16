@@ -55,7 +55,7 @@ expected_sums() {  # expected_sums <key>: sha256 of the pinned release's SHA256S
     # Pinned here, per addon tag (the descriptor schema carries no digest):
     # bumping a tag in addon.json without updating its digest fails this smoke.
     case "$1" in
-        herdr)        echo c90bce908dc6d690c0273e8b664d84297aa16e3277bfd00fcf5003bfb6a30152 ;;
+        herdr)        echo 97509f91c5463be190307731d8417aaab2742d17850638fcc6fb0d1a9eddd011 ;;
         agentkit)     echo 1ae33b64622a91a624c3fc1d483ae8b200896de6eb9f7a3f04cd7f23ce2fb2c6 ;;
         devcontainer) echo c7a5ffb737777473f08932f9a2de153518d923f5d7edeb4ab97fdd7537bf2374 ;;
         vim)          echo 304667a4fa5914e503332213549b49105c87577d42d1b757f82d3a9a4d1156c7 ;;
@@ -111,10 +111,15 @@ PY
 }
 
 smoke_herdr() {
-    local repo tag iface proj skill out
+    local repo tag iface ifaces top proj skill out
     repo="$(field herdr "d['product']['repo']")"
     tag="$(field herdr "d['product']['tag']")"
-    iface="$(field herdr "d['product']['interface']")"
+    # The descriptor accepts a list of protocol majors (herdr-peers 2.0.0
+    # kept protocol 1 additive): the smoke installs the pinned tag and its
+    # helper reports the tag's own major, which must be a member — and the
+    # top of the list, since the pin is the newest accepted release.
+    ifaces="$(python3 -c "import json,sys; d=json.load(open(sys.argv[1]))['product']['interface']; v=d if isinstance(d,list) else [d]; print('%s %s' % (max(v), ' '.join(str(x) for x in v)))" "$ADDONS/herdr/addon.json")"
+    top="${ifaces%% *}"; iface="${ifaces#*}"
     proj="$WORK/herdr-proj"
     mkdir -p "$proj"
     git -C "$proj" init -q
@@ -123,13 +128,13 @@ smoke_herdr() {
         || { fail "herdr: skills add https://github.com/${repo}/tree/${tag} failed"; return; }
     skill="$(find "$proj" -path '*/herdr-peers/SKILL.md' | head -1)"
     [ -n "$skill" ] || { fail "herdr: installed SKILL.md not found"; return; }
-    grep -qE "^[[:space:]]+protocol: ${iface}\$" "$skill" \
-        || { fail "herdr: SKILL.md metadata.protocol is not ${iface}"; return; }
+    grep -qE "^[[:space:]]+protocol: ${top}\$" "$skill" \
+        || { fail "herdr: SKILL.md metadata.protocol is not ${top} (the tag's own major)"; return; }
     out="$(bash "$(dirname "$skill")/scripts/herdr-peers" --version 2>&1 || true)"
     case "$out" in
-        *"${tag#v} (protocol ${iface})"*) ok "herdr: ${repo}@${tag} installs; ${out}"
-                                          verify_sums herdr ;;
-        *) fail "herdr: helper --version said '${out}', expected ${tag#v} (protocol ${iface})" ;;
+        *"${tag#v} (protocol ${top})"*) ok "herdr: ${repo}@${tag} installs; ${out} (accepted: ${ifaces#* })"
+                                        verify_sums herdr ;;
+        *) fail "herdr: helper --version said '${out}', expected ${tag#v} (protocol ${top})" ;;
     esac
 }
 
