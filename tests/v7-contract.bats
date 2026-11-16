@@ -247,7 +247,9 @@ PY
   [ -s "$PLAN/analysis_results/DWP_REPORT.md" ]
   # rerun is byte-identical (determinism contract)
   cp "$PLAN/analysis_results/benchmark.json" "$BATS_TEST_TMPDIR/b1.json"
-  run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
+  rm -f "$PLAN/analysis_results/benchmark.json"
+  run python3 "$bench" report --plan "$PLAN"
+  [ "$status" -eq 0 ]
   cmp "$BATS_TEST_TMPDIR/b1.json" "$PLAN/analysis_results/benchmark.json"
 }
 
