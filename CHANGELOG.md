@@ -11,6 +11,17 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [7.12.1] — 2026-11-16
+
+### Changes
+
+- Merge pull request #93 from DailybotHQ/feat/plan-loop
+- fix(skill): make the dogfood lock self-consistent after the 7.12.0 merge
+- Merge remote-tracking branch 'origin/main' into feat/plan-loop
+- chore(addon): pin coding-agents-kit v1.4.0 (ak update ships)
+- fix(addon): accept the schema herdr-peers 1.3.x actually emits
+
+
 ## [7.12.0] — 2026-11-16
 
 ### Changes
