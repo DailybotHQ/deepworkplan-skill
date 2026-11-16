@@ -47,7 +47,7 @@ recipes — those drift; the pinned skill is the single source.
 
 - Read-only: `command -v herdr`, `command -v herdr-peers`,
   `herdr-peers --version` (expect `herdr-peers 2.0.0 (protocol 2)`; a protocol-1 release also satisfies the descriptor — the accepted set is [1, 2]).
-- A protocol other than `1` **MUST** be one warning and "not available".
+- A protocol outside the descriptor's accepted set (`[1, 2]`) **MUST** be one warning and "not available".
 - The transport is usable only inside Herdr (`HERDR_ENV=1`); outside it the
   addon is installed but not usable in that session — recorded, not an
   error.
