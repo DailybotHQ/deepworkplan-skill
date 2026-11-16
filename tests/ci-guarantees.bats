@@ -353,3 +353,22 @@ shell = ((wf['jobs']['bats-tests'].get('defaults') or {}).get('run') or {}).get(
 assert re.search(r'^\s*set\s+-\w*o\s+pipefail\b', before_tee, re.M) or 'pipefail' in shell, run
 PY
 }
+
+@test "both release workflows check the instruction budgets after the stamp and before the commit" {
+  for wf in prerelease auto-release; do
+    f="$REPO_ROOT/.github/workflows/$wf.yml"
+    run python3 - "$f" <<'PY'
+import sys
+lines = open(sys.argv[1], encoding='utf-8').read().splitlines()
+names = [l.strip()[len('- name: '):] for l in lines if l.strip().startswith('- name: ')]
+stamp = [i for i, n in enumerate(names) if n.startswith('Stamp the version') or n.startswith('Bump version')]
+guard = [i for i, n in enumerate(names) if n == 'Instruction budgets hold after the stamp']
+commit = [i for i, n in enumerate(names) if n.startswith('Commit')]
+assert stamp and guard and commit, (stamp, guard, commit)
+assert stamp[0] < guard[0] < commit[0], (names)
+text = open(sys.argv[1], encoding='utf-8').read()
+assert 'bats tests/context-accounting.bats' in text
+PY
+    [ "$status" -eq 0 ] || { echo "$wf: $output"; return 1; }
+  done
+}

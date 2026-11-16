@@ -390,7 +390,7 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 7.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 8.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
 

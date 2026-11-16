@@ -156,6 +156,15 @@ jobs:
           mv CHANGELOG.md.new CHANGELOG.md
           cp /tmp/new_section.md RELEASE_NOTES.md
 
+      - name: Instruction budgets hold after the stamp
+        # The stamp makes every SKILL.md longer or shorter, and the release
+        # commit is [skip ci]: the budgets are checked here, before anything
+        # is committed or tagged (the 8.0.0-beta.1 stamp once pushed the create
+        # bundle over its limit unseen).
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq bats
+          PYTHONDONTWRITEBYTECODE=1 bats tests/context-accounting.bats
+
       - name: Commit, push, tag
         env:
           NEW_VERSION: ${{ steps.version.outputs.version }}
