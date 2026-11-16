@@ -97,7 +97,7 @@ transition of one delegate:
 `launch` MUST be refused — and the refusal recorded as a `refusal` event,
 exit 5 — unless **all** hold:
 
-1. the contract is v7;
+1. the contract is v7 or later (v8, `LOOP_ENGINEERING.md` §5);
 2. the contract grants `agent_delegation`;
 3. the task exists, has started, and is not complete;
 4. the task is marked `parallel_safe`, **or** the delegate is read-only

@@ -4,7 +4,7 @@
 
 This document is the normative specification of the DeepWorkPlan
 **agentkit addon**: an opt-in thin integrator of **coding-agents-kit**
-(`ak`), used as the **headless** delegation transport of v7 plans
+(`ak`), used as the **headless** delegation transport of v7 and v8 plans
 (`../../spec/V7_CONTRACT.md`). The kit is a separate product with its own
 repository, license and release cycle; this addon is the DWP-side
 integration contract only: detection, the offer, the pinned install, the

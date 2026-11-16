@@ -11,8 +11,8 @@ Contract (PLAN_024 item 3.5, agreed with the herdr-peers side 2026-11-15):
   lead (a pane address | null), start: prompt-lead|launch}``; the queue may
   carry ``parallel: true`` (default: one plan at a time per repository).
 - Writers, and only these: `create` appends on approval; a human or the lead
-  reorders (the file is theirs to edit); `execute` flips ``started`` at the
-  lead-claim moment (with the lead address) and ``done`` after the plan's
+  reorders (the file is theirs to edit); `execute` flips ``started`` on a
+  task start while the item is still queued (with the lead address) and ``done`` after the plan's
   closure; `create`/`refine` flip ``skipped`` with a one-line note. The
   daemon is a bounded, read-only consumer and never writes.
 - The write is atomic (temp file + rename) with mode 0600, the lead records'
