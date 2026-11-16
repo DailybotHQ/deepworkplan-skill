@@ -238,7 +238,7 @@ PY
     c "$SK/spec/LOOP_ENGINEERING.md" 'Inside Herdr, where the lead'"'"'s pane address exists, execute MUST mark `started`'
     c "$SK/spec/LOOP_ENGINEERING.md" 'outside Herdr the item stays `queued`'
     c "$SK/refine/SKILL.md" 'One write outside the plan folder: a queued plan'"'"'s `skipped` state in `.dwp/queue.json`'
-    c "$SK/create/SKILL.md" '(it also covers v7 and v8)'
+    c "$SK/create/SKILL.md" '(also v7 and v8)'
     # the CLI the create flow names takes --start
     q append --plan PLAN_9_x --start launch >/dev/null
     q show | grep -q '"start": "launch"'

@@ -260,7 +260,7 @@ all following text is literal context. Never inspect ordinary context words.
 
 **0.3 Select the plan generation:** if this pack's line is 6+ or the developer
 explicitly asked for a v6 plan, read [`v6.md`](v6.md) and follow that flow
-exclusively (it also covers v7 and v8). Stop here: Steps 1 onward describe the
+exclusively (also v7 and v8). Stop here: Steps 1 onward describe the
 retained v5 lifecycle and MUST NOT be applied to a v6–v8 plan. With this
 8.x pack, v8 is the default for new plans; an explicit `v7` or `v6` request
 materializes it. Existing plans always keep their recorded generation.
