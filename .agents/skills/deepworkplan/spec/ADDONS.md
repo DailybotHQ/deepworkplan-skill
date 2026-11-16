@@ -391,7 +391,7 @@ lives in its own public repository
 (`https://github.com/DailybotHQ/deepworkplan-vim`, GPL-3.0, versioned
 independently of the pack); this folder is the DWP-side integration
 contract only, a **thin integrator** pinned to the product tag
-`deepworkplan-vim@v1.0.1`: detection, feature claims and the install steps
+`deepworkplan-vim@v1.1.0`: detection, feature claims and the install steps
 are read from the product's machine-readable surface (`addon/surface.json`,
 interface `1`); an unknown interface major is one warning and "not
 available", never an error. `onboard` Phase 7b offers it as an **explicit
@@ -408,7 +408,7 @@ template).
 
 An optional addon integrating **coding-agents-kit** (`ak`;
 `https://github.com/DailybotHQ/coding-agents-kit`, MIT, its own release
-cycle) pinned at `v1.0.1` (interface `1`), as the **headless** transport of
+cycle) pinned at `v1.5.0` (interface `1`), as the **headless** transport of
 v7 delegation ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `ak run` per
 delegate, in a dedicated git worktree, recorded through `ledger.py
 delegate`, its result asserted until the plan's own gates observe it.
@@ -456,7 +456,7 @@ The shipped set:
 | `design-system` | in-pack only | — | — | — |
 | `devcontainer` | `DailybotHQ/devcontainer-kit` `v1.3.0`, interface 2 | — | — | — |
 | `herdr` | `DailybotHQ/herdr-peers` `v2.1.0`, interface 1 or 2 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
-| `vim` | `DailybotHQ/deepworkplan-vim` `v1.0.1`, interface 1 | — | — | — |
+| `vim` | `DailybotHQ/deepworkplan-vim` `v1.1.0`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its
 `detect.command`, and only for an addon the registry enables — or, when
