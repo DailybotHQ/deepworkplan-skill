@@ -219,7 +219,9 @@ def _closed(obj, known, path, errors):
 AUTONOMY_KEYS = ('stall_budget', 'promptable', 'notify', 'brain', 'queue')
 AUTONOMY_NOTIFY_TARGETS = ('dailybot',)
 AUTONOMY_QUEUE_STARTS = ('prompt-lead', 'launch', 'none')
-PANE_ADDRESS = re.compile(r'^(local|[A-Za-z0-9._-]{1,64}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$')
+# herdr-peers' exact form (MACHINE_RE): a machine id is passed to Herdr
+# as an argument and must never read as an option, so it cannot start with '-'.
+PANE_ADDRESS = re.compile(r"^(?:local|[A-Za-z0-9][A-Za-z0-9._-]{0,63}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
 
 
 def autonomy_errors(doc):
@@ -282,7 +284,8 @@ def contract_errors(doc, parents=None):
     if 'autonomy' in doc and generation != 'v8':
         errors.append('contract.autonomy: only the v8 generation carries the '
                       'autonomy block (generations never mix)')
-    errors.extend(autonomy_errors(doc))
+    if generation == 'v8':
+        errors.extend(autonomy_errors(doc))
     declared = doc.get('schema')
     if declared not in CONTRACT_GENERATIONS:
         # Mixed-era refusal (section 9.1): v5 and older documents keep their
@@ -363,7 +366,7 @@ def contract_errors(doc, parents=None):
     _envelope_errors(doc, errors)
     _scheduling_errors(doc, errors)
     _tasks_errors(doc, criteria, errors,
-                  v7=CONTRACT_GENERATIONS[declared] == 'v7')
+                  v7=CONTRACT_GENERATIONS[declared] in ('v7', 'v8'))
     return errors
 
 
