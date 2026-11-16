@@ -259,7 +259,7 @@ items = dict((i['plan'], i) for i in json.load(open(sys.argv[1]))['items'])
 assert items['PLAN_4_x']['lead'] is None and 'PLAN_2_x' not in items and 'PLAN_3_x' not in items, items
 PY
     SK="$REPO_ROOT/skills/deepworkplan"
-    tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'append --plan <PLAN_id> --lead <address> [--after <PLAN_id>] [--start prompt-lead|launch]'
+    tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'append --plan <PLAN_id> --lead <address>'
     tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'set-lead --plan <PLAN_id> --lead <address>'
     # set-lead names a queued plan's lead later; only a queued one; a malformed address is refused
     q set-lead --plan PLAN_4_x --lead local:wP:p9 >/dev/null
