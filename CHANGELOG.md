@@ -11,6 +11,38 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [7.11.0] — 2026-11-16
+
+### Changes
+
+- Merge pull request #88 from DailybotHQ/fix/v7-hardening-series
+- Revert "feat(skill): proportion before allocation in the live create path; lockfiles as shared interfaces"
+- fix(skill): make the dogfood lock self-consistent after the merge
+- fix(skill): restore the lock to main's vendored entries and re-derive the merged tree's hash
+- Merge remote-tracking branch 'origin/main' into fix/v7-hardening-series
+- feat(skill): proportion before allocation in the live create path; lockfiles as shared interfaces
+- fix(shared): resolve the local review's warnings on the hardening series
+- docs(skill): replace the README tagline with the comprehension-test winner
+- chore(skill): refresh the deepworkplan dogfood mirror
+- ci: compile the compliance audit on the documented Python floor
+- fix(create): keep the Lite create bundle inside its instruction budget
+- chore(skill): refresh the deepworkplan dogfood mirror
+- docs(docs): state durability and token claims precisely in the pack docs
+- docs(docs): preregister the plan-mode versus DWP Lite study (design only)
+- feat(verify): add a read-only compliance audit of finished plans
+- docs(docs): publish the three-arm fresh-agent benchmark with its limits
+- docs(create): add the how-smuggling question and promote stable behavior
+- docs(create): keep every request verbatim and name the binding text
+- feat(shared): warn when parallel_safe siblings share a surface or interface
+- fix(shared): surface the §5.1.4 seeded-defect rule at task completion
+- test: make the negative assertions in the new suites effective
+- fix(shared): warn before a dirty start voids every control pair
+- fix(create): keep the small-work protection beside the micro exception
+- fix(create): follow spec §11 for micro-tier requests
+- docs(spec): define harness and plan durability precisely
+- docs(adr): record methodology identity and positioning (ADR 0006)
+
+
 ## [7.10.2] — 2026-11-15
 
 ### Changes
