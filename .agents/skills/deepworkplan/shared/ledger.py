@@ -64,7 +64,8 @@ import contract_v6  # noqa: E402  (sibling module, same directory)
 
 LEDGER_IDENTITY = 'dwp-ledger/6.0'
 # F-24: a v7 plan's records name the v7 ledger (same code, v7 generation).
-LEDGER_IDENTITY_BY_GENERATION = {'v6': LEDGER_IDENTITY, 'v7': 'dwp-ledger/7.0'}
+# v8 events are v7 events (spec/LOOP_ENGINEERING.md): same identity.
+LEDGER_IDENTITY_BY_GENERATION = {'v6': LEDGER_IDENTITY, 'v7': 'dwp-ledger/7.0', 'v8': 'dwp-ledger/7.0'}
 
 
 def ledger_identity(contract):
@@ -90,8 +91,11 @@ MANIFEST_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
 # plans project into the unchanged v6 snapshot shape (positions are keyed
 # by event type, so the `delegation` type needs no new snapshot schema).
 MANIFEST_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
+# v8 plans project into the v7 manifest line (spec/LOOP_ENGINEERING.md): the
+# generation changes the contract only.
 MANIFEST_URL_BY_GENERATION = {'v6': MANIFEST_SCHEMA_URL,
-                              'v7': MANIFEST_SCHEMA_URL_V7}
+                              'v7': MANIFEST_SCHEMA_URL_V7,
+                              'v8': MANIFEST_SCHEMA_URL_V7}
 MANIFEST_SCHEMA_URLS = tuple(MANIFEST_URL_BY_GENERATION.values())
 
 # Journal types that are render provenance, not plan state: they never
