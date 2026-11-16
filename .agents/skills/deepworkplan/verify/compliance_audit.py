@@ -10,6 +10,8 @@ anything.
 
 Per plan it reports:
   * criteria closed on a declared evidence class, and criteria closed outside it;
+  * each unclosed criterion's owning task (the task whose gate_intent names
+    it; null when no task does);
   * whether a Final Review task completed;
   * declared controls and their latest control-pair verdicts, including
     dirty-start `control_unavailable` voids (D3-3);
@@ -168,6 +170,9 @@ def audit_plan(plan_dir):
         'criteria_closed_on_declared_class': closed_ok,
         'criteria_closed_outside_declared_class': closed_outside,
         'criteria_unclosed': unclosed,
+        # Who owes each unclosed criterion: the task whose gate_intent names
+        # it, or null when no task does (a criterion nothing can close).
+        'criteria_unclosed_owners': {c: owner.get(c) for c in unclosed},
         'final_review': final_review,
         'controls_declared': controlled,
         'control_verdicts': {c: verdicts.get(c, 'no pair recorded')

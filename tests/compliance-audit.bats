@@ -73,6 +73,20 @@ _field() { # _field KEY -> JSON value of plans[0][KEY]
   [ "$(_field tasks_completed <<<"$output")" = "1" ]
 }
 
+@test "each unclosed criterion names its owning task, or null when no task owns it" {
+  _close_first
+  run python3 "$AUDIT" "$PLAN" --json
+  [ "$status" -eq 0 ]
+  owners="$(_field criteria_unclosed_owners <<<"$output")"
+  # The fixture: AC-journal-catalog-closed is owed by T-ship-validator's
+  # gate_intent; AC-prose-only-criterion is named by no task.
+  [ "$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1]), sort_keys=True))' "$owners")" = \
+    '{"AC-journal-catalog-closed": "T-ship-validator", "AC-prose-only-criterion": null}' ]
+  # A closed criterion is not listed as owed.
+  run grep -q "$FIRST_AC" <<<"$owners"
+  [ "$status" -ne 0 ]
+}
+
 @test "the audit counts the §5.1.4 observations the ledger recorded" {
   _close_first
   run python3 "$AUDIT" "$PLAN" --json

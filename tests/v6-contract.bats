@@ -60,6 +60,27 @@ PY
     echo "$output" | grep -qE "self-test: OK \([0-9]+ mutant probes\)"
 }
 
+@test "the self-test catches a dropped or inverted parallel_safe overlap check" {
+    # cli#148 item 3: the R8 warning must be guarded by the shipped
+    # self-test itself, not only by the external v7-contract suite.
+    for mode in silent always; do
+        run python3 - "$C6" "$mode" <<'PY'
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location('c6', sys.argv[1])
+c6 = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(c6)
+if sys.argv[2] == 'silent':
+    c6.parallel_overlap_warnings = lambda doc: []
+else:
+    c6.parallel_overlap_warnings = lambda doc: ['forced warning']
+ok, failures, _ = c6.self_test()
+assert not ok, 'self-test passed with a %s overlap check' % sys.argv[2]
+assert any('parallel_safe pair' in f for f in failures), failures
+PY
+        [ "$status" -eq 0 ] || { echo "mode=$mode: $output"; return 1; }
+    done
+}
+
 @test "committed fixtures validate through the CLI in both directions" {
     run python3 "$C6" validate-contract "$FX/contract-minimal.json"
     [ "$status" -eq 0 ]
