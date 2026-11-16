@@ -1786,6 +1786,27 @@ def self_test():
     v6_marked['tasks'][0]['parallel_safe'] = True
     if not contract_errors(v6_marked):
         failures.append('parallel_safe under the v6 URL must fail')
+    # The parallel_safe overlap warning (R8): a dropped or inverted check
+    # must fail the self-test, not only the external bats suite.
+    def overlap_pair(surface_a, surface_b, chained=False):
+        return {'tasks': [
+            {'id': 'T-a', 'parallel_safe': True,
+             'touched_surface': [surface_a]},
+            {'id': 'T-b', 'parallel_safe': True,
+             'touched_surface': [surface_b],
+             'prerequisites': ['T-a'] if chained else []}]}
+    for label, doc, expected in (
+            ('same-path parallel_safe pair warns',
+             overlap_pair('src/product.py', 'src/product.py'), 1),
+            ('prerequisite-chained pair is silent',
+             overlap_pair('src/product.py', 'src/product.py', True), 0),
+            ('disjoint parallel_safe pair is silent',
+             overlap_pair('src/a.py', 'src/b.py'), 0)):
+        probes[0] += 1
+        got = len(parallel_overlap_warnings(doc))
+        if got != expected:
+            failures.append('%s: expected %d warning(s), got %d'
+                            % (label, expected, got))
     v7_stamped = dict(v7, contract_id=compute_contract_id(v7))
     delegation = {'schema': JOURNAL_SCHEMA_URL_V7, 'type': 'delegation',
                   'seq': 1, 'ts': '2026-10-09T00:00:00Z',

@@ -105,6 +105,9 @@ were executed concurrently on a shared host, so their timings are meaningless.
 
 ## Snapshot efficiency results
 
+The [v8 loop measurement](evaluations/v8-loop.md) records instruction bytes per
+flow and a bounded read-only observation of the local Herdr loop.
+
 The [working-principles trial](evaluations/working-principles.md) records an
 independent agent authoring rules in two fixtures and repeating reconciliation.
 It observes file changes and idempotence within that session; it does not
