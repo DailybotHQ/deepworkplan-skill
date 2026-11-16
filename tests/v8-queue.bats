@@ -79,7 +79,7 @@ PY
 
 @test "the file is written atomically at 0600, no temp left behind" {
     q append --plan PLAN_1_x >/dev/null
-    PERM="$(stat -f '%Lp' "$DWP/queue.json" 2>/dev/null || stat -c '%a' "$DWP/queue.json")"
+    PERM="$(python3 -c "import os,sys; print(oct(os.stat(sys.argv[1]).st_mode)[-3:])" "$DWP/queue.json")"
     [ "$PERM" = "600" ]
     ls "$DWP" | grep -c "^\.queue\..*\.tmp$" | grep -qx "0"
 }
@@ -110,4 +110,52 @@ json.dump(d, open(p, "w"))
 PY
     run q show
     [ "$status" -eq 1 ]
+}
+
+@test "H1: re-queuing a finished plan is refused (plan ids are one-shot)" {
+    q append --plan PLAN_1_x >/dev/null
+    q set-state --plan PLAN_1_x --state done >/dev/null
+    run q append --plan PLAN_1_x
+    [ "$status" -ne 0 ]
+    # and the queue still reads valid — never bricked
+    q show | grep -q '"state": "done"'
+}
+
+@test "M1: the lead must be a protocol pane address, and only with started" {
+    q append --plan PLAN_1_x >/dev/null
+    run q set-state --plan PLAN_1_x --state started --lead "wP:p2"
+    [ "$status" -ne 0 ]
+    run q set-state --plan PLAN_1_x --state done --lead local:w1:p2
+    [ "$status" -ne 0 ]
+    q set-state --plan PLAN_1_x --state started --lead local:wP:p2 >/dev/null
+    q show | grep -q '"lead": "local:wP:p2"'
+}
+
+@test "M2: the 65th append is refused (the consumer's cap)" {
+    local i
+    for i in $(seq 1 64); do q append --plan "PLAN_${i}_x" >/dev/null; done
+    run q append --plan PLAN_65_x
+    [ "$status" -ne 0 ]
+    q show | grep -c '"state": "queued"' | grep -qx 64
+}
+
+@test "L1: an item cannot wait for itself or for a plan outside the queue" {
+    run q append --plan PLAN_1_x --after PLAN_1_x
+    [ "$status" -ne 0 ]
+    run q append --plan PLAN_1_x --after PLAN_9_not_here
+    [ "$status" -ne 0 ]
+}
+
+@test "H2: a symlinked .dwp is refused; a symlinked queue.json is not read" {
+    local real linked
+    real="$(mktemp -d)"
+    linked="$(mktemp -d)/dwp-link"
+    ln -s "$real" "$linked"
+    run q --dwp "$linked" append --plan PLAN_1_x
+    [ "$status" -ne 0 ]
+    printf '{"schema":"dwp-queue-v1","items":[]}' > "$real/other.json"
+    ln -s "$real/other.json" "$DWP/queue.json"
+    run q show
+    [ "$status" -eq 1 ]
+    rm -f "$DWP/queue.json"
 }

@@ -23,11 +23,24 @@
     },
     {
       "pattern": "^https://github\\.com/DailybotHQ/ai-diff-reviewer[\"'].*"
+    },
+    {
+      "pattern": "youtube.com"
     }
   ],
   "timeout": "10s",
   "retryOn429": true,
   "retryCount": 3,
   "fallbackRetryDelay": "5s",
-  "aliveStatusCodes": [200, 206, 301, 302, 303, 304, 307, 308, 403]
+  "aliveStatusCodes": [
+    200,
+    206,
+    301,
+    302,
+    303,
+    304,
+    307,
+    308,
+    403
+  ]
 }

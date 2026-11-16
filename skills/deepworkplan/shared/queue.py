@@ -32,6 +32,7 @@ import argparse
 import json
 import os
 import re
+import stat
 import sys
 import tempfile
 import time
@@ -40,6 +41,11 @@ SCHEMA = "dwp-queue-v1"
 STATES = ("queued", "started", "done", "skipped")
 STARTS = ("prompt-lead", "launch")
 MAX_BYTES = 64 * 1024
+# The consumer's own caps (herdr-peers fleet_report): a queue above 64 items,
+# or 64 KiB, is refused wholesale by the daemon — the writer enforces the
+# same ceilings so a producer-valid document is always consumer-valid.
+MAX_ITEMS = 64
+PANE_ADDRESS = re.compile(r"^(local|[A-Za-z0-9._-]{1,64}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
 PLAN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NOTE_MAX = 200
 
@@ -88,13 +94,31 @@ def valid_doc(doc):
     return len(plans) == len(set(plans))
 
 
+def _safe_dwp(dwp_dir):
+    """Refuse a symlinked .dwp: the write must land inside the repository's
+    own .dwp, never in whatever a link points at (fleet_report's consumer
+    reads the repository's queue; a redirected write is data loss)."""
+    if os.path.islink(dwp_dir):
+        raise SystemExit("queue.py: %s is a symlink; the queue lives in the "
+                         "repository's own .dwp" % dwp_dir)
+
+
 def read(dwp_dir):
     """The validated document, or None (a damaged queue never breaks the
     lifecycle; the caller may warn once)."""
     path = queue_path(dwp_dir)
     try:
-        with open(path, "rb") as fh:
-            raw = fh.read(MAX_BYTES + 1)
+        # O_NOFOLLOW + fstat on the descriptor itself: a queue.json that is
+        # a symlink is refused (it would read another file), and the stat
+        # never races through the path.
+        fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        try:
+            info = os.fstat(fd)
+            if not stat.S_ISREG(info.st_mode):
+                return None
+            raw = os.read(fd, MAX_BYTES + 1)
+        finally:
+            os.close(fd)
         if len(raw) > MAX_BYTES:
             return None
         doc = json.loads(raw.decode("utf-8"))
@@ -106,6 +130,9 @@ def read(dwp_dir):
 def _write(dwp_dir, doc):
     doc["updated_at"] = _iso_now()
     doc.setdefault("schema", SCHEMA)
+    if not valid_doc(doc):
+        raise SystemExit("queue.py: refusing to write a document that would "
+                         "not validate (dwp-queue-v1 is closed)")
     path = queue_path(dwp_dir)
     fd, tmp = tempfile.mkstemp(dir=dwp_dir, prefix=".queue.", suffix=".tmp")
     try:
@@ -130,10 +157,22 @@ def _load_or_new(dwp_dir):
 
 
 def append(dwp_dir, plan, after=None, start="prompt-lead"):
+    _safe_dwp(dwp_dir)
     doc = _load_or_new(dwp_dir)
     for item in doc["items"]:
-        if item["plan"] == plan and item["state"] in ("queued", "started"):
-            raise SystemExit("queue.py: %s is already %s in the queue" % (plan, item["state"]))
+        if item["plan"] == plan:
+            raise SystemExit("queue.py: %s is already in the queue (%s); plan "
+                             "ids are one-shot — re-queuing is an error, use a "
+                             "new plan" % (plan, item["state"]))
+    if after is not None:
+        if after == plan:
+            raise SystemExit("queue.py: --after must not name the plan itself")
+        if not any(i["plan"] == after for i in doc["items"]):
+            raise SystemExit("queue.py: --after names %s, which is not in the "
+                             "queue; dependencies are queue-internal" % after)
+    if len(doc["items"]) >= MAX_ITEMS:
+        raise SystemExit("queue.py: the queue holds at most %d items (the "
+                         "consumer refuses more)" % MAX_ITEMS)
     doc["items"].append({"plan": plan, "after": after, "state": "queued",
                          "lead": None, "start": start})
     _write(dwp_dir, doc)
@@ -141,7 +180,14 @@ def append(dwp_dir, plan, after=None, start="prompt-lead"):
 
 
 def set_state(dwp_dir, plan, state, lead=None, note=None):
+    _safe_dwp(dwp_dir)
     doc = _load_or_new(dwp_dir)
+    if lead is not None:
+        if state != "started":
+            raise SystemExit("queue.py: --lead belongs to the started state")
+        if not isinstance(lead, str) or not PANE_ADDRESS.match(lead):
+            raise SystemExit("queue.py: --lead is not a pane address "
+                             "(local|<machine>):<workspace>:<pane>")
     item = next((i for i in doc["items"] if i["plan"] == plan), None)
     if item is None:
         raise SystemExit("queue.py: %s is not in the queue" % plan)
