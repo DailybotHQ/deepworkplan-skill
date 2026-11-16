@@ -44,6 +44,7 @@ def summarize_log(since: str, until: str) -> None:
         "plan_stalled_events": classes["plan_stalled"],
         "plan_blocked_events": classes["plan_blocked"],
         "plan_completed_events": classes["plan_completed"],
+        "plan_no_lead_events": classes["plan_no_lead"],
         "prompt_actions": actions["prompt"],
         "brain_launches": classes["brain_launched"],
         "brain_retirements": classes["brain_replaced"],

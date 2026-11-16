@@ -59,7 +59,7 @@ The daemon status attributed both retirements to profiles starting in a mode tha
 
 The fleet command above read a map generated at `2026-11-16T15:19:10Z`, `51` seconds old and not stale: `n = 33` plan rows (15 completed, 4 open, 14 unreadable), `n = 14` machine rows and `n = 43` agent rows. These are one-snapshot map classifications, not events or completion rates; unreadable plans were not assigned another state.
 
-`herdr-peers log --json` is the separate delegation/message record, not the daemon action log, so it was not used for prompt/event counts. The installed helper rejects a `--pane` selector both globally and after the verb; these local-machine reads used no pane selector. No daemon control command ran. `summarize-herdr-loop.py` reads stdin and prints only aggregate counts/timestamps; it saves no log, plan IDs, pane addresses, branch names or paths.
+`herdr-peers log --json` is the separate delegation/message record, not the daemon action log, so it was not used for prompt/event counts. The installed helper rejects a `--pane` selector both globally and after the verb; these local-machine reads used no pane selector. No daemon control command ran. [`summarize-herdr-loop.py`](../../tests/efficiency/summarize-herdr-loop.py) reads stdin and prints only aggregate counts/timestamps; it saves no log, plan IDs, pane addresses, branch names or paths.
 
 ## Coding-agents-kit cached path
 
