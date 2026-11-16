@@ -151,3 +151,42 @@ objs = [a for a in alts if a.get('type') == 'object' or 'properties' in a]
 assert objs and all(o.get('additionalProperties') is False and 'resolver' not in o.get('properties', {}) for o in objs), objs
 PY
 }
+
+@test "the 8.x pack creates v8 plans by default; explicit v7 and v6 requests are honoured" {
+  c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+  c "$SK/create/v6.md" '**v8 is the default for new plans on the 8.x pack**'
+  c "$SK/create/v6.md" '`https://deepworkplan.com/schema/plan-contract/v8.json`'
+  c "$SK/create/v6.md" 'An explicit `v7` request writes `https://deepworkplan.com/schema/plan-contract/v7.json`'
+  c "$SK/create/SKILL.md" 'With this 8.x pack, v8 is the default for new plans'
+  c "$SK/spec/V6_LIFECYCLE.md" 'With the current 8.x pack, new plans use the v8 contract generation by default'
+  c "$SK/spec/README.md" 'New plans created by the 8.x pack use the v8 contract generation'
+  # no surface still names v7 as the default for new plans of the current pack
+  run bash -c "grep -rn 'v7 is the default for new' '$SK' | grep -v 'V7_ROADMAP.md'"
+  [ "$status" -ne 0 ] || { echo "$output"; return 1; }
+}
+
+@test "review: one ordered generation ladder; a promptable address must match whole" {
+  python3 - "$SHARED" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import contract_v6 as C
+assert C.GENERATION_ORDER == ('v6', 'v7', 'v8')
+assert C.generation_at_least('v8', 'v7') and C.generation_at_least('v7', 'v7')
+assert not C.generation_at_least('v6', 'v7') and not C.generation_at_least(None, 'v7')
+assert 'v8' in C.contract_generation.__doc__
+PY
+  _doc "$WORK/nl.json" "doc['autonomy'] = {'promptable': ['local:w1:p2\n']}"
+  run _valid "$WORK/nl.json"
+  [ "$status" -ne 0 ]
+}
+
+@test "review of #99: appointment is consistent, the queue rule is readiness, links follow the pin, the router names Lite and Full" {
+  c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+  c "$SPEC" 'The daemon MUST NOT write the lead record. A peer outside the recorded succession MAY become lead only through Appointment below, by its own takeover, never by the daemon.'
+  ! c "$SPEC" 'or appoint a peer outside the recorded succession'
+  c "$SPEC" 'When a queued item is ready (its `after` plan is completed, or it has none)'
+  c "$SPEC" 'The daemon MAY read the queue and MUST NOT write it.'
+  tag="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["product"]["tag"])' "$SK/addons/herdr/addon.json")"
+  ! grep -o 'herdr-peers/blob/v[0-9.]*' "$SPEC" | grep -v "blob/$tag\$"
+  c "$SK/SKILL.md" 'Deep Work Plans are Lite (bounded work) or Full (task files, longer work).'
+}

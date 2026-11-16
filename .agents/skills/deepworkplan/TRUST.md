@@ -36,8 +36,8 @@ each step atomic and resumable, never rewriting a different contract or
 another generation's manifest; it also captures
 each task's starting fingerprint at `task_start` and executes both legs of
 a declared control pair, materializing the old leg as a detached worktree
-at that recorded revision; for v7 plans its `delegate` command records
-delegation launches and results behind a gate — v7 contract,
+at that recorded revision; for v7 and v8 plans its `delegate` command records
+delegation launches and results behind a gate — a v7-or-later contract,
 `agent_delegation` grant, `parallel_safe` task or read-only delegate, an
 enabled and detected transport addon — and **never runs a delegate
 itself**: the transport addon does, and a delegate's result stays
@@ -78,7 +78,7 @@ the Dailybot CLI is installed, sends one report through it — every other
 case (no CLI, invalid input, failed send) exits 0 silently; and
 `shared/queue.py`, the plan queue (dwp-queue-v1): the only writer of
 `.dwp/queue.json` — create appends on approval, execute marks a plan
-started when it claims the lead, finalize marks it done, create/refine may
+started on a task start while it is still queued and done after its closure, create/refine may
 skip with a note — an atomic 0600 write, and a read of anything that is not
 a valid bounded document is a quiet none; and
 `shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,

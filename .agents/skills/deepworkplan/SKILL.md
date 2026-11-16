@@ -11,7 +11,7 @@ metadata: {"openclaw":{"emoji":"🧠","homepage":"https://deepworkplan.com","req
 # DeepWorkPlan — Methodology Skill (Router)
 
 The repository is the harness.
-**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Spec-first is per episode: plan before code with acceptance criteria. Plans are exportable, git-ignored `.dwp/plans/` state, resumable in repo, not a maintained specification. **Loop engineering:** registration = lead claim + succession; optional human-started daemon; nudges add no authority; successor takeover by succession; appointment only by human grant; `plan-event-v1`, `fleet-v1`, prompt-lead queue. Runs within recorded authority and gates; method works alone.
+**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Deep Work Plans are Lite (bounded work) or Full (task files, longer work). Planning is spec-first per episode: the plan precedes the code, with acceptance criteria, as git-ignored, exportable `.dwp/plans/` state any agent can resume, not a maintained specification. Loop engineering registers a lead and its succession; an optional daemon a human starts nudges without adding authority. Plans run within their recorded authority and gates; the method works alone.
 
 DWP measures the instruction bytes each flow loads. It has not shown a general saving in provider tokens.
 
@@ -155,8 +155,8 @@ developer which they mean before routing.
   or mutate files — regardless of how they are invoked.
 - **Plan generation is detected, never assumed.** A plan folder carrying a
   `manifest.json` contract pointer, a `contract.json`, or a `contracts/`
-  revision chain is **v6** (contract generation v6 or v7,
-  `spec/V7_CONTRACT.md`) — create and execute route it through their
+  revision chain is **v6** (contract generation v6–v8,
+  `spec/V6_LIFECYCLE.md`) — create and execute route it through their
   `v6.md` loops (contract, journal, scheduler, verified closure). Anything
   else keeps the recorded v5 lifecycle, is never migrated silently, and a
   v5-only runner that meets a v6 plan reports it as unsupported rather

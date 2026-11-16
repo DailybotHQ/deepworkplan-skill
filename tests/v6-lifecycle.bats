@@ -339,7 +339,7 @@ PY
 @test "create/SKILL.md selects current v6 at Step 0.3" {
   grep -qF '**0.3 Select the plan generation:**' "$SK/create/SKILL.md"
   grep -qE '^  - \[`v6\.md`\]\(v6\.md\)' "$SK/create/SKILL.md"
-  tr '\n' ' ' < "$SK/create/SKILL.md" | tr -s ' ' | grep -qF 'With this 7.x pack, v7 is the default for new plans; an explicit `v6` request materializes a v6 contract.'
+  tr '\n' ' ' < "$SK/create/SKILL.md" | tr -s ' ' | grep -qF 'With this 8.x pack, v8 is the default for new plans; an explicit `v7` or `v6` request materializes it.'
   grep -qF 'Existing plans always keep their recorded generation.' "$SK/create/SKILL.md"
 }
 

@@ -1,6 +1,6 @@
 # Template — one headless delegate through `ak` (reason, don't copy-paste)
 
-Reasoning guidance for running ONE delegate of a v7 plan through
+Reasoning guidance for running ONE delegate of a v7 or v8 plan through
 coding-agents-kit. Fill every `<placeholder>` from the plan and the
 machine; never guess. Preconditions are in `../../../execute/delegation.md`
 (grant, `parallel_safe` or read-only, `addon:agentkit` in the effective

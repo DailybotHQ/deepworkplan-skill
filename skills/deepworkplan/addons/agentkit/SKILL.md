@@ -13,7 +13,7 @@ metadata: {"openclaw":{"emoji":"🧰","homepage":"https://deepworkplan.com/kit/a
 Integrate **coding-agents-kit** — one command surface (`ak`) for every
 terminal coding agent (claude, codex, cursor, opencode, pi, cline, grok and
 their provider variants, multiple accounts through profiles) — as the
-**headless** transport a v7 plan may use to delegate a `parallel_safe`
+**headless** transport a v7 or v8 plan may use to delegate a `parallel_safe`
 task. This is an **opt-in addon**, never required for a repo to be
 AI-first and never a conformance gate: without it every task runs in the
 current session exactly as before.
@@ -43,7 +43,7 @@ DWP); everything this addon relies on is the kit's frozen **interface 1**
 
 - **`onboard` Phase 7b** offers it as an explicit opt-in when the developer
   wants a plan to hand bounded tasks to other coding agents.
-- **`execute`** uses it only through `delegation.md`, only on a v7 plan whose
+- **`execute`** uses it only through `delegation.md`, only on a v7 or v8 plan whose
   contract grants `agent_delegation`, only for a `parallel_safe` task (or a
   read-only delegate), and only when `resources.py abilities` shows
   `addon:agentkit` as a `subagents` source.

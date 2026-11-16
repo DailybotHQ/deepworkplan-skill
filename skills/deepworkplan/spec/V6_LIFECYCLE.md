@@ -53,8 +53,9 @@ plan keeps v6 forever, and a journal mixing generations is refused.
 
 ## 2. Activation (normative)
 
-With the current 7.x pack, new plans use the v7 contract generation by
-default (§1 table); an explicit `v6` request materializes a v6 contract. A
+With the current 8.x pack, new plans use the v8 contract generation by
+default (§1 table); an explicit `v7` or `v6` request materializes that
+contract generation. A
 developer's explicit v6 request also selects this flow when an older pack
 provides it.
 A 5.x pack without that request follows its recorded v5 flow. Existing

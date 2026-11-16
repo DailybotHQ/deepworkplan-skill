@@ -11,9 +11,9 @@ Contract (PLAN_024 item 3.5, agreed with the herdr-peers side 2026-11-15):
   lead (a pane address | null), start: prompt-lead|launch}``; the queue may
   carry ``parallel: true`` (default: one plan at a time per repository).
 - Writers, and only these: `create` appends on approval; a human or the lead
-  reorders (the file is theirs to edit); `execute` flips ``started`` at the
-  lead-claim moment (with the lead address); `finalize_plan.py` flips
-  ``done``; `create`/`refine` flip ``skipped`` with a one-line note. The
+  reorders (the file is theirs to edit); `execute` flips ``started`` on a
+  task start while the item is still queued (with the lead address) and ``done`` after the plan's
+  closure; `create`/`refine` flip ``skipped`` with a one-line note. The
   daemon is a bounded, read-only consumer and never writes.
 - The write is atomic (temp file + rename) with mode 0600, the lead records'
   discipline. A read of anything that is not a valid, bounded document is a
@@ -79,15 +79,15 @@ def valid_doc(doc):
         note = {"note"}
         if not keys <= base | note or not keys >= base:
             return False
-        if not isinstance(item["plan"], str) or not PLAN_ID.match(item["plan"]):
+        if not isinstance(item["plan"], str) or not PLAN_ID.fullmatch(item["plan"]):
             return False
         after = item["after"]
-        if after is not None and (not isinstance(after, str) or not PLAN_ID.match(after)):
+        if after is not None and (not isinstance(after, str) or not PLAN_ID.fullmatch(after)):
             return False
         if item["state"] not in STATES or item["start"] not in STARTS:
             return False
         lead = item["lead"]
-        if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.match(lead)):
+        if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead)):
             return False
         if item["state"] == "started" and lead is None:
             return False
@@ -191,7 +191,7 @@ def set_state(dwp_dir, plan, state, lead=None, note=None):
     if lead is not None:
         if state != "started":
             raise SystemExit("queue.py: --lead belongs to the started state")
-        if not isinstance(lead, str) or not PANE_ADDRESS.match(lead):
+        if not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead):
             raise SystemExit("queue.py: --lead is not a pane address "
                              "(local|<machine>):<workspace>:<pane>")
     item = next((i for i in doc["items"] if i["plan"] == plan), None)
@@ -221,7 +221,7 @@ def main(argv=None):
     p.add_argument("--plan", required=True)
     p.add_argument("--after", default=None, help="a plan id this one waits for")
     p.add_argument("--start", default="prompt-lead", choices=STARTS)
-    p = sub.add_parser("set-state", help="flip a state (execute, finalize, create/refine)")
+    p = sub.add_parser("set-state", help="flip a state (execute, create/refine)")
     p.add_argument("--plan", required=True)
     p.add_argument("--state", required=True, choices=STATES)
     p.add_argument("--lead", default=None, help="the lead pane address (with started)")
@@ -235,7 +235,7 @@ def main(argv=None):
         print(json.dumps(doc, indent=2, sort_keys=True))
         return 0
     if args.cmd == "append":
-        if not PLAN_ID.match(args.plan):
+        if not PLAN_ID.fullmatch(args.plan):
             raise SystemExit("queue.py: --plan is not a plan id")
         append(args.dwp, args.plan, args.after, args.start)
         return 0

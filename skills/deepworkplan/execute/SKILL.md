@@ -30,8 +30,8 @@ when their moment arrives.
   t0 set — the operative rules the loop needs are inline below.
 - **Conditional — read only when the trigger fires:**
   - [`v6.md`](v6.md) (this directory) — read only when Step 2.0 detects a
-    v6 or v7 plan; it carries the whole task loop.
-  - [`delegation.md`](delegation.md) — read only when a v7 plan granting
+    v6, v7 or v8 plan; it carries the whole task loop.
+  - [`delegation.md`](delegation.md) — read only when a v7 or v8 plan granting
     `agent_delegation` delegates a task.
   - [`debate.md`](debate.md) — read only when a listed decision task runs.
   - [`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the

@@ -26,8 +26,9 @@ epoch is the lead. With `autopilot --loop`, a plan with a readable state and a
 lead record MAY be watched; the daemon MAY prompt an idle lead to continue
 within the plan's recorded authority. If the lead pane is gone, the daemon MAY
 prompt the first reachable successor to run `lead takeover`; the helper MUST
-check whether takeover is allowed. The daemon MUST NOT write the lead record
-or appoint a peer outside the recorded succession.
+check whether takeover is allowed. The daemon MUST NOT write the lead record.
+A peer outside the recorded succession MAY become lead only through
+Appointment below, by its own takeover, never by the daemon.
 
 **Human-started daemon and authority.** A human MUST start autopilot. The
 background daemon MAY cover enabled machines and sends fixed prompts; a prompt
@@ -42,17 +43,17 @@ daemon MAY prompt the first eligible live lane to request appointment; the
 helper MUST check the conditions again. A new lead MUST run `lead verify`
 before a merge, tag, or release.
 
-**Queue, events, and fleet map.** When the current plan completes and queue
-mode is `prompt-lead`, the daemon MAY prompt the named lead to start the next
-eligible queued plan through the plan tool's execute flow; its start gate MUST
-check approval again. The daemon MAY report plan events as `plan-event-v1`
+**Queue, events, and fleet map.** When a queued item is ready (its `after`
+plan is completed, or it has none) and its start is `prompt-lead`, the daemon
+MAY prompt its named lead to start it through the plan tool's execute flow;
+its start gate MUST check approval again. The daemon MAY report plan events as `plan-event-v1`
 JSON to the configured `--notify` command. The `fleet-v1` map reports agents,
-plans, and their roles; `fleet ui` shows the map live. The daemon MUST read
+plans, and their roles; `fleet ui` shows the map live. The daemon MAY read
 the queue and MUST NOT write it.
 
 These behaviors are the optional Herdr integration, documented in
-[herdr-peers v2.0.0 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.0/skills/herdr-peers/autopilot.md)
-and [herdr-peers v2.0.0 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.0/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
+[herdr-peers v2.0.2 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.2/skills/herdr-peers/autopilot.md)
+and [herdr-peers v2.0.2 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.2/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
 
 ## 2. The `autonomy` block (plan-contract/v8)
 
@@ -94,9 +95,13 @@ itself did not mark lead-resolvable; everything else waits for the human.
 
 `.dwp/queue.json`, schema `dwp-queue-v1`. Only the pack (`shared/queue.py`)
 or a human MAY write it; the daemon MUST only read it. Create appends on
-approval; a human or the lead reorders; execute MUST mark `started` at the
-lead-claim moment together with the lead's pane address (a `started` item
-without one is invalid); finalize marks `done`; create/refine skip with a
+approval; a human or the lead reorders. Inside Herdr, where the lead's pane
+address exists, execute MUST mark `started` on a task start while the item is
+still `queued` (normally the plan's first task, once its lead has claimed it;
+a crash or a resume retries), together with that address (a `started` item
+without one is invalid); outside Herdr the item stays `queued` and a consumer
+reads the journal's task start as in flight. Execute marks
+`done` after the plan's closure; create/refine skip with a
 one-line note. A queue MUST NOT hold more than 64 items.
 One plan at a time per repository unless the queue carries
 `parallel: true`. Dependencies are queue-internal (`after` names a plan
