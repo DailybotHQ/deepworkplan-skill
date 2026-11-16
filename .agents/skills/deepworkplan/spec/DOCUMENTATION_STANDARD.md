@@ -1,8 +1,8 @@
 # DOCUMENTATION_STANDARD.md — DeepWorkPlan Repository Documentation Standard
 
 > **Version scope:** This is a retained v5.0.0 base document. The current
-> v6 standard also requires the applicable `V6_*.md` extensions indexed in
-> [README.md](README.md). Existing v5 plans keep this document’s recorded rules.
+> standard (8.0.0) also requires the applicable `V6_*.md` extensions, their
+> v7 additions and `LOOP_ENGINEERING.md`, indexed in [README.md](README.md). Existing v5 plans keep this document’s recorded rules.
 
 ## Abstract
 
@@ -390,17 +390,19 @@ the onboarding flow **MUST** keep them distinct:
   report, per file, what it added or changed.
 - **Recorded provenance.** A repository that adopts this standard **SHOULD**
   record it — a line such as
-  `DWP standard: 7.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
+  `DWP standard: 8.0.0 (onboarded YYYY-MM-DD; upgraded YYYY-MM-DD; skill x.y.z)`
   in `AGENTS.md` or `docs/README.md` — so a checker and a future agent can tell
   which standard the repository declares.
 
   The version in that line is the **umbrella DWP standard** implemented by the
   installed pack, not the version of this retained v5 base document. The v6
-  extension documents and their v7 additions in this directory define the
-  current plan lifecycle.
+  extension documents, their v7 additions and the v8 loop engineering
+  (`LOOP_ENGINEERING.md`) in this directory define the current plan
+  lifecycle.
   A conformance checker reads the declaration against the standard it
-  implements and rejects a newer one. The standard's series are 2.x, 4.x,
-  5.x and 6.x (historical) and 7.x (current — there is no 3.x); the skill package
+  implements and rejects a newer one. The standard's series are 2.x and
+  4.x (historical), 5.x, 6.x and 7.x (retained) and 8.x (current — there is
+  no 3.x); the skill package
   `version:` and the `/v2.json` and `/v5.json`
   schema URLs are two further, separate series, never compared against this
   line.

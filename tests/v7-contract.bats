@@ -222,8 +222,10 @@ PY
   run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
   [ "$status" -ne 0 ]
   # benchmark-record v1 carries release versions only: under a pre-release-
-  # stamped pack, run the benchmark from a copy stamped with its release base
-  # (the same rule as tests/v6-benchmark.bats).
+  # stamped pack, run the benchmark from a copy stamped with its release base.
+  # tests/v6-benchmark.bats applies the same version rule file-wide in
+  # setup_file; here the copy is local to this one case, and both report
+  # runs below use it.
   local bench="$SHARED/benchmark.py"
   if grep -qE '^version: "[0-9]+\.[0-9]+\.[0-9]+-' "$SK/SKILL.md"; then
     cp -R "$SK" "$WORK/pack-release"

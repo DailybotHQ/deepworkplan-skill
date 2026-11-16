@@ -1,8 +1,8 @@
 # DWP_SPECIFICATION.md — Deep Work Plan Specification
 
 > **Version scope:** This is a retained v5.0.0 base document. The current
-> v6 standard also requires the applicable `V6_*.md` extensions indexed in
-> [README.md](README.md). Existing v5 plans keep this document’s recorded rules.
+> standard (8.0.0) also requires the applicable `V6_*.md` extensions, their
+> v7 additions and `LOOP_ENGINEERING.md`, indexed in [README.md](README.md). Existing v5 plans keep this document’s recorded rules.
 
 ## Abstract
 
@@ -39,7 +39,7 @@ workspace. Archetype-specific behavior is called out inline, especially in §8
 
 Three version series coexist on purpose and never compare: the skill **package**
 `version:` (release-managed), the **DWP standard** this document versions
-(2.x and 4.x historical, 5.x retained as the base, 6.x retained, 7.x current — there is no 3.x standard; the v3 launch
+(2.x and 4.x historical, 5.x retained as the base, 6.x and 7.x retained, 8.x current — there is no 3.x standard; the v3 launch
 was a product release), and the **schema URLs** (`plan-state/v2.json`,
 `plan-state/v5.json` — a schema-shape series, not the standard's version; the
 v5 URLs are **generation snapshots** of the v2 shape, adding no property).
