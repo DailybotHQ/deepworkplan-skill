@@ -205,5 +205,5 @@ PY
   c "$SPEC" 'The daemon MAY read the queue and MUST NOT write it.'
   tag="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["product"]["tag"])' "$SK/addons/herdr/addon.json")"
   ! grep -o 'herdr-peers/blob/v[0-9.]*' "$SPEC" | grep -v "blob/$tag\$"
-  c "$SK/SKILL.md" 'Deep Work Plans are Lite (bounded work) or Full (task files, longer work).'
+  c "$SK/SKILL.md" 'Plans are Lite (bounded work) or Full (task files, longer work).'
 }

@@ -11,7 +11,7 @@ metadata: {"openclaw":{"emoji":"🧠","homepage":"https://deepworkplan.com","req
 # DeepWorkPlan — Methodology Skill (Router)
 
 The repository is the harness.
-**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Deep Work Plans are Lite (bounded work) or Full (task files, longer work). Planning is spec-first per episode: the plan precedes the code, with acceptance criteria, as git-ignored, exportable `.dwp/plans/` state any agent can resume, not a maintained specification. Loop engineering registers a lead and its succession; an optional daemon a human starts nudges without adding authority. Plans run within their recorded authority and gates; the method works alone.
+**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Plans are Lite (bounded work) or Full (task files, longer work). Planning is spec-first per episode: the plan precedes the code, with acceptance criteria, as git-ignored, exportable `.dwp/plans/` state any agent can resume, not a maintained specification. Loop engineering registers a lead and its succession; an optional daemon a human starts nudges without adding authority. Plans run within their recorded authority and gates; the method works alone.
 
 DWP measures the instruction bytes each flow loads. It has not shown a general saving in provider tokens.
 
