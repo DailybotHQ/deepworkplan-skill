@@ -43,8 +43,11 @@ teardown() { rm -rf "$TMPDIR_TEST"; }
     # spec/CONFIG.md), addon-descriptor v1 (spec/ADDONS.md §7) and the v7
     # contract generation (plan-contract, journal-event, plan-manifest v7;
     # spec/V7_CONTRACT.md), plus the dwp-handoff v1 packet (guide/swarm.md
-    # §17, shared/swarm.py) = nineteen URLs, all shipped files.
-    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 19 ]
+    # §17, shared/swarm.py), plus the v8 contract generation
+    # (plan-contract/v8; spec/LOOP_ENGINEERING.md — v8 events are v7
+    # events, so no new journal or manifest URL) = twenty URLs, all
+    # shipped files.
+    [ "$(echo "$urls" | wc -l | tr -d ' ')" -eq 20 ]
     while IFS= read -r url; do
         label="${url#*schema/}"; label="${label%%/*}"
         v="${url##*/v}"; v="${v%.json}"

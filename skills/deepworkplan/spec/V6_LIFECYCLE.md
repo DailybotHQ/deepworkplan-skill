@@ -45,6 +45,7 @@ event:
 |---|---|---|---|---|
 | v6 | `plan-contract/v6` | `journal-event/v6` | `plan-manifest/v6` | — |
 | v7 | `plan-contract/v7` | `journal-event/v7` | `plan-manifest/v7` | `tasks[].parallel_safe`, the `delegation` event ([`V7_CONTRACT.md`](V7_CONTRACT.md)) |
+| v8 | `plan-contract/v8` | `journal-event/v7` | `plan-manifest/v7` | the optional `autonomy` block ([`LOOP_ENGINEERING.md`](LOOP_ENGINEERING.md)); everything v7 carries |
 
 Both generations run through the same loops and helpers and project into
 the same `plan-snapshot/v6` shape. A plan never changes generation: a v6

@@ -273,7 +273,9 @@ def records(plan, documents, report):
     except ledger.LedgerError as exc:
         return report.bad(f'contract: {exc}')
     found = contract_v6.contract_generation(rec.contract)
-    if not report.verdict(found == generation,
+    # A v8 contract lives in the v7 manifest line (spec/LOOP_ENGINEERING.md):
+    # the generation changes the contract only.
+    if not report.verdict(found == generation or (generation, found) == ('v7', 'v8'),
                           f'{generation} manifest pairs with a {generation} contract',
                           f'manifest.json is {generation} but the live contract is {found} — a '
                           'torn pair this checker refuses to guess about; resolve the folder by hand'):
