@@ -372,3 +372,35 @@ PY
     [ "$status" -eq 0 ] || { echo "$wf: $output"; return 1; }
   done
 }
+
+@test "the dogfood lock helper reproduces both skills CLI hash algorithms and fails closed on neither" {
+    command -v node >/dev/null || skip "node is required by the lockfile refresh"
+    # The committed lockfile verifies (the helper proves its algorithm against
+    # the ai-diff-reviewer entry the release automation wrote).
+    run node "$REPO_ROOT/scripts/update-dogfood-lock.mjs" --verify
+    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+    # A lockfile written by the older CLI (skills@1.5.24) is still recognised,
+    # and an unknown algorithm is refused without writing.
+    R="$(cd "$(mktemp -d)" && pwd -P)"
+    mkdir -p "$R/scripts" "$R/.agents/skills/ai-diff-reviewer/sub" "$R/.agents/skills/deepworkplan"
+    cp "$REPO_ROOT/scripts/update-dogfood-lock.mjs" "$R/scripts/"
+    printf 'a\n' > "$R/.agents/skills/ai-diff-reviewer/SKILL.md"
+    printf 'b\n' > "$R/.agents/skills/ai-diff-reviewer/sub/x.md"
+    printf 'c\n' > "$R/.agents/skills/deepworkplan/SKILL.md"
+    v1="$(cd "$R/.agents/skills/ai-diff-reviewer" && node -e '
+const c=require("crypto"),fs=require("fs");
+const f=["SKILL.md","sub/x.md"].sort((a,b)=>a.localeCompare(b));
+const h=c.createHash("sha256");for(const p of f){h.update(p);h.update(fs.readFileSync(p));}
+console.log(h.digest("hex"))')"
+    for ctl in "$v1" 0000000000000000000000000000000000000000000000000000000000000000; do
+        printf '{"version":1,"skills":{"ai-diff-reviewer":{"computedHash":"%s"},"deepworkplan":{"computedHash":"x"}}}\n' "$ctl" > "$R/skills-lock.json"
+        run node "$R/scripts/update-dogfood-lock.mjs"
+        if [ "$ctl" = "$v1" ]; then
+            [ "$status" -eq 0 ] && [[ "$output" == *"skills@1.5.24"* ]] || { echo "$output"; return 1; }
+        else
+            [ "$status" -ne 0 ] && [[ "$output" == *"Refusing to write"* ]] || { echo "$output"; return 1; }
+            grep -q '"deepworkplan":{"computedHash":"x"}' "$R/skills-lock.json"
+        fi
+    done
+    rm -rf "$R"
+}
