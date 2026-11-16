@@ -79,17 +79,69 @@ brain acts, the plan is not queued.
 
 ## 3. Structured blockers
 
-Status: specified for the 8.0.0 line; the state field ships with the state
-schema change that carries it (a later 8.0.0 change). Until that schema is
-published, a writer MUST NOT add these fields to `state.json` (the
-published `blocked` object is closed), and every blocker is the human's.
+A v8 plan records why it cannot continue as data, so the loop, the fleet and
+a resuming agent read the same fields instead of scraping prose.
 
-A blocked plan will record a C-class and an optional **`resolver`:
-`"lead" | "human"`**; an absent resolver MUST be read as `human`. `lead`
-means resolvable inside the plan's recorded authority **without** a
-credential, login, consent, payment, push to main, release or deletion. The
-loop (its brain included) MUST NOT ask a lead to resolve a blocker the plan
-itself did not mark lead-resolvable; everything else waits for the human.
+### 3.1. The blocker record
+
+A blocker MUST be recorded through the ledger's helper (`ledger.py block`
+to raise, `ledger.py unblock` to resolve) as a `blocker` event of
+`journal-event/v8`; a raw append of a `blocker` event MUST be refused, and
+every refused raise or resolution MUST be recorded as a refusal. A raise
+carries:
+
+| Field | Rule |
+|---|---|
+| `task` | the blocked task of this contract; a task its evidence already closed MUST NOT be blocked |
+| `reason` | non-empty, at most 1000 characters: why the task cannot continue |
+| `needs` | exactly one non-empty line, at most 500 characters: what unblocks it |
+| `class` | REQUIRED, one of `C1`–`C7` ([`AGENT_PROTOCOL.md`](AGENT_PROTOCOL.md) §7.5) |
+| `resolver` | OPTIONAL, `"lead"` or `"human"`; an absent resolver MUST be read as `human` |
+
+`lead` means resolvable inside the plan's recorded authority **without** a
+credential, login, consent, payment, push to main, release or deletion.
+`resolver: "lead"` MUST be refused for `C1`, `C2`, `C5` and `C6` (approval,
+a consent or login screen, damage, terms are the human's). A resolution
+carries only the task (and an optional note).
+
+At most one blocker MUST be active per plan: a raise on another task MUST be
+refused until the active one is resolved. A re-raise on the same task MAY
+update `reason`, `needs`, `class` and `resolver`; the episode keeps the
+`since` of its first raise. While a blocker is unresolved its task MUST NOT
+complete: completion MUST be refused, and evidence that lands meanwhile does
+not close the task.
+
+### 3.2. Where readers find it
+
+The plan's `state.json` is `plan-snapshot/v8`: the `plan-snapshot/v6` shape
+with `blocker` as the active blocker — `{task, reason, since, needs, class,
+resolver?}` — or `null`, and `blocked` as a derived task status that wins over
+the others while the blocker is unresolved. Like every snapshot field it is
+projected by the ledger, never written by hand.
+
+`PROGRESS.md` SHOULD open with a structured header of four fixed lines
+directly under its title, written by create and refreshed on every
+transition (`shared/progress_header.py`):
+
+```text
+Goal: <one line>
+Current task: <task id> - <title> (<status>)
+Next action: <one line>
+Needs: none | <class> (<resolver>): <needs>
+```
+
+`Current task` and `Needs` are derived from the snapshot (the blocked task
+first, else the first task not completed); `Goal` and `Next action` are the
+executing agent's words. The rest of `PROGRESS.md` stays the agents' working
+index.
+
+### 3.3. What the loop may do with it
+
+The loop (its brain included) MUST NOT ask a lead to resolve a blocker the
+plan itself did not mark `resolver: "lead"`; everything else waits for the
+human. v6 and v7 plans record no `blocker` events, keep `plan-snapshot/v6`
+(whose `blocker` stays `null`), and every blocker they report is the
+human's.
 
 ## 4. The plan queue
 
@@ -110,9 +162,13 @@ queue is a quiet none and never breaks the lifecycle.
 
 ## 5. What v8 keeps
 
-Everything v7 carries — `tasks[].parallel_safe`, delegation, the journal
-(the v8 event set is the v7 event set) — under one ordered generation
-ladder: every feature gated "v7" MUST be available to v8 and later. A v8
-plan MUST use the v7 manifest and journal line (`plan-manifest/v7`,
-`journal-event/v7`); a conformance checker MUST pair a v7 manifest with a v8
-contract.
+Everything v7 carries — `tasks[].parallel_safe`, delegation and the full v7
+event set — under one ordered generation ladder: every feature gated "v7"
+MUST be available to v8 and later. A v8 plan MUST record its events under
+`journal-event/v8` (the v7 event set plus `blocker`, §3) and project into
+`plan-snapshot/v8`; a journal that mixes generations MUST be refused. A v8
+plan MUST keep the v7 manifest line (`plan-manifest/v7`): the manifest's
+shape and its contract pointer do not change, so a new manifest URL would
+add a generation without a difference. A conformance checker MUST pair a v7
+manifest with a v8 contract. v6 and v7 plans keep their records byte for
+byte.

@@ -40,7 +40,10 @@ SUPPORTED_SPEC = '5.0.0'
 MANIFEST_V6 = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
 MANIFEST_V7 = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
 RECORD_GENERATIONS = {MANIFEST_V6: 'v6', MANIFEST_V7: 'v7'}
-SNAPSHOT_V6 = 'https://deepworkplan.com/schema/plan-snapshot/v6.json'
+# The snapshot URL follows the live contract's generation: v6/v7 plans
+# project into plan-snapshot/v6, v8 plans into plan-snapshot/v8
+# (spec/LOOP_ENGINEERING.md section 3), so the state check compares against
+# the ledger's own projection, not a constant.
 # The standard's released series: 2.x and 4.x are historical (plans authored
 # before each jump stay valid, §6.5), 5.x is this checker's ceiling. There is no 3.x standard
 # — the v3 launch was a product release, not a standard bump.
@@ -273,8 +276,11 @@ def records(plan, documents, report):
     except ledger.LedgerError as exc:
         return report.bad(f'contract: {exc}')
     found = contract_v6.contract_generation(rec.contract)
-    # A v8 contract lives in the v7 manifest line (spec/LOOP_ENGINEERING.md):
-    # the generation changes the contract only.
+    # A v8 contract lives in the v7 manifest line (spec/LOOP_ENGINEERING.md
+    # section 5): v8 changes the contract, journal and snapshot generations,
+    # never the manifest shape. The journal check below holds every event to
+    # the live contract's generation (a v8 plan's events carry
+    # journal-event/v8; a mixed journal is refused).
     if not report.verdict(found == generation or (generation, found) == ('v7', 'v8'),
                           f'{generation} manifest pairs with a {generation} contract',
                           f'manifest.json is {generation} but the live contract is {found} — a '
@@ -329,9 +335,9 @@ def records(plan, documents, report):
     state = documents.get('state')
     if state is None:
         report.note('no state.json yet — run ledger.py project (the snapshot is derived)')
-    elif state.get('schema') != SNAPSHOT_V6:
-        report.bad(f'state.json is {state.get("schema")!r}, not the derived plan snapshot — '
-                   'regenerate it with ledger.py project, never by hand')
+    elif state.get('schema') != snapshot['schema']:
+        report.bad(f'state.json is {state.get("schema")!r}, not the derived plan snapshot '
+                   f'({snapshot["schema"]}) — regenerate it with ledger.py project, never by hand')
     elif (plan / 'state.json').read_bytes() == ledger.snapshot_bytes(snapshot).encode('utf-8'):
         report.ok('state.json agrees with the journal (byte-identical projection)')
     else:
@@ -340,6 +346,10 @@ def records(plan, documents, report):
     tasks = snapshot['tasks']
     done = sum(t['status'] == 'completed' for t in tasks)
     report.ok(f'{done}/{len(tasks)} tasks completed (derived from gate evidence)')
+    blocker = snapshot.get('blocker')
+    if isinstance(blocker, dict):
+        report.note(f'blocked: {blocker.get("task")} ({blocker.get("class")}, resolver '
+                    f'{blocker.get("resolver") or "human"}) needs: {blocker.get("needs")}')
     if tasks and 'final review' not in str(tasks[-1].get('title') or '').lower():
         report.note('the last contract task is not the Final Review (DWP_SPECIFICATION §6.1)')
     if tasks and done == len(tasks):

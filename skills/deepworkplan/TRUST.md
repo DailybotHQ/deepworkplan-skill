@@ -41,7 +41,9 @@ delegation launches and results behind a gate — a v7-or-later contract,
 `agent_delegation` grant, `parallel_safe` task or read-only delegate, an
 enabled and detected transport addon — and **never runs a delegate
 itself**: the transport addon does, and a delegate's result stays
-`asserted` until this ledger's own gate observes it), `shared/views.py`
+`asserted` until this ledger's own gate observes it; for v8 plans its
+`block` and `unblock` commands are the only writers of structured blocker
+records and re-project `state.json` — they run nothing), `shared/views.py`
 rendering the deterministic generated views under the human-edit rule,
 `shared/scheduler.py` — the read-only authorization core that turns journal
 records into dispatch/refusal decisions (it never writes and never executes
@@ -81,6 +83,10 @@ case (no CLI, invalid input, failed send) exits 0 silently; and
 started on a task start while it is still queued and done after its closure, create/refine may
 skip with a note — an atomic 0600 write, and a read of anything that is not
 a valid bounded document is a quiet none; and
+`shared/progress_header.py`, the v8 `PROGRESS.md` header writer: it reads
+the plan's records read-only and rewrites only the four header lines under
+the title of that plan's `PROGRESS.md` (atomic; the body below is never
+touched; `--check` writes nothing); and
 `shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,
 guarded resumable migrate, verified rollback. It never executes anything:
 a v5 gate record is imported through the ledger writer as `imported`

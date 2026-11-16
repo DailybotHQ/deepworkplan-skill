@@ -63,9 +63,11 @@ sys.dont_write_bytecode = True  # never leave caches inside an installed pack
 import contract_v6  # noqa: E402  (sibling module, same directory)
 
 LEDGER_IDENTITY = 'dwp-ledger/6.0'
-# F-24: a v7 plan's records name the v7 ledger (same code, v7 generation).
-# v8 events are v7 events (spec/LOOP_ENGINEERING.md): same identity.
-LEDGER_IDENTITY_BY_GENERATION = {'v6': LEDGER_IDENTITY, 'v7': 'dwp-ledger/7.0', 'v8': 'dwp-ledger/7.0'}
+# F-24: a plan's records name the ledger of its generation (same code). A
+# v8 plan has its own journal and snapshot generations (journal-event/v8,
+# plan-snapshot/v8; spec/LOOP_ENGINEERING.md section 3), so its records
+# name the v8 ledger.
+LEDGER_IDENTITY_BY_GENERATION = {'v6': LEDGER_IDENTITY, 'v7': 'dwp-ledger/7.0', 'v8': 'dwp-ledger/8.0'}
 
 
 def ledger_identity(contract):
@@ -80,6 +82,13 @@ LOCK_STALE_SECONDS = 900
 # publishes under its own label, beside plan-contract/v6 and
 # journal-event/v6, and is described by spec/schema/plan-snapshot-v6.schema.json.
 STATE_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-snapshot/v6.json'
+# v8 plans project into plan-snapshot/v8: the v6 snapshot with `blocker` as
+# the plan's active structured blocker (object or null) and `blocked` as a
+# derived task status (spec/LOOP_ENGINEERING.md section 3). v6 and v7 plans
+# keep plan-snapshot/v6 byte for byte.
+STATE_SCHEMA_URL_V8 = 'https://deepworkplan.com/schema/plan-snapshot/v8.json'
+SNAPSHOT_URL_BY_GENERATION = {'v6': STATE_SCHEMA_URL, 'v7': STATE_SCHEMA_URL,
+                              'v8': STATE_SCHEMA_URL_V8}
 
 # RFC 9.1 again, for the plan identity: the v6 manifest is its own new
 # generation (the v1/v2/v5 manifest shapes are frozen), and it carries the
@@ -91,8 +100,10 @@ MANIFEST_SCHEMA_URL = 'https://deepworkplan.com/schema/plan-manifest/v6.json'
 # plans project into the unchanged v6 snapshot shape (positions are keyed
 # by event type, so the `delegation` type needs no new snapshot schema).
 MANIFEST_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/plan-manifest/v7.json'
-# v8 plans project into the v7 manifest line (spec/LOOP_ENGINEERING.md): the
-# generation changes the contract only.
+# v8 plans keep the v7 manifest line (spec/LOOP_ENGINEERING.md section 5):
+# the manifest's shape and its contract pointer are unchanged, so a new
+# manifest URL would add a generation without a difference. The v8
+# generation changes the contract, the journal and the snapshot.
 MANIFEST_URL_BY_GENERATION = {'v6': MANIFEST_SCHEMA_URL,
                               'v7': MANIFEST_SCHEMA_URL_V7,
                               'v8': MANIFEST_SCHEMA_URL_V7}
@@ -134,6 +145,10 @@ class PrerequisitesUnmet(ApprovalMissing):
 
 class CompletionRefused(LedgerError):
     """Completion refused on missing in-window accepted evidence. Exit 4."""
+
+
+class BlockerRefused(LedgerError):
+    """A blocker raise/resolve the record layer refuses (recorded). Exit 5."""
 
 
 # ---------------------------------------------------------------- plan load
@@ -658,9 +673,43 @@ def invalidated_before(events):
     return found
 
 
+def active_blocker(events):
+    """The plan's active structured blocker, or None (v8; a read-only fold).
+
+    At most one blocker is active per plan (the writer refuses a second
+    task's raise). A re-raise on the same task updates reason, needs, class
+    and resolver but keeps `since` - the episode started at the first
+    raise. A resolution ends the episode. Deterministic: `since` is the
+    raising event's ts, never the wall clock.
+    """
+    active = None
+    for event in events:
+        if event.get('type') != 'blocker':
+            continue
+        if event.get('action') == 'raised':
+            record = {'task': event.get('task'),
+                      'reason': event.get('reason'),
+                      'since': event.get('ts'),
+                      'needs': event.get('needs'),
+                      'class': event.get('class')}
+            if active is not None and active.get('task') == record['task']:
+                record['since'] = active['since']
+            if 'resolver' in event:
+                record['resolver'] = event['resolver']
+            active = record
+        elif event.get('action') == 'resolved' and active is not None and \
+                active.get('task') == event.get('task'):
+            active = None
+    return active
+
+
 def task_complete(contract, events, task_id):
     """True when every gate_intent criterion has in-window accepted
-    evidence (the same zero-test predicate complete_task enforces)."""
+    evidence (the same zero-test predicate complete_task enforces) and no
+    unresolved blocker holds the task (LOOP_ENGINEERING.md section 3)."""
+    blocker = active_blocker(events)
+    if blocker is not None and blocker.get('task') == task_id:
+        return False
     return all(state.get('satisfied')
                for state in criterion_states(contract, events, task_id))
 
@@ -855,6 +904,12 @@ class Writer:
                 'gate_run records are produced only by the gate executor '
                 '(ledger.py gate) — a mediated write can never be '
                 'observed evidence (A1)')
+        if etype == 'blocker':
+            raise LedgerError(
+                'blocker records are produced only by `ledger.py block` and '
+                '`ledger.py unblock` (one active blocker per plan; lead '
+                'refused for C1/C2/C5/C6) - a raw append cannot bypass them '
+                '(LOOP_ENGINEERING.md section 3)')
         if etype == 'delegation':
             raise LedgerError(
                 'delegation records are produced only by `ledger.py '
@@ -1483,6 +1538,9 @@ class Writer:
         in_progress. A restart reopens the evidence window, so a
         restarted task derives in_progress again until fresh evidence
         lands."""
+        blocker = active_blocker(self.events)
+        if blocker is not None and blocker.get('task') == task_id:
+            return 'blocked'        # v8 only: blocker events exist from v8
         if self.task_start_seq(task_id) is None:
             return 'pending'
         if task_complete(self.r.contract, self.events, task_id):
@@ -1511,8 +1569,10 @@ class Writer:
             seq = event.get('seq', 0)
             if etype and seq > positions.get(etype, {}).get('seq', 0):
                 positions[etype] = {'seq': seq}
+        generation = contract_v6.contract_generation(self.r.contract)
         state = {
-            'schema': STATE_SCHEMA_URL,
+            'schema': SNAPSHOT_URL_BY_GENERATION.get(generation,
+                                                     STATE_SCHEMA_URL),
             'plan': self.r.contract['plan'],
             'contract_id': self.r.contract_id,
             'contract_revision': self.r.contract.get('revision', 1),
@@ -1526,7 +1586,11 @@ class Writer:
             'positions': positions,
             'resources': self._resource_totals(),
             'checkpoint': self._last_authority_question(),
-            'blocker': None,
+            # v8: the active structured blocker (LOOP_ENGINEERING.md
+            # section 3); v6/v7 projections keep the reserved null.
+            'blocker': (active_blocker(self.events)
+                        if contract_v6.generation_at_least(generation, 'v8')
+                        else None),
         }
         archives = self.r.archives()
         if archives:
@@ -1779,6 +1843,22 @@ class Writer:
         """Refuse completion unless every gate_intent criterion has
         in-window accepted evidence (zero-test control)."""
         self._check_position()
+        blocker = active_blocker(self.events)
+        if blocker is not None and blocker.get('task') == task_id:
+            self._append_raw('refusal',
+                             {'subject': task_id, 'stage': 'gate',
+                              'reason': 'unresolved blocker (%s): %s - '
+                                        'resolve it with `ledger.py '
+                                        'unblock` first' %
+                                        (blocker.get('class'),
+                                         blocker.get('needs'))},
+                             actor={'kind': 'helper',
+                                    'identity': LEDGER_IDENTITY},
+                             ts=_utc_now())
+            raise CompletionRefused(
+                'completion of %s refused: an unresolved blocker holds it '
+                '(%s, needs: %s) - resolve it with `ledger.py unblock` first'
+                % (task_id, blocker.get('class'), blocker.get('needs')))
         open_delegations = sorted(
             did for did, ev in self.delegations(task_id).items()
             if ev.get('state') == 'launched')
@@ -1870,6 +1950,67 @@ class Writer:
                              note='mediated by the ledger reading the '
                                   'contract at completion of %s '
                                   '(non-blocking)' % task_id)
+
+    # -- structured blockers (v8, spec/LOOP_ENGINEERING.md section 3) -------
+
+    def _refuse_blocker(self, subject, reason):
+        self._append_raw('refusal', {'subject': subject, 'stage': 'authorize',
+                                     'reason': reason},
+                         actor={'kind': 'helper',
+                                'identity': LEDGER_IDENTITY},
+                         ts=_utc_now())
+        raise BlockerRefused('blocker refused: %s' % reason)
+
+    def blocker(self, op, task_id, payload=None, actor=None, note=None):
+        """Raise or resolve the plan's structured blocker (writes).
+
+        raise: a v8 plan, a task of this contract that is not complete, no
+        other task's blocker active, and a payload of exactly reason, needs
+        (one line), class (C1..C7) and an optional resolver (lead|human;
+        absent = human; lead refused for C1/C2/C5/C6). resolve: the active
+        blocker of that task. Every refusal is recorded. The only writer of
+        `blocker` events: a raw append is refused.
+        """
+        self._check_position()
+        actor = actor or {'kind': 'agent', 'identity': 'caller'}
+        subject = '%s %s' % ('block' if op == 'raise' else 'unblock', task_id)
+        generation = contract_v6.contract_generation(self.r.contract)
+        if not contract_v6.generation_at_least(generation, 'v8'):
+            self._refuse_blocker(subject, 'this plan is %s - structured '
+                                 'blockers are recorded from v8 (older plans '
+                                 'keep their lifecycle)' % generation)
+        if not any(t.get('id') == task_id
+                   for t in self.r.contract.get('tasks', [])):
+            self._refuse_blocker(subject, 'unknown task')
+        active = active_blocker(self.events)
+        if op == 'resolve':
+            if active is None or active.get('task') != task_id:
+                self._refuse_blocker(subject, 'no unresolved blocker holds '
+                                     'this task')
+            return self._append_raw('blocker', {'task': task_id,
+                                                'action': 'resolved'},
+                                    actor, _utc_now(), note=note)
+        if op != 'raise':
+            raise LedgerError('blocker op must be raise or resolve')
+        if not isinstance(payload, dict):
+            raise LedgerError('block --json must be a JSON object')
+        unknown = sorted(set(payload) - {'reason', 'needs', 'class',
+                                         'resolver'})
+        if unknown:
+            self._refuse_blocker(subject, 'unknown blocker field(s): %s '
+                                 '(reason, needs, class, resolver)'
+                                 % ', '.join(unknown))
+        if active is not None and active.get('task') != task_id:
+            self._refuse_blocker(subject, 'the plan is already blocked on %s '
+                                 '- resolve that blocker first (one active '
+                                 'blocker per plan)' % active.get('task'))
+        if self.task_status(task_id) == 'completed':
+            self._refuse_blocker(subject, 'the task is already complete')
+        body = dict(payload, task=task_id, action='raised')
+        problems = contract_v6.blocker_payload_errors(body, 'blocker')
+        if problems:
+            self._refuse_blocker(subject, problems[0])
+        return self._append_raw('blocker', body, actor, _utc_now(), note=note)
 
     # -- delegation (v7, spec/V7_CONTRACT.md section 3) ----------------------
 
@@ -2769,7 +2910,10 @@ def main(argv):
              '--human-note FILE '
              '| delegate '
              'launch|observe|collect|cancel --task T [--json OBJ] '
-             '[--caps JSON]} [options]')
+             '[--caps JSON] '
+             '| block --task T --json \'{"reason":..,"needs":..,'
+             '"class":"C1".."C7"[,"resolver":"lead"|"human"]}\' '
+             '| unblock --task T [--note TEXT]} [options]')
     if any(arg in ('-h', '--help') for arg in argv):
         print(usage)
         return 0
@@ -2876,6 +3020,36 @@ def main(argv):
                                                 event['state'], event['seq']))
                 return 0
             except DelegationRefused as exc:
+                print('REFUSED: %s' % exc)
+                return 5
+            finally:
+                lock.release()
+        if args.command in ('block', 'unblock'):
+            if not args.task:
+                print('%s requires --task' % args.command)
+                return 2
+            if args.command == 'block' and not args.json:
+                print('block requires --json with reason, needs and class')
+                return 2
+            rec, lock, writer = _writer_for(args, args.force)
+            try:
+                event = writer.blocker(
+                    'raise' if args.command == 'block' else 'resolve',
+                    args.task,
+                    json.loads(args.json) if args.json else None,
+                    actor={'kind': args.actor_kind,
+                           'identity': args.actor_identity},
+                    note=args.note)
+                writer.project()
+                if args.command == 'block':
+                    print('OK: %s blocked at seq %d (%s, resolver %s)' %
+                          (args.task, event['seq'], event['class'],
+                           event.get('resolver', 'human')))
+                else:
+                    print('OK: %s unblocked at seq %d' % (args.task,
+                                                         event['seq']))
+                return 0
+            except BlockerRefused as exc:
                 print('REFUSED: %s' % exc)
                 return 5
             finally:

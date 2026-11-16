@@ -4,7 +4,8 @@
 # refused on any other generation; its five keys are checked; an absent key
 # means its one recorded default; a v8 plan keeps every v7 task rule
 # (parallel_safe) and records delegation like a v7 plan; it is materialized
-# into the v7 manifest and journal line.
+# into the v7 manifest line with its own journal generation
+# (journal-event/v8, the v7 events plus `blocker`).
 bats_require_minimum_version 1.5.0
 
 REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
@@ -82,6 +83,8 @@ import re, sys
 sys.path.insert(0, sys.argv[1])
 import contract_v6 as C
 spec = open(sys.argv[2], encoding='utf-8').read()
+# the autonomy table is section 2; section 3's blocker table is another table
+spec = spec[spec.index('## 2. '):spec.index('## 3. ')]
 rows = {}
 for line in spec.splitlines():
     m = re.match(r'^\| `([a-z_]+)` \|', line)
@@ -97,7 +100,7 @@ assert C.AUTONOMY_NOTIFY_TARGETS == ('dailybot',)
 PY
 }
 
-@test "a v8 plan materializes into the v7 manifest and journal line, and records delegation like a v7 plan" {
+@test "a v8 plan materializes into the v7 manifest line and the v8 journal, and records delegation like a v7 plan" {
   REPO="$WORK/repo"; PLAN="$REPO/.dwp/plans/PLAN_v8_fixture"
   mkdir -p "$PLAN/analysis_results" "$REPO/src" "$WORK/bin" "$WORK/home"
   export HOME="$WORK/home"
@@ -118,7 +121,8 @@ doc['autonomy'] = {'brain': False, 'queue': 'prompt-lead'}"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   grep -q 'plan-manifest/v7.json' "$PLAN/manifest.json"
   grep -q "\"schema\": \"$V8\"" "$PLAN/contract.json"
-  grep -q 'journal-event/v7.json' "$PLAN/journal.ndjson"
+  grep -q 'journal-event/v8.json' "$PLAN/journal.ndjson"
+  ! grep -q 'journal-event/v7.json' "$PLAN/journal.ndjson"
   # the conformance checker pairs the v7 manifest with the v8 contract (not a torn pair)
   run python3 "$SK/verify/plan_contract.py" "$PLAN"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
@@ -126,7 +130,8 @@ doc['autonomy'] = {'brain': False, 'queue': 'prompt-lead'}"
   python3 "$CFG" enable agentkit --repo "$REPO" >/dev/null
   python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
   python3 "$LEDGER" --plan "$PLAN" project >/dev/null
-  grep -qF '"generated_by": "dwp-ledger/7.0"' "$PLAN/state.json"
+  grep -qF '"generated_by": "dwp-ledger/8.0"' "$PLAN/state.json"
+  grep -qF '"schema": "https://deepworkplan.com/schema/plan-snapshot/v8.json"' "$PLAN/state.json"
   mkdir -p "$WORK/wt"
   digest="sha256:$(printf 'x' | shasum -a 256 | cut -c1-64)"
   run env PATH="$WORK/bin:$PATH" python3 "$LEDGER" --plan "$PLAN" delegate launch --task T-publish-schemas \
@@ -135,13 +140,22 @@ doc['autonomy'] = {'brain': False, 'queue': 'prompt-lead'}"
   grep -q '"type": "delegation"' "$PLAN/journal.ndjson" || grep -q '"delegation' "$PLAN/journal.ndjson"
 }
 
-@test "the v8 spec is indexed, in the generation table, normative, and its blocker field waits for its schema" {
+@test "the v8 spec is indexed, in the generation table, normative, and its blocker rules are stated" {
   grep -q '\[`LOOP_ENGINEERING.md`\](LOOP_ENGINEERING.md)' "$SK/spec/README.md"
-  grep -q '^| v8 | `plan-contract/v8` | `journal-event/v7` | `plan-manifest/v7` |' "$SK/spec/V6_LIFECYCLE.md"
+  grep -q '^| v8 | `plan-contract/v8` | `journal-event/v8` | `plan-manifest/v7` |' "$SK/spec/V6_LIFECYCLE.md"
   grep -q 'RFC 2119' "$SPEC"
   [ "$(grep -c 'MUST' "$SPEC")" -ge 8 ]
-  grep -q 'a writer MUST NOT add these fields to `state.json`' "$SPEC"
-  # and the published state schema really is closed (the reason for the rule above)
+  c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+  # the status paragraph is lifted: the fields ship with their schemas
+  ! grep -q 'a writer MUST NOT add these fields' "$SPEC"
+  ! grep -q 'Status: specified for the 8.0.0 line' "$SPEC"
+  c "$SPEC" '`resolver: "lead"` MUST be refused for `C1`, `C2`, `C5` and `C6`'
+  c "$SPEC" 'At most one blocker MUST be active per plan'
+  c "$SPEC" 'While a blocker is unresolved its task MUST NOT complete'
+  c "$SPEC" 'A v8 plan MUST record its events under `journal-event/v8`'
+  c "$SPEC" 'A v8 plan MUST keep the v7 manifest line (`plan-manifest/v7`)'
+  # the retained v5 state stays closed and untouched: v8 blockers live in
+  # the v8 snapshot, never in plan-state/v5
   python3 - "$SK/spec/schema/plan-state-v5.schema.json" <<'PY'
 import json, sys
 doc = json.load(open(sys.argv[1]))

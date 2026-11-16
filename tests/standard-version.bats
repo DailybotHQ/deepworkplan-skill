@@ -113,9 +113,11 @@ PY
     # (spec/V7_CONTRACT.md): plan-contract/v7, journal-event/v7 and
     # plan-manifest/v7. There is no snapshot or context-manifest v7 — v7
     # plans project into plan-snapshot/v6. The 8.0.0 line adds exactly
-    # plan-contract/v8 (spec/LOOP_ENGINEERING.md): v8 events are v7 events
-    # and v8 plans project into the v7 manifest line.
-    run bash -c "grep -rn 'schema/plan-state/v[3-46-9]\|schema/plan-manifest/v[3-48-9]\|schema/plan-contract/v[3-49]\|schema/plan-snapshot/v[3-47-9]\|schema/journal-event/v[3-48-9]\|schema/context-manifest/v[3-47-9]' '$SK'"
+    # plan-contract/v8, journal-event/v8 (v7 + the blocker event) and
+    # plan-snapshot/v8 (the v6 snapshot with the blocker wired;
+    # spec/LOOP_ENGINEERING.md section 3); v8 plans keep the v7 manifest
+    # line, and there is no plan-snapshot/v7 or context-manifest v7/v8.
+    run bash -c "grep -rn 'schema/plan-state/v[3-46-9]\|schema/plan-manifest/v[3-48-9]\|schema/plan-contract/v[3-49]\|schema/plan-snapshot/v[3-479]\|schema/journal-event/v[3-49]\|schema/context-manifest/v[3-47-9]' '$SK'"
     [ "$status" -ne 0 ]
     grep -q 'plan-manifest/v5.json' "$SK/create/SKILL.md"
     grep -q 'plan-state/v5.json' "$SK/create/SKILL.md"
@@ -131,7 +133,9 @@ PY
         'plan-manifest/v7.json plan-manifest-v7.schema.json' \
         'plan-contract/v7.json plan-contract-v7.schema.json' \
         'journal-event/v7.json journal-event-v7.schema.json' \
-        'plan-contract/v8.json plan-contract-v8.schema.json'; do
+        'plan-contract/v8.json plan-contract-v8.schema.json' \
+        'journal-event/v8.json journal-event-v8.schema.json' \
+        'plan-snapshot/v8.json plan-snapshot-v8.schema.json'; do
         set -- $pair
         [ -s "$SK/spec/schema/$2" ]
         grep -q "https://deepworkplan.com/schema/$1" "$SK/spec/schema/$2"

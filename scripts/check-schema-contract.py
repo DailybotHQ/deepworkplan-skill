@@ -59,6 +59,9 @@ def load_schemas(pack):
         "https://deepworkplan.com/schema/plan-contract/v7.json": json.load(open(os.path.join(d, "plan-contract-v7.schema.json"))),
         "https://deepworkplan.com/schema/journal-event/v7.json": json.load(open(os.path.join(d, "journal-event-v7.schema.json"))),
         "https://deepworkplan.com/schema/plan-manifest/v7.json": json.load(open(os.path.join(d, "plan-manifest-v7.schema.json"))),
+        "https://deepworkplan.com/schema/plan-contract/v8.json": json.load(open(os.path.join(d, "plan-contract-v8.schema.json"))),
+        "https://deepworkplan.com/schema/journal-event/v8.json": json.load(open(os.path.join(d, "journal-event-v8.schema.json"))),
+        "https://deepworkplan.com/schema/plan-snapshot/v8.json": json.load(open(os.path.join(d, "plan-snapshot-v8.schema.json"))),
         "https://deepworkplan.com/schema/addon-descriptor/v1.json": json.load(open(os.path.join(d, "addon-descriptor-v1.schema.json"))),
     }
 
@@ -516,6 +519,91 @@ def v7_cases(schemas, problems, notes, pack):
                      "generation refused at runtime")
 
 
+def v8_cases(schemas, problems, notes, pack):
+    """v8 generation (spec/LOOP_ENGINEERING.md section 3): journal-event/v8 is
+    a strict superset of v7 (every v7 fixture event re-stamped v8 validates
+    under both halves) plus the blocker event, and the halves agree on every
+    blocker mutant; the ledger-generated blocked snapshot fixture validates
+    under plan-snapshot/v8 and its mutants are refused."""
+    js = schemas["https://deepworkplan.com/schema/journal-event/v8.json"]
+    ss = schemas["https://deepworkplan.com/schema/plan-snapshot/v8.json"]
+    js7 = schemas["https://deepworkplan.com/schema/journal-event/v7.json"]
+    tests = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tests")
+    cv6 = load_pack_module(pack, "contract_v6")
+    before = len(problems)
+    try:
+        contract = json.load(open(os.path.join(tests, "fixtures", "v7", "contract-minimal-v7.json")))
+        events = [json.loads(l) for l in open(os.path.join(tests, "fixtures", "v7", "journal-delegation-v7.ndjson")) if l.strip()]
+        snapshot = json.load(open(os.path.join(tests, "fixtures", "v8", "state-blocked-v8.json")))
+    except (OSError, ValueError) as exc:
+        problems.append(f"v8: fixtures unreadable ({exc})")
+        return
+    contract = {k: v for k, v in contract.items() if k != "contract_id"}
+    contract["schema"] = "https://deepworkplan.com/schema/plan-contract/v8.json"
+    contract["contract_id"] = cv6.compute_contract_id(contract)
+    url = "https://deepworkplan.com/schema/journal-event/v8.json"
+    for ev in events:
+        ev = dict(ev, schema=url, contract_id=contract["contract_id"])
+        if errors(js, ev) or cv6.journal_event_errors(ev, contract):
+            problems.append(f"v8: v7 event type {ev.get('type')!r} re-stamped v8 rejected "
+                            f"(jsonschema={errors(js, ev)[:1]} runtime={cv6.journal_event_errors(ev, contract)[:1]})")
+    raised = {"schema": url, "type": "blocker", "seq": 9, "ts": "2026-11-16T00:00:00Z",
+              "plan": contract["plan"], "contract_id": contract["contract_id"],
+              "actor": {"kind": "agent", "identity": "check"}, "task": contract["tasks"][0]["id"],
+              "action": "raised", "reason": "the fixture service is down",
+              "needs": "restart the fixture service", "class": "C3", "resolver": "lead"}
+    resolved = {k: v for k, v in raised.items() if k not in ("reason", "needs", "class", "resolver")}
+    resolved.update(action="resolved", seq=10)
+    for label, ev in (("raise", raised), ("resolution", resolved), ("raise without resolver",
+                      {k: v for k, v in raised.items() if k != "resolver"})):
+        if errors(js, ev) or cv6.journal_event_errors(ev, contract):
+            problems.append(f"v8: valid blocker {label} rejected (jsonschema={errors(js, ev)[:1]} "
+                            f"runtime={cv6.journal_event_errors(ev, contract)[:1]})")
+
+    def both_reject(label, base, mutate):
+        ev = copy.deepcopy(base)
+        mutate(ev)
+        if not errors(js, ev) or not cv6.journal_event_errors(ev, contract):
+            problems.append(f"v8 blocker mutant {label}: a half accepted it "
+                            f"(jsonschema={bool(errors(js, ev))} runtime={bool(cv6.journal_event_errors(ev, contract))})")
+
+    for klass in ("C1", "C2", "C5", "C6"):
+        both_reject(f"lead on {klass}", raised, lambda e, k=klass: e.update({"class": k}))
+    both_reject("no class", raised, lambda e: e.pop("class"))
+    both_reject("no needs", raised, lambda e: e.pop("needs"))
+    both_reject("multi-line needs", raised, lambda e: e.update(needs="a\nb"))
+    both_reject("blank needs", raised, lambda e: e.update(needs="   "))
+    both_reject("unknown class", raised, lambda e: e.update({"class": "C8"}))
+    both_reject("unknown resolver", raised, lambda e: e.update(resolver="brain"))
+    both_reject("unknown action", raised, lambda e: e.update(action="paused"))
+    both_reject("resolution carries fields", resolved, lambda e: e.update(needs="x"))
+    both_reject("blocker claims trust", raised, lambda e: e.update(trust="asserted"))
+    both_reject("unknown field", raised, lambda e: e.update(owner="me"))
+    if not errors(js7, dict(raised, schema="https://deepworkplan.com/schema/journal-event/v7.json")):
+        problems.append("v8: journal-event/v7 accepts a blocker event (v7 must stay closed)")
+    v7_contract = dict(contract, schema="https://deepworkplan.com/schema/plan-contract/v7.json")
+    if not cv6.journal_event_errors(raised, v7_contract):
+        problems.append("v8 event under a v7 contract: runtime accepted a mixed generation")
+    errs = errors(ss, snapshot)
+    if errs:
+        problems.append(f"v8: the ledger-generated blocked snapshot fixture is rejected ({errs[0]})")
+    for label, mutate in (
+            ("v6 snapshot URL", lambda s: s.update(schema="https://deepworkplan.com/schema/plan-snapshot/v6.json")),
+            ("lead on C1", lambda s: s["blocker"].update({"class": "C1"})),
+            ("blocker as a string", lambda s: s.update(blocker="stuck")),
+            ("blocker without needs", lambda s: s["blocker"].pop("needs")),
+            ("blocker extra field", lambda s: s["blocker"].update(owner="me")),
+            ("unknown task status", lambda s: s["tasks"][0].update(status="paused"))):
+        doc = copy.deepcopy(snapshot)
+        mutate(doc)
+        if not errors(ss, doc):
+            problems.append(f"v8 snapshot mutant {label}: accepted by the schema")
+    if len(problems) == before:
+        notes.append("v8: v7 events valid under journal-event/v8 (superset); blocker raise/resolve "
+                     "valid under both halves and 14 blocker mutants rejected by both; v7 stays "
+                     "closed to blocker; blocked snapshot fixture valid, 6 snapshot mutants rejected")
+
+
 def config_cases(schemas, problems, notes, pack):
     """Configuration file (spec/CONFIG.md): the committed fixtures validate
     under BOTH halves - jsonschema over the published dwp-config v1 schema,
@@ -785,6 +873,7 @@ def main():
     benchmark_cases(schemas, problems, notes, a.pack)
     learnings_cases(schemas, problems, notes, a.pack)
     v7_cases(schemas, problems, notes, a.pack)
+    v8_cases(schemas, problems, notes, a.pack)
     config_cases(schemas, problems, notes, a.pack)
     descriptor_cases(schemas, problems, notes, a.pack)
     for n in notes:

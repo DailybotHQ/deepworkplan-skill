@@ -38,15 +38,19 @@ JOURNAL_SCHEMA_URL = 'https://deepworkplan.com/schema/journal-event/v6.json'
 CONTRACT_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/plan-contract/v7.json'
 JOURNAL_SCHEMA_URL_V7 = 'https://deepworkplan.com/schema/journal-event/v7.json'
 CONTRACT_SCHEMA_URL_V8 = 'https://deepworkplan.com/schema/plan-contract/v8.json'
+JOURNAL_SCHEMA_URL_V8 = 'https://deepworkplan.com/schema/journal-event/v8.json'
 
 # The v8 generation (spec/LOOP_ENGINEERING.md) adds one optional top-level
-# `autonomy` block to v7 — the plan's recorded authority for the loop. The
-# journal-event set is unchanged: v8 events are v7 events.
+# `autonomy` block to v7 — the plan's recorded authority for the loop — and
+# its own journal generation: journal-event/v8 = v7 + the `blocker` event
+# (structured blockers, LOOP_ENGINEERING.md section 3). The manifest line
+# stays plan-manifest/v7: the manifest's shape and pointer do not change.
 CONTRACT_GENERATIONS = {CONTRACT_SCHEMA_URL: 'v6', CONTRACT_SCHEMA_URL_V7: 'v7',
                         CONTRACT_SCHEMA_URL_V8: 'v8'}
-JOURNAL_GENERATIONS = {JOURNAL_SCHEMA_URL: 'v6', JOURNAL_SCHEMA_URL_V7: 'v7'}
+JOURNAL_GENERATIONS = {JOURNAL_SCHEMA_URL: 'v6', JOURNAL_SCHEMA_URL_V7: 'v7',
+                       JOURNAL_SCHEMA_URL_V8: 'v8'}
 JOURNAL_URL_BY_GENERATION = {'v6': JOURNAL_SCHEMA_URL, 'v7': JOURNAL_SCHEMA_URL_V7,
-                              'v8': JOURNAL_SCHEMA_URL_V7}
+                              'v8': JOURNAL_SCHEMA_URL_V8}
 CONTRACT_URL_BY_GENERATION = {'v6': CONTRACT_SCHEMA_URL,
                               'v7': CONTRACT_SCHEMA_URL_V7,
                               'v8': CONTRACT_SCHEMA_URL_V8}
@@ -124,6 +128,23 @@ JOURNAL_EVENT_TYPES = ('task_start', 'approval', 'gate_run', 'observation',
 
 # v7 catalog: the v6 catalog plus `delegation` (V7_CONTRACT.md section 3).
 JOURNAL_EVENT_TYPES_V7 = JOURNAL_EVENT_TYPES + ('delegation',)
+# v8 catalog: the v7 catalog plus `blocker` (LOOP_ENGINEERING.md section 3).
+JOURNAL_EVENT_TYPES_V8 = JOURNAL_EVENT_TYPES_V7 + ('blocker',)
+JOURNAL_CATALOG_BY_GENERATION = {'v6': JOURNAL_EVENT_TYPES,
+                                 'v7': JOURNAL_EVENT_TYPES_V7,
+                                 'v8': JOURNAL_EVENT_TYPES_V8}
+
+# v8 structured blockers (LOOP_ENGINEERING.md section 3). The class is the
+# escalation class of AGENT_PROTOCOL.md section 7.5; `resolver` says who may
+# resolve it (absent = human). `lead` is refused for the classes that by
+# definition need a human: approval (C1), a consent or login screen (C2),
+# damage (C5) and terms (C6).
+BLOCKER_ACTIONS = ('raised', 'resolved')
+BLOCKER_CLASSES = ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7')
+BLOCKER_RESOLVERS = ('lead', 'human')
+BLOCKER_HUMAN_ONLY_CLASSES = ('C1', 'C2', 'C5', 'C6')
+BLOCKER_REASON_MAX = 1000
+BLOCKER_NEEDS_MAX = 500
 
 # Types whose payload carries evidence and therefore a trust label.
 EVIDENCE_TYPES = ('gate_run', 'observation', 'resource_sample',
@@ -998,8 +1019,7 @@ def journal_event_errors(event, contract=None):
                       (expected or JOURNAL_SCHEMA_URL, event_url))
         return errors
     etype = event.get('type')
-    catalog = JOURNAL_EVENT_TYPES_V7 if \
-        JOURNAL_GENERATIONS[event_url] == 'v7' else JOURNAL_EVENT_TYPES
+    catalog = JOURNAL_CATALOG_BY_GENERATION[JOURNAL_GENERATIONS[event_url]]
     if etype not in catalog:
         errors.append('event.type: unknown event type %r (closed catalog: '
                       '%s)' % (etype, ', '.join(catalog)))
@@ -1490,7 +1510,66 @@ def _v_delegation(event, errors):
                       'asserted until the parent runner observes it)')
 
 
+def blocker_payload_errors(event, path='event'):
+    """Errors in one blocker raise/resolve payload (LOOP_ENGINEERING.md
+    section 3); shared by the journal validator and the ledger's writer so
+    a refusal names the same rule either way."""
+    errors = []
+    tid = event.get('task')
+    if not isinstance(tid, str) or not ID_TASK.match(tid):
+        errors.append('%s.task: expected a T-* id' % path)
+    action = event.get('action')
+    if action not in BLOCKER_ACTIONS:
+        errors.append('%s.action: expected raised/resolved' % path)
+        return errors
+    if action == 'resolved':
+        extra = sorted(k for k in ('reason', 'needs', 'class', 'resolver')
+                       if k in event)
+        if extra:
+            errors.append('%s: a resolution carries only the task (and an '
+                          'optional note), not %s' % (path, ', '.join(extra)))
+        return errors
+    reason = event.get('reason')
+    if not isinstance(reason, str) or not reason.strip() or \
+            len(reason) > BLOCKER_REASON_MAX:
+        errors.append('%s.reason: expected a non-empty string (<= %d chars)'
+                      % (path, BLOCKER_REASON_MAX))
+    needs = event.get('needs')
+    if not isinstance(needs, str) or not needs.strip() or \
+            len(needs) > BLOCKER_NEEDS_MAX or '\n' in needs or '\r' in needs:
+        errors.append('%s.needs: expected one non-empty line (<= %d chars) '
+                      'saying what unblocks the task' % (path, BLOCKER_NEEDS_MAX))
+    klass = event.get('class')
+    if klass not in BLOCKER_CLASSES:
+        errors.append('%s.class: expected one of %s (AGENT_PROTOCOL.md 7.5)'
+                      % (path, '/'.join(BLOCKER_CLASSES)))
+    if 'resolver' in event:
+        resolver = event['resolver']
+        if resolver not in BLOCKER_RESOLVERS:
+            errors.append('%s.resolver: expected lead/human (absent = human)'
+                          % path)
+        elif resolver == 'lead' and klass in BLOCKER_HUMAN_ONLY_CLASSES:
+            errors.append('%s.resolver: lead is refused for %s - approval, '
+                          'consent or login, damage and terms are the '
+                          "human's (LOOP_ENGINEERING.md section 3)"
+                          % (path, klass))
+    return errors
+
+
+def _v_blocker(event, errors):
+    """LOOP_ENGINEERING.md section 3: one blocker raise or resolution.
+
+    Not an evidence type (no trust label). Recorded only by the ledger's
+    block/unblock helper, never by a raw append.
+    """
+    _closed(event, {'schema', 'type', 'seq', 'ts', 'plan', 'contract_id',
+                    'actor', 'note', 'task', 'action', 'reason', 'needs',
+                    'class', 'resolver'}, 'event', errors)
+    errors.extend(blocker_payload_errors(event))
+
+
 _EVENT_VALIDATORS = {
+    'blocker': _v_blocker,
     'delegation': _v_delegation,
     'task_start': _v_task_start,
     'approval': _v_approval,
@@ -1840,6 +1919,53 @@ def self_test():
              lambda e: e.pop('prompt_digest'), v7_stamped)):
         probes[0] += 1
         ev = dict(delegation)
+        mutate(ev)
+        if not journal_event_errors(ev, against):
+            failures.append('mutant %r should fail' % label)
+    # v8 generation (LOOP_ENGINEERING.md section 3): the blocker event is
+    # valid only under the v8 journal URL, and its rules hold.
+    v8 = json.loads(json.dumps(v7))
+    v8['schema'] = CONTRACT_SCHEMA_URL_V8
+    v8_stamped = dict(v8, contract_id=compute_contract_id(v8))
+    raised = {'schema': JOURNAL_SCHEMA_URL_V8, 'type': 'blocker', 'seq': 2,
+              'ts': '2026-11-16T00:00:00Z', 'plan': v8['plan'],
+              'contract_id': v8_stamped['contract_id'],
+              'actor': {'kind': 'agent', 'identity': 'selftest'},
+              'task': v8['tasks'][0]['id'], 'action': 'raised',
+              'reason': 'the fixture repository is missing',
+              'needs': 'clone the fixture repository', 'class': 'C3',
+              'resolver': 'lead'}
+    resolved = dict({k: v for k, v in raised.items()
+                     if k not in ('reason', 'needs', 'class', 'resolver')},
+                    action='resolved', seq=3)
+    for label, event in (('a v8 blocker raise', raised),
+                         ('a v8 blocker resolution', resolved)):
+        probes[0] += 1
+        if journal_event_errors(event, v8_stamped):
+            failures.append('%s should be valid: %s'
+                            % (label, journal_event_errors(event,
+                                                           v8_stamped)[:1]))
+    for label, mutate, against in (
+            ('blocker under the v7 journal URL',
+             lambda e: e.update(schema=JOURNAL_SCHEMA_URL_V7), v7_stamped),
+            ('v8 event under a v7 contract', lambda e: None, v7_stamped),
+            ('lead resolver on a C1 blocker',
+             lambda e: e.update({'class': 'C1'}), v8_stamped),
+            ('lead resolver on a C2 blocker',
+             lambda e: e.update({'class': 'C2'}), v8_stamped),
+            ('lead resolver on a C5 blocker',
+             lambda e: e.update({'class': 'C5'}), v8_stamped),
+            ('lead resolver on a C6 blocker',
+             lambda e: e.update({'class': 'C6'}), v8_stamped),
+            ('blocker without a class', lambda e: e.pop('class'), v8_stamped),
+            ('multi-line needs',
+             lambda e: e.update(needs='one\ntwo'), v8_stamped),
+            ('unknown resolver',
+             lambda e: e.update(resolver='brain'), v8_stamped),
+            ('blocker claims trust',
+             lambda e: e.update(trust='asserted'), v8_stamped)):
+        probes[0] += 1
+        ev = dict(raised)
         mutate(ev)
         if not journal_event_errors(ev, against):
             failures.append('mutant %r should fail' % label)
