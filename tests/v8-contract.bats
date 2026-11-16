@@ -119,6 +119,10 @@ doc['autonomy'] = {'brain': False, 'queue': 'prompt-lead'}"
   grep -q 'plan-manifest/v7.json' "$PLAN/manifest.json"
   grep -q "\"schema\": \"$V8\"" "$PLAN/contract.json"
   grep -q 'journal-event/v7.json' "$PLAN/journal.ndjson"
+  # the conformance checker pairs the v7 manifest with the v8 contract (not a torn pair)
+  run python3 "$SK/verify/plan_contract.py" "$PLAN"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" == *"manifest pairs with a"* ]]
   python3 "$CFG" enable agentkit --repo "$REPO" >/dev/null
   python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
   python3 "$LEDGER" --plan "$PLAN" project >/dev/null
@@ -129,4 +133,21 @@ doc['autonomy'] = {'brain': False, 'queue': 'prompt-lead'}"
       --json "{\"delegation_id\": \"d1\", \"transport\": \"headless\", \"via\": \"agentkit\", \"kind\": \"claude\", \"target\": \"$WORK/wt\", \"worktree\": \"$WORK/wt\", \"prompt_digest\": \"$digest\"}"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
   grep -q '"type": "delegation"' "$PLAN/journal.ndjson" || grep -q '"delegation' "$PLAN/journal.ndjson"
+}
+
+@test "the v8 spec is indexed, in the generation table, normative, and its blocker field waits for its schema" {
+  grep -q '\[`LOOP_ENGINEERING.md`\](LOOP_ENGINEERING.md)' "$SK/spec/README.md"
+  grep -q '^| v8 | `plan-contract/v8` | `journal-event/v7` | `plan-manifest/v7` |' "$SK/spec/V6_LIFECYCLE.md"
+  grep -q 'RFC 2119' "$SPEC"
+  [ "$(grep -c 'MUST' "$SPEC")" -ge 8 ]
+  grep -q 'a writer MUST NOT add these fields to `state.json`' "$SPEC"
+  # and the published state schema really is closed (the reason for the rule above)
+  python3 - "$SK/spec/schema/plan-state-v5.schema.json" <<'PY'
+import json, sys
+doc = json.load(open(sys.argv[1]))
+blocked = doc['properties']['blocked']
+alts = blocked.get('anyOf') or blocked.get('oneOf') or [blocked]
+objs = [a for a in alts if a.get('type') == 'object' or 'properties' in a]
+assert objs and all(o.get('additionalProperties') is False and 'resolver' not in o.get('properties', {}) for o in objs), objs
+PY
 }

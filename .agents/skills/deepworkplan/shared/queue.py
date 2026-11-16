@@ -45,7 +45,9 @@ MAX_BYTES = 64 * 1024
 # or 64 KiB, is refused wholesale by the daemon — the writer enforces the
 # same ceilings so a producer-valid document is always consumer-valid.
 MAX_ITEMS = 64
-PANE_ADDRESS = re.compile(r"^(local|[A-Za-z0-9._-]{1,64}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
+# herdr-peers' exact form, the same as contract_v6.PANE_ADDRESS (a test pins them
+# equal): a machine id is passed to Herdr as an argument, so it cannot start with '-'.
+PANE_ADDRESS = re.compile(r"^(?:local|[A-Za-z0-9][A-Za-z0-9._-]{0,63}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
 PLAN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NOTE_MAX = 200
 
@@ -65,7 +67,7 @@ def valid_doc(doc):
     allowed = {"schema", "updated_at", "items", "parallel"}
     if set(doc) - allowed or doc.get("schema") != SCHEMA:
         return False
-    if not isinstance(doc.get("items"), list):
+    if not isinstance(doc.get("items"), list) or len(doc["items"]) > MAX_ITEMS:
         return False
     if "parallel" in doc and not isinstance(doc["parallel"], bool):
         return False
@@ -85,7 +87,9 @@ def valid_doc(doc):
         if item["state"] not in STATES or item["start"] not in STARTS:
             return False
         lead = item["lead"]
-        if lead is not None and not isinstance(lead, str):
+        if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.match(lead)):
+            return False
+        if item["state"] == "started" and lead is None:
             return False
         if "note" in item and (not isinstance(item["note"], str)
                                or not item["note"].strip() or len(item["note"]) > NOTE_MAX):
@@ -182,6 +186,8 @@ def append(dwp_dir, plan, after=None, start="prompt-lead"):
 def set_state(dwp_dir, plan, state, lead=None, note=None):
     _safe_dwp(dwp_dir)
     doc = _load_or_new(dwp_dir)
+    if state == "started" and lead is None:
+        raise SystemExit("queue.py: started needs --lead (the lead that claimed the plan)")
     if lead is not None:
         if state != "started":
             raise SystemExit("queue.py: --lead belongs to the started state")
