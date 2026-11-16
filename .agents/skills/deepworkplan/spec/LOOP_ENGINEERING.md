@@ -17,43 +17,42 @@ methodology works alone; addons only amplify.
 
 ### 1.1. Loop semantics
 
-Loop engineering describes how an optional Herdr daemon carries an approved,
+Loop engineering describes how an optional daemon carries an approved,
 registered plan forward. It does not expand the plan's authority.
 
-**Registration and succession.** Registration uses Herdr's lead claim, which
-records the lead and its succession list. The peer holding the highest lead
-epoch is the lead. With
-`autopilot --loop`, a plan with a readable state and a lead record is watched;
-the daemon prompts an idle lead to continue within the plan's recorded
-authority. If the lead pane is gone, the daemon prompts the first reachable
-successor to run `lead takeover`; the helper checks whether takeover is
-allowed. The daemon does not write the lead record or appoint a peer outside
-the recorded succession.
+**Registration and succession.** Registration uses a lead claim, which MUST
+record the lead and its succession list. The peer holding the highest lead
+epoch is the lead. With `autopilot --loop`, a plan with a readable state and a
+lead record MAY be watched; the daemon MAY prompt an idle lead to continue
+within the plan's recorded authority. If the lead pane is gone, the daemon MAY
+prompt the first reachable successor to run `lead takeover`; the helper MUST
+check whether takeover is allowed. The daemon MUST NOT write the lead record
+or appoint a peer outside the recorded succession.
 
-**Human-started daemon and authority.** Only a human starts autopilot. The
-background daemon can cover enabled Herdr machines and sends fixed prompts; a
-prompt is not a new approval or authority grant. In particular, a continuation
-nudge asks the lead to respect the plan's existing gates and authority. Logins
-and credentials remain for a human.
+**Human-started daemon and authority.** A human MUST start autopilot. The
+background daemon MAY cover enabled machines and sends fixed prompts; a prompt
+MUST NOT be treated as a new approval or authority grant. In particular, a
+continuation nudge asks the lead to respect the plan's existing gates and
+authority. A human MUST provide logins and credentials.
 
-**Appointment.** Lead appointment requires both a human's recorded grant on
-the lead claim and a human start of the daemon with `--appoint`. After the lead
-and its successors meet the documented gone-and-no-progress checks, the daemon
-may prompt the first eligible live lane to request appointment; the helper
-checks the conditions again. A new lead runs `lead verify` before a merge,
-tag, or release.
+**Appointment.** Lead appointment MUST require both a human's recorded grant
+on the lead claim and a human start of the daemon with `--appoint`. After the
+lead and its successors meet the documented gone-and-no-progress checks, the
+daemon MAY prompt the first eligible live lane to request appointment; the
+helper MUST check the conditions again. A new lead MUST run `lead verify`
+before a merge, tag, or release.
 
 **Queue, events, and fleet map.** When the current plan completes and queue
-mode is `prompt-lead`, the daemon can prompt the named lead to start the next
-eligible queued plan through the plan tool's execute flow; its start gate
-checks approval again. The daemon reports plan events as `plan-event-v1` JSON
-to the configured `--notify` command. The `fleet-v1` map reports agents,
-plans, and their roles; `fleet ui` shows the map live. The daemon reads the
-queue and does not write it.
+mode is `prompt-lead`, the daemon MAY prompt the named lead to start the next
+eligible queued plan through the plan tool's execute flow; its start gate MUST
+check approval again. The daemon MAY report plan events as `plan-event-v1`
+JSON to the configured `--notify` command. The `fleet-v1` map reports agents,
+plans, and their roles; `fleet ui` shows the map live. The daemon MUST read
+the queue and MUST NOT write it.
 
 These behaviors are the optional Herdr integration, documented in
-[herdr-peers v2.0.1 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.1/skills/herdr-peers/autopilot.md)
-and [herdr-peers v2.0.1 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.1/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
+[herdr-peers v2.0.0 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.0/skills/herdr-peers/autopilot.md)
+and [herdr-peers v2.0.0 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.0/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
 
 ## 2. The `autonomy` block (plan-contract/v8)
 

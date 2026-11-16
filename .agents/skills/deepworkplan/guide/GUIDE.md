@@ -3,7 +3,7 @@
 ### How to Create Deep-Work Task Execution Plans (outputs under `.dwp/`)
 
 The repository is the harness: versioned files travel with the code. **Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Spec-first is one work episode: the plan is written before code with acceptance criteria. It lives as exportable, git-ignored `.dwp/plans/` working state, resumable by any agent in the repository, not as a maintained specification.
-**Loop engineering** (optional Herdr) registers a lead and succession; a human starts the daemon, whose prompts add no authority. It supports takeover, granted appointment, `plan-event-v1`, `fleet-v1`, and prompt-lead queue starts. The plan runs within its recorded authority and gates. DWP measures the instruction bytes each flow loads; it has not shown a general saving in provider tokens. The method works alone.
+**Loop engineering** registers a lead and succession; a human starts the optional daemon, whose prompts add no authority. It supports takeover, granted appointment, `plan-event-v1`, `fleet-v1`, and prompt-lead queue starts. The plan runs within its recorded authority and gates. DWP measures the instruction bytes each flow loads; it has not shown a general saving in provider tokens. The method works alone.
 
 ---
 

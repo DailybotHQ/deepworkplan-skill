@@ -34,7 +34,7 @@ agent changes and long runs.
 
 > The repository is the harness.
 >
-> Spec-first, loop-closed: the repository is the harness and the plan runs itself to done. Spec-first means one work episode: the plan is written before code with acceptance criteria. It runs inside its recorded authority and gates; the optional Herdr daemon is started by a human and its prompts add no authority.
+> Spec-first, loop-closed: the repository is the harness and the plan runs itself to done. Spec-first means one work episode: the plan is written before code with acceptance criteria. It runs inside its recorded authority and gates; a human starts the optional loop daemon and its prompts add no authority.
 
 The pack does three things:
 
@@ -73,8 +73,8 @@ lifecycle.
   installed skill are versioned and travel with the code. The record is kept by
   helpers and enforced cooperatively; it is not a sandbox.
 - **Loop engineering.** Registration is a lead claim with a succession list.
-  Herdr's optional daemon is started by a human; its nudges add no authority.
-  It can continue open plans, prompt a listed successor after lead loss, and,
+  A human starts the optional daemon; its nudges add no authority. It can
+  continue open plans, prompt a listed successor after lead loss, and,
   when explicitly granted, prompt a lane for lead appointment. `plan-event-v1`
   reports plan events, `fleet-v1` maps agents and plans, and queued plans start
   through the prompt-lead flow. These are addon capabilities; the methodology
