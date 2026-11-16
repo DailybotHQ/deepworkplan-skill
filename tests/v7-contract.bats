@@ -278,7 +278,7 @@ PY
   c "$SK/spec/V7_CONTRACT.md" 'A raw `append --type delegation` MUST be refused'
   grep -qF '[`V7_CONTRACT.md`](V7_CONTRACT.md)' "$SK/spec/README.md"
   c "$SK/create/v6.md" '**v8 is the default for new plans on the 8.x pack**'
-  c "$SK/SKILL.md" '(contract generation v6, v7 or v8, `spec/V7_CONTRACT.md`, `spec/LOOP_ENGINEERING.md`)'
+  c "$SK/SKILL.md" '(contract generation v6–v8, `spec/V6_LIFECYCLE.md`)'
   c "$SK/spec/V6_LIFECYCLE.md" 'A plan never changes generation'
 }
 

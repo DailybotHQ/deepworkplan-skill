@@ -148,7 +148,7 @@ _refusals() { python3 -c 'import json,sys; print(sum(1 for l in open(sys.argv[1]
 
 @test "flows: execute declares delegation.md behind a trigger; v6.md routes to it; the rules are stated" {
   c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
-  c "$SK/execute/SKILL.md" '[`delegation.md`](delegation.md) — read only when a v7 plan granting `agent_delegation` delegates a task.'
+  c "$SK/execute/SKILL.md" '[`delegation.md`](delegation.md) — read only when a v7 or v8 plan granting `agent_delegation` delegates a task.'
   c "$SK/execute/v6.md" 'read [`delegation.md`](delegation.md) first; its result is asserted until step 4 here observes it.'
   c "$SK/execute/delegation.md" 'A refusal is **not a blocker**: run the task sequentially.'
   c "$SK/execute/delegation.md" 'A completed delegation never closes a criterion'
