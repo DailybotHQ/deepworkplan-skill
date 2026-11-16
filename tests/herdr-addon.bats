@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The herdr addon — a thin integrator of herdr-peers as the interactive
 # delegation transport (spec/ADDONS.md §6.6, spec/V7_CONTRACT.md). Policy
-# under test: opt-in, never required; a single pin (herdr-peers v1.3.1 plus
+# under test: opt-in, never required; a single pin (herdr-peers v2.0.0 plus
 # Herdr's official skill pinned) in descriptor and docs; no protocol copy in
 # the pack (no stamp, grant or listing recipes; no `herdr-mesh` anywhere);
 # the transport maps launch/observe/collect/cancel onto the helper with the
@@ -39,14 +39,14 @@ doc_has() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
   grep -q '^## Trust boundary (write scope)$' "$ADDON/SKILL.md"
 }
 
-@test "pins: descriptor v1.3.1 interface 1; every install line names an exact tag" {
+@test "pins: descriptor v2.0.0 interface 1-or-2; every install line names an exact tag" {
   python3 - "$ADDON/addon.json" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1]))
-assert d['product'] == {'repo': 'DailybotHQ/herdr-peers', 'tag': 'v1.3.1', 'interface': 1}, d
+assert d['product'] == {'repo': 'DailybotHQ/herdr-peers', 'tag': 'v2.0.0', 'interface': [1, 2]}, d
 assert d['transport'] == 'interactive', d
 PY
-  grep -qF 'npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v1.3.1 --skill herdr-peers -g -y' "$ADDON/install.md"
+  grep -qF 'npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v2.0.0 --skill herdr-peers -g -y' "$ADDON/install.md"
   grep -qF 'npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g' "$ADDON/install.md"
   # W012: no unpinned `skills add owner/repo ` anywhere in the addon
   run grep -rnE 'skills add [A-Za-z]+/[a-z-]+ ' "$ADDON"
@@ -54,7 +54,7 @@ PY
   run grep -rnE '(curl|wget)[^|]*\| *(ba)?sh' "$ADDON"
   [ "$status" -ne 0 ]
   run bash -c "grep -rhoE 'herdr-peers@v[0-9.]+' '$ADDON' '$ONBOARD' '$SK/spec/ADDONS.md' '$SK/addons/README.md' | sort -u"
-  [ "$output" = "herdr-peers@v1.3.1" ]
+  [ "$output" = "herdr-peers@v2.0.0" ]
 }
 
 @test "native debates: panel contract, helpers, templates, optional agentkit, protocol 1" {
@@ -104,7 +104,7 @@ import sys
 sys.path.insert(0, sys.argv[1])
 import config, resources
 assert not resources.effective_abilities(None, sys.argv[2])["abilities"]["subagents"]
-config.write_addon(sys.argv[2], "herdr", True, "v1.3.1")
+config.write_addon(sys.argv[2], "herdr", True, "v2.0.0")
 on = resources.effective_abilities(None, sys.argv[2])
 assert on["sources"]["subagents"] == ["addon:herdr"], on
 assert not on["abilities"]["model_routing"], on
@@ -119,7 +119,7 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   doc_has "$doc" 'an optional daemon that only a human starts'
   doc_has "$doc" 'it never touches a login, and no message, peer or plan can start it'
   doc_has "$doc" 'DWP never requires it, and an agent executing a plan **MUST NOT** start it on its own'
-  doc_has "$doc" 'herdr-peers/blob/v1.3.1/skills/herdr-peers/autopilot.md'
+  doc_has "$doc" 'herdr-peers/blob/v2.0.0/skills/herdr-peers/autopilot.md'
 }
 
 # --- decision debates: the default decision mode (SPEC §6.4) ------------------
@@ -216,4 +216,31 @@ print("ok")' "$SK/shared" "$WORK/repo/.dwp"
   [ "$status" -eq 0 ]
   doc_has "$SK/create/decisions.md" 'grep -Eq "^decision: [^<[:space:]]"'
   doc_has "$SK/execute/debate.md" '`decision: <the choice>` (the gate reads it)'
+}
+
+@test "the addon accepts protocol 1 and protocol 2 (herdr-peers 2.0.0)" {
+    python3 - "$REPO_ROOT" <<'PYEOF'
+import os, sys, tempfile
+sys.path.insert(0, os.path.join(sys.argv[1], "skills", "deepworkplan", "shared"))
+import resources
+work = tempfile.mkdtemp()
+bindir = os.path.join(work, "bin"); os.makedirs(bindir)
+for ver in ("1", "2", "3"):
+    script = os.path.join(bindir, "herdr-peers" + ver)
+    with open(script, "w") as fh:
+        fh.write("#!/bin/sh\necho 'herdr-peers 2.0.0 (protocol %s)'\n" % ver)
+    os.chmod(script, 0o755)
+def verdict_for(ver):
+    os.environ["PATH"] = bindir + os.pathsep + "/usr/bin:/bin"
+    live = os.path.join(bindir, "herdr-peers")
+    if os.path.lexists(live):
+        os.unlink(live)
+    os.symlink(os.path.join(bindir, "herdr-peers" + ver), live)
+    out = resources.addon_status("herdr", addons_dir=os.path.join(sys.argv[1], "skills", "deepworkplan", "addons"))
+    os.unlink(live)
+    return out
+v1, v2, v3 = (verdict_for(v) for v in ("1", "2", "3"))
+assert v1["compatible"] and v2["compatible"], (v1, v2)
+assert not v3["compatible"] and "accepted 1/2" in v3["reason"], v3
+PYEOF
 }

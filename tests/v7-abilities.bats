@@ -90,7 +90,7 @@ _source() { printf '%s' "$output" | python3 -c 'import json,sys; print(",".join(
   [ "$status" -eq 0 ]
   [ "$(_ability subagents)" = "False" ]
   [ "$(printf '%s\n' "$stderr" | grep -c '^WARNING')" -eq 1 ]
-  [[ "$stderr" == *"unknown interface major 2 (pinned 1)"* ]] || return 1
+  [[ "$stderr" == *"unknown interface major 2 (accepted 1)"* ]] || return 1
 }
 
 @test "disabling the addon removes exactly what it contributed" {
