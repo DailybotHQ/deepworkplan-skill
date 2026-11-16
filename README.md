@@ -57,10 +57,11 @@ The pack does three things:
 
 The methodology works alone: apart from the required local review, every addon
 is optional and only amplifies it.
-The current major line is **v7** (DWP standard 7.0.0; releases are on the
+The current major line is **v8** (DWP standard 8.0.0; releases are on the
 [Releases](https://github.com/DailybotHQ/deepworkplan-skill/releases) page).
-New plans use the v7 contract; existing v6 and v5 plans keep their recorded
-lifecycle.
+New plans use the v8 contract, which adds an optional autonomy block for the
+plan loop ([loop engineering](skills/deepworkplan/spec/LOOP_ENGINEERING.md)).
+Existing v7, v6 and v5 plans keep their recorded lifecycle.
 
 **How the method works**
 
@@ -264,7 +265,7 @@ optional and installed only where they fit. Each is recorded in the
 ## Documentation
 
 - [deepworkplan.com](https://deepworkplan.com) — the methodology, the kit pages and the published schemas
-- [`skills/deepworkplan/spec/`](skills/deepworkplan/spec/README.md) — the normative standard (7.0.0)
+- [`skills/deepworkplan/spec/`](skills/deepworkplan/spec/README.md) — the normative standard (8.0.0)
 - [`skills/deepworkplan/guide/GUIDE.md`](skills/deepworkplan/guide/GUIDE.md) — the methodology guide, including [orchestration at scale](skills/deepworkplan/guide/orchestration-at-scale.md)
 - [`docs/`](docs/) — [installation](docs/INSTALLATION.md), [design](docs/DESIGN.md), [compatibility](docs/COMPATIBILITY.md), [testing](docs/TESTING_GUIDE.md)
 - [CHANGELOG.md](CHANGELOG.md) · [Open Agent Skills standard](https://agentskills.io) · [skills.sh](https://skills.sh)
@@ -292,7 +293,7 @@ Each repository assigns IDs starting at `001`; the counter is kept in
 `latest` selects the highest numbered plan. You can also select a plan by its
 full folder name, ID, or unique slug. Existing folders such as
 `PLAN_improve_docs/` are not renamed and remain usable. The current pack
-creates v7 plans (v6 on explicit request) with 2–5-word slugs. The retained v5 creation flow uses
+creates v8 plans (v7 or v6 on explicit request) with 2–5-word slugs. The retained v5 creation flow uses
 2–4 words to fit its frozen schemas.
 
 ### Benchmark metrics and learnings (opt-in)
