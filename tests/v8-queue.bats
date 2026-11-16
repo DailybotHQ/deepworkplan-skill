@@ -123,7 +123,7 @@ PY
 
 @test "M1: the lead must be a protocol pane address, and only with started" {
     q append --plan PLAN_1_x >/dev/null
-    run q set-state --plan PLAN_1_x --state started --lead "wP:p2"
+    run q set-state --plan PLAN_1_x --state started --lead "wP"
     [ "$status" -ne 0 ]
     run q set-state --plan PLAN_1_x --state done --lead local:w1:p2
     [ "$status" -ne 0 ]
@@ -226,7 +226,7 @@ assert not Q.valid_doc(doc([item('P1\n')])), 'plan id with a newline'
 assert not Q.valid_doc(doc([item('P1', after='P0\n'), item('P0')])), 'after with a newline'
 PY
     q append --plan PLAN_1_x >/dev/null
-    run q set-state --plan PLAN_1_x --state started --lead "$(printf 'local:w1:p2\n ')"
+    run q set-state --plan PLAN_1_x --state started --lead $'local:w1\n:p2'
     [ "$status" -ne 0 ]
 }
 
@@ -242,4 +242,47 @@ PY
     # the CLI the create flow names takes --start
     q append --plan PLAN_9_x --start launch >/dev/null
     q show | grep -q '"start": "launch"'
+}
+
+@test "review of #97: append records the lead the daemon prompts; a malformed one is refused" {
+    q append --plan PLAN_1_x --lead local:wP:p2 >/dev/null
+    q show | grep -q '"lead": "local:wP:p2"'
+    q show | grep -q '"state": "queued"'
+    run q append --plan PLAN_2_x --lead "-x:w1:p2"
+    [ "$status" -ne 0 ]
+    run q append --plan PLAN_3_x --lead $'local:w1:p2\nx'
+    [ "$status" -ne 0 ]
+    q append --plan PLAN_4_x >/dev/null
+    python3 - "$DWP/queue.json" <<'PY'
+import json, sys
+items = dict((i['plan'], i) for i in json.load(open(sys.argv[1]))['items'])
+assert items['PLAN_4_x']['lead'] is None and 'PLAN_2_x' not in items and 'PLAN_3_x' not in items, items
+PY
+    SK="$REPO_ROOT/skills/deepworkplan"
+    tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'append --plan <PLAN_id> --lead <address>'
+    tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'set-lead --plan <PLAN_id> --lead <address>'
+    # set-lead names a queued plan's lead later; only a queued one; a malformed address is refused
+    q set-lead --plan PLAN_4_x --lead local:wP:p9 >/dev/null
+    q show | grep -q '"lead": "local:wP:p9"'
+    run q set-lead --plan PLAN_4_x --lead "-x:w1:p2"
+    [ "$status" -ne 0 ]
+    q set-state --plan PLAN_1_x --state started --lead local:wP:p2 >/dev/null
+    run q set-lead --plan PLAN_1_x --lead local:wP:p3
+    [ "$status" -ne 0 ]
+    run q set-lead --plan PLAN_404_x --lead local:wP:p3
+    [ "$status" -ne 0 ]
+    # $HERDR_PANE_ID may hold a pane id or a full address: both are accepted, never doubled
+    q append --plan PLAN_5_x --lead "wP:p5" >/dev/null
+    q append --plan PLAN_6_x --lead " local:wP:p6 " >/dev/null
+    run q append --plan PLAN_7_x --lead "local:local:wP:p7"
+    [ "$status" -ne 0 ]
+    q set-lead --plan PLAN_5_x --lead "wP:p8" >/dev/null
+    python3 - "$DWP/queue.json" <<'PY'
+import json, sys
+items = dict((i['plan'], i) for i in json.load(open(sys.argv[1]))['items'])
+assert items['PLAN_5_x']['lead'] == 'local:wP:p8', items['PLAN_5_x']
+assert items['PLAN_6_x']['lead'] == 'local:wP:p6', items['PLAN_6_x']
+assert 'PLAN_7_x' not in items
+PY
+    tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'pass `$HERDR_PANE_ID` as it is'
 }

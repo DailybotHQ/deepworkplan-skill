@@ -10,8 +10,9 @@ Contract (PLAN_024 item 3.5, agreed with the herdr-peers side 2026-11-15):
 - Items: ``{plan, after (plan id | null), state: queued|started|done|skipped,
   lead (a pane address | null), start: prompt-lead|launch}``; the queue may
   carry ``parallel: true`` (default: one plan at a time per repository).
-- Writers, and only these: `create` appends on approval; a human or the lead
-  reorders (the file is theirs to edit); `execute` flips ``started`` on a
+- Writers, and only these: `create` appends on approval (with the lead the
+  daemon prompts, ``--lead``); the developer or the lead names or renames a
+  queued plan's lead (``set-lead``) and reorders (the file is theirs to edit); `execute` flips ``started`` on a
   task start while the item is still queued (with the lead address) and ``done`` after the plan's
   closure; `create`/`refine` flip ``skipped`` with a one-line note. The
   daemon is a bounded, read-only consumer and never writes.
@@ -22,7 +23,8 @@ Contract (PLAN_024 item 3.5, agreed with the herdr-peers side 2026-11-15):
 Usage (the flows call it the way they call the other state helpers)::
 
     python3 shared/queue.py --dwp <dir> show
-    python3 shared/queue.py --dwp <dir> append --plan PLAN_x [--after PLAN_y] [--start prompt-lead]
+    python3 shared/queue.py --dwp <dir> append --plan PLAN_x [--after PLAN_y] [--start prompt-lead] [--lead local:w1:p2]
+    python3 shared/queue.py --dwp <dir> set-lead --plan PLAN_x --lead local:w1:p2
     python3 shared/queue.py --dwp <dir> set-state --plan PLAN_x --state started --lead local:w1:p2
     python3 shared/queue.py --dwp <dir> set-state --plan PLAN_x --state done
     python3 shared/queue.py --dwp <dir> set-state --plan PLAN_x --state skipped --note "reason"
@@ -48,8 +50,20 @@ MAX_ITEMS = 64
 # herdr-peers' exact form, the same as contract_v6.PANE_ADDRESS (a test pins them
 # equal): a machine id is passed to Herdr as an argument, so it cannot start with '-'.
 PANE_ADDRESS = re.compile(r"^(?:local|[A-Za-z0-9][A-Za-z0-9._-]{0,63}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
+PANE_ID = re.compile(r"^[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
 PLAN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NOTE_MAX = 200
+
+
+def norm_lead(value):
+    """A lead as written by a caller: a full pane address stays as it is; a
+    bare Herdr pane id (`w9:p1`, what $HERDR_PANE_ID may hold) becomes
+    `local:w9:p1`; surrounding blanks are dropped. The result is still checked
+    against PANE_ADDRESS by the caller."""
+    if not isinstance(value, str):
+        return value
+    value = value.strip()
+    return "local:" + value if PANE_ID.fullmatch(value) else value
 
 
 def _iso_now():
@@ -160,8 +174,12 @@ def _load_or_new(dwp_dir):
     return doc
 
 
-def append(dwp_dir, plan, after=None, start="prompt-lead"):
+def append(dwp_dir, plan, after=None, start="prompt-lead", lead=None):
     _safe_dwp(dwp_dir)
+    lead = norm_lead(lead)
+    if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead)):
+        raise SystemExit("queue.py: --lead is not a pane address "
+                         "(local|<machine>):<workspace>:<pane>")
     doc = _load_or_new(dwp_dir)
     for item in doc["items"]:
         if item["plan"] == plan:
@@ -178,13 +196,32 @@ def append(dwp_dir, plan, after=None, start="prompt-lead"):
         raise SystemExit("queue.py: the queue holds at most %d items (the "
                          "consumer refuses more)" % MAX_ITEMS)
     doc["items"].append({"plan": plan, "after": after, "state": "queued",
-                         "lead": None, "start": start})
+                         "lead": lead, "start": start})
+    _write(dwp_dir, doc)
+    return doc
+
+
+def set_lead(dwp_dir, plan, lead):
+    """Name (or rename) the lead the daemon prompts to start a queued plan."""
+    _safe_dwp(dwp_dir)
+    lead = norm_lead(lead)
+    if not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead):
+        raise SystemExit("queue.py: --lead is not a pane address "
+                         "(local|<machine>):<workspace>:<pane>")
+    doc = _load_or_new(dwp_dir)
+    item = next((i for i in doc["items"] if i["plan"] == plan), None)
+    if item is None:
+        raise SystemExit("queue.py: %s is not in the queue" % plan)
+    if item["state"] != "queued":
+        raise SystemExit("queue.py: only a queued plan's lead can be named (got %s)" % item["state"])
+    item["lead"] = lead
     _write(dwp_dir, doc)
     return doc
 
 
 def set_state(dwp_dir, plan, state, lead=None, note=None):
     _safe_dwp(dwp_dir)
+    lead = norm_lead(lead)
     doc = _load_or_new(dwp_dir)
     if state == "started" and lead is None:
         raise SystemExit("queue.py: started needs --lead (the lead that claimed the plan)")
@@ -221,6 +258,11 @@ def main(argv=None):
     p.add_argument("--plan", required=True)
     p.add_argument("--after", default=None, help="a plan id this one waits for")
     p.add_argument("--start", default="prompt-lead", choices=STARTS)
+    p.add_argument("--lead", default=None,
+                   help="the pane address the daemon prompts to start it (without one it waits for a human to name one)")
+    p = sub.add_parser("set-lead", help="name the lead the daemon prompts to start a queued plan")
+    p.add_argument("--plan", required=True)
+    p.add_argument("--lead", required=True)
     p = sub.add_parser("set-state", help="flip a state (execute, create/refine)")
     p.add_argument("--plan", required=True)
     p.add_argument("--state", required=True, choices=STATES)
@@ -234,10 +276,15 @@ def main(argv=None):
             return 1
         print(json.dumps(doc, indent=2, sort_keys=True))
         return 0
+    if args.cmd == "set-lead":
+        if not PLAN_ID.fullmatch(args.plan):
+            raise SystemExit("queue.py: --plan is not a plan id")
+        set_lead(args.dwp, args.plan, args.lead)
+        return 0
     if args.cmd == "append":
         if not PLAN_ID.fullmatch(args.plan):
             raise SystemExit("queue.py: --plan is not a plan id")
-        append(args.dwp, args.plan, args.after, args.start)
+        append(args.dwp, args.plan, args.after, args.start, args.lead)
         return 0
     set_state(args.dwp, args.plan, args.state, args.lead, args.note)
     return 0
