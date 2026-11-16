@@ -1,7 +1,7 @@
-# Execute — delegation (v7 plans only)
+# Execute — delegation (v7 and v8 plans)
 
-Read this file only when a **v7** plan (contract `schema` =
-`…/plan-contract/v7.json`) grants `agent_delegation` and the next task is
+Read this file only when a **v7 or v8** plan (contract `schema` =
+`…/plan-contract/v7.json` or `…/plan-contract/v8.json`) grants `agent_delegation` and the next task is
 marked `parallel_safe` — or a read-only delegate would help it. Otherwise
 the task runs in this session exactly as `v6.md` describes; not delegating
 is always correct. Normative source: `../spec/V7_CONTRACT.md` and

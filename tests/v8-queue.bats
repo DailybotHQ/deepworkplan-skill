@@ -189,3 +189,20 @@ PY
     [ "$status" -eq 1 ]
     rm -f "$DWP/queue.json"
 }
+
+@test "the flows write the queue: create appends after approval, execute marks started and done, refine skips" {
+    SK="$REPO_ROOT/skills/deepworkplan"
+    c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+    c "$SK/create/v6.md" 'python3 ../shared/queue.py --dwp <dwp_dir> append --plan <PLAN_id>'
+    c "$SK/create/v6.md" 'Not queuing is the default and always correct.'
+    c "$SK/execute/v6.md" '--state started --lead local:$HERDR_PANE_ID'
+    c "$SK/execute/v6.md" 'set-state --plan <PLAN_id> --state done'
+    c "$SK/refine/SKILL.md" '--state skipped --note "<one line>"'
+    # the commands the flows name are the helper's real CLI
+    q append --plan PLAN_1_x >/dev/null
+    q set-state --plan PLAN_1_x --state started --lead local:wP:p2 >/dev/null
+    q set-state --plan PLAN_1_x --state done >/dev/null
+    q append --plan PLAN_2_x >/dev/null
+    q set-state --plan PLAN_2_x --state skipped --note "dropped by the developer" >/dev/null
+    q show | grep -q '"state": "skipped"'
+}

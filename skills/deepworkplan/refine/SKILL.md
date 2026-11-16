@@ -340,6 +340,10 @@ a marked plan. Full-to-Lite downgrade is not automatic.
   exception and is explicit.
 - **No mandatory report:** refine never adds an Executive Report task; it may
   record an explicit report request in the README guidelines.
+- **Plan queue:** when the developer takes a queued plan out of the
+  repository's queue, record why: `python3 ../shared/queue.py --dwp <dwp_dir>
+  set-state --plan <PLAN_id> --state skipped --note "<one line>"`. Reordering
+  is the developer's or the lead's own edit of `.dwp/queue.json`.
 - **Git ignore:** everything under `.dwp/` is git-ignored.
 - **No draft artifact:** `refine` always operates on a plan folder under
   `.dwp/plans/`. Nothing is written to `.dwp/drafts/` — it no longer exists.

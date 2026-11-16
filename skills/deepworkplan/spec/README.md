@@ -8,9 +8,10 @@
 > `V7_CONTRACT.md` and four schemas; 6.0.0 declarations stay valid). The v5
 > base documents below remain versioned 5.0.0 so existing plans keep their
 > recorded rules; the four `V6_*.md` documents define the lifecycle on top of
-> that base and the `V7_*.md` documents extend it. New plans created by the 7.x pack use the v7 contract generation of
-> the same record layer (`V7_CONTRACT.md`: v6 plus the `parallel_safe` marker
-> and delegation records); v6 plans keep v6. Existing v1/v2/v5 plans
+> that base and the `V7_*.md` documents extend it. New plans created by the 8.x pack use the v8 contract generation of
+> the same record layer (`LOOP_ENGINEERING.md`: the v7 contract plus the
+> optional `autonomy` block; `V7_CONTRACT.md`: v6 plus the `parallel_safe`
+> marker and delegation records); v7 and v6 plans keep their generation. Existing v1/v2/v5 plans
 > retain their recorded generation and are never silently migrated. Schema
 > URLs are published at `https://deepworkplan.com/schema/`.
 

@@ -19,7 +19,9 @@
   journal event carries `…/journal-event/v7.json`. A journal that mixes
   generations, or a v7 event under a v6 contract, MUST be refused.
 - New plans created by the 7.x pack are v7 by default; an explicit `v6`
-  request materializes a v6 contract. A plan never changes generation: v6
+  request materializes a v6 contract. The 8.x pack defaults to v8
+  ([`LOOP_ENGINEERING.md`](LOOP_ENGINEERING.md): v7 plus the optional
+  `autonomy` block); an explicit `v7` request still materializes v7. A plan never changes generation: v6
   plans keep v6 forever and run unchanged.
 - v7 plans project into the unchanged `plan-snapshot/v6` shape (its
   `positions` are keyed by event type, so the `delegation` type needs no new

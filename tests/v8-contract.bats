@@ -151,3 +151,16 @@ objs = [a for a in alts if a.get('type') == 'object' or 'properties' in a]
 assert objs and all(o.get('additionalProperties') is False and 'resolver' not in o.get('properties', {}) for o in objs), objs
 PY
 }
+
+@test "the 8.x pack creates v8 plans by default; explicit v7 and v6 requests are honoured" {
+  c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+  c "$SK/create/v6.md" '**v8 is the default for new plans on the 8.x pack**'
+  c "$SK/create/v6.md" '`https://deepworkplan.com/schema/plan-contract/v8.json`'
+  c "$SK/create/v6.md" 'An explicit `v7` request writes `https://deepworkplan.com/schema/plan-contract/v7.json`'
+  c "$SK/create/SKILL.md" 'With this 8.x pack, v8 is the default for new plans'
+  c "$SK/spec/V6_LIFECYCLE.md" 'With the current 8.x pack, new plans use the v8 contract generation by default'
+  c "$SK/spec/README.md" 'New plans created by the 8.x pack use the v8 contract generation'
+  # no surface still names v7 as the default for new plans of the current pack
+  run bash -c "grep -rn 'v7 is the default for new' '$SK' | grep -v 'V7_ROADMAP.md'"
+  [ "$status" -ne 0 ] || { echo "$output"; return 1; }
+}
