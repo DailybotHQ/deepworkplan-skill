@@ -161,8 +161,10 @@ This is the integration value. Reasoning guidance is in
   2. **Significant task** (MAY, regular) — a feature/bug fix/major refactor
      completes; intermediate setup tasks are never reported.
   3. **Blocked** (SHOULD, regular with `blockers`) — the plan halts on a stop
-     condition and `state.json.blocked` is populated (typical of unattended
-     runs): the team sees *what is stuck and what it needs* in the standup
+     condition and `state.json.blocked` is populated — on a v8 plan,
+     `state.json.blocker` (the v8 snapshot has no `blocked` object, and its
+     held task reads `blocked`, not `in_progress`) — typical of unattended
+     runs: the team sees *what is stuck and what it needs* in the standup
      instead of discovering a silent overnight halt.
   4. **Completion** (SHOULD, the only **milestone**) — via the dailybot
      `report` sub-skill (`dailybot agent update ... --milestone --json-data
@@ -175,7 +177,9 @@ This is the integration value. Reasoning guidance is in
 - Where the plan carries the machine-readable state layer
   (`../../spec/PLAN_STATE.md`), derive the `--json-data` payload from
   `state.json`: `completed` from completed tasks (phrased as outcomes),
-  `in_progress` from the current task, `blockers` from `state.json.blocked`.
+  `in_progress` from the current task, `blockers` from `state.json.blocked`
+  (on a v8 plan, `state.json.blocker`, and the blocked task is the current
+  one).
 - Every event MUST be **best-effort and conditional**: it fires only if the
   Dailybot skill/CLI is present, authenticated and reporting is authorized, and it **MUST NOT block**
   `create` or `execute` if Dailybot is absent, unauthenticated, or unreachable —

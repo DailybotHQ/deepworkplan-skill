@@ -223,6 +223,7 @@ jobs:
                         skills/deepworkplan/verify/plan_contract.py \
                         skills/deepworkplan/verify/compliance_audit.py \
                         skills/deepworkplan/shared/queue.py \
+                        skills/deepworkplan/shared/progress_header.py \
                         skills/deepworkplan/addons/herdr/scripts/notify-dailybot.py; do
             python3 -m py_compile "$helper"
             echo "OK: $helper compiles on $(python3 --version)"
