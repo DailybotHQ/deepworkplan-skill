@@ -37,6 +37,10 @@ when their moment arrives.
   - [`../guide/swarm.md`](../guide/swarm.md) §17 — read only when the
     agentkit addon is enabled (capacity check at each task boundary:
     `../shared/swarm.py capacity`) or a handoff or succession is in play.
+  - [`../addons/herdr/SKILL.md`](../addons/herdr/SKILL.md) — read only when
+    `HERDR_ENV=1` and the herdr addon is enabled: at plan start, claim the
+    plan's lead record, `--succession` when successors are known
+    ("Plan loop").
   - [`../spec/LITE_PLANS.md`](../spec/LITE_PLANS.md) — read only when the
     plan README declares `Plan Format: Lite` or a v2 state line (anchored
     task records, approval axis, promotion recovery).
