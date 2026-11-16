@@ -32,7 +32,9 @@ hand real work to coding agents (Claude Code, Codex, Cursor, Gemini CLI,
 Copilot, OpenClaw and others) and need that work to survive context resets,
 agent changes and long runs.
 
-> The repository is the harness. Agents plan first, verify every step, and pick up where another agent left off.
+> The repository is the harness.
+>
+> Spec-first, loop-closed: the repository is the harness and the plan runs itself to done. Spec-first means one work episode: the plan is written before code with acceptance criteria. It runs inside its recorded authority and gates; a human starts the optional loop daemon and its prompts add no authority.
 
 The pack does three things:
 
@@ -60,28 +62,25 @@ The current major line is **v7** (DWP standard 7.0.0; releases are on the
 New plans use the v7 contract; existing v6 and v5 plans keep their recorded
 lifecycle.
 
-**What it rests on**
+**How the method works**
 
-- **You steer; the agents do the hours.** You decide what *done* means and where
-  the lines are. The plan carries your intent, so the work does not need
-  correcting every twenty minutes.
-- **The plan is what the agent returns to.** Long work fills any model's context
-  and detail falls away. Atomic tasks, validation gates and resumable state give
-  the agent something durable to come back to, lap after lap.
-- **Done is a contract, not a feeling.** Every task names its acceptance criteria
-  and the checks that must pass. An agent does not get to *decide* it finished —
-  it passes, or the task stays open.
-- **The repository is the harness.** Context, tools and guardrails live in your
-  repo as tracked plain files any agent can read. Plans live in the working copy
-  (`.dwp/`, git-ignored): any agent working there resumes them after a context
-  reset or a change of agent mid-flight, and a fresh clone starts without them
-  unless you export one. No lock-in, no external brain.
-- **Context is the scarcest resource.** Instructions load progressively by
-  trigger, validation is selected from what each task actually touched, and
-  skills are decided task-locally — measured in instruction bytes per flow. No
-  general provider-token saving is claimed: the one token measurement (one
-  workload, flows never entered) was mixed per feature and favored the no-harness
-  control all-in ([three-arm benchmark](docs/evaluations/three-arm-benchmark.md)).
+- **Spec-first per work episode.** The plan is written before code, with
+  acceptance criteria. It lives in the repository's working copy as git-ignored
+  state; a fresh clone starts without it unless exported. It is not a maintained
+  specification. Any agent working in that repository can pick it up where
+  another left off.
+- **The repository is the harness.** `AGENTS.md`, `docs/`, `.agents/` and the
+  installed skill are versioned and travel with the code. The record is kept by
+  helpers and enforced cooperatively; it is not a sandbox.
+- **Loop engineering.** Registration is a lead claim with a succession list.
+  A human starts the optional daemon; its nudges add no authority. It can
+  continue open plans, prompt a listed successor after lead loss, and,
+  when explicitly granted, prompt a lane for lead appointment. `plan-event-v1`
+  reports plan events, `fleet-v1` maps agents and plans, and queued plans start
+  through the prompt-lead flow. These are addon capabilities; the methodology
+  works without them.
+- **Measured efficiency.** DWP measures the instruction bytes each flow loads.
+  It has not shown a general saving in provider tokens.
 
 ## Install
 

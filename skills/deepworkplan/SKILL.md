@@ -10,17 +10,12 @@ metadata: {"openclaw":{"emoji":"🧠","homepage":"https://deepworkplan.com","req
 
 # DeepWorkPlan — Methodology Skill (Router)
 
-Models matter; context matters more. The **DeepWorkPlan** skill turns any
-repository into a structured environment — context, guardrails, and a durable
-plan — where any coding agent executes reliably on short or long work. It makes
-the repository "AI-first" — `AGENTS.md` + `docs/` + per-module docs + `.agents/`
-(with the `.claude → .agents` and `.cursor → .agents` symlinks) — and runs structured **Deep Work
-Plans**: Lite plans for bounded work and Full task-file plans for longer work;
-an AI agent creates, refines, executes task-by-task,
-and resumes. All plan output lands in a gitignored `.dwp/` directory
-at the repo root (`.dwp/plans/`).
+The repository is the harness.
+**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Spec-first is per episode: plan before code with acceptance criteria. Plans are exportable, git-ignored `.dwp/plans/` state, resumable in repo, not a maintained specification. **Loop engineering:** registration = lead claim + succession; optional human-started daemon; nudges add no authority; successor takeover by succession; appointment only by human grant; `plan-event-v1`, `fleet-v1`, prompt-lead queue. Runs within recorded authority and gates; method works alone.
 
-Source of truth: <https://deepworkplan.com>. License: MIT.
+DWP measures the instruction bytes each flow loads. It has not shown a general saving in provider tokens.
+
+Source: <https://deepworkplan.com>.
 
 ## Start here (first run)
 
