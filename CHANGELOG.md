@@ -11,6 +11,62 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [8.0.0-beta.1] — 2026-11-16 (pre-release)
+
+### Changes
+
+- Merge pull request #102 from DailybotHQ/chore/pin-herdr-peers-2.1.0
+- merge: main (#101, structured blockers) into chore/pin-herdr-peers-2.1.0
+- Merge pull request #101 from DailybotHQ/feat/v8-structured-blockers
+- chore(addon): pin herdr-peers v2.1.0
+- fix(skill): resolve the self-review findings on structured blockers
+- feat(skill): structured blockers and the PROGRESS.md header for v8 plans
+- Merge pull request #100 from DailybotHQ/fix/queue-append-lead
+- test(queue): match the append example across its line continuation
+- docs(queue): the append example names --lead; set-lead is a listed writer
+- fix(queue): accept $HERDR_PANE_ID in either form; keep the lead-less append as the last resort
+- fix(queue): a queued plan names the lead the daemon prompts
+- Merge pull request #97 from DailybotHQ/feat/v8-default-generation
+- test(v8): the queue-writers assertion follows the spec's sentence
+- fix(create): address the self-review of 5026f38
+- docs(spec): fold p2M's review of #99 into the v8 line
+- merge: main (#98, #99 the v8 narrative) into feat/v8-default-generation
+- Merge pull request #99 from DailybotHQ/docs/v8-narrative
+- Merge remote-tracking branch 'origin/main' into docs/v8-narrative
+- chore(addon): pin herdr-peers v2.0.2
+- Merge pull request #98 from DailybotHQ/docs/v8-loop-measurement
+- docs(skill): clarify loop authority in router
+- merge: main (#96, cli#148 items 3 and 5) into feat/v8-default-generation
+- Merge pull request #96 from DailybotHQ/fix/v8-cli148-3-5
+- fix(evaluation): report plan no-lead counts
+- docs(spec): address loop narrative review
+- fix(execute): address the self-review of #97
+- fix(shared): name every owner of an unclosed criterion; split the audit wording
+- docs(evaluation): measure v8 loop behavior
+- fix(shared): guard the parallel_safe overlap check in the self-test; name unclosed criteria's owners
+- docs(skill): refresh the generated dogfood mirror
+- docs(skill): fit narrative within instruction budgets
+- fix(shared): whole-string address and plan-id matches; one ordered generation ladder
+- docs(skill): refresh the generated dogfood mirror
+- docs(spec): define v8 loop semantics
+- Merge remote-tracking branch 'origin/main' into docs/v8-narrative
+- Merge remote-tracking branch 'origin/main' into feat/v8-default-generation
+- Merge pull request #94 from DailybotHQ/feat/v8-line
+- chore(addon): pin herdr-peers v2.0.1
+- test: the generation wording fits the create budget; delegation names v8
+- feat(create)!: new plans are plan-contract/v8; the flows write the plan queue
+- fix(v8): address the self-review of #94
+- docs(skill): align the v8 methodology narrative
+- test(v7): the delegation refusal names v7 and later plans
+- test(v8): the v8 contract generation end to end; v8 plans materialize
+- merge: main (7.12.2: herdr protocol 2) into feat/v8-line
+- wip(v8): contract review fixes (H1 ladder, M1 address form, M2 defaults + LOOP_ENGINEERING spec, L1 early return; 499/533)
+- fix(v8): publish the plan-contract/v8 schema snapshot and refresh the mirror
+- fix(v8): address the cross-review of the queue writer (p2M) and the CI findings
+- fix(v8): drop the bytecode my syntax check committed into the pack
+- feat(v8): the plan queue writer (dwp-queue-v1) and the two verified cli#148 fixes
+
+
 ## [7.12.2] — 2026-11-16
 
 ### Changes
