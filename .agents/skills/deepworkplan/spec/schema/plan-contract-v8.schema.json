@@ -489,19 +489,22 @@
     "autonomy": {
       "type": "object",
       "additionalProperties": false,
-      "description": "The plan's recorded authority for the loop. Absent means the conservative defaults: the human is the resolver, no brain acts, the plan is not queued.",
+      "description": "The plan's recorded authority for the loop. An absent block means every default: the human is the resolver, the lead is the only promptable pane, nothing is notified, no brain acts, the plan is not queued. Inside a present block every absent key keeps its own default: stall_budget absent = 3 (herdr-peers' MAX_PLAN_PROMPTS); promptable absent = the lead only; notify absent = no target; brain absent = false; queue absent = none. See spec/LOOP_ENGINEERING.md.",
       "properties": {
         "stall_budget": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 10
+          "maximum": 10,
+          "description": "Loop prompts without progress before the plan is marked stalled. Absent = 3 (herdr-peers' MAX_PLAN_PROMPTS)."
         },
         "promptable": {
           "type": "array",
           "minItems": 1,
           "items": {
-            "type": "string"
-          }
+            "type": "string",
+            "pattern": "^(?:local|[A-Za-z0-9][A-Za-z0-9._-]{0,63}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$"
+          },
+          "description": "Pane addresses the loop may prompt, herdr-peers' exact form (a machine id never starts with '-'). Absent = the plan's lead only."
         },
         "notify": {
           "type": "array",
@@ -510,17 +513,20 @@
             "enum": [
               "dailybot"
             ]
-          }
+          },
+          "description": "Notification targets. Absent = no target (the loop still records)."
         },
         "brain": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "May a brain act on this plan. Absent = false."
         },
         "queue": {
           "enum": [
             "prompt-lead",
             "launch",
             "none"
-          ]
+          ],
+          "description": "How the plan may be started from the queue. Absent = none (not queued)."
         }
       }
     }

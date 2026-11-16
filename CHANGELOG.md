@@ -11,6 +11,17 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [7.12.2] — 2026-11-16
+
+### Changes
+
+- Merge pull request #95 from DailybotHQ/fix/herdr-protocol-2
+- ci: ignore youtube.com in the link check (second 429 rate-limit this cycle)
+- fix(addon): the SPEC detection rule speaks the accepted set
+- fix(addon): the instruction path and the pin smoke accept protocol 2
+- fix(addon): accept herdr-peers protocol 1 and 2; pin v2.0.0 (the silent-abilities regression)
+
+
 ## [7.12.1] — 2026-11-16
 
 ### Changes

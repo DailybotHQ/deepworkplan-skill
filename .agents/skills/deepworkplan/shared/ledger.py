@@ -1917,10 +1917,10 @@ class Writer:
         if not isinstance(payload, dict):
             raise LedgerError('delegate --json must be a JSON object')
         if op == 'launch':
-            if contract_v6.contract_generation(contract) != 'v7':
+            if contract_v6.contract_generation(contract) not in ('v7', 'v8'):
                 self._refuse_delegation(task_id, 'this plan is %s - only v7 '
-                                        'plans record delegation (v6 plans '
-                                        'keep their lifecycle)' %
+                                        'and later plans record delegation '
+                                        '(v6 plans keep their lifecycle)' %
                                         contract_v6.contract_generation(
                                             contract))
             granted = contract.get('permissions', {}).get('granted', [])
