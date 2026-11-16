@@ -23,16 +23,19 @@ lead, repo_root, blocker_class, at.
 """
 
 import json
-import os
 import shutil
 import subprocess
 import sys
 
-SCHEMA = "plan-event-v1"
+SCHEMA = "herdr-peers/plan-event-v1"
 AGENT_NAME = "deepworkplan-loop"
 # The daemon runs this command without a shell under a 20 s timeout; stay
 # below it so the script exits 0 by itself instead of being killed.
 SEND_TIMEOUT_SECONDS = 15
+# The daemon writes one small JSON object; anything larger is not ours. Reading
+# is capped so a runaway writer can never wedge the notifier: overflow is a
+# quiet no-op, exactly like every other unusable input.
+MAX_INPUT_BYTES = 64 * 1024
 
 # Human-readable summary per event class. Placeholders: plan, repo, machine,
 # lead, blocker. Kept short on purpose — this is a notification, not a report.
@@ -53,6 +56,11 @@ MESSAGES = {
     "plan_no_lead": (
         "A plan has nobody leading it: '{plan}' in {repo} lost its lead and "
         "no successor is reachable (machine {machine})."
+    ),
+    "plan_lead_moved": (
+        "A plan's lead record is stale: the pane named as lead of '{plan}' in "
+        "{repo} now works outside the plan's repository (lead {lead}, machine "
+        "{machine})."
     ),
 }
 
@@ -126,7 +134,9 @@ def send(message, event):
 
 def main():
     try:
-        raw = sys.stdin.read()
+        raw = sys.stdin.read(MAX_INPUT_BYTES + 1)
+        if len(raw) > MAX_INPUT_BYTES:
+            return 0
         event = json.loads(raw)
     except (ValueError, OSError):
         return 0

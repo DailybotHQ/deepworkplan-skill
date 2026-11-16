@@ -17,7 +17,7 @@ registry record and the mapping of the four delegation operations onto
 |-------|-------|
 | **Version** | 0.2.0 |
 | **Status** | Stable — autonomy by default (coding-agents-kit `v0.2.0` and later) |
-| **Product pin** | `DailybotHQ/coding-agents-kit` `v1.3.0`, interface `1` |
+| **Product pin** | `DailybotHQ/coding-agents-kit` `v1.4.0`, interface `1` |
 | **Companions** | `SKILL.md`, `addon.json`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../spec/V7_ABILITIES.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -53,7 +53,7 @@ kit** is coding-agents-kit; **the addon** is this folder.
   complete and writes nothing.
 - The documented install is the pinned tagged clone plus the kit's
   installer:
-  `git clone --branch v1.3.0 https://github.com/DailybotHQ/coding-agents-kit` then
+  `git clone --branch v1.4.0 https://github.com/DailybotHQ/coding-agents-kit` then
   `./coding-agents-kit/install.sh` (Windows: `install.ps1`). A
   fetch-and-execute pipeline **MUST NOT** appear anywhere in this pack's
   text. The addon **MUST NOT** install coding-agent CLIs on its own.
@@ -165,7 +165,7 @@ minor version (`v0.2.0`), and SPEC 0.2.0 describes it.
 
 1. `SKILL.md`, `SPEC.md`, `addon.json`, `templates/INTEGRATION.md` exist;
    `addon.json` validates with key `agentkit`, product
-   `DailybotHQ/coding-agents-kit` `v1.3.0`, interface 1, transport
+   `DailybotHQ/coding-agents-kit` `v1.4.0`, interface 1, transport
    `headless`.
 2. Detection is read-only; interface 1 or one warning.
 3. Install used the pinned tagged clone; no pipeline anywhere in the text.
