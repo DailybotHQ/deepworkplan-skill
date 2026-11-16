@@ -108,3 +108,4 @@ SHA256SUMS
 # Lifecycle fixtures deliberately contain .dwp/ plan directories (dev-only, immutable)
 !tests/fixtures/**/.dwp/
 !tests/fixtures/**/.dwp/**
+.agents/scheduled_tasks.lock

@@ -226,7 +226,7 @@ addon's container profile): enable the kit's Herdr machine option; `dck up`
 approval. Peers then run the pinned herdr-peers skill inside the container
 (`../herdr/install.md` §3); every image since `v0.3.5` carries herdr-peers
 (`v1.1.2` bakes `v1.2.1`, autopilot included; the herdr addon itself pins
-`v1.2.2`). The
+`v1.3.1`). The
 kit's `[herdr] layout` key (`"standard"`: App · Editor · Development ·
 Agents, created by `dck up`; `"none"` skips it) is the kit's choice, and the
 addon passes the person's preference without adding its own. The optional
