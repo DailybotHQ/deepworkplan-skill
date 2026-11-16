@@ -95,10 +95,12 @@ itself did not mark lead-resolvable; everything else waits for the human.
 
 `.dwp/queue.json`, schema `dwp-queue-v1`. Only the pack (`shared/queue.py`)
 or a human MAY write it; the daemon MUST only read it. Create appends on
-approval; a human or the lead reorders; execute MUST mark `started` on a
-task start while the item is still `queued` (normally the plan's first task,
-once its lead has claimed it; a crash or a resume retries), together with the
-lead's pane address (a `started` item without one is invalid); execute marks
+approval; a human or the lead reorders. Inside Herdr, where the lead's pane
+address exists, execute MUST mark `started` on a task start while the item is
+still `queued` (normally the plan's first task, once its lead has claimed it;
+a crash or a resume retries), together with that address (a `started` item
+without one is invalid); outside Herdr the item stays `queued` and a consumer
+reads the journal's task start as in flight. Execute marks
 `done` after the plan's closure; create/refine skip with a
 one-line note. A queue MUST NOT hold more than 64 items.
 One plan at a time per repository unless the queue carries

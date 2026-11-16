@@ -48,7 +48,9 @@ counts, `PROGRESS.md`, and the **regenerated** `state.json` — kept mutually
 consistent. Deleting a completed task, dropping the Final Review (or a legacy
 plan's final tasks), or invalidating completed evidence requires explicit
 developer confirmation. `manifest.json` is **never** rewritten
-(`../spec/PLAN_STATE.md` §2).
+(`../spec/PLAN_STATE.md` §2). One write outside the plan folder: a queued
+plan's `skipped` state in `.dwp/queue.json`, through `../shared/queue.py`
+only (see *Plan queue* below).
 
 **It MUST NOT:** touch source files, write outside `.dwp/`, weaken a task's
 acceptance criteria or validation gate without saying so in the diff summary,

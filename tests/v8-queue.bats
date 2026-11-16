@@ -229,3 +229,17 @@ PY
     run q set-state --plan PLAN_1_x --state started --lead "$(printf 'local:w1:p2\n ')"
     [ "$status" -ne 0 ]
 }
+
+@test "review of 5026f38: autonomy.queue drives the append; started is Herdr-scoped; refine's write scope names the queue" {
+    SK="$REPO_ROOT/skills/deepworkplan"
+    c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
+    c "$SK/create/v6.md" 'or a v8 contract records `autonomy.queue` other than `none`'
+    c "$SK/create/v6.md" '[--start prompt-lead|launch]'
+    c "$SK/spec/LOOP_ENGINEERING.md" 'Inside Herdr, where the lead'"'"'s pane address exists, execute MUST mark `started`'
+    c "$SK/spec/LOOP_ENGINEERING.md" 'outside Herdr the item stays `queued`'
+    c "$SK/refine/SKILL.md" 'One write outside the plan folder: a queued plan'"'"'s `skipped` state in `.dwp/queue.json`'
+    c "$SK/create/SKILL.md" '(it also covers v7 and v8)'
+    # the CLI the create flow names takes --start
+    q append --plan PLAN_9_x --start launch >/dev/null
+    q show | grep -q '"start": "launch"'
+}
