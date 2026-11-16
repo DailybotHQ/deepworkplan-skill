@@ -131,6 +131,36 @@ PY
     q show | grep -q '"lead": "local:wP:p2"'
 }
 
+@test "review: started needs a lead; a lead cannot start with '-'; the queue's address form is the contract's" {
+    q append --plan PLAN_1_x >/dev/null
+    run q set-state --plan PLAN_1_x --state started
+    [ "$status" -ne 0 ]
+    q show | grep -q '"state": "queued"'
+    run q set-state --plan PLAN_1_x --state started --lead "-x:w1:p2"
+    [ "$status" -ne 0 ]
+    python3 - "$REPO_ROOT/skills/deepworkplan/shared" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import contract_v6, queue as Q
+assert Q.PANE_ADDRESS.pattern == contract_v6.PANE_ADDRESS.pattern, (Q.PANE_ADDRESS.pattern, contract_v6.PANE_ADDRESS.pattern)
+PY
+}
+
+@test "review: a hand-edited queue with a bad lead, a lead-less started item or 65 items is not valid" {
+    python3 - "$REPO_ROOT/skills/deepworkplan/shared" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import queue as Q
+item = lambda p, **kw: dict({'plan': p, 'after': None, 'state': 'queued', 'lead': None, 'start': 'prompt-lead'}, **kw)
+doc = lambda items: {'schema': Q.SCHEMA, 'items': items}
+assert Q.valid_doc(doc([item('P1', state='started', lead='local:w1:p2')]))
+assert not Q.valid_doc(doc([item('P1', lead='-x:w1:p2')])), 'a lead that reads as an option'
+assert not Q.valid_doc(doc([item('P1', state='started')])), 'started without its lead'
+assert not Q.valid_doc(doc([item('P%d' % i) for i in range(Q.MAX_ITEMS + 1)])), 'above the cap'
+assert Q.valid_doc(doc([item('P%d' % i) for i in range(Q.MAX_ITEMS)]))
+PY
+}
+
 @test "M2: the 65th append is refused (the consumer's cap)" {
     local i
     for i in $(seq 1 64); do q append --plan "PLAN_${i}_x" >/dev/null; done
