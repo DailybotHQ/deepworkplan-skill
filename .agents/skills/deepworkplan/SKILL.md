@@ -10,24 +10,12 @@ metadata: {"openclaw":{"emoji":"🧠","homepage":"https://deepworkplan.com","req
 
 # DeepWorkPlan — Methodology Skill (Router)
 
-**The repository is the harness.** Its versioned `AGENTS.md`, `docs/`,
-per-module docs, `.agents/` kit, and installed skill travel with the code.
+The repository is the harness.
+**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Spec-first is per episode: plan before code with acceptance criteria. Plans are exportable, git-ignored `.dwp/plans/` state, resumable by repo agents, not a maintained specification. **Loop engineering** (optional Herdr): registration = lead claim + succession; human-started daemon; nudges add no authority; successor takeover/appointment by grant; `plan-event-v1`, `fleet-v1`, prompt-lead queue. It runs within recorded authority and gates; the method works alone.
 
-**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Spec-first means one work episode: the plan is written before code with acceptance criteria. It runs only inside its recorded authority and gates; the optional Herdr addon can carry the loop through a human-started daemon whose prompts add no authority. The methodology works without addons.
+DWP measures the instruction bytes each flow loads. It has not shown a general saving in provider tokens.
 
-- **Spec-first per work episode.** The plan is written before code, with
-  acceptance criteria. It lives in the repository's working copy under
-  git-ignored `.dwp/plans/`; a fresh clone starts without it unless exported.
-  Any agent working there can resume it. It is not a maintained specification.
-- **Loop engineering.** Registration is a lead claim with a succession list.
-  Herdr's optional, human-started daemon continues open plans, nudges with no
-  added authority, and supports succession or explicitly granted appointment
-  after lead loss. `plan-event-v1` carries plan events, `fleet-v1` maps agents
-  and plans, and queued plans start by prompting the lead.
-- **Measured efficiency.** DWP measures the instruction bytes each flow loads.
-  It has not shown a general saving in provider tokens.
-
-Source of truth: <https://deepworkplan.com>. License: MIT.
+Source: <https://deepworkplan.com>.
 
 ## Start here (first run)
 
