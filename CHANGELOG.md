@@ -11,6 +11,19 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [7.12.0] — 2026-11-16
+
+### Changes
+
+- Merge pull request #91 from DailybotHQ/feat/plan-loop
+- fix(skill): refresh the dogfood mirror after the TRUST count fix
+- chore(addon): pin herdr-peers v1.3.1 (the loop patch line) before 7.12.0
+- fix(addon): align the loop PR with the herdr-peers 1.3.0 interfaces
+- fix(addon): satisfy the claims, hygiene and budget gates on the loop PR
+- chore: drop the compiled pyc that slipped into the herdr addon scripts
+- feat(addon): register plans with the herdr-peers loop and ship the Dailybot notifier
+
+
 ## [7.11.0] — 2026-11-16
 
 ### Changes
