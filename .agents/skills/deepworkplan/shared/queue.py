@@ -12,8 +12,8 @@ Contract (PLAN_024 item 3.5, agreed with the herdr-peers side 2026-11-15):
   carry ``parallel: true`` (default: one plan at a time per repository).
 - Writers, and only these: `create` appends on approval; a human or the lead
   reorders (the file is theirs to edit); `execute` flips ``started`` at the
-  lead-claim moment (with the lead address); `finalize_plan.py` flips
-  ``done``; `create`/`refine` flip ``skipped`` with a one-line note. The
+  lead-claim moment (with the lead address) and ``done`` after the plan's
+  closure; `create`/`refine` flip ``skipped`` with a one-line note. The
   daemon is a bounded, read-only consumer and never writes.
 - The write is atomic (temp file + rename) with mode 0600, the lead records'
   discipline. A read of anything that is not a valid, bounded document is a
@@ -221,7 +221,7 @@ def main(argv=None):
     p.add_argument("--plan", required=True)
     p.add_argument("--after", default=None, help="a plan id this one waits for")
     p.add_argument("--start", default="prompt-lead", choices=STARTS)
-    p = sub.add_parser("set-state", help="flip a state (execute, finalize, create/refine)")
+    p = sub.add_parser("set-state", help="flip a state (execute, create/refine)")
     p.add_argument("--plan", required=True)
     p.add_argument("--state", required=True, choices=STATES)
     p.add_argument("--lead", default=None, help="the lead pane address (with started)")

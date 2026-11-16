@@ -195,7 +195,10 @@ PY
     c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
     c "$SK/create/v6.md" 'python3 ../shared/queue.py --dwp <dwp_dir> append --plan <PLAN_id>'
     c "$SK/create/v6.md" 'Not queuing is the default and always correct.'
-    c "$SK/execute/v6.md" '--state started --lead local:$HERDR_PANE_ID'
+    c "$SK/execute/v6.md" '`herdr-peers lead show --plan <PLAN_id> --json`'
+    c "$SK/execute/v6.md" '--state started --lead <that address>'
+    c "$SK/execute/delegation.md" '1. The contract is v7 or v8 and grants `agent_delegation`.'
+    c "$SK/spec/LOOP_ENGINEERING.md" 'execute marks `done` after the plan'
     c "$SK/execute/v6.md" 'set-state --plan <PLAN_id> --state done'
     c "$SK/refine/SKILL.md" '--state skipped --note "<one line>"'
     # the commands the flows name are the helper's real CLI

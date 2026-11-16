@@ -9,7 +9,7 @@ is always correct. Normative source: `../spec/V7_CONTRACT.md` and
 
 ## When a delegate may be used (all must hold)
 
-1. The contract is v7 and grants `agent_delegation`.
+1. The contract is v7 or v8 and grants `agent_delegation`.
 2. The task is marked `parallel_safe` by `create` — or the delegate is
    **read-only** (no worktree, no writes: research, review, analysis).
 3. `python3 ../shared/resources.py --plan <dir> abilities` lists the

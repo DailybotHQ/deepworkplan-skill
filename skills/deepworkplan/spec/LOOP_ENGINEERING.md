@@ -57,7 +57,7 @@ itself did not mark lead-resolvable; everything else waits for the human.
 or a human MAY write it; the daemon MUST only read it. Create appends on
 approval; a human or the lead reorders; execute MUST mark `started` at the
 lead-claim moment together with the lead's pane address (a `started` item
-without one is invalid); finalize marks `done`; create/refine skip with a
+without one is invalid); execute marks `done` after the plan's closure; create/refine skip with a
 one-line note. A queue MUST NOT hold more than 64 items.
 One plan at a time per repository unless the queue carries
 `parallel: true`. Dependencies are queue-internal (`after` names a plan

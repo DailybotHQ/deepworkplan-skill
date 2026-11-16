@@ -78,7 +78,7 @@ the Dailybot CLI is installed, sends one report through it — every other
 case (no CLI, invalid input, failed send) exits 0 silently; and
 `shared/queue.py`, the plan queue (dwp-queue-v1): the only writer of
 `.dwp/queue.json` — create appends on approval, execute marks a plan
-started when it claims the lead, finalize marks it done, create/refine may
+started when it claims the lead and done after its closure, create/refine may
 skip with a note — an atomic 0600 write, and a read of anything that is not
 a valid bounded document is a quiet none; and
 `shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,
