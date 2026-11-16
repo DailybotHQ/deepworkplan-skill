@@ -219,7 +219,7 @@ check_repo_standard() {
       return 0
     fi
     if ! standard_series_ok "$declared"; then
-      fail "AGENTS.md declares DWP standard $declared, which is not a DWP standard (the series are 2.x, 4.x, 5.x, 6.x and 7.x historical and 8.x current; there is no 3.x) — correct the provenance line"
+      fail "AGENTS.md declares DWP standard $declared, which is not a DWP standard (the series are 2.x and 4.x historical, 5.x, 6.x and 7.x retained, 8.x current; there is no 3.x) — correct the provenance line"
       return 0
     fi
     pass "AGENTS.md declares DWP standard $declared"

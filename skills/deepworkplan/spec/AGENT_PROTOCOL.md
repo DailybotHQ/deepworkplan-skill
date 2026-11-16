@@ -1,8 +1,8 @@
 # AGENT_PROTOCOL.md — Cross-Agent Behavior Specification
 
 > **Version scope:** This is a retained v5.0.0 base document. The current
-> v6 standard also requires the applicable `V6_*.md` extensions indexed in
-> [README.md](README.md). Existing v5 plans keep this document’s recorded rules.
+> standard (8.0.0) also requires the applicable `V6_*.md` extensions, their
+> v7 additions and `LOOP_ENGINEERING.md`, indexed in [README.md](README.md). Existing v5 plans keep this document’s recorded rules.
 
 ## Abstract
 
