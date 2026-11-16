@@ -10,6 +10,8 @@ anything.
 
 Per plan it reports:
   * criteria closed on a declared evidence class, and criteria closed outside it;
+  * each unclosed criterion's owning tasks (every task whose gate_intent
+    names it; an empty list when none does);
   * whether a Final Review task completed;
   * declared controls and their latest control-pair verdicts, including
     dirty-start `control_unavailable` voids (D3-3);
@@ -89,10 +91,14 @@ def audit_plan(plan_dir):
     statuses = {t.get('id'): t.get('status')
                 for t in snapshot.get('tasks', [])}
     criteria = contract.get('acceptance', {}).get('criteria', [])
-    owner = {}
+    # Every task whose gate_intent names a criterion, in contract order: a
+    # criterion several tasks can close names all of them.
+    owners = {}
     for task in contract.get('tasks', []):
         for intent in task.get('gate_intent', []):
-            owner[intent.get('criterion')] = task.get('id')
+            names = owners.setdefault(intent.get('criterion'), [])
+            if task.get('id') not in names:
+                names.append(task.get('id'))
 
     # "Closed" is decided exactly as the ledger decides it at completion
     # (ledger.criterion_states: in-window gate runs, amendment-invalidated
@@ -168,6 +174,9 @@ def audit_plan(plan_dir):
         'criteria_closed_on_declared_class': closed_ok,
         'criteria_closed_outside_declared_class': closed_outside,
         'criteria_unclosed': unclosed,
+        # Who owes each unclosed criterion: every task whose gate_intent
+        # names it, or an empty list when none does (nothing can close it).
+        'criteria_unclosed_owners': {c: owners.get(c, []) for c in unclosed},
         'final_review': final_review,
         'controls_declared': controlled,
         'control_verdicts': {c: verdicts.get(c, 'no pair recorded')
