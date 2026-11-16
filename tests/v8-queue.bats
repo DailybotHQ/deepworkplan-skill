@@ -243,3 +243,32 @@ PY
     q append --plan PLAN_9_x --start launch >/dev/null
     q show | grep -q '"start": "launch"'
 }
+
+@test "review of #97: append records the lead the daemon prompts; a malformed one is refused" {
+    q append --plan PLAN_1_x --lead local:wP:p2 >/dev/null
+    q show | grep -q '"lead": "local:wP:p2"'
+    q show | grep -q '"state": "queued"'
+    run q append --plan PLAN_2_x --lead "-x:w1:p2"
+    [ "$status" -ne 0 ]
+    run q append --plan PLAN_3_x --lead $'local:w1:p2\nx'
+    [ "$status" -ne 0 ]
+    q append --plan PLAN_4_x >/dev/null
+    python3 - "$DWP/queue.json" <<'PY'
+import json, sys
+items = dict((i['plan'], i) for i in json.load(open(sys.argv[1]))['items'])
+assert items['PLAN_4_x']['lead'] is None and 'PLAN_2_x' not in items and 'PLAN_3_x' not in items, items
+PY
+    SK="$REPO_ROOT/skills/deepworkplan"
+    tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- '[--start prompt-lead|launch] [--lead <address>]'
+    tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'set-lead --plan <PLAN_id> --lead <address>'
+    # set-lead names a queued plan's lead later; only a queued one; a malformed address is refused
+    q set-lead --plan PLAN_4_x --lead local:wP:p9 >/dev/null
+    q show | grep -q '"lead": "local:wP:p9"'
+    run q set-lead --plan PLAN_4_x --lead "-x:w1:p2"
+    [ "$status" -ne 0 ]
+    q set-state --plan PLAN_1_x --state started --lead local:wP:p2 >/dev/null
+    run q set-lead --plan PLAN_1_x --lead local:wP:p3
+    [ "$status" -ne 0 ]
+    run q set-lead --plan PLAN_404_x --lead local:wP:p3
+    [ "$status" -ne 0 ]
+}

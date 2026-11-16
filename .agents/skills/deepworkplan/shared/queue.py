@@ -22,7 +22,8 @@ Contract (PLAN_024 item 3.5, agreed with the herdr-peers side 2026-11-15):
 Usage (the flows call it the way they call the other state helpers)::
 
     python3 shared/queue.py --dwp <dir> show
-    python3 shared/queue.py --dwp <dir> append --plan PLAN_x [--after PLAN_y] [--start prompt-lead]
+    python3 shared/queue.py --dwp <dir> append --plan PLAN_x [--after PLAN_y] [--start prompt-lead] [--lead local:w1:p2]
+    python3 shared/queue.py --dwp <dir> set-lead --plan PLAN_x --lead local:w1:p2
     python3 shared/queue.py --dwp <dir> set-state --plan PLAN_x --state started --lead local:w1:p2
     python3 shared/queue.py --dwp <dir> set-state --plan PLAN_x --state done
     python3 shared/queue.py --dwp <dir> set-state --plan PLAN_x --state skipped --note "reason"
@@ -160,8 +161,11 @@ def _load_or_new(dwp_dir):
     return doc
 
 
-def append(dwp_dir, plan, after=None, start="prompt-lead"):
+def append(dwp_dir, plan, after=None, start="prompt-lead", lead=None):
     _safe_dwp(dwp_dir)
+    if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead)):
+        raise SystemExit("queue.py: --lead is not a pane address "
+                         "(local|<machine>):<workspace>:<pane>")
     doc = _load_or_new(dwp_dir)
     for item in doc["items"]:
         if item["plan"] == plan:
@@ -178,7 +182,24 @@ def append(dwp_dir, plan, after=None, start="prompt-lead"):
         raise SystemExit("queue.py: the queue holds at most %d items (the "
                          "consumer refuses more)" % MAX_ITEMS)
     doc["items"].append({"plan": plan, "after": after, "state": "queued",
-                         "lead": None, "start": start})
+                         "lead": lead, "start": start})
+    _write(dwp_dir, doc)
+    return doc
+
+
+def set_lead(dwp_dir, plan, lead):
+    """Name (or rename) the lead the daemon prompts to start a queued plan."""
+    _safe_dwp(dwp_dir)
+    if not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead):
+        raise SystemExit("queue.py: --lead is not a pane address "
+                         "(local|<machine>):<workspace>:<pane>")
+    doc = _load_or_new(dwp_dir)
+    item = next((i for i in doc["items"] if i["plan"] == plan), None)
+    if item is None:
+        raise SystemExit("queue.py: %s is not in the queue" % plan)
+    if item["state"] != "queued":
+        raise SystemExit("queue.py: only a queued plan's lead can be named (got %s)" % item["state"])
+    item["lead"] = lead
     _write(dwp_dir, doc)
     return doc
 
@@ -221,6 +242,11 @@ def main(argv=None):
     p.add_argument("--plan", required=True)
     p.add_argument("--after", default=None, help="a plan id this one waits for")
     p.add_argument("--start", default="prompt-lead", choices=STARTS)
+    p.add_argument("--lead", default=None,
+                   help="the pane address the daemon prompts to start it (without one it waits for a human to name one)")
+    p = sub.add_parser("set-lead", help="name the lead the daemon prompts to start a queued plan")
+    p.add_argument("--plan", required=True)
+    p.add_argument("--lead", required=True)
     p = sub.add_parser("set-state", help="flip a state (execute, create/refine)")
     p.add_argument("--plan", required=True)
     p.add_argument("--state", required=True, choices=STATES)
@@ -234,10 +260,15 @@ def main(argv=None):
             return 1
         print(json.dumps(doc, indent=2, sort_keys=True))
         return 0
+    if args.cmd == "set-lead":
+        if not PLAN_ID.fullmatch(args.plan):
+            raise SystemExit("queue.py: --plan is not a plan id")
+        set_lead(args.dwp, args.plan, args.lead)
+        return 0
     if args.cmd == "append":
         if not PLAN_ID.fullmatch(args.plan):
             raise SystemExit("queue.py: --plan is not a plan id")
-        append(args.dwp, args.plan, args.after, args.start)
+        append(args.dwp, args.plan, args.after, args.start, args.lead)
         return 0
     set_state(args.dwp, args.plan, args.state, args.lead, args.note)
     return 0
