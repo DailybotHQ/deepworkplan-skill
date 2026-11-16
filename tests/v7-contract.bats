@@ -103,7 +103,7 @@ PY
   python3 "$LEDGER" --plan "$PLAN" start --task T-publish-schemas >/dev/null
   run _launch T-publish-schemas
   [ "$status" -eq 5 ]
-  [[ "$output" == *"only v7 plans record delegation"* ]] || return 1
+  [[ "$output" == *"only v7 and later plans record delegation"* ]] || return 1
   [ "$(_types)" = "approval task_start refusal" ]
 }
 
