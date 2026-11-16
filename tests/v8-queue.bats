@@ -198,7 +198,7 @@ PY
     c "$SK/execute/v6.md" '`herdr-peers lead show --plan <PLAN_id> --json`'
     c "$SK/execute/v6.md" '--state started --lead <that address>'
     c "$SK/execute/delegation.md" '1. The contract is v7 or v8 and grants `agent_delegation`.'
-    c "$SK/spec/LOOP_ENGINEERING.md" 'execute marks `done` after the plan'
+    c "$SK/spec/LOOP_ENGINEERING.md" 'marks `done` after the plan'
     c "$SK/execute/v6.md" 'On any task start while `.dwp/queue.json` still lists this plan as `queued`'
     c "$SK/spec/LOOP_ENGINEERING.md" 'execute MUST mark `started` on a task start while the item is still `queued`'
     c "$SK/execute/v6.md" 'On a v7 or v8 plan that grants `agent_delegation`'
