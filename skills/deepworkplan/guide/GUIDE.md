@@ -2,6 +2,22 @@
 
 ### How to Create Deep-Work Task Execution Plans (outputs under `.dwp/`)
 
+The repository is the harness. Its versioned files travel with the code.
+
+**Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Spec-first means one work episode: the plan is written before code with acceptance criteria. It runs only inside its recorded authority and gates; the optional Herdr addon can carry the loop through a human-started daemon whose prompts add no authority. The methodology works without addons.
+
+- **Spec-first per work episode.** The plan is written before code, with
+  acceptance criteria. It lives in the repository's working copy under
+  git-ignored `.dwp/plans/`; a fresh clone starts without it unless exported.
+  Any agent working there can resume it. It is not a maintained specification.
+- **Loop engineering.** Registration is a lead claim with a succession list.
+  Herdr's optional, human-started daemon continues open plans, nudges with no
+  added authority, and supports succession or explicitly granted appointment
+  after lead loss. `plan-event-v1` carries plan events, `fleet-v1` maps agents
+  and plans, and queued plans start by prompting the lead.
+- **Measured efficiency.** DWP measures the instruction bytes each flow loads.
+  It has not shown a general saving in provider tokens.
+
 This guide defines the **official structure and workflow** for creating _agent deep work plans_.
 
 These plans are designed so that an AI agent (Cursor, Claude, etc.) can:
