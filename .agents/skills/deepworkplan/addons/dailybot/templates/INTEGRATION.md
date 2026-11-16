@@ -88,7 +88,8 @@ convey:
 > Dailybot skill/CLI is installed and authenticated, DWP work emits agent
 > updates at four points — **kickoff** (plan approved: what is being built),
 > **significant task** (a feature/fix ships mid-plan), **blocked** (the plan
-> halts and `state.json.blocked` says what it needs), and **completion** (the
+> halts and `state.json.blocked` — `state.json.blocker` on a v8 plan — says
+> what it needs), and **completion** (the
 > only **milestone**: what was built). If Dailybot is absent, unauthenticated,
 > or unreachable — or if `.dailybot/disabled` is present — skip silently and
 > continue. Reporting MUST NOT block `create` or `execute`.
@@ -112,6 +113,7 @@ if command -v dailybot >/dev/null 2>&1 && [ ! -f .dailybot/disabled ]; then
     || echo "Dailybot report skipped (non-blocking)."
 
   # 3) Blocked (regular, blockers populated) — derive from state.json.blocked
+  #    (state.json.blocker on a v8 plan; its held task reads `blocked`)
   dailybot agent update "<what is stuck and what it needs>" \
     --json-data '{"completed":["<done so far>"],"in_progress":[],"blockers":["<reason> — needs <needs>"]}' \
     || echo "Dailybot report skipped (non-blocking)."
@@ -132,7 +134,9 @@ Decision notes:
 - **Payload from the state layer:** when the plan carries `state.json`
   (`PLAN_STATE.md`), derive `--json-data` from it — `completed` from completed
   tasks phrased as outcomes, `in_progress` from the current task, `blockers`
-  from `state.json.blocked` (`reason`, `needs`). Without the state layer,
+  from `state.json.blocked` (`reason`, `needs`) — on a v8 plan from
+  `state.json.blocker` (the same fields plus its class), where the held task
+  reads `blocked` and counts as the current one. Without the state layer,
   derive from the plan README's checkboxes. Never maintain a separate progress
   ledger just for reporting.
 - **One kickoff, one completion** per plan — re-runs and resumes do not

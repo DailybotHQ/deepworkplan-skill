@@ -39,7 +39,8 @@ import contract_v6  # noqa: E402  (sibling modules, same directory)
 import ledger  # noqa: E402
 
 KEYS = ('Goal', 'Current task', 'Next action', 'Needs')
-LINE_MAX = 300
+LINE_MAX = 300      # the caller's lines (Goal, Next action): refused beyond
+TITLE_MAX = 200     # a task title is shortened to this; id and status never
 _KEY_LINE = re.compile(r'^(%s): ?(.*)$' % '|'.join(re.escape(k) for k in KEYS))
 
 
@@ -66,18 +67,25 @@ def derived(snapshot):
     if current is None:
         task_line = 'none - plan complete'
     else:
+        # Only the title may be shortened: the id and the status are what a
+        # reader acts on, so they are never cut.
         title = ' '.join(str(current.get('title') or '').split())
+        if len(title) > TITLE_MAX:
+            title = title[:TITLE_MAX - 3].rstrip() + '...'
         task_line = '%s%s (%s)' % (current.get('id'),
                                    ' - %s' % title if title else '',
                                    current.get('status'))
     if isinstance(blocker, dict):
+        # Never truncated: the ledger bounds needs to one line of at most
+        # 500 characters (LOOP_ENGINEERING.md section 3.1), and the unblock
+        # instruction is the line's whole purpose.
         needs_line = '%s (%s): %s' % (blocker.get('class'),
                                       blocker.get('resolver') or 'human',
                                       ' '.join(str(blocker.get('needs')
                                                    or '').split()))
     else:
         needs_line = 'none'
-    return task_line[:LINE_MAX], needs_line[:LINE_MAX]
+    return task_line, needs_line
 
 
 def split_header(text):

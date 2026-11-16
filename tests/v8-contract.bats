@@ -122,7 +122,8 @@ doc['autonomy'] = {'brain': False, 'queue': 'prompt-lead'}"
   grep -q 'plan-manifest/v7.json' "$PLAN/manifest.json"
   grep -q "\"schema\": \"$V8\"" "$PLAN/contract.json"
   grep -q 'journal-event/v8.json' "$PLAN/journal.ndjson"
-  ! grep -q 'journal-event/v7.json' "$PLAN/journal.ndjson"
+  run grep -q 'journal-event/v7.json' "$PLAN/journal.ndjson"
+  [ "$status" -ne 0 ] || return 1
   # the conformance checker pairs the v7 manifest with the v8 contract (not a torn pair)
   run python3 "$SK/verify/plan_contract.py" "$PLAN"
   [ "$status" -eq 0 ] || { echo "$output"; return 1; }
@@ -147,8 +148,10 @@ doc['autonomy'] = {'brain': False, 'queue': 'prompt-lead'}"
   [ "$(grep -c 'MUST' "$SPEC")" -ge 8 ]
   c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
   # the status paragraph is lifted: the fields ship with their schemas
-  ! grep -q 'a writer MUST NOT add these fields' "$SPEC"
-  ! grep -q 'Status: specified for the 8.0.0 line' "$SPEC"
+  run grep -q 'a writer MUST NOT add these fields' "$SPEC"
+  [ "$status" -ne 0 ] || return 1
+  run grep -q 'Status: specified for the 8.0.0 line' "$SPEC"
+  [ "$status" -ne 0 ] || return 1
   c "$SPEC" '`resolver: "lead"` MUST be refused for `C1`, `C2`, `C5` and `C6`'
   c "$SPEC" 'At most one blocker MUST be active per plan'
   c "$SPEC" 'While a blocker is unresolved its task MUST NOT complete'

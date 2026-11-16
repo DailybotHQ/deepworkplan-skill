@@ -569,17 +569,24 @@ def ready(contract, events):
         [e.get('seq', 0) for e in events
          if isinstance(e, dict) and e.get('type') == 'approval'] or [0])
     candidates = []
+    # v8 structured blockers (LOOP_ENGINEERING.md section 3): the held task
+    # waits for its resolution, and a prerequisite is met only when
+    # task_complete says so - the same predicate start_task and authorize
+    # use, so evidence that landed under an open blocker never makes a
+    # successor look eligible.
+    hold = ledger.active_blocker(events)
+    held = hold.get('task') if hold else None
     for order, task in enumerate(contract.get('tasks', [])):
         task_id = task.get('id')
-        if ledger.task_complete(contract, events, task_id):
+        if task_id == held or ledger.task_complete(contract, events, task_id):
             continue
         blocked = False
         since = approval_seq or 1
         for prereq in task.get('prerequisites', []):
-            states = ledger.criterion_states(contract, events, prereq)
-            if not all(state.get('satisfied') for state in states):
+            if not ledger.task_complete(contract, events, prereq):
                 blocked = True
                 break
+            states = ledger.criterion_states(contract, events, prereq)
             for state in states:
                 since = max(since, state.get('via_seq') or 0)
         if blocked:

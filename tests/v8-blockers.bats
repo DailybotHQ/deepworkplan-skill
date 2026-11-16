@@ -199,8 +199,10 @@ PY
   [ "$(_snap 's["schema"]')" = '"https://deepworkplan.com/schema/plan-snapshot/v6.json"' ]
   [ "$(_snap 's["blocker"]')" = 'null' ]
   [ "$(_snap 's["generated_by"]')" = '"dwp-ledger/7.0"' ]
-  ! grep -q 'journal-event/v8' "$PLAN/journal.ndjson"
-  ! grep -q '"type":"blocker"' "$PLAN/journal.ndjson"
+  run grep -q 'journal-event/v8' "$PLAN/journal.ndjson"
+  [ "$status" -ne 0 ] || return 1
+  run grep -q '"type":"blocker"' "$PLAN/journal.ndjson"
+  [ "$status" -ne 0 ] || return 1
 }
 
 @test "a v8 journal is held to its generation: a v7-URL event in a v8 plan is refused" {
@@ -281,4 +283,74 @@ Needs: none" ]
   _plan PLAN_v7_header v7
   run python3 "$HEADER" --plan "$PLAN" --goal g --next n
   [ "$status" -eq 1 ]; [[ "$output" == *"this plan is v7"* ]]
+}
+
+@test "the scheduler agrees with start: a blocked task and its successors are not ready" {
+  # Review of #101: evidence that lands under an open blocker must not make
+  # the successor look eligible to `scheduler.py ready` while `start` refuses it.
+  _plan PLAN_v8_ready v8           # sets T1/AC1/T2 from the fixture
+  # rebuild it with T2 depending on T1
+  rm -rf "$PLAN"
+  mkdir -p "$REPO/.dwp/plans/PLAN_v8_ready/analysis_results"
+  PLAN="$REPO/.dwp/plans/PLAN_v8_ready"
+  printf '# Goal\n\nready.\n' > "$PLAN/README.md"
+  python3 - "$FIX" "$PLAN/draft.json" <<'PY'
+import json, sys
+doc = json.load(open(sys.argv[1]))
+doc.pop('contract_id', None)
+doc['plan'] = 'PLAN_v8_ready'
+doc['schema'] = 'https://deepworkplan.com/schema/plan-contract/v8.json'
+doc['invariants'] = []
+doc['scope']['allowed_command_classes'] = ['python3']
+doc['scope']['allowed_paths'] = ['src/']
+for t in doc['tasks']:
+    t['touched_surface'] = ['src/product.py']
+    for g in t['gate_intent']:
+        g['check'] = 'python3 -c pass'
+doc['tasks'][0]['prerequisites'] = []
+doc['tasks'][1]['prerequisites'] = [doc['tasks'][0]['id']]
+for c in doc['acceptance']['criteria']:
+    c.pop('control', None)
+    c['accepted_evidence'] = ['observed']
+json.dump(doc, open(sys.argv[2], 'w'), indent=2)
+PY
+  run python3 "$LEDGER" --plan "$PLAN" materialize --contract "$PLAN/draft.json" --authority bats --mechanism plan_authorship
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  python3 "$LEDGER" --plan "$PLAN" start --task "$T1" >/dev/null
+  _block "$T1" '{"reason": "r", "needs": "n", "class": "C3"}'
+  [ "$status" -eq 0 ]
+  run python3 "$LEDGER" --plan "$PLAN" gate --task "$T1" --criterion "$AC1" --json '"python3 -c pass"'
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run python3 "$SK/shared/scheduler.py" ready "$PLAN"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [[ "$output" != *"\"$T1\""* ]] || { echo "blocked task listed ready: $output"; return 1; }
+  [[ "$output" != *"\"$T2\""* ]] || { echo "successor listed ready: $output"; return 1; }
+  run python3 "$LEDGER" --plan "$PLAN" start --task "$T2"
+  [ "$status" -eq 3 ]
+  # once resolved, the successor is ready and starts
+  python3 "$LEDGER" --plan "$PLAN" unblock --task "$T1" >/dev/null
+  run python3 "$SK/shared/scheduler.py" ready "$PLAN"
+  grep -q "\"$T2\"" <<<"$output" || { echo "$output"; return 1; }
+  run python3 "$LEDGER" --plan "$PLAN" start --task "$T2"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+}
+
+@test "the header never truncates needs or the task status; only a long title is shortened" {
+  _plan PLAN_v8_long v8
+  long="$(python3 -c 'print("restart " + "x" * 480)')"
+  _block "$T1" "{\"reason\": \"r\", \"needs\": \"$long\", \"class\": \"C3\"}"
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run python3 "$HEADER" --plan "$PLAN" --goal g --next n
+  [ "$status" -eq 0 ]
+  grep -qF "Needs: C3 (human): $long" "$PLAN/PROGRESS.md"
+  grep -q "^Current task: $T1 .* (blocked)\$" "$PLAN/PROGRESS.md"
+  python3 - "$SK/shared" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import progress_header as H
+task, needs = H.derived({'tasks': [{'id': 'T-a', 'title': 'w ' * 400, 'status': 'blocked'}],
+                         'blocker': None})
+assert task.startswith('T-a - ') and task.endswith('... (blocked)'), task
+assert len(task) < 230, len(task)
+PY
 }
