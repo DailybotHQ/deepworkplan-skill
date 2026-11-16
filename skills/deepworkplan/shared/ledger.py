@@ -566,7 +566,7 @@ def criterion_states(contract, events, task_id):
     if task is None:
         raise LedgerError('task %r is not in the contract' % task_id)
     start = task_start_seq_of(events, task_id)
-    accepted_by = {c['id']: c.get('accepted_evidence', [])
+    accepted_by = {c['id']: (c.get('accepted_evidence') or [])
                    for c in contract['acceptance']['criteria']}
     invalid_before = invalidated_before(events)
     states = []

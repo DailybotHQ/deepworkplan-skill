@@ -13,7 +13,7 @@ Source of truth: <https://deepworkplan.com> · License: MIT.
 A **Markdown-first** agent skill: the "code" is the `SKILL.md` prompt files an
 agent reads at runtime, plus a small set of local helpers. Two Bash: `setup.sh`
 (symlinking, at the repository root, not inside the pack) and, inside the pack,
-`shared/context.sh` for repo/branch/`.dwp/` detection. Twenty Python (stdlib
+`shared/context.sh` for repo/branch/`.dwp/` detection. Twenty-one Python (stdlib
 only, Python 3.9+), all inside the pack: `verify/conformance.sh` and its
 `verify/plan_contract.py` for the read-only conformance check,
 `verify/compliance_audit.py` for the read-only compliance audit of finished
@@ -76,6 +76,11 @@ prints one action per addon; it writes nothing and installs nothing; and
 notifier: it reads one `plan-event-v1` JSON document on stdin and, only when
 the Dailybot CLI is installed, sends one report through it — every other
 case (no CLI, invalid input, failed send) exits 0 silently; and
+`shared/queue.py`, the plan queue (dwp-queue-v1): the only writer of
+`.dwp/queue.json` — create appends on approval, execute marks a plan
+started when it claims the lead, finalize marks it done, create/refine may
+skip with a note — an atomic 0600 write, and a read of anything that is not
+a valid bounded document is a quiet none; and
 `shared/migrate_v6.py`, the explicit v5 → v6 migration helper — preview,
 guarded resumable migrate, verified rollback. It never executes anything:
 a v5 gate record is imported through the ledger writer as `imported`
