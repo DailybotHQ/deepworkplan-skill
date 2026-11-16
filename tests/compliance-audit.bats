@@ -73,7 +73,7 @@ _field() { # _field KEY -> JSON value of plans[0][KEY]
   [ "$(_field tasks_completed <<<"$output")" = "1" ]
 }
 
-@test "each unclosed criterion names its owning task, or null when no task owns it" {
+@test "each unclosed criterion names its owning tasks, or none when no task owns it" {
   _close_first
   run python3 "$AUDIT" "$PLAN" --json
   [ "$status" -eq 0 ]
@@ -81,10 +81,32 @@ _field() { # _field KEY -> JSON value of plans[0][KEY]
   # The fixture: AC-journal-catalog-closed is owed by T-ship-validator's
   # gate_intent; AC-prose-only-criterion is named by no task.
   [ "$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1]), sort_keys=True))' "$owners")" = \
-    '{"AC-journal-catalog-closed": "T-ship-validator", "AC-prose-only-criterion": null}' ]
+    '{"AC-journal-catalog-closed": ["T-ship-validator"], "AC-prose-only-criterion": []}' ]
   # A closed criterion is not listed as owed.
   run grep -q "$FIRST_AC" <<<"$owners"
   [ "$status" -ne 0 ]
+}
+
+@test "a criterion two tasks can close names both owners, in contract order" {
+  # A second plan from the same draft, rewired so both tasks gate the
+  # second criterion, which nobody closes.
+  TWO="$REPO/.dwp/plans/PLAN_v7_fixture_two_owners"
+  mkdir -p "$TWO/analysis_results"
+  cp "$PLAN/README.md" "$TWO/README.md"
+  python3 - "$PLAN/draft.json" "$TWO/draft.json" <<'PY'
+import json, sys
+doc = json.load(open(sys.argv[1]))
+doc['plan'] = 'PLAN_v7_fixture_two_owners'
+doc['tasks'][0]['gate_intent'].append(dict(doc['tasks'][1]['gate_intent'][0]))
+json.dump(doc, open(sys.argv[2], 'w'), indent=2)
+PY
+  run python3 "$LEDGER" --plan "$TWO" materialize --contract "$TWO/draft.json" --authority bats --mechanism plan_authorship
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  run python3 "$AUDIT" "$TWO" --json
+  [ "$status" -eq 0 ]
+  owners="$(_field criteria_unclosed_owners <<<"$output")"
+  [ "$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["AC-journal-catalog-closed"]))' "$owners")" = \
+    '["T-publish-schemas", "T-ship-validator"]' ]
 }
 
 @test "the audit counts the §5.1.4 observations the ledger recorded" {
