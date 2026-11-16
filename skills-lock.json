@@ -11,6 +11,7 @@
     "dailybot": {
       "source": "DailybotHQ/agent-skill",
       "ref": "v3.23.20",
+      "commit": "a74fa055fcae006798744e8ea4c7fb17ae9b0a06",
       "sourceType": "github",
       "skillPath": "skills/dailybot/SKILL.md",
       "computedHash": "49f01f14f329abbac9e051b82a7ce8586d7f6119acf4557a3d76055910400816"
