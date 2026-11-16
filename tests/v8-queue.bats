@@ -206,3 +206,19 @@ PY
     q set-state --plan PLAN_2_x --state skipped --note "dropped by the developer" >/dev/null
     q show | grep -q '"state": "skipped"'
 }
+
+@test "review: an address or plan id with a trailing newline is refused (whole-string match)" {
+    python3 - "$REPO_ROOT/skills/deepworkplan/shared" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import queue as Q
+item = lambda p, **kw: dict({'plan': p, 'after': None, 'state': 'queued', 'lead': None, 'start': 'prompt-lead'}, **kw)
+doc = lambda items: {'schema': Q.SCHEMA, 'items': items}
+assert not Q.valid_doc(doc([item('P1', state='started', lead='local:w1:p2\n')])), 'lead with a newline'
+assert not Q.valid_doc(doc([item('P1\n')])), 'plan id with a newline'
+assert not Q.valid_doc(doc([item('P1', after='P0\n'), item('P0')])), 'after with a newline'
+PY
+    q append --plan PLAN_1_x >/dev/null
+    run q set-state --plan PLAN_1_x --state started --lead "$(printf 'local:w1:p2\n ')"
+    [ "$status" -ne 0 ]
+}

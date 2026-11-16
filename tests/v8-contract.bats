@@ -164,3 +164,18 @@ PY
   run bash -c "grep -rn 'v7 is the default for new' '$SK' | grep -v 'V7_ROADMAP.md'"
   [ "$status" -ne 0 ] || { echo "$output"; return 1; }
 }
+
+@test "review: one ordered generation ladder; a promptable address must match whole" {
+  python3 - "$SHARED" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+import contract_v6 as C
+assert C.GENERATION_ORDER == ('v6', 'v7', 'v8')
+assert C.generation_at_least('v8', 'v7') and C.generation_at_least('v7', 'v7')
+assert not C.generation_at_least('v6', 'v7') and not C.generation_at_least(None, 'v7')
+assert 'v8' in C.contract_generation.__doc__
+PY
+  _doc "$WORK/nl.json" "doc['autonomy'] = {'promptable': ['local:w1:p2\n']}"
+  run _valid "$WORK/nl.json"
+  [ "$status" -ne 0 ]
+}

@@ -59,8 +59,19 @@ ID_ADDON = re.compile(r'^[a-z][a-z0-9-]{0,63}$')
 DIGEST = re.compile(r'^sha256:[0-9a-f]{64}$')
 
 
+# The contract generations in order: a feature gated on a generation is
+# available to every later one (spec/LOOP_ENGINEERING.md §5).
+GENERATION_ORDER = ('v6', 'v7', 'v8')
+
+
+def generation_at_least(generation, floor):
+    """True when `generation` is `floor` or a later contract generation."""
+    return (generation in GENERATION_ORDER
+            and GENERATION_ORDER.index(generation) >= GENERATION_ORDER.index(floor))
+
+
 def contract_generation(doc):
-    """'v6' or 'v7' from the contract's schema URL, else None."""
+    """'v6', 'v7' or 'v8' from the contract's schema URL, else None."""
     if not isinstance(doc, dict):
         return None
     return CONTRACT_GENERATIONS.get(doc.get('schema'))
@@ -244,7 +255,7 @@ def autonomy_errors(doc):
             errors.append('autonomy.promptable: a non-empty list of pane addresses')
         else:
             for addr in promptable:
-                if not isinstance(addr, str) or not PANE_ADDRESS.match(addr):
+                if not isinstance(addr, str) or not PANE_ADDRESS.fullmatch(addr):
                     errors.append('autonomy.promptable: %r is not a pane address' % (addr,))
     notify = block.get('notify')
     if 'notify' in block:
@@ -366,7 +377,7 @@ def contract_errors(doc, parents=None):
     _envelope_errors(doc, errors)
     _scheduling_errors(doc, errors)
     _tasks_errors(doc, criteria, errors,
-                  v7=CONTRACT_GENERATIONS[declared] in ('v7', 'v8'))
+                  v7=generation_at_least(CONTRACT_GENERATIONS[declared], 'v7'))
     return errors
 
 

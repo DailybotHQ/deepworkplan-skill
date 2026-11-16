@@ -79,15 +79,15 @@ def valid_doc(doc):
         note = {"note"}
         if not keys <= base | note or not keys >= base:
             return False
-        if not isinstance(item["plan"], str) or not PLAN_ID.match(item["plan"]):
+        if not isinstance(item["plan"], str) or not PLAN_ID.fullmatch(item["plan"]):
             return False
         after = item["after"]
-        if after is not None and (not isinstance(after, str) or not PLAN_ID.match(after)):
+        if after is not None and (not isinstance(after, str) or not PLAN_ID.fullmatch(after)):
             return False
         if item["state"] not in STATES or item["start"] not in STARTS:
             return False
         lead = item["lead"]
-        if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.match(lead)):
+        if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead)):
             return False
         if item["state"] == "started" and lead is None:
             return False
@@ -191,7 +191,7 @@ def set_state(dwp_dir, plan, state, lead=None, note=None):
     if lead is not None:
         if state != "started":
             raise SystemExit("queue.py: --lead belongs to the started state")
-        if not isinstance(lead, str) or not PANE_ADDRESS.match(lead):
+        if not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead):
             raise SystemExit("queue.py: --lead is not a pane address "
                              "(local|<machine>):<workspace>:<pane>")
     item = next((i for i in doc["items"] if i["plan"] == plan), None)
@@ -235,7 +235,7 @@ def main(argv=None):
         print(json.dumps(doc, indent=2, sort_keys=True))
         return 0
     if args.cmd == "append":
-        if not PLAN_ID.match(args.plan):
+        if not PLAN_ID.fullmatch(args.plan):
             raise SystemExit("queue.py: --plan is not a plan id")
         append(args.dwp, args.plan, args.after, args.start)
         return 0
