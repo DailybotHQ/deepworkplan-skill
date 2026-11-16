@@ -221,7 +221,17 @@ PY
   # a refused completion is a recorded refusal: the derived learnings half copies its reason
   run python3 "$LEDGER" --plan "$PLAN" complete --task T-publish-schemas
   [ "$status" -ne 0 ]
-  run python3 "$SHARED/benchmark.py" report --plan "$PLAN"
+  # benchmark-record v1 carries release versions only: under a pre-release-
+  # stamped pack, run the benchmark from a copy stamped with its release base
+  # (the same rule as tests/v6-benchmark.bats).
+  local bench="$SHARED/benchmark.py"
+  if grep -qE '^version: "[0-9]+\.[0-9]+\.[0-9]+-' "$SK/SKILL.md"; then
+    cp -R "$SK" "$WORK/pack-release"
+    sed -i.bak -E 's/^version: "([0-9]+\.[0-9]+\.[0-9]+)-[^"]*"/version: "\1"/' "$WORK/pack-release/SKILL.md"
+    rm -f "$WORK/pack-release/SKILL.md.bak"
+    bench="$WORK/pack-release/shared/benchmark.py"
+  fi
+  run python3 "$bench" report --plan "$PLAN"
   [ "$status" -eq 0 ]
   [[ "$output" != *"not measured"* ]] || return 1
   python3 - "$PLAN" <<'PY'
