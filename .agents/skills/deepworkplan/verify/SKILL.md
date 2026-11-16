@@ -54,6 +54,23 @@ flow. Repository-only checks still run without Python. The checker accepts both 
 the judgment checks (real commands, real toolchain, catalog-matches-disk) on
 top — the script verifies *structure*; you verify *substance*.
 
+## Compliance audit of finished plans (read-only)
+
+Conformance asks whether a plan is well-formed; the compliance audit asks
+whether finished v6/v7 work followed the rules the pack already ships:
+criteria closed on their declared evidence class, a completed Final Review,
+declared controls and their verdicts (dirty-start voids counted), §5.1.4
+`control missing` observations, a verbatim request kept, and re-anchoring
+(reported unmeasured — execution leaves no record of it). It never writes.
+
+```bash
+python3 {skill_dir}/verify/compliance_audit.py --plans-dir .dwp/plans   # every plan
+python3 {skill_dir}/verify/compliance_audit.py <plan-dir> --json        # one plan, JSON
+```
+
+Findings are data for the next roadmap, not conformance failures: the audit
+exits `0` when it ran and `2` on a usage error or an unreadable plan.
+
 ## Parameter support
 
 - `/dwp-verify` — verify the repository (the default).

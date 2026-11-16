@@ -294,3 +294,32 @@ doc_has() {
     # A hand-written receipt stays forbidden.
     doc_has "$SK/execute/SKILL.md" "asserts a verification that never happened"
 }
+
+@test "durability is stated precisely: the harness is tracked, plans are not" {
+    # ADR 0006: the repository is the harness (tracked), plans live in the
+    # working copy and any agent there resumes them, and a fresh clone starts
+    # without plans unless one is exported. "Version-controlled plans" was the
+    # overclaim the 2026 methodology debate found in public copy.
+    local spec="$SK/spec/DWP_SPECIFICATION.md"
+    doc_has "$spec" "**The repository is the harness**"
+    doc_has "$spec" "| **Session-durable** |"
+    doc_has "$spec" "| **Host-portable** |"
+    doc_has "$spec" "| **Repo-durable** |"
+    doc_has "$spec" "| **Spec-first** |"
+    doc_has "$spec" "**MUST NOT** call plans version-controlled"
+    # The overclaim does not return in shipped prose: the only allowed
+    # mention is the prohibition itself.
+    local hits
+    hits="$(grep -rniE "version-controlled[^.]*plan" "$SK" --include='*.md' \
+        | grep -v "MUST NOT\*\* call plans" || true)"
+    [ -z "$hits" ] || { echo "$hits"; return 1; }
+}
+
+@test "the verbatim request is kept and the approved contract binds" {
+    # ADR 0006 (R9): verbatim intent was kept only for relayed authority;
+    # it now covers every request, and the binding text is named.
+    doc_has "$SK/create/v6.md" "every plan keeps the human's request verbatim"
+    doc_has "$SK/create/v6.md" "**the approved contract binds**"
+    doc_has "$SK/create/SKILL.md" "Keep the request verbatim"
+    doc_has "$SK/spec/DWP_SPECIFICATION.md" "keep the human's request verbatim in a note inside the plan folder"
+}

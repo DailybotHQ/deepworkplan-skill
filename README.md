@@ -26,13 +26,13 @@
 > The official DeepWorkPlan agent skill pack, maintained by [Dailybot](https://www.dailybot.com).
 
 DeepWorkPlan turns any repository into a **structured environment** — context,
-guardrails and a durable plan — where any coding agent executes with precision
+guardrails and a plan in the repository's working copy — where any coding agent executes with precision
 and finishes short- and long-horizon work. It is for developers and teams who
 hand real work to coding agents (Claude Code, Codex, Cursor, Gemini CLI,
 Copilot, OpenClaw and others) and need that work to survive context resets,
 agent changes and long runs.
 
-> DeepWorkPlan is spec-driven development where the repository itself becomes the harness.
+> The repository is the harness. Agents plan first, verify every step, and pick up where another agent left off.
 
 The pack does three things:
 
@@ -71,13 +71,17 @@ lifecycle.
 - **Done is a contract, not a feeling.** Every task names its acceptance criteria
   and the checks that must pass. An agent does not get to *decide* it finished —
   it passes, or the task stays open.
-- **The repository is the harness.** Context, tools, guardrails and state live in
-  your repo as plain files any agent can read. No lock-in, no external brain, and
-  it survives a context reset or a change of agent mid-flight.
+- **The repository is the harness.** Context, tools and guardrails live in your
+  repo as tracked plain files any agent can read. Plans live in the working copy
+  (`.dwp/`, git-ignored): any agent working there resumes them after a context
+  reset or a change of agent mid-flight, and a fresh clone starts without them
+  unless you export one. No lock-in, no external brain.
 - **Context is the scarcest resource.** Instructions load progressively by
   trigger, validation is selected from what each task actually touched, and
-  skills are decided task-locally — so the plan pays for itself instead of
-  crowding out the work.
+  skills are decided task-locally — measured in instruction bytes per flow. No
+  general provider-token saving is claimed: the one token measurement (one
+  workload, flows never entered) was mixed per feature and favored the no-harness
+  control all-in ([three-arm benchmark](docs/evaluations/three-arm-benchmark.md)).
 
 ## Install
 

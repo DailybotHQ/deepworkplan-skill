@@ -5,6 +5,11 @@ executing a plan. The evidence does **not** establish a general reduction in
 provider tokens, billing, or end-to-end time. Detailed requirements, fault
 detection and final validation remain constraints on any efficiency claim.
 
+The only provider-token measurement DWP has is the
+[three-arm fresh-agent benchmark](three-arm-benchmark.md): one workload, the
+flows never entered, a mixed per-feature direction, and about 4.4–4.9× the
+no-harness control all-in because one-time onboarding never amortized.
+
 This evaluation compares the installed pack at baseline
 `eaf54994ac5894b74849f1b8d2b6137df8d83e30` with the review-corrected candidate identified by
 [its static provenance record](token-efficiency-data/static-candidate-provenance.json).

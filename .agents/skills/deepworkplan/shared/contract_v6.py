@@ -306,6 +306,85 @@ def contract_errors(doc, parents=None):
     return errors
 
 
+# Path words and file names that mark a shared interface: two writers
+# touching any of them can collide semantically even when their files differ
+# (R8, ADR 0006). Words match whole path tokens (split on / . _ -), so
+# "protocol/" is not "proto"; prose files (.md, .txt, .rst) never match.
+SHARED_INTERFACE_WORDS = ('schema', 'schemas', 'migration', 'migrations',
+                          'generated', 'openapi', 'proto', 'protos')
+SHARED_INTERFACE_FILES = ('package.json', 'pyproject.toml', 'go.mod',
+                          'cargo.toml')
+
+
+def _is_shared_interface(path):
+    lowered = path.lower().rstrip('/')
+    name = lowered.rsplit('/', 1)[-1]
+    if name in SHARED_INTERFACE_FILES or name.endswith('.lock') or \
+            name.endswith('lock.json') or name.endswith('.proto'):
+        return True
+    if name.endswith(('.md', '.txt', '.rst')):
+        return False        # prose about a schema is not the schema
+    tokens = set(t for t in re.split(r'[/._-]+', lowered) if t)
+    return bool(tokens & set(SHARED_INTERFACE_WORDS))
+
+
+def _prerequisite_closure(tasks):
+    """task id -> every task id it transitively depends on."""
+    direct = {t.get('id'): set(t.get('prerequisites') or []) for t in tasks}
+    closure = {}
+    for tid in direct:
+        seen, stack = set(), list(direct[tid])
+        while stack:
+            dep = stack.pop()
+            if dep not in seen:
+                seen.add(dep)
+                stack.extend(direct.get(dep, ()))
+        closure[tid] = seen
+    return closure
+
+
+def _surfaces_overlap(a, b):
+    a, b = a.rstrip('/'), b.rstrip('/')
+    return a == b or a.startswith(b + '/') or b.startswith(a + '/')
+
+
+def parallel_overlap_warnings(doc):
+    """Warn (never refuse) when two tasks that may run concurrently are both
+    marked parallel_safe yet share a touched surface or a shared interface.
+
+    File non-overlap is not semantic safety: schemas, migrations, generated
+    artifacts and lockfiles couple writers whose paths differ. Tasks ordered
+    by a prerequisite chain never run concurrently and are skipped.
+    """
+    tasks = [t for t in doc.get('tasks', []) if t.get('parallel_safe') is True]
+    deps = _prerequisite_closure(doc.get('tasks', []))
+    warnings = []
+    for i, first in enumerate(tasks):
+        for second in tasks[i + 1:]:
+            a, b = first.get('id'), second.get('id')
+            if a in deps.get(b, ()) or b in deps.get(a, ()):
+                continue
+            sa = first.get('touched_surface') or []
+            sb = second.get('touched_surface') or []
+            shared = sorted({x for x in sa for y in sb
+                             if _surfaces_overlap(x, y)})
+            if shared:
+                warnings.append(
+                    'parallel_safe tasks %s and %s share touched surface %s - '
+                    'they can collide when run concurrently; order them or '
+                    'split the surface' % (a, b, ', '.join(shared)))
+                continue
+            ia = [x for x in sa if _is_shared_interface(x)]
+            ib = [y for y in sb if _is_shared_interface(y)]
+            if ia and ib:
+                warnings.append(
+                    'parallel_safe tasks %s and %s both touch shared '
+                    'interfaces (%s / %s) - file non-overlap is not semantic '
+                    'safety; declare one owner or order them'
+                    % (a, b, ', '.join(ia), ', '.join(ib)))
+    return warnings
+
+
 def closure_errors(doc, warnings=None):
     """Criteria that no evidence can ever close (field report F-11).
 
@@ -1746,6 +1825,7 @@ def main(argv):
         warnings = []
         if not errors:
             draft = closure_errors(doc, warnings) + gate_command_errors(doc)
+            warnings += parallel_overlap_warnings(doc)
             if recorded:
                 # an already-materialized contract (e.g. a migration's
                 # records-only synthesis): draft checks are advisories

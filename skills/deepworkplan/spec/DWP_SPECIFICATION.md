@@ -128,6 +128,11 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 | **Executive Report** | An optional, on-request stakeholder artifact generated after completion (§6.3). |
 | **Orchestrator plan** | A plan in an orchestrator hub that creates and coordinates **child DWPs** in sub-repos. |
 | **`.dwp/`** | The gitignored repo-root output directory: `.dwp/plans/`. |
+| **Harness** | The agent scaffolding a DWP repository carries: `AGENTS.md`, `docs/`, `.agents/` and the installed skill. **The repository is the harness**: these files are versioned and travel with the code. |
+| **Session-durable** | A plan survives sessions, context resets and agent changes in the repository's working copy. Any agent working there can resume it, including several agents on one plan. Every plan is session-durable by rule (§2). |
+| **Host-portable** | A plan can move to another machine or a fresh clone only through an explicit export (`ledger.py export`). Plans are host-portable by export, never implicitly. |
+| **Repo-durable** | Committed to version control and present in every clone. DWP plans are **not** repo-durable: `.dwp/` is git-ignored working state. A fresh clone starts without plans unless one is exported. |
+| **Spec-first** | The planning step's level in Böckeler's taxonomy of spec-driven development: the plan is written before the code, with acceptance criteria, and serves one work episode. A DWP plan is spec-first; it is not spec-anchored (kept and maintained alongside the code) and not spec-as-source (the only human-edited artifact). |
 
 ---
 
@@ -147,6 +152,13 @@ interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
 
 - `.dwp/` **MUST** be git-ignored (added to the repo's `.gitignore`). Plan
   execution artifacts are working state, not tracked deliverables.
+- Durability is stated with the terms of §1.2 and never stronger: a plan is
+  **session-durable** (any agent in the working copy resumes it),
+  **host-portable** only by explicit export, and **not repo-durable**.
+  Documentation and public copy describing DWP **MUST NOT** call plans
+  version-controlled or imply that a fresh clone carries them; they **MAY**
+  say that the repository is the harness, because the harness files are
+  tracked.
 - The legacy `.agent_commands/agent_deep_work_plans/results/` tree **MUST NOT** be
   used by v2 plans. On migration, existing plans **MUST** be relocated or archived,
   and **MUST NOT** be blind-deleted (`ORCHESTRATOR_MANIFEST.md` key decision).
@@ -607,6 +619,11 @@ apply to every plan and every agent that continues one:
    does not prove the rule. A test of exact output checks it with a sentinel
    (`[ "$(f x; printf s)" = $'y\ns' ]`): `$(…)` strips trailing newlines, so
    output that drops or doubles its final newline would otherwise pass.
+   In a v6/v7 plan the ledger makes this rule visible without blocking: when a
+   gate-closed criterion that declares no `control` completes, `ledger.py
+   complete` warns and records a `§5.1.4 control missing` observation; a
+   declared control, including `exempt` with a rationale, is a decision and
+   draws no warning (ADR 0006).
 2. **Compare to the base.** Performance, coverage and size are compared
    against the base branch (or the plan's starting revision), not only against
    a threshold; a regression against the base is reported even when the
@@ -689,6 +706,13 @@ earlier versions placed in separate closing tasks are relocated: skills
 decisions move **into the task that produced the pattern** (§6.2), and the
 Executive Report becomes an **optional artifact generated on request** (§6.3).
 Nothing in the security pass is relaxed.
+
+A plan **SHOULD** keep the human's request verbatim in a note inside the plan
+folder (`analysis_results/HUMAN_NOTE.md`), and delegates **SHOULD** receive a
+pointer to it rather than a paraphrase. The approved plan (in v6/v7, the
+contract) **binds**; the verbatim request is its reference. A disagreement
+between them is resolved by an amendment, never by re-reading the request
+over the approved plan.
 
 ### 6.1. Task N — Final Review
 
