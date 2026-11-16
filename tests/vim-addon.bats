@@ -80,6 +80,11 @@ vim_doc_has() {
     run bash -c "{ grep -rhoE '(deepworkplan-vim@|DWP_VIM_REF=)v[0-9]+\.[0-9]+\.[0-9]+' '$ADDON' '$ONBOARD' '$README' '$SPEC'; grep -rhoE -- '--branch v[0-9]+\.[0-9]+\.[0-9]+' '$ADDON'; } | sed -E 's/.*(v[0-9]+\.[0-9]+\.[0-9]+)$/\1/' | sort -u"
     [ "$status" -eq 0 ]
     [ "$output" = "$PIN_TAG" ]
+    # The registry version an accepted install records (prose may wrap the
+    # JSON across lines, so the files are joined first) names the same tag.
+    run bash -c "find '$ADDON' -name '*.md' -exec cat {} + | tr '\\n' ' ' | tr -s ' ' | grep -oE '\"enabled\": true, \"version\": \"v[0-9]+\\.[0-9]+\\.[0-9]+\"' | grep -oE 'v[0-9]+\\.[0-9]+\\.[0-9]+' | sort -u"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$PIN_TAG" ]
 }
 
 @test "lexical trust: no fetch-and-execute installer strings in the addon tree" {

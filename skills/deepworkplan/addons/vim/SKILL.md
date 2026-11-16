@@ -135,7 +135,7 @@ with explicit acceptance, then re-detect and record the observed version.
 
 On acceptance, record the addon in the repository registry —
 `.dwp/config.json` → `"addons": {"vim": {"enabled": true, "version":
-"v1.0.0"}}` (`../../spec/CONFIG.md`; reconcile an existing file, never
+"v1.1.0"}}` (`../../spec/CONFIG.md`; reconcile an existing file, never
 clobber it) — then run the headless smoke start, the command-index mapping
 probe and the plan-browser module probe. Every outcome is recorded, none
 blocks. A failed check is a finding about the machine, never a repo
