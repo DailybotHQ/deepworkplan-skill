@@ -1,0 +1,83 @@
+{
+  "blocker": {
+    "class": "C3",
+    "needs": "restart the fixture service",
+    "reason": "the fixture service is down",
+    "resolver": "lead",
+    "since": "2026-11-16T18:34:49Z",
+    "task": "T-publish-schemas"
+  },
+  "checkpoint": null,
+  "contract_id": "4f6dc2a5f5e2177ec48dcd16e1f3bb9532711b2d07f7156f554baed4febc87f4",
+  "contract_revision": 1,
+  "generated_by": "dwp-ledger/8.0",
+  "plan": "PLAN_v8_reader_fixture",
+  "positions": {
+    "approval": {
+      "seq": 1
+    },
+    "blocker": {
+      "seq": 3
+    },
+    "task_start": {
+      "seq": 2
+    }
+  },
+  "resources": {
+    "latest_samples": {},
+    "limits": [
+      {
+        "enforcement": "enforced",
+        "id": "spend_usd",
+        "limit": 4000,
+        "metering_source": "claude-adapter: usage.total_cost_usd",
+        "unit": "USD"
+      },
+      {
+        "enforcement": "advisory",
+        "id": "wall_clock_hours",
+        "limit": 16,
+        "unit": "hours"
+      },
+      {
+        "enforcement": "enforced",
+        "id": "gate_retries",
+        "limit": 3,
+        "metering_source": "core-runner: journal gate_run count",
+        "unit": "retries"
+      }
+    ]
+  },
+  "schema": "https://deepworkplan.com/schema/plan-snapshot/v8.json",
+  "tasks": [
+    {
+      "criteria": [
+        {
+          "criterion": "AC-valid-contract-shape",
+          "satisfied": false,
+          "stale_seqs": [],
+          "started_seq": 2
+        }
+      ],
+      "id": "T-publish-schemas",
+      "started_seq": 2,
+      "status": "blocked",
+      "title": "Publish the v6 contract and journal-event schemas"
+    },
+    {
+      "criteria": [
+        {
+          "criterion": "AC-journal-catalog-closed",
+          "satisfied": false,
+          "stale_seqs": [],
+          "started_seq": null
+        }
+      ],
+      "id": "T-ship-validator",
+      "started_seq": null,
+      "status": "pending",
+      "title": "Ship the runtime validator and prove the catalog closed"
+    }
+  ],
+  "updated_at": "2026-11-16T18:34:49Z"
+}
