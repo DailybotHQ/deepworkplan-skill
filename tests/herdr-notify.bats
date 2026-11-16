@@ -33,7 +33,11 @@ teardown() {
 }
 
 event_json() {
-    printf '%s' "{\"schema\":\"plan-event-v1\",\"event\":\"$1\",\"plan\":\"/x/proj/.dwp/plans/PLAN_09_loop\",\"machine\":\"local\",\"lead\":\"local:wP:p2J\",\"repo_root\":\"/tmp/devproj\",\"blocker_class\":\"$2\",\"at\":\"2026-11-15T18:00:00Z\"}"
+    # The payload shape herdr-peers 1.3.1 actually emits (autopilot.py
+    # EVENT_SCHEMA = 'herdr-peers/plan-event-v1'; the schema the skill ships
+    # at skills/herdr-peers/schemas/plan-event-v1.json requires all eight
+    # fields, additionalProperties false).
+    printf '%s' "{\"schema\":\"herdr-peers/plan-event-v1\",\"event\":\"$1\",\"plan\":\"PLAN_09_loop\",\"machine\":\"local\",\"lead\":\"local:wP:p2J\",\"repo_root\":\"/tmp/devproj\",\"blocker_class\":\"$2\",\"at\":\"2026-11-15T18:00:00Z\"}"
 }
 
 @test "valid event with no dailybot CLI: exit 0, silent" {
@@ -89,4 +93,27 @@ EOF
     chmod +x "$FAKE_BIN/dailybot"
     run env PATH="$FAKE_BIN:/usr/bin:/bin" "$NOTIFY" <<< "$(event_json plan_stalled '')"
     [ "$status" -eq 0 ]
+}
+
+@test "the real 1.3.1 schema end to end: a fifth event (plan_lead_moved) reports" {
+    run env PATH="$FAKE_BIN:/usr/bin:/bin" "$NOTIFY" <<< "$(event_json plan_lead_moved '')"
+    [ "$status" -eq 0 ]
+    grep -q "lead record is stale" "$FAKE_LOG"
+    grep -q "PLAN_09_loop" "$FAKE_LOG"
+}
+
+@test "an oversized payload is a quiet no-op (never breaks the daemon)" {
+    local big
+    big="$(head -c 70000 /dev/zero | tr '\0' 'x')"
+    run env PATH="$FAKE_BIN:/usr/bin:/bin" "$NOTIFY" <<< "${big}"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+    [ ! -s "$FAKE_LOG" ]
+}
+
+@test "the schema the daemon emits is the one the script accepts" {
+    # The emitter's string, pinned from herdr-peers v1.3.1 autopilot.py.
+    grep -q 'SCHEMA = "herdr-peers/plan-event-v1"' "$NOTIFY"
+    # ...and the pre-1.3 namespaced-less string is gone.
+    ! grep -q 'SCHEMA = "plan-event-v1"' "$NOTIFY"
 }
