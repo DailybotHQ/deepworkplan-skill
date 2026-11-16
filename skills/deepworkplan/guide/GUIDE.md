@@ -16,6 +16,7 @@ The repository is the harness: versioned files travel with the code. **Spec-firs
 
 This file is the routing index; each flow loads only what it needs
 (`spec/DWP_SPECIFICATION.md` §5).
+Do not read every guide file up front; load only what your current flow needs.
 
 ## How to read this guide (by flow)
 
