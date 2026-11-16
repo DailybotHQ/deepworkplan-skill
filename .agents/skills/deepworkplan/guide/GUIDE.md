@@ -2,16 +2,8 @@
 
 ### How to Create Deep-Work Task Execution Plans (outputs under `.dwp/`)
 
-This guide defines the **official structure and workflow** for creating _agent deep work plans_.
-
-These plans are designed so that an AI agent (Cursor, Claude, etc.) can:
-
-- Work for **many hours** (including overnight)
-- Focus on **one task at a time**
-- Follow a **clear, ordered execution plan**
-- Keep everything **modular, auditable and disposable**
-
-Use this document whenever you need to generate a new deep-work plan.
+The repository is the harness: versioned files travel with the code. **Spec-first, loop-closed: the repository is the harness and the plan runs itself to done.** Spec-first is one work episode: the plan is written before code with acceptance criteria. It lives as exportable, git-ignored `.dwp/plans/` working state, resumable by any agent in the repository, not as a maintained specification.
+**Loop engineering** registers a lead and succession; a human starts the optional daemon, whose prompts add no authority. It supports takeover, granted appointment, `plan-event-v1`, `fleet-v1`, and prompt-lead queue starts. The plan runs within its recorded authority and gates. DWP measures the instruction bytes each flow loads; it has not shown a general saving in provider tokens. The method works alone.
 
 ---
 
@@ -22,12 +14,9 @@ Use this document whenever you need to generate a new deep-work plan.
 > extraction comes back empty, that is a defect to report, never a blank
 > section.
 
-This file is the **routing index** of the methodology guide. The guide's content
-is unchanged; it is split into flow-scoped files so an agent loads only what its
-current flow needs (`spec/DWP_SPECIFICATION.md` §5). The design rationale lives
-in the contributor-only repository ADR.
-Nothing here is compressed — every section that existed in
-the single-file guide exists verbatim in exactly one file below.
+This file is the routing index; each flow loads only what it needs
+(`spec/DWP_SPECIFICATION.md` §5).
+Do not read every guide file up front; load only what your current flow needs.
 
 ## How to read this guide (by flow)
 
@@ -40,9 +29,6 @@ the single-file guide exists verbatim in exactly one file below.
 | **Verify** / **status** | [`structure.md`](./structure.md) §1–§2 | — |
 | **Upgrade** the installed skill | [`structure.md`](./structure.md) §1–§2 (what lives where) | the `upgrade` sub-skill itself (`../upgrade/SKILL.md`) — check is read-only, download needs explicit acceptance, `.dwp/` is never migrated |
 | **Author** skills/agents | [`skills-integration.md`](./skills-integration.md) | — |
-
-Do not read every file by default. Each sub-skill's "Shared resources" section
-names its essential files and its conditional triggers.
 
 ## Section map (every section of the original guide, in original order)
 

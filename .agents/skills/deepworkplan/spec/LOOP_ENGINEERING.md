@@ -8,12 +8,51 @@
 
 ## 1. The v8 rule
 
-An approved plan runs to its end without a human. Autonomy is the default
-**inside the plan's recorded authority**; the human is notified, never
-waited on — except logins and credentials, and the plan's own gates
-(C1–C7 publication, push, external messages) still stop unless the plan
-records the pre-authorization. v7's rule stands: the methodology works
-alone; addons only amplify.
+An approved plan MUST run to completion without routine human intervention,
+inside the authority recorded in that plan. The human MUST be notified, not
+waited on, except when a login or credential is required or a plan's own C1–C7
+gate requires human input and pre-authorization is absent. At those exceptions,
+execution MUST stop at the gate until the required input is available. The
+methodology works alone; addons only amplify.
+
+### 1.1. Loop semantics
+
+Loop engineering describes how an optional daemon carries an approved,
+registered plan forward. It does not expand the plan's authority.
+
+**Registration and succession.** Registration uses a lead claim, which MUST
+record the lead and its succession list. The peer holding the highest lead
+epoch is the lead. With `autopilot --loop`, a plan with a readable state and a
+lead record MAY be watched; the daemon MAY prompt an idle lead to continue
+within the plan's recorded authority. If the lead pane is gone, the daemon MAY
+prompt the first reachable successor to run `lead takeover`; the helper MUST
+check whether takeover is allowed. The daemon MUST NOT write the lead record
+or appoint a peer outside the recorded succession.
+
+**Human-started daemon and authority.** A human MUST start autopilot. The
+background daemon MAY cover enabled machines and sends fixed prompts; a prompt
+MUST NOT be treated as a new approval or authority grant. In particular, a
+continuation nudge asks the lead to respect the plan's existing gates and
+authority. A human MUST provide logins and credentials.
+
+**Appointment.** Lead appointment MUST require both a human's recorded grant
+on the lead claim and a human start of the daemon with `--appoint`. After the
+lead and its successors meet the documented gone-and-no-progress checks, the
+daemon MAY prompt the first eligible live lane to request appointment; the
+helper MUST check the conditions again. A new lead MUST run `lead verify`
+before a merge, tag, or release.
+
+**Queue, events, and fleet map.** When the current plan completes and queue
+mode is `prompt-lead`, the daemon MAY prompt the named lead to start the next
+eligible queued plan through the plan tool's execute flow; its start gate MUST
+check approval again. The daemon MAY report plan events as `plan-event-v1`
+JSON to the configured `--notify` command. The `fleet-v1` map reports agents,
+plans, and their roles; `fleet ui` shows the map live. The daemon MUST read
+the queue and MUST NOT write it.
+
+These behaviors are the optional Herdr integration, documented in
+[herdr-peers v2.0.0 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.0/skills/herdr-peers/autopilot.md)
+and [herdr-peers v2.0.0 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.0.0/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
 
 ## 2. The `autonomy` block (plan-contract/v8)
 
@@ -69,6 +108,6 @@ queue is a quiet none and never breaks the lifecycle.
 Everything v7 carries — `tasks[].parallel_safe`, delegation, the journal
 (the v8 event set is the v7 event set) — under one ordered generation
 ladder: every feature gated "v7" MUST be available to v8 and later. A v8
-plan is materialized into the v7 manifest and journal line
-(`plan-manifest/v7`, `journal-event/v7`); a conformance checker MUST pair a
-v7 manifest with a v8 contract.
+plan MUST use the v7 manifest and journal line (`plan-manifest/v7`,
+`journal-event/v7`); a conformance checker MUST pair a v7 manifest with a v8
+contract.
