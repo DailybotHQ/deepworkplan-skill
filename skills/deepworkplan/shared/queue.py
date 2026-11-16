@@ -49,8 +49,20 @@ MAX_ITEMS = 64
 # herdr-peers' exact form, the same as contract_v6.PANE_ADDRESS (a test pins them
 # equal): a machine id is passed to Herdr as an argument, so it cannot start with '-'.
 PANE_ADDRESS = re.compile(r"^(?:local|[A-Za-z0-9][A-Za-z0-9._-]{0,63}):[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
+PANE_ID = re.compile(r"^[A-Za-z0-9]{1,32}:[A-Za-z0-9]{1,32}$")
 PLAN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 NOTE_MAX = 200
+
+
+def norm_lead(value):
+    """A lead as written by a caller: a full pane address stays as it is; a
+    bare Herdr pane id (`w9:p1`, what $HERDR_PANE_ID may hold) becomes
+    `local:w9:p1`; surrounding blanks are dropped. The result is still checked
+    against PANE_ADDRESS by the caller."""
+    if not isinstance(value, str):
+        return value
+    value = value.strip()
+    return "local:" + value if PANE_ID.fullmatch(value) else value
 
 
 def _iso_now():
@@ -163,6 +175,7 @@ def _load_or_new(dwp_dir):
 
 def append(dwp_dir, plan, after=None, start="prompt-lead", lead=None):
     _safe_dwp(dwp_dir)
+    lead = norm_lead(lead)
     if lead is not None and (not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead)):
         raise SystemExit("queue.py: --lead is not a pane address "
                          "(local|<machine>):<workspace>:<pane>")
@@ -190,6 +203,7 @@ def append(dwp_dir, plan, after=None, start="prompt-lead", lead=None):
 def set_lead(dwp_dir, plan, lead):
     """Name (or rename) the lead the daemon prompts to start a queued plan."""
     _safe_dwp(dwp_dir)
+    lead = norm_lead(lead)
     if not isinstance(lead, str) or not PANE_ADDRESS.fullmatch(lead):
         raise SystemExit("queue.py: --lead is not a pane address "
                          "(local|<machine>):<workspace>:<pane>")
@@ -206,6 +220,7 @@ def set_lead(dwp_dir, plan, lead):
 
 def set_state(dwp_dir, plan, state, lead=None, note=None):
     _safe_dwp(dwp_dir)
+    lead = norm_lead(lead)
     doc = _load_or_new(dwp_dir)
     if state == "started" and lead is None:
         raise SystemExit("queue.py: started needs --lead (the lead that claimed the plan)")
