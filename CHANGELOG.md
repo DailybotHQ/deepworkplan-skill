@@ -11,6 +11,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [8.0.3] — 2026-11-17
+
+### Changes
+
+- Merge pull request #108 from DailybotHQ/fix/v8-queue-transitions-and-pins
+- chore(addon): pin devcontainer-kit v1.4.2
+- fix(shared): the queue refuses transitions its lifecycle does not name; pin devcontainer-kit v1.4.1
+
+
 ## [8.0.2] — 2026-11-17
 
 ### Changes
