@@ -286,6 +286,8 @@ def main(argv=None):
             raise SystemExit("queue.py: --plan is not a plan id")
         append(args.dwp, args.plan, args.after, args.start, args.lead)
         return 0
+    if not PLAN_ID.fullmatch(args.plan):
+        raise SystemExit("queue.py: --plan is not a plan id")
     set_state(args.dwp, args.plan, args.state, args.lead, args.note)
     return 0
 

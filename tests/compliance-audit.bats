@@ -143,7 +143,27 @@ PY
   printf '# old\n' > "$WORK/plans/PLAN_old/README.md"
   run python3 "$AUDIT" --plans-dir "$WORK/plans" --json
   [ "$status" -eq 0 ]
-  grep -q 'not a v6/v7 record-layer plan' <<<"$output"
+  grep -q 'not a v6/v7/v8 record-layer plan' <<<"$output"
+}
+
+@test "a v8 plan is reported as generation v8, not by its v7 manifest line" {
+  python3 - "$PLAN/draft.json" "$WORK/v8.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d['schema'] = 'https://deepworkplan.com/schema/plan-contract/v8.json'
+d['plan'] = 'PLAN_v8_audit'
+json.dump(d, open(sys.argv[2], 'w'), indent=2)
+PY
+  P8="$REPO/.dwp/plans/PLAN_v8_audit"
+  mkdir -p "$P8/analysis_results"; printf '# Goal\n\nv8 audit.\n' > "$P8/README.md"
+  run python3 "$LEDGER" --plan "$P8" materialize --contract "$WORK/v8.json" --authority bats --mechanism plan_authorship
+  [ "$status" -eq 0 ]
+  grep -q 'plan-manifest/v7.json' "$P8/manifest.json"
+  run python3 "$AUDIT" "$P8" --json
+  [ "$status" -eq 0 ]
+  [ "$(_field generation <<<"$output")" = "\"v8\"" ]
+  run python3 "$AUDIT" "$PLAN" --json
+  [ "$(_field generation <<<"$output")" = "\"v7\"" ]
 }
 
 @test "usage errors exit 2" {
