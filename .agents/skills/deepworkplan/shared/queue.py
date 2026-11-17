@@ -41,6 +41,16 @@ import time
 
 SCHEMA = "dwp-queue-v1"
 STATES = ("queued", "started", "done", "skipped")
+# The lifecycle (spec/LOOP_ENGINEERING.md section 4): a queued plan starts,
+# finishes or is skipped (outside Herdr it is marked done straight from
+# queued); a started plan finishes or is skipped; done and skipped are
+# terminal, because plan ids are one-shot.
+TRANSITIONS = {
+    "queued": ("started", "done", "skipped"),
+    "started": ("done", "skipped"),
+    "done": (),
+    "skipped": (),
+}
 STARTS = ("prompt-lead", "launch")
 MAX_BYTES = 64 * 1024
 # The consumer's own caps (herdr-peers fleet_report): a queue above 64 items,
@@ -238,6 +248,10 @@ def set_state(dwp_dir, plan, state, lead=None, note=None):
         raise SystemExit("queue.py: %s is already done; the queue is append-only history" % plan)
     if state == "started" and item["state"] != "queued":
         raise SystemExit("queue.py: only a queued plan starts (got %s)" % item["state"])
+    if state not in TRANSITIONS.get(item["state"], ()):
+        raise SystemExit("queue.py: %s cannot go from %s to %s (allowed: %s)"
+                         % (plan, item["state"], state,
+                            ", ".join(TRANSITIONS.get(item["state"], ())) or "none, it is terminal"))
     if state == "skipped":
         if not note or not note.strip():
             raise SystemExit("queue.py: skipping needs a one-line note")

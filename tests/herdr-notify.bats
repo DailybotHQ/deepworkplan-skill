@@ -67,6 +67,12 @@ event_json() {
     [ ! -s "$FAKE_LOG" ]
 }
 
+@test "8.0.3: a missing schema is refused too (the daemon always stamps plan-event-v1)" {
+    run env PATH="$FAKE_BIN:/usr/bin:/bin" "$NOTIFY" <<< '{"event":"plan_stalled","plan":"p"}'
+    [ "$status" -eq 0 ]
+    [ ! -s "$FAKE_LOG" ]
+}
+
 @test "completed event: one report with event, repo and plan names" {
     run env PATH="$FAKE_BIN:/usr/bin:/bin" "$NOTIFY" <<< "$(event_json plan_completed '')"
     [ "$status" -eq 0 ]
