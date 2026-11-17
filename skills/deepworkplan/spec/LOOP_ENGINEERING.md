@@ -52,8 +52,8 @@ plans, and their roles; `fleet ui` shows the map live. The daemon MAY read
 the queue and MUST NOT write it.
 
 These behaviors are the optional Herdr integration, documented in
-[herdr-peers v2.1.0 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.1.0/skills/herdr-peers/autopilot.md)
-and [herdr-peers v2.1.0 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.1.0/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
+[herdr-peers v2.2.0 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.2.0/skills/herdr-peers/autopilot.md)
+and [herdr-peers v2.2.0 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.2.0/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
 
 ## 2. The `autonomy` block (plan-contract/v8)
 

@@ -18,7 +18,7 @@ rule.
 |-------|-------|
 | **Version** | 0.3.0 |
 | **Status** | Stable (DeepWorkPlan 7.0.0) |
-| **Product pin** | `DailybotHQ/herdr-peers` `v2.1.0`, protocol/interface `1` or `2`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
+| **Product pin** | `DailybotHQ/herdr-peers` `v2.2.0`, protocol/interface `1` or `2`; depends on `herdrdev/herdr@v0.9.3` (skill `herdr`) |
 | **Companions** | `SKILL.md`, `addon.json`, `install.md`, `templates/INTEGRATION.md`, `../README.md`, `../../spec/ADDONS.md`, `../../execute/delegation.md` |
 
 ## 1. Conventions
@@ -56,11 +56,11 @@ recipes — those drift; the pinned skill is the single source.
 
 - Explicit opt-in (`onboard` Phase 7b); a decline writes nothing.
 - Installs (`install.md`) **MUST** name exact tags:
-  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v2.1.0 --skill herdr-peers -g -y`
+  `npx --yes skills add https://github.com/DailybotHQ/herdr-peers/tree/v2.2.0 --skill herdr-peers -g -y`
   and `npx --yes skills add https://github.com/herdrdev/herdr/tree/v0.9.3 --skill herdr -g -y`. Herdr
   itself is installed through its own documented paths; a fetch-and-execute
   pipeline **MUST NOT** appear in this pack's text.
-- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v2.1.0"}`
+- On acceptance: `addons.herdr` = `{"enabled": true, "version": "v2.2.0"}`
   via `shared/config.py enable`. Enabling grants no plan any authority.
 
 ## 6. The Transport (v7 delegation)
@@ -258,7 +258,7 @@ Nothing blocks `onboard`, `create`, `execute` or `verify`.
 
 1. `SKILL.md`, `SPEC.md`, `install.md`, `addon.json`,
    `templates/INTEGRATION.md` exist; no protocol file ships in this folder.
-2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v2.1.0`,
+2. `addon.json`: key `herdr`, product `DailybotHQ/herdr-peers` `v2.2.0`,
    interface 1 or 2 (the descriptor's accepted list), transport `interactive`.
 3. Every install line pins a tag; no pipeline text.
 4. The registry entry exists only after acceptance.
