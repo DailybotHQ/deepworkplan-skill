@@ -75,6 +75,15 @@ PY
     [ "$status" -ne 0 ]
     run q append --plan "not a plan id"
     [ "$status" -ne 0 ]
+    # every verb that names a plan applies the same id guard
+    for verb in set-lead set-state; do
+        case "$verb" in
+            set-lead)  run q set-lead --plan "../PLAN_1_x" --lead local:w1:p1 ;;
+            set-state) run q set-state --plan "../PLAN_1_x" --state done ;;
+        esac
+        [ "$status" -ne 0 ] || return 1
+        [[ "$output" == *"not a plan id"* ]] || { echo "$verb: $output"; return 1; }
+    done
 }
 
 @test "the file is written atomically at 0600, no temp left behind" {
