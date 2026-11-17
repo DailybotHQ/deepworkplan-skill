@@ -11,6 +11,22 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [8.0.2] — 2026-11-17
+
+### Changes
+
+- Merge pull request #107 from DailybotHQ/chore/pin-devcontainer-kit-1.4.0
+- test(v8): the loop semantics name Revive beside Appointment
+- fix(addon): herdr-peers 2.2.0 version strings; revive in the v8 loop semantics
+- chore(addon): pin herdr-peers v2.2.0
+- chore(addon): the machine-install recipe checks devcontainer-kit v1.4.0's digest
+- Merge main (#106) into chore/pin-devcontainer-kit-1.4.0
+- Merge pull request #106 from DailybotHQ/fix/create-v8-journal-line
+- chore(addon): pin devcontainer-kit v1.4.0
+- fix(verify): the compliance audit reports v8 plans as v8; queue set-state guards the plan id
+- docs(spec): a v8 plan writes journal-event/v8; erratum on the frozen contract description
+
+
 ## [8.0.1] — 2026-11-16
 
 ### Changes
