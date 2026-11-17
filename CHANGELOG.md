@@ -11,6 +11,15 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [8.0.1] — 2026-11-16
+
+### Changes
+
+- Merge pull request #105 from DailybotHQ/chore/pin-vim-1.1.0
+- fix(addon): the vim registry record names v1.1.0
+- fix(addon): pin deepworkplan-vim v1.1.0; the dogfood lock helper follows skills@1.9.0
+
+
 ## [8.0.0] — 2026-11-16
 
 ### Changes
