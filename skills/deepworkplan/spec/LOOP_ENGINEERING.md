@@ -172,3 +172,10 @@ shape and its contract pointer do not change, so a new manifest URL would
 add a generation without a difference. A conformance checker MUST pair a v7
 manifest with a v8 contract. v6 and v7 plans keep their records byte for
 byte.
+
+**Erratum (8.0.1).** The `description` of the frozen
+`schema/plan-contract-v8.schema.json` says the journal-event set is unchanged
+from v7. That sentence predates the structured blocker (§3): this section and
+`schema/journal-event-v8.schema.json` are normative, and a v8 journal carries
+the `blocker` event. The schema's bytes stay frozen; only the prose of its
+description is superseded.
