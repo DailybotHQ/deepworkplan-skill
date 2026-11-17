@@ -133,19 +133,19 @@ form**; only its CI surface is optional.
 - An optional addon at `skills/deepworkplan/addons/devcontainer/` that gives a
   repository a reproducible dev container through **devcontainer-kit**
   (`dck`; `https://github.com/DailybotHQ/devcontainer-kit`, MIT, its own
-  release cycle) pinned at `v1.3.0` (interface `2`). The kit owns the
+  release cycle) pinned at `v1.4.0` (interface `2`). The kit owns the
   Dockerfile template and its render (`dck init`, which reconciles and never
   clobbers), the pinned images and tools, the entrypoint, the launcher, SSH
   agent forwarding, Herdr registration and the `dck-dockerfile` skill; the
   addon owns detection, the offer, the stack → options reasoning, the
   registry record and validation.
 - **Per-repository layout, no shared base image (devcontainer-kit
-  `v1.3.0`):** the render produces `.devcontainer/devcontainer.json`,
+  `v1.4.0`):** the render produces `.devcontainer/devcontainer.json`,
   `docker/local/<service>/Dockerfile` (plus its entrypoint),
   `docker/local/docker-compose.yaml` and `dev.sh`. The Dockerfile starts from
   the official runtime image pinned by digest; the kit's GHCR base image is
   not required. The addon offers the skill through
-  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v1.3.0 --skill dck-dockerfile -y`
+  `npx --yes skills add https://github.com/DailybotHQ/devcontainer-kit/tree/v1.4.0 --skill dck-dockerfile -y`
   (repo-local), and the pack keeps no copy of the template.
 - **Vendor-neutral (7.0.0):** the 1.x in-pack templates and their
   company-specific requirements are retired; no network, volume, CLI or
@@ -348,14 +348,14 @@ form**; only its CI surface is optional.
 ### 6.6 Herdr (sixth addon — interactive delegation transport, thin integrator)
 
 An optional addon integrating **herdr-peers** (`DailybotHQ/herdr-peers`,
-MIT, its own release cycle) pinned at `v2.1.0` (protocol/interface `1` or `2`), as
+MIT, its own release cycle) pinned at `v2.2.0` (protocol/interface `1` or `2`), as
 the **interactive** transport of v7 delegation
 ([`V7_CONTRACT.md`](V7_CONTRACT.md)): one `herdr-peers ask` to a peer agent
 in a [Herdr](https://herdr.dev) pane on any reachable machine, recorded in
 the plan journal before the reply is relied on, the reply asserted until
 the plan's own gates observe the work. `onboard` Phase 7b offers it as an
 **explicit opt-in**; installs are the pinned skills
-(`herdr-peers@v2.1.0`, Herdr's official `herdr@v0.9.3`).
+(`herdr-peers@v2.2.0`, Herdr's official `herdr@v0.9.3`).
 
 Placement decision (revised for 7.0.0): the peer protocol — stamp, grant,
 reply, loop guard, depth limit 1, fan-out cap, scope — moved out of the
@@ -454,8 +454,8 @@ The shipped set:
 | `dailybot` | `DailybotHQ/agent-skill` `v3.23.20` | `telemetry` (reporting only, consent-gated) | — | — |
 | `dependency-upgrade` | in-pack only | — | — | — |
 | `design-system` | in-pack only | — | — | — |
-| `devcontainer` | `DailybotHQ/devcontainer-kit` `v1.3.0`, interface 2 | — | — | — |
-| `herdr` | `DailybotHQ/herdr-peers` `v2.1.0`, interface 1 or 2 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
+| `devcontainer` | `DailybotHQ/devcontainer-kit` `v1.4.0`, interface 2 | — | — | — |
+| `herdr` | `DailybotHQ/herdr-peers` `v2.2.0`, interface 1 or 2 | `subagents`, `cancel_children` | `agent_delegation` | `interactive` |
 | `vim` | `DailybotHQ/deepworkplan-vim` `v1.1.0`, interface 1 | — | — | — |
 
 A descriptor is **data**: the pack executes nothing it names except its

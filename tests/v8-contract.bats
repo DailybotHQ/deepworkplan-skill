@@ -199,7 +199,12 @@ PY
 
 @test "review of #99: appointment is consistent, the queue rule is readiness, links follow the pin, the router names Lite and Full" {
   c() { tr '\n' ' ' < "$1" | tr -s ' ' | grep -qF -- "$2"; }
-  c "$SPEC" 'The daemon MUST NOT write the lead record. A peer outside the recorded succession MAY become lead only through Appointment below, by its own takeover, never by the daemon.'
+  c "$SPEC" 'The daemon MUST NOT write the lead record. A peer outside the recorded succession MAY become lead only through Appointment or Revive below, by its own takeover, never by the daemon.'
+  # Revive (herdr-peers v2.2.0) is human-granted, ticketed, never takes over a live lead
+  c "$SPEC" 'Revive MUST require a human start of the daemon with `--revive`; that start is the grant.'
+  c "$SPEC" "The helper MUST accept that takeover only with the daemon's one-time ticket"
+  c "$SPEC" 'A stalled plan whose lead is live MUST NOT be taken over'
+  c "$SPEC" 'a revived lead, like an appointed one, MUST run `lead verify` before a merge, tag, or release.'
   ! c "$SPEC" 'or appoint a peer outside the recorded succession'
   c "$SPEC" 'When a queued item is ready (its `after` plan is completed, or it has none)'
   c "$SPEC" 'The daemon MAY read the queue and MUST NOT write it.'

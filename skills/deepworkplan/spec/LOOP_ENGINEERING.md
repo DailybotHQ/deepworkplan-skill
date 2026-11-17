@@ -1,7 +1,8 @@
 # Loop Engineering (normative, v8)
 
 > Status: normative for the v8 generation. The loop's machinery lives in
-> herdr-peers (`autopilot --loop --appoint --brain`, the fleet map and UI,
+> herdr-peers (`autopilot --loop --appoint --brain`, optionally `--revive`,
+> the fleet map and UI,
 > the plan-queue consumer); this section defines what a **plan** records so
 > the loop can carry it to the end, and nothing more. The key words MUST,
 > MUST NOT, SHOULD and MAY are used as in RFC 2119.
@@ -28,7 +29,7 @@ within the plan's recorded authority. If the lead pane is gone, the daemon MAY
 prompt the first reachable successor to run `lead takeover`; the helper MUST
 check whether takeover is allowed. The daemon MUST NOT write the lead record.
 A peer outside the recorded succession MAY become lead only through
-Appointment below, by its own takeover, never by the daemon.
+Appointment or Revive below, by its own takeover, never by the daemon.
 
 **Human-started daemon and authority.** A human MUST start autopilot. The
 background daemon MAY cover enabled machines and sends fixed prompts; a prompt
@@ -43,6 +44,17 @@ daemon MAY prompt the first eligible live lane to request appointment; the
 helper MUST check the conditions again. A new lead MUST run `lead verify`
 before a merge, tag, or release.
 
+**Revive.** Revive MUST require a human start of the daemon with
+`--revive`; that start is the grant. When a plan's lead and every member of
+its succession and lanes are gone and none can take over, the daemon MAY
+launch one fresh agent in the plan's checkout and brief it to run `lead
+takeover --reason revive`. The helper MUST accept that takeover only with the
+daemon's one-time ticket and only after its own checks find every member
+gone, and the record is adopted only on the daemon's machine. A stalled plan
+whose lead is live MUST NOT be taken over: the daemon MAY ask that lead once
+to hand over. Revive is capped per plan and fleet-wide, and a revived lead,
+like an appointed one, MUST run `lead verify` before a merge, tag, or release.
+
 **Queue, events, and fleet map.** When a queued item is ready (its `after`
 plan is completed, or it has none) and its start is `prompt-lead`, the daemon
 MAY prompt its named lead to start it through the plan tool's execute flow;
@@ -52,8 +64,8 @@ plans, and their roles; `fleet ui` shows the map live. The daemon MAY read
 the queue and MUST NOT write it.
 
 These behaviors are the optional Herdr integration, documented in
-[herdr-peers v2.1.0 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.1.0/skills/herdr-peers/autopilot.md)
-and [herdr-peers v2.1.0 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.1.0/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
+[herdr-peers v2.2.0 `autopilot.md` §§1–9](https://github.com/DailybotHQ/herdr-peers/blob/v2.2.0/skills/herdr-peers/autopilot.md)
+and [herdr-peers v2.2.0 `protocol.md` §12](https://github.com/DailybotHQ/herdr-peers/blob/v2.2.0/skills/herdr-peers/protocol.md#12-leadership-lead-notices-and-fencing).
 
 ## 2. The `autonomy` block (plan-contract/v8)
 
