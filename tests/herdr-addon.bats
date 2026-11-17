@@ -55,6 +55,9 @@ PY
   [ "$status" -ne 0 ]
   run bash -c "grep -rhoE 'herdr-peers@v[0-9.]+' '$ADDON' '$ONBOARD' '$SK/spec/ADDONS.md' '$SK/addons/README.md' | sort -u"
   [ "$output" = "herdr-peers@v2.2.0" ]
+  # The version string a successful install prints names the same release.
+  run bash -c "grep -rhoE 'herdr-peers [0-9]+\\.[0-9]+\\.[0-9]+ \\(protocol' '$ADDON' | sort -u"
+  [ "$output" = "herdr-peers 2.2.0 (protocol" ]
 }
 
 @test "native debates: panel contract, helpers, templates, optional agentkit, protocol 1" {

@@ -25,7 +25,7 @@ Both `-y` flags are required in an agent's non-interactive shell (`npx
 The first is Herdr's official skill (the authority for every `herdr`
 command; `herdr --skill` prints the copy matching the installed binary).
 The second installs the herdr-peers skill and its helper script. Verify:
-`herdr-peers --version` → `herdr-peers 2.1.0 (protocol 2)`.
+`herdr-peers --version` → `herdr-peers 2.2.0 (protocol 2)`.
 
 **Plan loop (herdr-peers v1.3.0 and later).** To have open Deep Work Plans
 run to their end without polling each lead, a human starts the loop daemon
