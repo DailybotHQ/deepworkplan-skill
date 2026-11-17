@@ -37,6 +37,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 os.pardir, 'shared'))
 import ledger  # noqa: E402  (read-side helpers only: PlanRecords, snapshot)
+import contract_v6  # noqa: E402  (contract_generation only)
 
 RECORD_SCHEMAS = ('plan-manifest/v6.json', 'plan-manifest/v7.json')
 _FINAL_REVIEW = re.compile(r'final[-_ ]?review', re.IGNORECASE)
@@ -58,7 +59,12 @@ def _has_human_note(plan_dir):
 
 
 def generation(plan_dir):
-    """'v6' / 'v7' for a record-layer plan, else None (never judged here)."""
+    """'v6' / 'v7' / 'v8' for a record-layer plan, else None (never judged).
+
+    The manifest says whether the plan is on the record layer at all; the
+    contract names its generation, because a v8 plan keeps the v7 manifest
+    line (spec/LOOP_ENGINEERING.md section 5).
+    """
     manifest = os.path.join(plan_dir, 'manifest.json')
     if not os.path.isfile(manifest):
         return None
@@ -66,10 +72,17 @@ def generation(plan_dir):
         schema = _read_json(manifest).get('schema', '')
     except (OSError, ValueError):
         return None
+    gen = None
     for suffix in RECORD_SCHEMAS:
         if schema.endswith(suffix):
-            return suffix.split('/')[-1][:2]
-    return None
+            gen = suffix.split('/')[-1][:2]
+    if gen is None:
+        return None
+    try:
+        return contract_v6.contract_generation(
+            _read_json(os.path.join(plan_dir, 'contract.json'))) or gen
+    except (OSError, ValueError):
+        return gen
 
 
 def audit_plan(plan_dir):
@@ -79,7 +92,7 @@ def audit_plan(plan_dir):
     gen = generation(plan_dir)
     if gen is None:
         return {'plan': name, 'generation': None,
-                'skipped': 'not a v6/v7 record-layer plan'}
+                'skipped': 'not a v6/v7/v8 record-layer plan'}
     # The same read side the verifier uses: the live contract (highest
     # revision under contracts/) and a snapshot derived from the journal,
     # computed without the lock and without writing.
