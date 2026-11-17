@@ -345,7 +345,10 @@ a marked plan. Full-to-Lite downgrade is not automatic.
 - **Plan queue:** when the developer takes a queued plan out of the
   repository's queue, record why: `python3 ../shared/queue.py --dwp <dwp_dir>
   set-state --plan <PLAN_id> --state skipped --note "<one line>"`. Reordering
-  is the developer's or the lead's own edit of `.dwp/queue.json`.
+  is the developer's or the lead's own edit of `.dwp/queue.json`
+  (`../spec/LOOP_ENGINEERING.md` §4): move whole items only, keep every field
+  and the `dwp-queue-v1` shape, and confirm with `queue.py show`, since a
+  document that no longer validates is a quiet none to the loop.
 - **Git ignore:** everything under `.dwp/` is git-ignored.
 - **No draft artifact:** `refine` always operates on a plan folder under
   `.dwp/plans/`. Nothing is written to `.dwp/drafts/` — it no longer exists.

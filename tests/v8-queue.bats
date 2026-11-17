@@ -295,3 +295,37 @@ assert 'PLAN_7_x' not in items
 PY
     tr '\n' ' ' < "$SK/create/v6.md" | tr -s ' ' | grep -qF -- 'pass `$HERDR_PANE_ID` as it is'
 }
+
+@test "8.0.3: the lifecycle table refuses every transition it does not name" {
+    # queued -> done is allowed (outside Herdr a plan is never marked started)
+    q append --plan PLAN_1_x >/dev/null
+    q set-state --plan PLAN_1_x --state done >/dev/null
+    # started -> queued and queued -> queued are refused
+    q append --plan PLAN_2_x >/dev/null
+    run q set-state --plan PLAN_2_x --state queued
+    [ "$status" -ne 0 ] && [[ "$output" == *"cannot go from queued to queued"* ]] || { echo "$output"; return 1; }
+    q set-state --plan PLAN_2_x --state started --lead local:w1:p1 >/dev/null
+    run q set-state --plan PLAN_2_x --state queued
+    [ "$status" -ne 0 ] && [[ "$output" == *"cannot go from started to queued"* ]] || { echo "$output"; return 1; }
+    # skipped is terminal: it neither starts nor finishes nor returns to queued
+    q append --plan PLAN_3_x >/dev/null
+    q set-state --plan PLAN_3_x --state skipped --note "out of scope" >/dev/null
+    for s in queued done; do
+        run q set-state --plan PLAN_3_x --state "$s"
+        [ "$status" -ne 0 ] && [[ "$output" == *"it is terminal"* ]] || { echo "$s: $output"; return 1; }
+    done
+    run q set-state --plan PLAN_3_x --state started --lead local:w1:p1
+    [ "$status" -ne 0 ] || return 1
+    # the refusals wrote nothing
+    q show | python3 -c 'import json,sys; s={i["plan"]:i["state"] for i in json.load(sys.stdin)["items"]}; assert s=={"PLAN_1_x":"done","PLAN_2_x":"started","PLAN_3_x":"skipped"}, s'
+}
+
+@test "8.0.3: a bare pane id is normalized to a local address; surrounding blanks are dropped" {
+    q append --plan PLAN_1_x --lead "w9:p1" >/dev/null
+    q show | grep -q '"lead": "local:w9:p1"'
+    q append --plan PLAN_2_x >/dev/null
+    q set-state --plan PLAN_2_x --state started --lead "  w2:p4  " >/dev/null
+    q show | grep -q '"lead": "local:w2:p4"'
+    q append --plan PLAN_3_x --lead "local:w1:p2" >/dev/null
+    q show | grep -q '"lead": "local:w1:p2"'
+}

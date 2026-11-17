@@ -140,7 +140,7 @@ def main():
         event = json.loads(raw)
     except (ValueError, OSError):
         return 0
-    if not isinstance(event, dict) or event.get("schema") not in (None, SCHEMA):
+    if not isinstance(event, dict) or event.get("schema") != SCHEMA:
         return 0
     message = build_message(event)
     if message is None:
