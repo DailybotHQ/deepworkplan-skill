@@ -11,6 +11,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [8.0.4] — 2026-11-18
+
+### Changes
+
+- Merge pull request #109 from DailybotHQ/chore/pin-dck-1.4.3-herdr-peers-2.2.1
+- chore(addon): pin devcontainer-kit v1.4.3 and herdr-peers v2.2.1
+
+
 ## [8.0.3] — 2026-11-17
 
 ### Changes
