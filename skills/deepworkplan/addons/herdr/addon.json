@@ -3,7 +3,7 @@
   "key": "herdr",
   "product": {
     "repo": "DailybotHQ/herdr-peers",
-    "tag": "v2.2.0",
+    "tag": "v2.2.1",
     "interface": [
       1,
       2
