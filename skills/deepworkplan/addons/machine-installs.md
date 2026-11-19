@@ -15,10 +15,10 @@ actually verified (`--ignore-missing` alone would pass with none).
 coding-agents-kit (`agentkit`):
 
 ```bash
-git clone --branch v1.5.0 --depth 1 https://github.com/DailybotHQ/coding-agents-kit cak
-git -C cak describe --tags --exact-match            # must print v1.5.0
-curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v1.5.0/SHA256SUMS -o cak.SHA256SUMS
-echo "d8057636d357ba056ab8c8a7feec58d31b53cb58c91d943109b7f22590b5cca3  cak.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
+git clone --branch v1.5.1 --depth 1 https://github.com/DailybotHQ/coding-agents-kit cak
+git -C cak describe --tags --exact-match            # must print v1.5.1
+curl -fsSL https://github.com/DailybotHQ/coding-agents-kit/releases/download/v1.5.1/SHA256SUMS -o cak.SHA256SUMS
+echo "fb4c71edec9fc510658045d53994fe9426fb752627a922a03616a832219ee3d1  cak.SHA256SUMS" | shasum -a 256 -c   # the pinned digest
 (cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS)       # must exit 0
 (cd cak && shasum -a 256 -c --ignore-missing ../cak.SHA256SUMS | grep -c ': OK$')   # must print a number above 0
 ./cak/install.sh
