@@ -11,6 +11,14 @@ the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html
 > hand-written part is an optional `## [Unreleased]` block above the newest
 > version: the next stable release folds its body into its own section.
 
+## [8.0.5] — 2026-11-19
+
+### Changes
+
+- Merge pull request #110 from DailybotHQ/chore/pin-agentkit-1.5.1
+- chore(addon): pin coding-agents-kit v1.5.1
+
+
 ## [8.0.4] — 2026-11-18
 
 ### Changes
